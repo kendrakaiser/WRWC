@@ -23,6 +23,9 @@ site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeC
 # Merge data from all sites into one dataframe
 flowdata <- readNWISuv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = site_info$begin_date, endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
 
+#save flow data as a csv
+#save a figure that shows YTD streamflow over WY average and CV
+
 # SNOTEL Sites
 cg = 895 #  Chocolate Gulch (0301)
 g  = 489 #  Galena (0101)
@@ -38,3 +41,15 @@ sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
 snotel_sites = c(cg, g, gs, hc, lwd, ds, cd, sr, ga, sp)
 
 snotel_data = snotel_download(snotel_sites, path = '~/Desktop/Data/WRWC/', internal = TRUE )
+#clean unecessary columns
+
+#save snotel data as a csv
+#save a figure that shows YTD SWE over WY average and CV for each site
+
+#  Additional Data
+
+#NRCS ET Agrimet data
+
+#National Operational Hydrologic Remote Sensing Center data - max SWE at 17 locations?
+
+#Reservoir Data
