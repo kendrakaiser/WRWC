@@ -41,9 +41,20 @@ sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
 snotel_sites = c(cg, g, gs, hc, lwd, ds, cd, sr, ga, sp)
 
 snotel_data = snotel_download(snotel_sites, path = '~/Desktop/Data/WRWC/', internal = TRUE )
+
+snotel_site_info = data.frame(matrix(ncol = 7 , nrow= length(snotel_sites)))
+colnames(snotel_site_info) <- c('id', 'start', 'end', 'lat', 'long', 'elevation', 'description')
+
+for (i in length(snotel_sites)){
+  snotel_site_info[i,] <- c(snotel_sites[i], unique(snotel_data$start[snotel_data$site_id == snotel_sites[i]]), unique(snotel_data$end[snotel_data$site_id == snotel_sites[i]]), unique(snotel_data$latitude[snotel_data$site_id == snotel_sites[i]]), unique(snotel_data$longitude[snotel_data$site_id == snotel_sites[i]]),  unique(snotel_data$elev[snotel_data$site_id == snotel_sites[i]]), unique(snotel_data$description[snotel_data$site_id == snotel_sites[i]]))
+}
+
 #clean unecessary columns
+snotel_data = subset(snotel_data, select = -c('network', 'state', ))
 
 #save snotel data as a csv
+write.csv(snotel_data, '~/Desktop/Data/WRWC/snotel_data.csv')
+
 #save a figure that shows YTD SWE over WY average and CV for each site
 
 #  Additional Data
