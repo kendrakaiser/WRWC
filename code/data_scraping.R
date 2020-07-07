@@ -9,11 +9,13 @@ library(tidyverse)
 library(snotelr)
 library(XML)
 library(httr)
+library(dplyr)
+library(devtools)
+devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/")
+library(RNRCS)
 
 #set date for AgriMet Data download
-YEAR = 2020
-MONTH = 7
-DAY = 1
+end = '2020-07-01'
 
 # USGS Gages
 bwb = 13139510 #  Bullion Bridge, Big Wood at Hailey
@@ -30,11 +32,13 @@ site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeC
 # Merge data from all sites into one dataframe
 streamflow_data <- readNWISuv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = site_info$begin_date, endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
 
-#save flow data as a csv
+# Save flow data as a csv
 write.csv(streamflow_data, '~/Desktop/Data/WRWC/streamflow_data.csv')
 write.csv(site_info, '~/Desktop/Data/WRWC/usgs_sites.csv')
 
 #save a figure that shows YTD streamflow over WY average and CV
+
+# -------- Retrieve Snotel data -------- #
 
 # SNOTEL Sites
 cg = 895 #  Chocolate Gulch (0301)
@@ -49,10 +53,10 @@ ga = 492 #  Garfield R.S. (Upper Muldoon Creek 0301)
 sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
 snotel_sites = c(cg, g, gs, hc, lwd, ds, cd, sr, ga, sp)
 
-#download snotel data
+# Download snotel data
 snotel_data = snotel_download(snotel_sites, path = '~/Desktop/Data/WRWC/', internal = TRUE )
 
-# pull out snotel site information
+# Pull out snotel site information
 snotel_site_info<-data.frame('id'=NA, 'start'=NA, 'end'=NA, 'lat'=NA, 'long'=NA, 'elev'=NA, 'description'=NA)
 snotel_site_info$start <-as.Date(NA)
 snotel_site_info$end <-as.Date(NA)
@@ -66,33 +70,41 @@ for (i in 1:length(snotel_sites)){
   snotel_site_info[i,'description'] <- snotel_data$description[snotel_data$site_id == snotel_sites[i]][1]
 }
 
-#remove unecessary columns from snotel data frame
+# remove unecessary columns from snotel data frame
 snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, latitude, longitude, elev, county, description))
-#save snotel data as a csv
+
+# save snotel data as a csv
 write.csv(snotel_data_out, '~/Desktop/Data/WRWC/snotel_data.csv')
 write.csv(snotel_site_info, '~/Desktop/Data/WRWC/snotel_sites.csv')
 
-#save a figure that shows YTD SWE over WY average and CV for each site
-
-#NRCS ET Agrimet data
-#OB= Air temperature
-#PC= precipitation, cumulative
-
-# AgriMet Sites
-fafi = fafi #06/25/1987
-pici = pici
-ichi = ichi
+# save a figure that shows YTD SWE over WY average and CV for each site
 
 
 
-url = rawToChar(GET("https://www.usbr.gov/pn-bin/instant.pl?list=FAFI&print_hourly=true&year=1983&month=1&day=1&format=html&last=&flags=false")$content)
+# -------- Download NRCS ET Agrimet data -------- #
+# OB = Air temperature
+# PC = precipitation, cumulative
+# additional: soil temp, humidity, vapor pressure
 
-url<- rawToChar(GET("usbr.gov/pn-bin/instant.pl?list=fafi%20ob,fafi%20pc&start=1987-01-01&end=2016-04-20"))
+# Fairfield; start: 06/25/1987; site number: 3108
+fafi=getAgriMet.data(site_id="FAFI", timescale="hourly", DayBgn = "1990-07-01", DayEnd="2020-07-01", pCodes=c("OB", "PC","SI")) 
+colnames(fafi)<- c("date_time", "fafi_t", "fafi_pc", "fafi_si", "fafi_sq")
+fafi$date_time<- as.Date(fafi$date_time)
+
+#Picabo; start: 04/21/1993; site number: 7040; does have SWE 1993-2002 and 2005-2017 - cant be used predictively since it is no longer available
+pici=getAgriMet.data(site_id="PICI", timescale="hourly", DayBgn = "1982-06-01", DayEnd="2020-07-01", pCodes=c("OB", "PC"))
+colnames(pici)<- c("date_time", "pici_t", "pici_pc")
+pici$date_time<- as.Date(pici$date_time)
+
+#Richmond; start 2014; site number 7673
+ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", DayEnd="2020-02-01", pCodes=c("OB", "PC"))
+
+# Merge AgriMet Data
+agri_met<- left_join(fafi, pici, by='date_time')
+# Save AgriMet data as csv
 
 
-data_fafi<- readHTMLTable(url, header=TRUE, as.data.frame = TRUE, stringsAsFactors=FALSE)
 
+# National Operational Hydrologic Remote Sensing Center data - max SWE at 17 locations?
 
-#National Operational Hydrologic Remote Sensing Center data - max SWE at 17 locations?
-
-#Reservoir Data
+# Reservoir Data
