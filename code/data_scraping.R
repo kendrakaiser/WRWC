@@ -89,18 +89,24 @@ write.csv(snotel_site_info, '~/Desktop/Data/WRWC/snotel_sites.csv')
 # Fairfield; start: 06/25/1987; site number: 3108
 fafi=getAgriMet.data(site_id="FAFI", timescale="hourly", DayBgn = "1990-07-01", DayEnd="2020-07-01", pCodes=c("OB", "PC","SI")) 
 colnames(fafi)<- c("date_time", "fafi_t", "fafi_pc", "fafi_si", "fafi_sq")
-fafi$date_time<- as.Date(fafi$date_time)
+fafi$date_time<- as.POSIXct(fafi$date_time, format ='%m/%d/%Y %H:%M')
+#something aint right w the conversion
+fafi[, 2]<- as.numeric(fafi[, 2])
 
-#Picabo; start: 04/21/1993; site number: 7040; does have SWE 1993-2002 and 2005-2017 - cant be used predictively since it is no longer available
-pici=getAgriMet.data(site_id="PICI", timescale="hourly", DayBgn = "1982-06-01", DayEnd="2020-07-01", pCodes=c("OB", "PC"))
+write.csv(fafi, '~/Desktop/Data/WRWC/fafi.csv')
+
+#Picabo; start: start: 1982-06-01; site number: 7040; does have SWE 1993-2002 and 2005-2017 - cant be used predictively since it is no longer available
+pici=getAgriMet.data(site_id="PICI", timescale="hourly", DayBgn = "1990-06-01", DayEnd="2020-07-01", pCodes=c("OB", "PC"))
 colnames(pici)<- c("date_time", "pici_t", "pici_pc")
-pici$date_time<- as.Date(pici$date_time)
+pici$date_time<- as.POSIXct(pici$date_time, format ='%m/%d/%Y %H:%M')
 
-#Richmond; start 2014; site number 7673
+write.csv(pici, '~/Desktop/Data/WRWC/pici.csv')
+
+#Richmond; start 3/27/2014 - 01-2020 daily temp; site number 7673
 ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", DayEnd="2020-02-01", pCodes=c("OB", "PC"))
 
 # Merge AgriMet Data
-agri_met<- left_join(fafi, pici, by='date_time')
+agri_met<- full_join(fafi, pici, by='date_time')
 # Save AgriMet data as csv
 
 
