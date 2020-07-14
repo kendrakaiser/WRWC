@@ -11,12 +11,14 @@ library(XML)
 library(httr)
 library(dplyr)
 library(devtools)
-devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/")
+devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
 library(RNRCS)
+library(plyr)
 
 #set date for AgriMet Data download
-end = '2020-07-01'
+end = '2020-07-14'
 
+# ------------------------------------------------------------------------------
 # USGS Gages
 bwb = 13139510 #  Bullion Bridge, Big Wood at Hailey
 bws = 13140800 #  Stanton Crossing, Big Wood
@@ -38,9 +40,9 @@ write.csv(site_info, '~/Desktop/Data/WRWC/usgs_sites.csv')
 
 #save a figure that shows YTD streamflow over WY average and CV
 
-# -------- Retrieve Snotel data -------- #
+# Retrieve Snotel data ----------------------------------------------------
 
-# SNOTEL Sites
+# SNOTEL Sites ----
 cg = 895 #  Chocolate Gulch (0301)
 g  = 489 #  Galena (0101)
 gs = 490 #  Galena Summit (0101)
@@ -53,7 +55,7 @@ ga = 492 #  Garfield R.S. (Upper Muldoon Creek 0301)
 sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
 snotel_sites = c(cg, g, gs, hc, lwd, ds, cd, sr, ga, sp)
 
-# Download snotel data
+# Download snotel data ----
 snotel_data = snotel_download(snotel_sites, path = '~/Desktop/Data/WRWC/', internal = TRUE )
 
 # Pull out snotel site information
@@ -81,36 +83,64 @@ write.csv(snotel_site_info, '~/Desktop/Data/WRWC/snotel_sites.csv')
 
 
 
-# -------- Download NRCS ET Agrimet data -------- #
+# Download NRCS ET Agrimet data ----
 # OB = Air temperature
 # PC = precipitation, cumulative
 # additional: soil temp, humidity, vapor pressure
 
-# Fairfield; start: 06/25/1987; site number: 3108
-fafi=getAgriMet.data(site_id="FAFI", timescale="hourly", DayBgn = "1990-07-01", DayEnd="2020-07-01", pCodes=c("OB", "PC","SI")) 
+# Download Fairfield Data ----------------------------------------
+# start: 06/25/1987; site number: 3108
+
+# create increments to download data
+tenYearDates=c(as.character(seq.Date(from=as.Date("1987-06-25"), to=as.Date(end), by="10 years")), end)
+fafi = data.frame()
+
+# download site data in ten year incremenets to prevent timing out server
+for (i in 2:length(tenYearDates)){
+  tempDF=getAgriMet.data(site_id="FAFI", timescale="hourly", DayBgn = tenYearDates[i-1], DayEnd=tenYearDates[i], pCodes=c("OB", "PC","SI", "SQ")) 
+  fafi=plyr::rbind.fill(fafi, tempDF)
+}
+#rename columns
 colnames(fafi)<- c("date_time", "fafi_t", "fafi_pc", "fafi_si", "fafi_sq")
+# update format of dates
 fafi$date_time<- as.POSIXct(fafi$date_time, format ='%m/%d/%Y %H:%M')
 #something aint right w the conversion
 fafi[, 2]<- as.numeric(fafi[, 2])
 
 write.csv(fafi, '~/Desktop/Data/WRWC/fafi.csv')
 
-#Picabo; start: start: 1982-06-01; site number: 7040; does have SWE 1993-2002 and 2005-2017 - cant be used predictively since it is no longer available
-pici=getAgriMet.data(site_id="PICI", timescale="hourly", DayBgn = "1990-06-01", DayEnd="2020-07-01", pCodes=c("OB", "PC"))
+# Download Picabo Data --------------------------------------
+# start: 1982-06-01; site number: 7040; 
+# Has SWE 1993-2002 and 2005-2017 - but can't be used predictively since it is no longer available
+
+# create increments to download data
+tenYearDates_p=c(as.character(seq.Date(from=as.Date("1982-06-01"), to=as.Date(end), by="10 years")), end)
+pici =data.frame()
+
+# download site data in ten year incremenets to prevent timing out server
+for (i in 2:length(tenYearDates)){
+  tempDF=getAgriMet.data(site_id="PICI", timescale="hourly", DayBgn = tenYearDates_p[i-1], DayEnd=tenYearDates_p[i], pCodes=c("OB", "PC")) 
+  pici=plyr::rbind.fill(pici, tempDF)
+}
+# rename columns 
 colnames(pici)<- c("date_time", "pici_t", "pici_pc")
+# update format of dates
 pici$date_time<- as.POSIXct(pici$date_time, format ='%m/%d/%Y %H:%M')
 
 write.csv(pici, '~/Desktop/Data/WRWC/pici.csv')
 
-#Richmond; start 3/27/2014 - 01-2020 daily temp; site number 7673
+# Download Richmond Data - can't do this through AgriMet because Idaho Power Data ----
+# start 3/27/2014 - 01-2020 daily temp; site number 7673
+
 ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", DayEnd="2020-02-01", pCodes=c("OB", "PC"))
 
+
 # Merge AgriMet Data
+
+# Merge & save AgriMet Data ---------------------------------
 agri_met<- full_join(fafi, pici, by='date_time')
-# Save AgriMet data as csv
+write.csv(agri_met, '~/Desktop/Data/WRWC/agri_met.csv')
 
-
-
+# Additional Data Sources ----
 # National Operational Hydrologic Remote Sensing Center data - max SWE at 17 locations?
-
 # Reservoir Data
