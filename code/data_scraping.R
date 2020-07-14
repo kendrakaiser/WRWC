@@ -15,7 +15,9 @@ devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE
 library(RNRCS)
 library(plyr)
 
-#set date for AgriMet Data download
+# set data directory for saving data
+cd ='~/Desktop/Data/WRWC'
+# set date for AgriMet Data download
 end = '2020-07-14'
 
 # ------------------------------------------------------------------------------
@@ -35,8 +37,8 @@ site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeC
 streamflow_data <- readNWISuv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = site_info$begin_date, endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
 
 # Save flow data as a csv
-write.csv(streamflow_data, '~/Desktop/Data/WRWC/streamflow_data.csv')
-write.csv(site_info, '~/Desktop/Data/WRWC/usgs_sites.csv')
+write.csv(streamflow_data, file.path(cd,'streamflow_data.csv'))
+write.csv(site_info, file.path(cd,'usgs_sites.csv'))
 
 #save a figure that shows YTD streamflow over WY average and CV
 
@@ -76,8 +78,8 @@ for (i in 1:length(snotel_sites)){
 snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, latitude, longitude, elev, county, description))
 
 # save snotel data as a csv
-write.csv(snotel_data_out, '~/Desktop/Data/WRWC/snotel_data.csv')
-write.csv(snotel_site_info, '~/Desktop/Data/WRWC/snotel_sites.csv')
+write.csv(snotel_data_out, file.path(cd,'snotel_data.csv'))
+write.csv(snotel_site_info, file.path(cd,'snotel_sites.csv'))
 
 # save a figure that shows YTD SWE over WY average and CV for each site
 
@@ -142,7 +144,7 @@ ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", 
 
 # Merge & save AgriMet Data ---------------------------------
 agri_met<- full_join(pici, fafi, by='date_time')
-write.csv(agri_met, '~/Desktop/Data/WRWC/agri_met.csv')
+write.csv(agri_met, file.path(cd,'agri_met.csv'))
 
 # Additional Data Sources ----
 # National Operational Hydrologic Remote Sensing Center data - max SWE at 17 locations?
