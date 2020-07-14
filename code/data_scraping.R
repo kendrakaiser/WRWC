@@ -110,7 +110,6 @@ fafi$date_time<- as.POSIXct(fafi$date_time, format ='%m/%d/%Y %H:%M')
 for(i in 2:4) {
   fafi[, i]<- as.numeric(fafi[, i])
 }
-write.csv(fafi, '~/Desktop/Data/WRWC/fafi.csv')
 
 # Download Picabo Data --------------------------------------
 # start: 1982-06-01; site number: 7040; 
@@ -129,8 +128,9 @@ for (i in 2:length(tenYearDates)){
 colnames(pici)<- c("date_time", "pici_t", "pici_pc")
 # update format of dates
 pici$date_time<- as.POSIXct(pici$date_time, format ='%m/%d/%Y %H:%M')
-
-write.csv(pici, '~/Desktop/Data/WRWC/pici.csv')
+# update format of values
+pici[, 2]<- as.numeric(pici[, 2])
+pici[, 3]<- as.numeric(pici[, 3])
 
 # Download Richmond Data - can't do this through AgriMet because Idaho Power Data ----
 # start 3/27/2014 - 01-2020 daily temp; site number 7673
@@ -141,7 +141,7 @@ ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", 
 # Merge AgriMet Data
 
 # Merge & save AgriMet Data ---------------------------------
-agri_met<- full_join(fafi, pici, by='date_time')
+agri_met<- full_join(pici, fafi, by='date_time')
 write.csv(agri_met, '~/Desktop/Data/WRWC/agri_met.csv')
 
 # Additional Data Sources ----
