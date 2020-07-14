@@ -85,7 +85,9 @@ write.csv(snotel_site_info, '~/Desktop/Data/WRWC/snotel_sites.csv')
 
 # Download NRCS ET Agrimet data ----
 # OB = Air temperature
-# PC = precipitation, cumulative
+# PC = precipitation, cumulative (units?)
+# SI = hourly soloar radiation (units?)
+# SQ = solar radiation, cumulative ??
 # additional: soil temp, humidity, vapor pressure
 
 # Download Fairfield Data ----------------------------------------
@@ -95,7 +97,7 @@ write.csv(snotel_site_info, '~/Desktop/Data/WRWC/snotel_sites.csv')
 tenYearDates=c(as.character(seq.Date(from=as.Date("1987-06-25"), to=as.Date(end), by="10 years")), end)
 fafi = data.frame()
 
-# download site data in ten year incremenets to prevent timing out server
+# download site data in ten year incremenets to prevent timing out server, will produce warning, that's okay
 for (i in 2:length(tenYearDates)){
   tempDF=getAgriMet.data(site_id="FAFI", timescale="hourly", DayBgn = tenYearDates[i-1], DayEnd=tenYearDates[i], pCodes=c("OB", "PC","SI", "SQ")) 
   fafi=plyr::rbind.fill(fafi, tempDF)
@@ -104,9 +106,10 @@ for (i in 2:length(tenYearDates)){
 colnames(fafi)<- c("date_time", "fafi_t", "fafi_pc", "fafi_si", "fafi_sq")
 # update format of dates
 fafi$date_time<- as.POSIXct(fafi$date_time, format ='%m/%d/%Y %H:%M')
-#something aint right w the conversion
-fafi[, 2]<- as.numeric(fafi[, 2])
-
+# update format of values
+for(i in 2:4) {
+  fafi[, i]<- as.numeric(fafi[, i])
+}
 write.csv(fafi, '~/Desktop/Data/WRWC/fafi.csv')
 
 # Download Picabo Data --------------------------------------
