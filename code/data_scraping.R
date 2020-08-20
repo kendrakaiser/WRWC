@@ -14,6 +14,7 @@ library(devtools)
 devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
 library(RNRCS)
 library(plyr)
+library(readr)
 
 # set data directory for saving data
 cd ='~/Desktop/Data/WRWC'
@@ -22,19 +23,26 @@ end = '2020-07-14'
 
 # ------------------------------------------------------------------------------
 # USGS Gages
-bwb = 13139510 #  Bullion Bridge, Big Wood at Hailey
-bws = 13140800 #  Stanton Crossing, Big Wood
-cc  = 13141500 #  Camas Creek near Blaine
-sc  = 13150430 #  Silver Creek near Picabo
-usgs_sites = c(bwb, bws, cc, sc) #  put all sites in one vector
+bwb = 13139510  #  Bullion Bridge, Big Wood at Hailey
+bws = 13140800  #  Stanton Crossing, Big Wood
+cc  = 13141500  #  Camas Creek near Blaine
+sc  = 13150430  #  Silver Creek near Picabo
+bwr = 13142500  #  Big Wood below Magic near Richfield
+mr  = 13142000  #  Magic Reservoir storage in acre - feet, impt for carry-over
+bwbr = 13140335 # Big Wood at S Broadford Bridge Nr Bellevue, data only goes back to 2017
+bwk = 13135500  #  Big Wood nr Ketchum, goes to 2011
+usgs_sites = c(bwb, bws, cc, sc, bwr) #  put all sites in one vector
 
-pCode <- "00060" # USGS code for streamflow
-
+pCode = "00060" # USGS code for streamflow
+sCode = "00054" # USGS code for reservoir storage (acre-feet)
 # Dataframe with information about sites and period of record
 site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeCd ='uv') # uv is an alias for instantaneous values
+res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
 
 # Merge data from all sites into one dataframe
 streamflow_data <- readNWISuv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = site_info$begin_date, endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
+
+res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_info$begin_date[2], endDate = res_info$end_date[2]) %>% renameNWISColumns() %>% data.frame
 
 # Save flow data as a csv
 write.csv(streamflow_data, file.path(cd,'streamflow_data.csv'))
@@ -80,6 +88,17 @@ snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, la
 # save snotel data as a csv
 write.csv(snotel_data_out, file.path(cd,'snotel_data.csv'))
 write.csv(snotel_site_info, file.path(cd,'snotel_sites.csv'))
+
+# Import Landsat Derived Snow Covered Area
+sca_file<- read.csv('~/Desktop/Data/WRWC/SnowCoveredArea_ts.csv', header = TRUE)
+sca2<- as.character(sca_file[,2])
+
+dts <- gsub("[{nd=\\d+}]", "", sca2)#this works
+dtts<- gsub("\\[|]", "", dts)
+dtts2 <- as.matrix(str_split(dtts, ", "))
+sca<- as.data.frame(matrix(as.numeric(unlist(dtts2)), ncol=2, byrow = TRUE))
+colnames(sca)<- c("sca", "date")
+sca$date<- as.Date(as.character(sca$date), format="%Y%m%d")
 
 # save a figure that shows YTD SWE over WY average and CV for each site
 
