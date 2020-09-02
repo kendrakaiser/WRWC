@@ -89,17 +89,17 @@ snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, la
 write.csv(snotel_data_out, file.path(cd,'snotel_data.csv'))
 write.csv(snotel_site_info, file.path(cd,'snotel_sites.csv'))
 
-# Import Landsat Derived Snow Covered Area
-sca_file<- read.csv('~/Desktop/Data/WRWC/SnowCoveredArea_ts.csv', header = TRUE)
-sca2<- as.character(sca_file[,2])
-
-dts <- gsub("[{nd=\\d+}]", "", sca2)#this works
-dtts<- gsub("\\[|]", "", dts)
-dtts2 <- as.matrix(str_split(dtts, ", "))
-sca<- as.data.frame(matrix(as.numeric(unlist(dtts2)), ncol=2, byrow = TRUE))
-colnames(sca)<- c("sca", "date")
+# Import Landsat Derived Snow Covered Area, reformat data into usable format
+sca_file<- read.csv('~/Desktop/Data/WRWC/SnowCoveredArea_test.csv', header = TRUE)
+dm<- as.matrix(str_split(gsub("\\[|]", "", gsub("[{nd=\\d+}{pixel_qa}]", "", as.character(sca_file[,2]))), ", "))
+sca<- as.data.frame(matrix(as.numeric(unlist(dm)), ncol=3, byrow = TRUE))
+colnames(sca)<- c("sca", "date", "obs_pixels")
 sca$date<- as.Date(as.character(sca$date), format="%Y%m%d")
-
+sca$sca_sqkm <- sca$sca/(1000*1000) #convert to sqkm
+sca$perc <- 5483.55/sca$sca #divide by area of ws to get percent sca
+sca$obs_sqkm <- sca$obs_pixels/(1000*1000) 
+sca$perc_obs_sca <- sca$sca_sqkm/sca$obs_sqkm
+sca$perc_obs <- sca$obs_sqkm/5483.55
 # save a figure that shows YTD SWE over WY average and CV for each site
 
 
