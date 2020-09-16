@@ -19,7 +19,7 @@ library(readr)
 # set data directory for saving data
 cd ='~/Desktop/Data/WRWC'
 # set date for AgriMet Data download
-end = '2020-07-14'
+end = '2020-09-15'
 
 # ------------------------------------------------------------------------------
 # USGS Gages
@@ -115,7 +115,7 @@ colnames(fafi)<- c("date_time", "fafi_t", "fafi_pc", "fafi_si", "fafi_sq")
 fafi$date_time<- as.POSIXct(fafi$date_time, format ='%m/%d/%Y %H:%M')
 # update format of values
 for(i in 2:4) {
-  fafi[, i]<- as.numeric(fafi[, i])
+  fafi[, i]<- as.numeric(as.character(fafi[, i]))
 }
 
 # Download Picabo Data --------------------------------------
@@ -136,8 +136,8 @@ colnames(pici)<- c("date_time", "pici_t", "pici_pc")
 # update format of dates
 pici$date_time<- as.POSIXct(pici$date_time, format ='%m/%d/%Y %H:%M')
 # update format of values
-pici[, 2]<- as.numeric(pici[, 2])
-pici[, 3]<- as.numeric(pici[, 3])
+pici[, 2]<- as.numeric(as.character(pici[, 2]))
+pici[, 3]<- as.numeric(as.character(pici[, 3]))
 
 # Download Richmond Data - can't do this through AgriMet because Idaho Power Data ----
 # start 3/27/2014 - 01-2020 daily temp; site number 7673
