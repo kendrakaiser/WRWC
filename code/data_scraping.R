@@ -15,6 +15,8 @@ devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE
 library(RNRCS)
 library(plyr)
 library(readr)
+library(lubridate)
+library(lfstat)
 
 # set data directory for saving data
 cd ='~/Desktop/Data/WRWC'
@@ -85,6 +87,10 @@ for (i in 1:length(snotel_sites)){
 # remove unecessary columns from snotel data frame
 snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, latitude, longitude, elev, county, description))
 
+snotel_data_out$date <- as.Date(snotel_data_out$date, format = "%Y-%m-%d")
+snotel_data_out$mo <- month(snotel_data_out$date)
+snotel_data_out$wy <- water_year(snotel_data_out$date, origin='usgs')
+
 # save snotel data as a csv
 write.csv(snotel_data_out, file.path(cd,'snotel_data.csv'))
 write.csv(snotel_site_info, file.path(cd,'snotel_sites.csv'))
@@ -118,6 +124,7 @@ for(i in 2:4) {
   fafi[, i]<- as.numeric(as.character(fafi[, i]))
 }
 
+fafi<-fafi[-1,] #remove first bad data value
 # Download Picabo Data --------------------------------------
 # start: 1982-06-01; site number: 7040; 
 # Has SWE 1993-2002 and 2005-2017 - but can't be used predictively since it is no longer available
