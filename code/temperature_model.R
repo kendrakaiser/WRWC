@@ -46,6 +46,7 @@ ggplot(tdata, aes(x=year, y=Apr.Jun.tempF, color=site)) +geom_point()
 # -----
 # Linear mixed effects model
 # ---
+#TODO: turn the lme routine into a function
 
 trend<-lme(fixed=Apr.Jun.tempF ~ (year), random=~1+(year)|site, correlation = corAR1(), data=tdata, method="ML",na.action=na.omit)
 null<-lme(fixed=Apr.Jun.tempF~1, random=~1+year|site,correlation=corAR1(),data=tdata,method="ML",na.action=na.omit)
@@ -94,7 +95,7 @@ png(filename = "Apr_Jun_ModTemp.png",
     antialias="cleartype")
 
 plot(tdata$year,tdata$Apr.Jun.tempF,type="n",xlab="Year",xlim=c(first.yr,(last.yr+1)),
-     ylab="Temperature (F)",main="Mean April-June Temperature Big Wood Watershed SnoTel Sites",ylim=c(0,15))
+     ylab="Temperature (F)",main="Mean April-June Temperature All SnoTel Sites",ylim=c(0,15))
 abline(h=seq(0,20,5),col="gray85",lty=2)
 abline(v=seq(1990,last.yr+1,5),col="gray85",lty=2)
 
@@ -125,8 +126,9 @@ for(i in 1:nyrs){
   wr.aj.temp$wr.aj.temp[i]<-mean(tdata$Apr.Jun.tempF[tdata$year==(first.yr+i)],na.rm=T)
 }
 
-plot(first.yr:last.yr,wr.aj.temp$wr.aj.temp,type="l")
+plot(first.yr:last.yr, wr.aj.temp$wrT,type="l")
 
+# ----
 #camas creek, add in fairfield
 t_cam<-tdata[tdata$site %in% c("camas creek divide ", "soldier r.s. "),]
 for(i in 1:nyrs){
@@ -139,17 +141,14 @@ trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = c
 summary(trend.reml)
 
 new.data<-data.frame(array(NA,c(length(site.key),3)))
-colnames(new.data)<-c("year","site","Apr.Jun.tempF")
+colnames(new.data)<-c("year","site","aj.tempF")
 new.data$year<-rep(last.yr+1,length(site.key))
 new.data$site<-(site.key)
 
 pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
 fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
 
-#
-# Bootstrap to estimate variance on new prediction, based on
-# fixed-effects covariance matrix
-#
+# Bootstrap to estimate variance on new prediction, based on fixed-effects covariance matrix
 
 mu<-trend.reml$coef$fixed
 sig<-trend.reml$var
@@ -161,3 +160,88 @@ var.est<-var(rand.coefs%*%c(1,last.yr+1))
 var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key)
 
 se.pred<-sqrt(var.est+var.site)
+
+# ----
+# Big Wood
+# ---
+t_bw<-tdata[tdata$site %in% c("chocolate gulch ", "dollarhide summit ", "galena ", "hyndman ", "lost-wood divide ", "galena summit "),]
+for(i in 1:nyrs){
+  wr.aj.temp$bwT[i]<-mean(t_bw$Apr.Jun.tempF[t_bw$year==(first.yr+i)],na.rm=T)
+}
+
+trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=t_bw, method="REML",na.action=na.omit)
+summary(trend.reml)
+
+new.data<-data.frame(array(NA,c(length(site.key),3)))
+colnames(new.data)<-c("year","site","aj.tempF")
+new.data$year<-rep(last.yr+1,length(site.key))
+new.data$site<-(site.key)
+
+pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
+fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
+
+# Bootstrap to estimate variance on new prediction, based on fixed-effects covariance matrix
+
+mu<-trend.reml$coef$fixed
+sig<-trend.reml$var
+
+nboots<-2000
+rand.coefs<-mvrnorm(nboots,mu,sig)
+var.est<-var(rand.coefs%*%c(1,last.yr+1))
+var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key)
+se.pred<-sqrt(var.est+var.site)
+
+nboot<-5000
+ajTemps.bw<-rnorm(nboot,mean=pred,sd=se.pred)
+
+write.csv(ajTemps.bw,"rand.aj.temp.bw.csv",row.names=F)
+
+plot(t_bw$year,t_bw$Apr.Jun.tempF,xlab="Year",xlim=c(first.yr,(last.yr+1)),
+     ylab="Temperature (F)",main="Mean April-June Temperature Big Wood Watershed SnoTel Sites",ylim=c(0,15))
+lines(first.yr:(last.yr+1),c(fits,pred),lwd=3)
+
+# ----
+# Little Wood
+# ---
+
+#little wood, add in picabo
+t_lw<-tdata[tdata$site %in% c("swede peak ", "garfield r.s. "),]
+for(i in 1:nyrs){
+  wr.aj.temp$lwT[i]<-mean(t_lw$Apr.Jun.tempF[t_lw$year==(first.yr+i)],na.rm=T)
+}
+
+plot(tdata$Apr.Jun.tempF[tdata$site == "swede peak "],tdata$Apr.Jun.tempF[tdata$site == "garfield r.s. "]) #this shows the two sites are highly correlated, so the reml wont work with the sites as fixed effects ...
+
+trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=t_lw, method="REML",na.action=na.omit)
+summary(trend.reml)
+
+new.data<-data.frame(array(NA,c(length(site.key),3)))
+colnames(new.data)<-c("year","site","aj.tempF")
+new.data$year<-rep(last.yr+1,length(site.key))
+new.data$site<-(site.key)
+
+pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
+fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
+
+
+plot(t_lw$year,t_lw$Apr.Jun.tempF,xlab="Year",xlim=c(first.yr,(last.yr+1)),
+     ylab="Temperature (F)",main="Mean April-June Temperature Little Wood Watershed SnoTel Sites",ylim=c(0,15))
+lines(first.yr:(last.yr+1),c(fits,pred),lwd=3)
+
+# Bootstrap to estimate variance on new prediction, based on fixed-effects covariance matrix
+
+mu<-trend.reml$coef$fixed
+sig<-trend.reml$var
+
+nboots<-2000
+rand.coefs<-mvrnorm(nboots,mu,sig)
+
+var.est<-var(rand.coefs%*%c(1,last.yr+1))
+var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key)
+
+se.pred<-sqrt(var.est+var.site)
+
+nboot<-5000
+ajTemps.lw<-rnorm(nboot,mean=pred,sd=se.pred)
+
+write.csv(ajTemps.lw,"rand.aj.temp.lw.csv",row.names=F)
