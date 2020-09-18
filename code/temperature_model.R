@@ -19,7 +19,7 @@ agrimet = read.csv(file.path(cd,'agri_met.csv'))
 # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993
 
 first.yr<-1988
-last.yr<-2017
+last.yr<-2020
 nyrs<-last.yr-first.yr+1
 site.key = as.character(unique(snotel$site_name))
 
@@ -51,7 +51,7 @@ trend<-lme(fixed=Apr.Jun.tempF ~ (year), random=~1+(year)|site, correlation = co
 null<-lme(fixed=Apr.Jun.tempF~1, random=~1+year|site,correlation=corAR1(),data=tdata,method="ML",na.action=na.omit)
 anova(null,trend) # p-Value is significant ( <.0001)
 
-#m odel is fit by maximizing the restricted log-likelihood (ask vanKirk why*)
+#model is fit by maximizing the restricted log-likelihood (ask vanKirk why*)
 trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata, method="REML",na.action=na.omit)
 summary(trend.reml)
 
@@ -76,7 +76,7 @@ rand.coefs<-mvrnorm(nboots,mu,sig)
 
 var.est<-var(rand.coefs%*%c(1,last.yr+1))
 var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key)
-
+#standard error
 se.pred<-sqrt(var.est+var.site)
 #bootstrap results
 nboot<-5000
@@ -112,3 +112,52 @@ legend("bottomright",bg="white",box.col=1,
        legend = c("Individual site data","Individual site trends","Watershed mean trend","2021 prediction & 95% CI"))
 
 dev.off()
+
+# ----
+# Temperature predictions per HUC8
+# ---
+
+#April- June temperatures for all three basins (wr), and subset by Camas Creek (cam), Big Wood (bw) and Little Wood (lw)
+wr.aj.temp<-data.frame(array(NA,c(length(1:nyrs),5)))
+names(wr.aj.temp)<-c("year","wrT","camT","bwT","lwT")
+wr.aj.temp$year<-first.yr:last.yr
+for(i in 1:nyrs){
+  wr.aj.temp$wr.aj.temp[i]<-mean(tdata$Apr.Jun.tempF[tdata$year==(first.yr+i)],na.rm=T)
+}
+
+plot(first.yr:last.yr,wr.aj.temp$wr.aj.temp,type="l")
+
+#camas creek, add in fairfield
+t_cam<-tdata[tdata$site %in% c("camas creek divide ", "soldier r.s. "),]
+for(i in 1:nyrs){
+  wr.aj.temp$camT[i]<-mean(t_cam$Apr.Jun.tempF[t_cam$year==(first.yr+i)],na.rm=T)
+}
+
+plot(tdata$Apr.Jun.tempF[tdata$site == "camas creek divide "],tdata$Apr.Jun.tempF[tdata$site == "soldier r.s. "]) #this shows the two sites are highly correlated, so the reml wont work with the sites as fixed effects ...
+
+trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=t_cam, method="REML",na.action=na.omit)
+summary(trend.reml)
+
+new.data<-data.frame(array(NA,c(length(site.key),3)))
+colnames(new.data)<-c("year","site","Apr.Jun.tempF")
+new.data$year<-rep(last.yr+1,length(site.key))
+new.data$site<-(site.key)
+
+pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
+fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
+
+#
+# Bootstrap to estimate variance on new prediction, based on
+# fixed-effects covariance matrix
+#
+
+mu<-trend.reml$coef$fixed
+sig<-trend.reml$var
+
+nboots<-2000
+rand.coefs<-mvrnorm(nboots,mu,sig)
+
+var.est<-var(rand.coefs%*%c(1,last.yr+1))
+var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key)
+
+se.pred<-sqrt(var.est+var.site)
