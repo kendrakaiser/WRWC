@@ -71,7 +71,7 @@ snotel_sites = c(cg, g, gs, hc, lwd, ds, cd, sr, ga, sp)
 snotel_data = snotel_download(snotel_sites, path = '~/Desktop/Data/WRWC/', internal = TRUE )
 
 # Pull out snotel site information
-snotel_site_info<-data.frame('id'=NA, 'start'=NA, 'end'=NA, 'lat'=NA, 'long'=NA, 'elev'=NA, 'description'=NA)
+snotel_site_info<-data.frame('id'=NA, 'start'=NA, 'end'=NA, 'lat'=NA, 'long'=NA, 'elev'=NA, 'description'=NA, 'site_name'=NA, 'huc8'=NA)
 snotel_site_info$start <-as.Date(NA)
 snotel_site_info$end <-as.Date(NA)
 for (i in 1:length(snotel_sites)){
@@ -83,7 +83,8 @@ for (i in 1:length(snotel_sites)){
   snotel_site_info[i,'elev'] <- snotel_data$elev[snotel_data$site_id == snotel_sites[i]][1]
   snotel_site_info[i,'description'] <- snotel_data$description[snotel_data$site_id == snotel_sites[i]][1]
 }
-
+snotel_site_info$site_name <- c('chocolate gulch', 'galena', 'galena summit', 'hyndman creek', 'lost wood divide', 'dollarhide summit', 'camas creek', 'soldier', 'garfield', 'swede peak')
+snotel_site_info$huc8 <- c(219,219,219,219,219,219,220,220,221,221)
 # remove unecessary columns from snotel data frame
 snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, latitude, longitude, elev, county, description))
 
