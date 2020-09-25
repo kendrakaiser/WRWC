@@ -117,15 +117,24 @@ for (i in 2:length(tenYearDates)){
   fafi=plyr::rbind.fill(fafi, tempDF)
 }
 #rename columns
-colnames(fafi)<- c("date_time", "t", "fafi_pc", "fafi_si", "fafi_sq")
+colnames(fafi)<- c("date_time", "fafi_t", "fafi_pc", "fafi_si", "fafi_sq")
 # update format of dates
 fafi$date_time<- as.POSIXct(fafi$date_time, format ='%m/%d/%Y %H:%M')
+fafi$mo <- month(fafi$date_time)
+fafi$y <- year(fafi$date_time)
+#this is not working
+#fafi$wy <- water_year(fafi$date_time, origin='usgs')
 # update format of values
 for(i in 2:4) {
   fafi[, i]<- as.numeric(as.character(fafi[, i]))
 }
 
 fafi<-fafi[-1,] #remove first bad data value
+fafiT<-fafi[,1:2]
+fafiT[,3]<- 'fairfield'
+fafiT<-cbind(fafiT, fafi[,6:7])
+colnames(fafiT) <- c("date_time","t", "site_name", 'month', 'y')
+
 # Download Picabo Data --------------------------------------
 # start: 1982-06-01; site number: 7040; 
 # Has SWE 1993-2002 and 2005-2017 - but can't be used predictively since it is no longer available
@@ -140,12 +149,21 @@ for (i in 2:length(tenYearDates)){
   pici=plyr::rbind.fill(pici, tempDF)
 }
 # rename columns 
-colnames(pici)<- c("date_time", "t", "pici_pc")
+colnames(pici)<- c("date_time", "pici_t", "pici_pc")
 # update format of dates
 pici$date_time<- as.POSIXct(pici$date_time, format ='%m/%d/%Y %H:%M')
+pici$mo <- month(pici$date_time)
+pici$y <- year(pici$date_time)
+#not working
+#pici$wy <- water_year(pici$date_time, origin='usgs')
+
 # update format of values
 pici[, 2]<- as.numeric(as.character(pici[, 2]))
 pici[, 3]<- as.numeric(as.character(pici[, 3]))
+piciT<- pici [,1:2]
+piciT[, 3]<-'picabo'
+piciT<- cbind(piciT, pici[,4:5])
+colnames(piciT)<- c("date_time","t", "site_name", 'month', 'y')
 
 # Download Richmond Data - can't do this through AgriMet because Idaho Power Data ----
 # start 3/27/2014 - 01-2020 daily temp; site number 7673
@@ -156,7 +174,7 @@ ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", 
 # Merge AgriMet Data
 
 # Merge & save AgriMet Data ---------------------------------
-agri_metT <- rbind(pici[,1:2], fafi[,1:2])
+agri_metT <- rbind(piciT, fafiT)
 write.csv(agri_metT, file.path(cd,'agri_metT.csv'))
 
 agri_met<- full_join(pici, fafi, by='date_time')
