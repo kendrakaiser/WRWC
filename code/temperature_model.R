@@ -29,7 +29,7 @@ colnames(tdata)<-c("year","site","Apr.Jun.tempF")
 tdata$year<-rep(first.yr:last.yr,length(site.key))
 tdata$site<-rep(site.key,each=nyrs)
 
-#calculate average april/jun temperature for every year
+#calculate average Snotel april/jun temperature for every year
 for(i in 1:10){ #hard coded this in after adding agrimet sites to site.key list
   for (y in first.yr:last.yr){
     sub<- snotel[snotel$site_name == site.key[i] & snotel$wy==y, ] #subset to indv. site and year
@@ -39,8 +39,8 @@ for(i in 1:10){ #hard coded this in after adding agrimet sites to site.key list
     tdata$Apr.Jun.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp
   }
 }
-
-for(i in 11:12){
+#calculate Agrimet average april/jun temperature for every year
+for(i in 11:12){# these values could be ∆ to not be hard coded
   for (y in first.yr:last.yr){
     sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$y==y, ]) #subset to indv. site and year
     #average april - june temps
@@ -139,8 +139,8 @@ for(i in 1:nyrs){
 plot(first.yr:last.yr, wr.aj.temp$wrT,type="l")
 
 # ----
-#camas creek, add in fairfield
-t_cam<-tdata[tdata$site %in% c("camas creek divide ", "soldier r.s. "),]
+#camas creek, added in fairfield, this might not work bc it just shows up as the average of the two locations which wont be reflective of the snowmelt dynamics
+t_cam<-tdata[tdata$site %in% c("camas creek divide ", "soldier r.s. ", "fairfield"),]
 for(i in 1:nyrs){
   wr.aj.temp$camT[i]<-mean(t_cam$Apr.Jun.tempF[t_cam$year==(first.yr+i)],na.rm=T)
 }
@@ -170,6 +170,10 @@ var.est<-var(rand.coefs%*%c(1,last.yr+1))
 var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key)
 
 se.pred<-sqrt(var.est+var.site)
+
+plot(t_cam$year,t_cam$Apr.Jun.tempF,xlab="Year",xlim=c(first.yr,(last.yr+1)),
+     ylab="Temperature (F)",main="Mean April-June Temperature Camas creek Watershed SnoTel & Agrimet Sites",ylim=c(0,60))
+lines(first.yr:(last.yr+1),c(fits,pred),lwd=3)
 
 # ----
 # Big Wood
