@@ -13,7 +13,7 @@ library(plotrix) #need for CI
 # import data ----
 cd = '~/Desktop/Data/WRWC'
 snotel = read.csv(file.path(cd,'snotel_data.csv'))
-agrimet = read.csv(file.path(cd,'agri_met.csv'))
+agrimet = read.csv(file.path(cd,'agri_metT.csv'))
 
 # Analyze and Predict temperature trend ----
 # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993
