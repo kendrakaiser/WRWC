@@ -66,6 +66,7 @@ sr = 769 #  Soldier R.S (Upper Soldier Creek 0303)
 ga = 492 #  Garfield R.S. (Upper Muldoon Creek 0301)
 sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
 snotel_sites = c(cg, g, gs, hc, lwd, ds, cd, sr, ga, sp)
+snotel_abrv <- c("cg", "g", "gs", "hc", "lwd", "ds", "cd", "sr", "ga", "sp")
 
 # Download snotel data ----
 snotel_data = snotel_download(snotel_sites, path = '~/Desktop/Data/WRWC/', internal = TRUE )
@@ -84,6 +85,7 @@ for (i in 1:length(snotel_sites)){
   snotel_site_info[i,'description'] <- snotel_data$description[snotel_data$site_id == snotel_sites[i]][1]
 }
 snotel_site_info$site_name <- c('chocolate gulch', 'galena', 'galena summit', 'hyndman creek', 'lost wood divide', 'dollarhide summit', 'camas creek', 'soldier', 'garfield', 'swede peak')
+snotel_site_info$abv<- snotel_abrv
 snotel_site_info$huc8 <- c(219,219,219,219,219,219,220,220,221,221)
 # remove unecessary columns from snotel data frame
 snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, latitude, longitude, elev, county, description))
@@ -91,6 +93,22 @@ snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, la
 snotel_data_out$date <- as.Date(snotel_data_out$date, format = "%Y-%m-%d")
 snotel_data_out$mo <- month(snotel_data_out$date)
 snotel_data_out$wy <- water_year(snotel_data_out$date, origin='usgs')
+snotel_data_out$day <- day(snotel_data_out$date)
+
+#subset April 1 data for model
+wy<- year(seq(as.Date("1979-04-01"),as.Date(end),"year"))
+april1swe<- array(data=NA, dim=c(length(wy), length(snotel_sites)+1))
+colnames(april1swe)<- c('year', snotel_abrv)
+april1swe[,1]<- wy
+
+for (i in 1:length(snotel_sites)) {
+  sub<- snotel_data_out[snotel_data_out$site_name == unique(snotel_data_out$site_name)[i] & snotel_data_out$mo == 4 & snotel_data_out$day ==1,]
+  april1swe[,i+1]<- sub$snow_water_equivalent
+
+  }
+
+
+
 
 # save snotel data as a csv
 write.csv(snotel_data_out, file.path(cd,'snotel_data.csv'))
