@@ -17,15 +17,14 @@ source("aictable.R")
 cd = '~/Desktop/Data/WRWC'
 
 # Import Data ------------------------------------------------------------------ # 
-# Predicted temperatures for each subbasin
-# Year and April 1 SWE 
-
-# Streamflow Data
+# Streamflow, April 1 SWE and Modeled Temperature Data
 q = read.csv(file.path(cd,'streamflow_data.csv'))
+swe = read.csv(file.path(cd,'april1swe.csv'))
+temp = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
 
+new.yr<-swe$tear[dim(input)[1]]+1
 
-
-
+# ------------------------------------------------------------------------------ # 
 # Calculate baseflows for each station
 stream.id<-c("bwb","bws","cc","bwr","sc")
 base.flows<-c(rep(NA,5))
