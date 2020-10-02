@@ -43,6 +43,7 @@ res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
 
 # Merge data from all sites into one dataframe
 streamflow_data <- readNWISuv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = site_info$begin_date, endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
+site_info$abr <- c("bwb", "bws", "cc", "sc", "bwr")
 
 res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_info$begin_date[2], endDate = res_info$end_date[2]) %>% renameNWISColumns() %>% data.frame
 
@@ -96,7 +97,8 @@ snotel_data_out$mo <- month(snotel_data_out$date)
 snotel_data_out$wy <- as.numeric(as.character(water_year(snotel_data_out$date, origin='usgs')))
 snotel_data_out$day <- day(snotel_data_out$date)
 
-#subset April 1 data for model
+#subset April 1 data for model 
+# TODO: update this to pull Feb1 and Mar1 as well
 wy<- year(seq(as.Date("1979-04-01"),as.Date(end),"year"))
 april1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
 colnames(april1swe)<- c('year', snotel_abrv)
