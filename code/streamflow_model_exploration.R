@@ -22,7 +22,7 @@ q = read.csv(file.path(cd,'streamflow_data.csv'))
 swe = read.csv(file.path(cd,'april1swe.csv'))
 temp = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
 
-new.yr<-swe$tear[dim(input)[1]]+1
+new.yr<-swe$year[dim(swe)[1]]+1
 
 # ------------------------------------------------------------------------------ # 
 # Calculate baseflows for each station
