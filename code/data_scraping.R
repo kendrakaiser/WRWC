@@ -39,13 +39,39 @@ pCode = "00060" # USGS code for streamflow
 sCode = "00054" # USGS code for reservoir storage (acre-feet)
 # Dataframe with information about sites and period of record
 site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeCd ='uv') # uv is an alias for instantaneous values
+site_info$abv <- c("bwb", "bws", "cc", "sc", "bwr")
+site_info <- site_info %>% select()
 res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
 
 # Merge data from all sites into one dataframe
-streamflow_data <- readNWISuv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = site_info$begin_date, endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
-site_info$abr <- c("bwb", "bws", "cc", "sc", "bwr")
+streamflow_data <- readNWISuv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
+streamflow_data$date <- as.Date(streamflow_data$date, format = "%Y-%m-%d")
+streamflow_data$mo <- month(streamflow_data$date)
+streamflow_data$wy <- as.numeric(as.character(water_year(streamflow_data$date, origin='usgs')))
+streamflow_data$day <- day(streamflow_data$date)
+
+streamflow_dat <- streamflow_data %>% inner_join(site_info, by ="site_no") 
 
 res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_info$begin_date[2], endDate = res_info$end_date[2]) %>% renameNWISColumns() %>% data.frame
+
+# calculate Apr - Sept total Volume and Center of Mass for each year for each station
+
+stream.id<-c("bwb","bws","cc","bwr","sc")
+metrics<-c(rep(NA,10))
+names(metrics)<-c("bwb.vol","bwb.com","bws.vol","bws.com","cc.vol","cc.com", "bwr.vol","bwr.com", "sc.vol", "sc.com")
+years<- min(streamflow_data$wy):max(streamflow_data$wy)
+
+for(i in 1:length(stream.id)){
+  sub <- streamflow_data %>% filter(abv == unique(abv)[i])
+
+  for (i in 1: length(years)){
+      tst<- sub %>% filter(wy == years[i] & between(mo, 4, 9)) 
+  }
+    
+  end <-min(sub$X[sub$mo == 4 & sub$day == 2])
+  vol<- mean(sub$Flow_Inst[1] : sub$Flow_Inst[which(sub$X == end)])
+}
+
 
 # Save flow data as a csv
 write.csv(streamflow_data, file.path(cd,'streamflow_data.csv'))
