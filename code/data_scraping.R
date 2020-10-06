@@ -37,39 +37,52 @@ usgs_sites = c(bwb, bws, cc, sc, bwr) #  put all sites in one vector
 
 pCode = "00060" # USGS code for streamflow
 sCode = "00054" # USGS code for reservoir storage (acre-feet)
-# Dataframe with information about sites and period of record
-site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeCd ='uv') # uv is an alias for instantaneous values
-site_info$abv <- c("bwb", "bws", "cc", "sc", "bwr")
-site_info <- site_info %>% select()
-res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
 
-# Merge data from all sites into one dataframe
+# Dataframe with information about sites and period of record, uv = instantaneous value
+site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeCd ='uv') 
+site_info$abv <- c("bwb", "bws", "cc", "sc", "bwr")
+site_info <- site_info %>% select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abr)
+
+# Dowload data from all sites into one dataframe
 streamflow_data <- readNWISuv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
+#Re-format dates and pull out month /day/ water year
 streamflow_data$date <- as.Date(streamflow_data$date, format = "%Y-%m-%d")
 streamflow_data$mo <- month(streamflow_data$date)
 streamflow_data$wy <- as.numeric(as.character(water_year(streamflow_data$date, origin='usgs')))
 streamflow_data$day <- day(streamflow_data$date)
-
-streamflow_dat <- streamflow_data %>% inner_join(site_info, by ="site_no") 
-
+# Cleanup Streamdlow dataframe and join relevant site information
+streamflow_data <- streamflow_data %>% select(-X, -agency_cd, -tz_cd) %>% inner_join(site_info, by ="site_no") 
+#Download reservoir data and site information
+res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
 res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_info$begin_date[2], endDate = res_info$end_date[2]) %>% renameNWISColumns() %>% data.frame
 
-# calculate Apr - Sept total Volume and Center of Mass for each year for each station
-
+# ----------------------------------------------------------------------------------
+# calculate hydrologic metrics for each year for each station
+# winter "baseflow" (wb), Apr - Sept total Volume (vol), and center of mass (cm)
 stream.id<-c("bwb","bws","cc","bwr","sc")
-metrics<-c(rep(NA,10))
-names(metrics)<-c("bwb.vol","bwb.com","bws.vol","bws.com","cc.vol","cc.com", "bwr.vol","bwr.com", "sc.vol", "sc.com")
-years<- min(streamflow_data$wy):max(streamflow_data$wy)
+years = min(streamflow_data$wy):max(streamflow_data$wy)
+metrics<-data.frame(matrix(ncol = 16, nrow= length(years)))
+names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm","bws.wq", "bws.vol","bws.cm","cc.wq","cc.vol","cc.cm", "bwr.wq", "bwr.vol","bwr.cm", "sc.wq","sc.vol", "sc.cm")
+metrics$year<- years
 
 for(i in 1:length(stream.id)){
   sub <- streamflow_data %>% filter(abv == unique(abv)[i])
-
+  
   for (i in 1: length(years)){
-      tst<- sub %>% filter(wy == years[i] & between(mo, 4, 9)) 
-  }
+    #average winter flow
+    sub1<- sub %>% filter(wy == years[i] & (mo >= 10 | mo < 4))
+    wq <- mean(sub1$Flow_Inst)
     
-  end <-min(sub$X[sub$mo == 4 & sub$day == 2])
-  vol<- mean(sub$Flow_Inst[1] : sub$Flow_Inst[which(sub$X == end)])
+    #total april-september flow
+    sub2<- sub %>% filter(wy == years[i] & between(mo, 4, 9)) 
+    vol<- sum(sub2$Flow_Inst)
+    
+    #center of mass between April 1 and July 31
+    sub3<- sub %>% filter(wy == years[i] & between(mo, 4, 7)) 
+    sub3$doy <- yday(sub3$date)
+    cm <- sum(sub3$doy * sub3$Flow_Inst)/sum(sub3$Flow_Inst)
+  }
+ #TODO push these into metrics by colname somehow ...
 }
 
 
