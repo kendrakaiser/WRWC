@@ -41,7 +41,7 @@ sCode = "00054" # USGS code for reservoir storage (acre-feet)
 # Dataframe with information about sites and period of record, uv = instantaneous value
 site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeCd ='uv') 
 site_info$abv <- c("bwb", "bws", "cc", "sc", "bwr")
-site_info <- site_info %>% select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abr)
+site_info <- site_info %>% select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abv)
 
 # Dowload data from all sites into one dataframe
 streamflow_data <- readNWISuv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
@@ -62,32 +62,35 @@ res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_in
 stream.id<-c("bwb","bws","cc","bwr","sc")
 years = min(streamflow_data$wy):max(streamflow_data$wy)
 metrics<-data.frame(matrix(ncol = 16, nrow= length(years)))
-names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm","bws.wq", "bws.vol","bws.cm","cc.wq","cc.vol","cc.cm", "bwr.wq", "bwr.vol","bwr.cm", "sc.wq","sc.vol", "sc.cm")
+names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm","bws.wq", "bws.vol","bws.cm","cc.wq","cc.vol","cc.cm", "sc.wq","sc.vol", "sc.cm", "bwr.wq", "bwr.vol","bwr.cm")
 metrics$year<- years
 
 for(i in 1:length(stream.id)){
   sub <- streamflow_data %>% filter(abv == unique(abv)[i])
   
-  for (i in 1: length(years)){
+  for (y in 1: length(years)){
     #average winter flow
-    sub1<- sub %>% filter(wy == years[i] & (mo >= 10 | mo < 4))
+    sub1<- sub %>% filter(wy == years[y] & (mo >= 10 | mo < 4))
     wq <- mean(sub1$Flow_Inst)
     
     #total april-september flow
-    sub2<- sub %>% filter(wy == years[i] & between(mo, 4, 9)) 
+    sub2<- sub %>% filter(wy == years[y] & between(mo, 4, 9)) 
     vol<- sum(sub2$Flow_Inst)
     
     #center of mass between April 1 and July 31
-    sub3<- sub %>% filter(wy == years[i] & between(mo, 4, 7)) 
-    sub3$doy <- yday(sub3$date)
+    sub3<- sub %>% filter(wy == years[y] & between(mo, 4, 7)) 
+    sub3$doy <- yday(as.Date(sub3$date))
     cm <- sum(sub3$doy * sub3$Flow_Inst)/sum(sub3$Flow_Inst)
+    
+    metrics[y,(((i-1)*3)+2)]<- wq
+    metrics[y,(((i-1)*3)+3)]<- vol
+    metrics[y,(((i-1)*3)+4)]<- cm
   }
- #TODO push these into metrics by colname somehow ...
 }
-
 
 # Save flow data as a csv
 write.csv(streamflow_data, file.path(cd,'streamflow_data.csv'))
+write.csv(metrics, file.path(cd,'metrics.csv'))
 write.csv(site_info, file.path(cd,'usgs_sites.csv'))
 
 #save a figure that shows YTD streamflow over WY average and CV
