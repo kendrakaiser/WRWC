@@ -158,6 +158,9 @@ write.csv(april1swe, file.path(cd, 'april1swe.csv'))
 write.csv(snotel_data_out, file.path(cd,'snotel_data.csv'))
 write.csv(snotel_site_info, file.path(cd,'snotel_sites.csv'))
 
+# merge april 1 swe and streamflow metrics
+allApril1<- april1swe %>% select(-X) %>% inner_join(metrics, by ="year") 
+write.csv(allApril1, file.path(cd,'all_April1.csv'))
 
 # Download NRCS ET Agrimet data ----
 # OB = Air temperature
