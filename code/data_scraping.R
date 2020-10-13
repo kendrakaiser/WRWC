@@ -47,17 +47,6 @@ site_info <- site_info %>% select(site_no, station_nm, dec_lat_va, dec_long_va, 
 streamflow_data <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
 streamflow_data <- streamflow_data %>% select(-X, -agency_cd, -tz_cd) %>% rename(flow=Flow_Inst)
 
-#instantaneous data is missing from 1993-06-26 to 1994-10-01 at camas creek, 1993-06-29 (1992-12-04 1992-12-09) silver creek and 1993-08-05 big wood at magic, this data was manually downloaded 
-cam = read.csv(file.path(cd,'camas_1994.csv'))
-sc = read.csv(file.path(cd,'silver_creek_1994.csv'))
-bw = read.csv(file.path(cd,'big_wood_1994.csv'))
-
-#remove instantaneous data from days without complete data
-
-
-#compile datasets
-streamflow_data <- rbind(streamflow_data, cam, sc, bw)
-
 #Re-format dates and pull out month /day/ water year
 streamflow_data$date <- as.Date(streamflow_data$dateTime, format = "%Y-%m-%d")
 streamflow_data$mo <- month(streamflow_data$date)
