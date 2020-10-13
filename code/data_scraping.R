@@ -40,18 +40,31 @@ sCode = "00054" # USGS code for reservoir storage (acre-feet)
 
 # Dataframe with information about sites and period of record, uv = instantaneous value
 site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeCd ='uv') 
-site_info$abv <- c("bwb", "bws", "cc", "sc", "bwr")
+site_info$abv <- c("bwb", "bws", "cc", "bwr", 'sc')
 site_info <- site_info %>% select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abv)
 
 # Dowload data from all sites into one dataframe
-streamflow_data <- readNWISuv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
+streamflow_data <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
+streamflow_data <- streamflow_data %>% select(-X, -agency_cd, -tz_cd) %>% rename(flow=Flow_Inst)
+
+#instantaneous data is missing from 1993-06-26 to 1994-10-01 at camas creek, 1993-06-29 (1992-12-04 1992-12-09) silver creek and 1993-08-05 big wood at magic, this data was manually downloaded 
+cam = read.csv(file.path(cd,'camas_1994.csv'))
+sc = read.csv(file.path(cd,'silver_creek_1994.csv'))
+bw = read.csv(file.path(cd,'big_wood_1994.csv'))
+
+#remove instantaneous data from days without complete data
+
+
+#compile datasets
+streamflow_data <- rbind(streamflow_data, cam, sc, bw)
+
 #Re-format dates and pull out month /day/ water year
-streamflow_data$date <- as.Date(streamflow_data$date, format = "%Y-%m-%d")
+streamflow_data$date <- as.Date(streamflow_data$dateTime, format = "%Y-%m-%d")
 streamflow_data$mo <- month(streamflow_data$date)
 streamflow_data$wy <- as.numeric(as.character(water_year(streamflow_data$date, origin='usgs')))
 streamflow_data$day <- day(streamflow_data$date)
 # Cleanup Streamdlow dataframe and join relevant site information
-streamflow_data <- streamflow_data %>% select(-X, -agency_cd, -tz_cd) %>% inner_join(site_info, by ="site_no") 
+streamflow_data <- streamflow_data %>% inner_join(site_info, by ="site_no") 
 #Download reservoir data and site information
 res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
 res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_info$begin_date[2], endDate = res_info$end_date[2]) %>% renameNWISColumns() %>% data.frame
