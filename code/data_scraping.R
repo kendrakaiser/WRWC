@@ -45,15 +45,15 @@ site_info <- site_info %>% select(site_no, station_nm, dec_lat_va, dec_long_va, 
 
 # Dowload data from all sites into one dataframe
 streamflow_data <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
-streamflow_data <- streamflow_data %>% select(-X, -agency_cd, -tz_cd) %>% rename(flow=Flow_Inst)
 
 #Re-format dates and pull out month /day/ water year
-streamflow_data$date <- as.Date(streamflow_data$dateTime, format = "%Y-%m-%d")
-streamflow_data$mo <- month(streamflow_data$date)
-streamflow_data$wy <- as.numeric(as.character(water_year(streamflow_data$date, origin='usgs')))
-streamflow_data$day <- day(streamflow_data$date)
+streamflow_data$Date <- as.Date(streamflow_data$Date, format = "%Y-%m-%d")
+streamflow_data$mo <- month(streamflow_data$Date)
+streamflow_data$wy <- as.numeric(as.character(water_year(streamflow_data$Date, origin='usgs')))
+streamflow_data$day <- day(streamflow_data$Date)
 # Cleanup Streamdlow dataframe and join relevant site information
-streamflow_data <- streamflow_data %>% inner_join(site_info, by ="site_no") 
+streamflow_data <- streamflow_data %>% select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
+
 #Download reservoir data and site information
 res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
 res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_info$begin_date[2], endDate = res_info$end_date[2]) %>% renameNWISColumns() %>% data.frame
@@ -64,7 +64,7 @@ res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_in
 stream.id<-c("bwb","bws","cc","bwr","sc")
 years = min(streamflow_data$wy):max(streamflow_data$wy)
 metrics<-data.frame(matrix(ncol = 16, nrow= length(years)))
-names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm","bws.wq", "bws.vol","bws.cm","cc.wq","cc.vol","cc.cm", "sc.wq","sc.vol", "sc.cm", "bwr.wq", "bwr.vol","bwr.cm")
+names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm","bws.wq", "bws.vol","bws.cm","cc.wq","cc.vol","cc.cm", "bwr.wq", "bwr.vol","bwr.cm", "sc.wq","sc.vol", "sc.cm")
 metrics$year<- years
 
 for(i in 1:length(stream.id)){
@@ -73,16 +73,16 @@ for(i in 1:length(stream.id)){
   for (y in 1: length(years)){
     #average winter flow
     sub1<- sub %>% filter(wy == years[y] & (mo >= 10 | mo < 4))
-    wq <- mean(sub1$Flow_Inst)
+    wq <- mean(sub1$Flow)
     
     #total april-september flow
     sub2<- sub %>% filter(wy == years[y] & between(mo, 4, 9)) 
-    vol<- sum(sub2$Flow_Inst)
+    vol<- sum(sub2$Flow)
     
     #center of mass between April 1 and July 31
     sub3<- sub %>% filter(wy == years[y] & between(mo, 4, 7)) 
-    sub3$doy <- yday(as.Date(sub3$date))
-    cm <- sum(sub3$doy * sub3$Flow_Inst)/sum(sub3$Flow_Inst)
+    sub3$doy <- yday(as.Date(sub3$Date))
+    cm <- sum(sub3$doy * sub3$Flow)/sum(sub3$Flow)
     
     metrics[y,(((i-1)*3)+2)]<- wq
     metrics[y,(((i-1)*3)+3)]<- vol
