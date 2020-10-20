@@ -54,7 +54,9 @@ for(i in 11:12){# these values could be ∆ to not be hard coded
 
 #transform temperature dataframe for main model
 tdata.wide <-pivot_wider(tdata, names_from = site, values_from = Apr.Jun.tempF)
-colnames(tdata.wide)<-c("year", "t.cg","t.cc", "t.s", "t.ds","t.gal","t.gar", "t.h", "t.lw", "t.gs", "t.sp","t.p", "t.f")         
+colnames(tdata.wide)<-c("year", "t.cg","t.ccd", "t.sr", "t.ds","t.g","t.ga", "t.hc", "t.lw", "t.gs", "t.sp","t.p", "t.f")
+
+snotel_abrv <- c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
 write.csv(tdata.wide, file.path(cd, 'ajTemps.csv'))
 
 #plot all data
