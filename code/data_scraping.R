@@ -111,7 +111,7 @@ sr = 769 #  Soldier R.S (Upper Soldier Creek 0303)
 ga = 492 #  Garfield R.S. (Upper Muldoon Creek 0301)
 sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
 snotel_sites = c(cg, g, gs, hc, lwd, ds, ccd, sr, ga, sp)
-snotel_abrv <- c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
+snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "ccd.swe", "sr.swe", "ga.swe", "sp.swe")
 
 # Download snotel data ----
 snotel_data = snotel_download(snotel_sites, path = '~/Desktop/Data/WRWC/', internal = TRUE )
