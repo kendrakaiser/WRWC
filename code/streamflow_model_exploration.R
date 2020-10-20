@@ -9,36 +9,25 @@
 library(MASS)
 library(plotrix)
 library(mvtnorm)
+library(tidyverse)
 
 rm(list=ls())
 
+cd = '~/Desktop/Data/WRWC'
 source("aictable.R")
 
-cd = '~/Desktop/Data/WRWC'
-
-
 # Import Data ------------------------------------------------------------------ # 
-# Streamflow, April 1 SWE and Modeled Temperature Data
-q = read.csv(file.path(cd,'streamflow_data.csv'))
+# Streamflow, April 1 SWE, historic and Modeled Temperature Data
+#q = read.csv(file.path(cd,'streamflow_data.csv'))
 usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
-swe = read.csv(file.path(cd,'april1swe.csv'))
-temp = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
+swe = read.csv(file.path(cd,'all_April1.csv'))
+temps = read.csv(file.path(cd, 'ajTemps.csv'))
+var = swe %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
 
+temp.ran = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
 new.yr<-swe$year[dim(swe)[1]]+1
 
 # ------------------------------------------------------------------------------ # 
-# Calculate winter flow for each station, perhaps move this to the data scraping script
-# currently set to calculate on the previous year
-stream.id<-c("bwb","bws","cc","bwr","sc")
-wint.flows<-c(rep(NA,5))
-names(wint.flows)<-stream.id
-for(i in 1:length(stream.id)){
-  sub <- q[q$site_no == usgs_sites$site_no[usgs_sites$abr == stream.id[i]] & q$wy == 2019,] # new.yr
-  rownames(sub) <- seq(length=nrow(sub))
-  end <-min(sub$X[sub$mo == 4 & sub$day == 2])
-  wint.flows[i]<- mean(sub$Flow_Inst[1] : sub$Flow_Inst[which(sub$X == end)])
-}
-
 # Create sequence of non-leap year dates
 wy<-seq(as.Date("2018-10-01"),as.Date("2019-09-30"),"day") #update to automate based on new.yr
 wy<-data.frame(wy,1:365)
