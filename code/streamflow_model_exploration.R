@@ -20,9 +20,10 @@ source("aictable.R")
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 #q = read.csv(file.path(cd,'streamflow_data.csv'))
 usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
-swe = read.csv(file.path(cd,'all_April1.csv'))
+swe_q = read.csv(file.path(cd,'all_April1.csv'))
+swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
 temps = read.csv(file.path(cd, 'ajTemps.csv'))
-var = swe %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
+var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
 
 temp.ran = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
 new.yr<-swe$year[dim(swe)[1]]+1
@@ -50,7 +51,8 @@ colnames(pred.params)<-c("log.vol","sigma")
 # April-Sept Volume Predictions
 #
 # ------------------------------------------------------------------------------ # 
-bwb_mod<-lm(log(HL.Vol)~log(HL.Base)+log(I(CC+WE+BB+IP)))
-sig<-summary(HLmod)$sigma
+cc_mod<-lm(log(var$cc.vol)~log(var$cc.wq)+log(var$ccd+var$sr)) 
+
+sig<-summary(cc_mod)$sigma
 
 pred.params[i,2]<-sig
