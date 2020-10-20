@@ -10,6 +10,8 @@ library(ggplot2)
 library(nlme) #need for lme 
 library(MASS) #need for mvrnorm
 library(plotrix) #need for CI
+library(tidyr)
+
 # import data ----
 cd = '~/Desktop/Data/WRWC'
 snotel = read.csv(file.path(cd,'snotel_data.csv'))
@@ -49,6 +51,11 @@ for(i in 11:12){# these values could be ∆ to not be hard coded
     tdata$Apr.Jun.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp
   }
 }
+
+#transform temperature dataframe for main model
+tdata.wide <-pivot_wider(tdata, names_from = site, values_from = Apr.Jun.tempF)
+colnames(tdata.wide)<-c("year", "t.cg","t.cc", "t.s", "t.ds","t.gal","t.gar", "t.h", "t.lw", "t.gs", "t.sp","t.p", "t.f")         
+write.csv(tdata.wide, file.path(cd, 'ajTemps.csv'))
 
 #plot all data
 ggplot(tdata, aes(x=year, y=Apr.Jun.tempF, color=site)) +geom_point()
