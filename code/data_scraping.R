@@ -11,7 +11,7 @@ library(XML)
 library(httr)
 library(dplyr)
 library(devtools)
-devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
+#devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
 library(RNRCS)
 library(plyr)
 library(readr)
@@ -77,7 +77,7 @@ for(i in 1:length(stream.id)){
     
     #total april-september flow
     sub2<- sub %>% filter(wy == years[y] & between(mo, 4, 9)) 
-    vol<- sum(sub2$Flow)
+    vol<- sum(sub2$Flow)*1.98 #convert from cfs to ac-ft
     
     #center of mass between April 1 and July 31
     sub3<- sub %>% filter(wy == years[y] & between(mo, 4, 7)) 
