@@ -88,19 +88,20 @@ pred.params[i,1]<-mean(preds.cc$fit, na.rm=T)
 
 output.vol[i,1]<-round(pred.dat[1,1]/mean(hist$cc.wq),3) #This years percent of mean winter flow
 output.vol[i,2]<-round(sum(pred.dat[1,2:3])/mean(hist$ccd+hist$sr, na.rm=T),3) #percent of mean SWE
-output.vol[i,3]<-round(exp(preds.cc$fit[1]+sig^2/2)/(1.98*183),0) # TODO: RVK what is this?
-output.vol[i,4]<-round(exp(preds.cc$fit[1]+sig^2/2)/mean(hist$cc.vol),3) # TODO: RVK what is this?
+
+output.vol[i,3]<-round(exp(preds.cc$fit[1]+sig^2/2)/(1.98*183),0) # back-transformation of log-transformed data to expected value in original units, with lognormal residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
+
+output.vol[i,4]<-round(exp(preds.cc$fit[1]+sig^2/2)/mean(hist$cc.vol),3) #Division by long-term mean to generate % of average volume, with lognormal residuals
 
 #predict this years total volume at 80 % confidence
 preds.cc<-predict(cc_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.8)
 
-output.vol[i,5]<-round(exp(preds.cc$fit[2])/(1.98*183),0) # TODO: RVK what is this?
-output.vol[i,6]<-round(exp(preds.cc$fit[2])/mean(hist$cc.vol),3) # TODO: RVK what is this?
+output.vol[i,5]<-round(exp(preds.cc$fit[2])/(1.98*183),0) #bottom of 80% CI (statisticians) converted to cfs
+output.vol[i,6]<-round(exp(preds.cc$fit[2])/mean(hist$cc.vol),3) #90% exceedance flow as a percent of long-term mean
 
 lastQ<-var$cc.vol[var$year == pred.yr-1] 
 output.vol[i,7]<-round(lastQ/(1.98*183),0) # TODO: RVK what is this?
-output.vol[i,8]<-round(lastQ/mean(hist$cc.vol),3) # Last years percent of historic volume ...
-
+output.vol[i,8]<-round(lastQ/mean(hist$cc.vol),3) # Last years percent of average historic volume 
 
 
 
