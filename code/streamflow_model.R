@@ -174,3 +174,16 @@ hist <- var[var$year < pred.yr,] %>% select(bwb.cm, cg.swe, g.swe, gs.swe, hc.sw
 #linear model
 bwb_mod.cm <-lm(log(bwb.cm) ~ g.swe+t.cg+ t.g+t.gs+t.hc+t.lw +log(cg.swe)+log(hc.swe), data=hist)
 summary(bwb_mod.cm) #r2 at 0.947
+
+
+#big wood at stanton
+hist <- var[var$year < pred.yr,] %>% select(bws.cm, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
+#linear model
+bws_mod.cm <-lm(log(bws.cm) ~ g.swe + t.cg+ t.g +t.lw +log(cg.swe)+log(gs.swe)+log(hc.swe), data=hist)
+summary(bws_mod.cm) #r2 at 0.914
+
+# Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
+hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, ga.swe, sp.swe, t.sp) 
+# Silver Creek linear model -- note no log tranformations here, difference in travel times?
+sc_mod.cm<-lm(sc.cm~log(sc.wq)+ga.swe+log(sp.swe), data=hist) 
+summary(sc_mod.cm) #r2 0.134 this does terribly ... 
