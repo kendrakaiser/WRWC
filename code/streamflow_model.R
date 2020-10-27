@@ -77,20 +77,25 @@ modOut<- function(mod, pred.dat, wq, vol, meanSWE, lastQ){
 }
 
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection
-hist <- var[var$year < pred.yr,] %>% select(cc.vol, cc.wq, sr.swe) 
+hist <- var[var$year < pred.yr,] %>% select(cc.vol, cc.wq, ccd.swe, sr.swe) 
 # Camas Creek linear model
-cc_mod<-lm(cc.vol~log(cc.wq)+sr.swe, data=hist) 
+cc_mod<-lm(log(cc.vol)~log(cc.wq)+sr.swe+ccd.swe, data=hist) 
 
 #April 1 data to use for prediction 
-pred.dat<-data.frame(array(NA,c(1,2)))
-names(pred.dat)<-c("cc.wq","sr.swe")
+pred.dat<-data.frame(array(NA,c(1,3)))
+names(pred.dat)<-c("cc.wq","ccd.swe","sr.swe")
 pred.dat$cc.wq<- var$cc.wq[var$year == pred.yr] #this years base flow
+pred.dat$ccd.swe<- var$ccd.swe[var$year == pred.yr]
 pred.dat$sr.swe<- var$sr.swe[var$year == pred.yr] # current April 1 SWE
 
 # Camas Creek Model output
 mod_out<- modOut(cc_mod, pred.dat, hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
+
+
+
+
 
 # --------------------------------------------------
 # Subset Big Wood Winter flows, Snotel from Chocolate Gulch, Galena & Galena Summit, Hyndman, Lost-Wood Divide and Dollarhide
