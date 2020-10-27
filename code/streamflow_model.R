@@ -1,9 +1,10 @@
 # ----------------------------------------------------------------------------- #
 # Predictive Streamflow Model for the Wood River Water Collaborative
 # Kendra Kaiser
-# July 14, 2020
-# Linear model to predict total streamflow volume and center of mass based on 
-# calculated baseflow, current SWE and predicted temperature 
+# October 27th, 2020
+# Linear models to predict total April-September streamflow volume and center of mass 
+# based on average winter flows, current SWE and temperature; model selection explored
+# 'streamflow_model_xploration.R' using BIC
 # ----------------------------------------------------------------------------- # 
 
 library(MASS)
@@ -197,26 +198,26 @@ pred.params.vol[5,] <- mod_out[[2]]
 # Subset Camas Creek Winter flows, Snotel & Temperatures from Soldier Ranger Station, camas creek divide 
 hist <- var[var$year < pred.yr,] %>% select(cc.cm, ccd.swe, t.sr) 
 # Camas Creek linear model
-cc_mod.cm<-lm(log(cc.cm)~log(ccd.swe) + t.sr, data=hist) 
+cc_mod.cm<-lm(cc.cm~log(ccd.swe) + t.sr, data=hist) 
 mod_sum[3,2]<-summary(cc_mod.cm)$adj.r.squared 
 
 
 #big wood at hailey
 hist <- var[var$year < pred.yr,] %>% select(bwb.cm, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
 #linear model
-bwb_mod.cm <-lm(log(bwb.cm) ~ g.swe+t.cg+ t.g+t.gs+t.hc+t.lw +log(cg.swe)+log(hc.swe), data=hist)
-mod_sum[1,2]<-summary(bwb_mod.cm)$adj.r.squared #r2 at 0.947
+bwb_mod.cm <-lm(bwb.cm ~ g.swe+t.cg+ t.g+t.gs+t.hc+t.lw +log(cg.swe)+log(hc.swe), data=hist)
+mod_sum[1,2]<-summary(bwb_mod.cm)$adj.r.squared 
 
 
 #big wood at stanton
 hist <- var[var$year < pred.yr,] %>% select(bws.cm, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
 #linear model
-bws_mod.cm <-lm(log(bws.cm) ~ g.swe + t.cg+ t.g +t.lw +log(cg.swe)+log(gs.swe)+log(hc.swe), data=hist)
-mod_sum[2,2]<-summary(bws_mod.cm)$adj.r.squared #r2 at 0.914
+bws_mod.cm <-lm(bws.cm ~ g.swe + t.cg+ t.g +t.lw +log(cg.swe)+log(gs.swe)+log(hc.swe), data=hist)
+mod_sum[2,2]<-summary(bws_mod.cm)$adj.r.squared 
 
 
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
 hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, ga.swe, sp.swe, t.sp) 
-# Silver Creek linear model -- note no log tranformations here, difference in travel times?
+# Silver Creek linear model
 sc_mod.cm<-lm(sc.cm~log(sc.wq)+ga.swe+log(sp.swe), data=hist) 
-mod_sum[4,2]<-summary(sc_mod.cm)$adj.r.squared #r2 0.134 this does terribly ... 
+mod_sum[4,2]<-summary(sc_mod.cm)$adj.r.squared 
