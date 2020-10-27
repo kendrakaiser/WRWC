@@ -42,7 +42,6 @@ modOut<- function(mod, pred.dat, wq, vol, meanSWE, lastQ){
   '
   mod:     input model
   pred.dat: data.frame of prediction variables
-  i:        watershed iteration for saving output
   wq:       array of historic winter flows (e.g. hist$cc.wq)
   vol:      array of historic april-sept volumes  (hist$cc.vol)
   meanSWE:  mean(arrays of historic SWE from ws snotel sites) #mean(hist$ccd+hist$sr, na.rm=T)
@@ -94,14 +93,11 @@ output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
 
-
-
-
 # --------------------------------------------------
-# Subset Big Wood Winter flows, Snotel from Chocolate Gulch, Galena & Galena Summit, Hyndman, Lost-Wood Divide and Dollarhide
-hist <- var[var$year < pred.yr,] %>% select(bwb.vol, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+# Subset Big Wood Winter flows, Snotel from  Galena & Galena Summit, Hyndman
+hist <- var[var$year < pred.yr,] %>% select(bwb.vol, bwb.wq, g.swe, gs.swe, hc.swe) 
 # Big Wood at Hailey linear model
-bwb_mod<-lm(log(bwb.vol)~log(bwb.wq)+log(cg.swe+ g.swe+ gs.swe+ hc.swe+ lwd.swe), data=hist) 
+bwb_mod<-lm(log(bwb.vol)~log(bwb.wq)+log(g.swe)+ log(gs.swe)+ log(hc.swe), data=hist) 
 
 #April 1 data to use for prediction 
 pred.dat<-data.frame(array(NA,c(1,6)))
@@ -114,7 +110,7 @@ pred.dat$hc.swe<- var$hc.swe[var$year == pred.yr] # current April 1 SWE
 pred.dat$lwd.swe<- var$lwd.swe[var$year == pred.yr] # current April 1 SWE
 
 # Big Wood at Hailey Model output
-mod_out<- modOut(bwb_mod, pred.dat, hist$bwb.wq, hist$bwb.vol, mean(hist$cg.swe,  hist$g.swe,  hist$gs.swe,  hist$hc.swe,  hist$lwd.swe, trim=0, na.rm=T), var$bwb.vol[var$year == pred.yr-1])
+mod_out<- modOut(bwb_mod, pred.dat, hist$bwb.wq, hist$bwb.vol, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol[var$year == pred.yr-1])
 #these could be formatted differntely to be saved to the gloabl env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
@@ -123,7 +119,7 @@ pred.params.vol[1,] <- mod_out[[2]]
 # Subset Big Wood at Stanton Winter flows, Snotel from Chocolate Gulch, Galena & Galena Summit, Hyndman, Lost-Wood Divide and Dollarhide
 hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bws.vol, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
 # Big Wood at Stanton linear model
-bws_mod<-lm(log(bws.vol)~log(bws.wq)+log(cg.swe+ g.swe+ gs.swe+ hc.swe+ lwd.swe), data=hist) 
+bws_mod<-lm(log(bws.vol)~bws.wq+g.swe+ log(gs.swe)+ log(hc.swe), data=hist) 
 
 #April 1 data to use for prediction 
 pred.dat<-data.frame(array(NA,c(1,6)))
@@ -145,8 +141,8 @@ pred.params.vol[2,] <- mod_out[[2]]
 # --------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
 hist <- var[var$year < pred.yr,] %>% select(sc.vol, sc.wq, ga.swe, sp.swe) 
-# Silver Creek linear model
-sc_mod<-lm(log(sc.vol)~log(sc.wq)+log(ga.swe+sp.swe), data=hist) 
+# Silver Creek linear model -- note no log tranformations here, difference in travel times?
+sc_mod<-lm(sc.vol~sc.wq+ga.swe+sp.swe, data=hist) 
 
 #April 1 data to use for prediction 
 pred.dat<-data.frame(array(NA,c(1,3)))
@@ -159,3 +155,22 @@ pred.dat$sp.swe<- var$sp.swe[var$year == pred.yr] # current April 1 SWE
 mod_out<- modOut(sc_mod, pred.dat, hist$sc.wq, hist$sc.vol, mean(hist$ga.swe+hist$sp.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
 output.vol[5,] <- mod_out[[1]]
 pred.params.vol[5,] <- mod_out[[2]]
+
+# ------------------------------------------------------------------------------ # 
+#
+# Center of Mass Predictions
+#
+# ------------------------------------------------------------------------------ # 
+
+# Subset Camas Creek Winter flows, Snotel & Temperatures from Soldier Ranger Station, camas creek divide 
+hist <- var[var$year < pred.yr,] %>% select(cc.cm, ccd.swe, t.sr) 
+# Camas Creek linear model
+cc_mod.cm<-lm(log(cc.cm)~log(ccd.swe) + t.sr, data=hist) 
+summary(cc_mod.cm) #R2 is a sweet 0.40
+
+
+#big wood at hailey
+hist <- var[var$year < pred.yr,] %>% select(bwb.cm, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
+#linear model
+bwb_mod.cm <-lm(log(bwb.cm) ~ g.swe+t.cg+ t.g+t.gs+t.hc+t.lw +log(cg.swe)+log(hc.swe), data=hist)
+summary(bwb_mod.cm) #r2 at 0.947
