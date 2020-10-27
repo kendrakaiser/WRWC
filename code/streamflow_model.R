@@ -6,7 +6,151 @@
 # calculated baseflow, current SWE and predicted temperature 
 # ----------------------------------------------------------------------------- # 
 
-# convert streamflow data into WY format
-# here is where we need to add in relevant diversions or reach gains if we have information on them 
-# Save Output
-# predicted streamflow
+library(MASS)
+library(plotrix)
+library(mvtnorm)
+library(tidyverse)
+
+rm(list=ls())
+cd = '~/Desktop/Data/WRWC'
+
+pred.yr <- 2020
+
+# Import Data ------------------------------------------------------------------ # 
+# Streamflow, April 1 SWE, historic and Modeled Temperature Data
+usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
+swe_q = read.csv(file.path(cd,'all_April1.csv'))
+swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
+temps = read.csv(file.path(cd, 'ajTemps.csv'))
+var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
+
+temp.ran = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
+stream.id<-unique(as.character(usgs_sites$abv))
+# ------------------------------------------------------------------------------ # 
+# Create sequence of non-leap year dates
+wy<-seq(as.Date("2018-10-01"),as.Date("2019-09-30"),"day") #update to automate based on new.yr
+wy<-data.frame(wy,1:365)
+colnames(wy)<-c("Date","day")
+
+# ------------------------------------------------------------------------------ # 
+#
+# April-Sept Volume Predictions
+#
+# ------------------------------------------------------------------------------ # 
+
+modOut<- function(mod, pred.dat, wq, vol, meanSWE, lastQ){
+  '
+  mod:     input model
+  pred.dat: data.frame of prediction variables
+  i:        watershed iteration for saving output
+  wq:       array of historic winter flows (e.g. hist$cc.wq)
+  vol:      array of historic april-sept volumes  (hist$cc.vol)
+  meanSWE:  mean(arrays of historic SWE from ws snotel sites) #mean(hist$ccd+hist$sr, na.rm=T)
+  lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$year == pred.yr-1] 
+  '
+  pred.params.vol<-array(NA,c(1,2))
+  output.vol<-array(NA,c(1,8))
+  
+  sig<-summary(mod)$sigma
+  pred.params.vol[1,2]<-sig
+  #predict this years total volume at 95 % confidence
+  predictions<-predict(mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+  pred.params.vol[1,1]<-mean(predictions$fit, na.rm=T)
+  #This years percent of mean winter flow
+  output.vol[1,1]<-round(pred.dat[1,1]/mean(wq, na.rm=T),3) 
+  #percent of mean SWE
+  output.vol[1,2]<-round(sum(pred.dat[1,2:3])/meanSWE,3) 
+  # back-transformation of log-transformed data to expected value in original units, with lognormal   residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
+  output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/(1.98*183),0) 
+  #Division by long-term mean to generate % of average volume, with lognormal residuals
+  output.vol[1,4]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=T),3) 
+  
+  #this years total volume at 80 % confidence
+  predictions<-predict(mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.8)
+  #bottom of 80% CI (statisticians) converted to cfs
+  output.vol[1,5]<-round(exp(predictions$fit[2])/(1.98*183),0) 
+  # 90% exceedance flow as a percent of long-term mean
+  output.vol[1,6]<-round(exp(predictions$fit[2])/mean(vol, na.rm=T),3) 
+  output.vol[1,7]<-round(lastQ/(1.98*183),0) # last years volume in cfs
+  output.vol[1,8]<-round(lastQ/mean(vol, na.rm=T),3) # Last years percent of average historic volume
+  return(list(output.vol, pred.params.vol))
+}
+
+# Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection
+hist <- var[var$year < pred.yr,] %>% select(cc.vol, cc.wq, sr.swe) 
+# Camas Creek linear model
+cc_mod<-lm(cc.vol~log(cc.wq)+sr.swe, data=hist) 
+
+#April 1 data to use for prediction 
+pred.dat<-data.frame(array(NA,c(1,2)))
+names(pred.dat)<-c("cc.wq","sr.swe")
+pred.dat$cc.wq<- var$cc.wq[var$year == pred.yr] #this years base flow
+pred.dat$sr.swe<- var$sr.swe[var$year == pred.yr] # current April 1 SWE
+
+# Camas Creek Model output
+mod_out<- modOut(cc_mod, pred.dat, hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
+output.vol[3,] <- mod_out[[1]]
+pred.params.vol[3,] <- mod_out[[2]]
+
+# --------------------------------------------------
+# Subset Big Wood Winter flows, Snotel from Chocolate Gulch, Galena & Galena Summit, Hyndman, Lost-Wood Divide and Dollarhide
+hist <- var[var$year < pred.yr,] %>% select(bwb.vol, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+# Big Wood at Hailey linear model
+bwb_mod<-lm(log(bwb.vol)~log(bwb.wq)+log(cg.swe+ g.swe+ gs.swe+ hc.swe+ lwd.swe), data=hist) 
+
+#April 1 data to use for prediction 
+pred.dat<-data.frame(array(NA,c(1,6)))
+names(pred.dat)<-c("bwb.wq","cg.swe","g.swe","gs.swe","hc.swe","lwd.swe")
+pred.dat$bwb.wq<- var$bwb.wq[var$year == pred.yr] #this years base flow
+pred.dat$cg.swe<- var$cg.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$g.swe<- var$g.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$gs.swe<- var$gs.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$hc.swe<- var$hc.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$lwd.swe<- var$lwd.swe[var$year == pred.yr] # current April 1 SWE
+
+# Big Wood at Hailey Model output
+mod_out<- modOut(bwb_mod, pred.dat, hist$bwb.wq, hist$bwb.vol, mean(hist$cg.swe,  hist$g.swe,  hist$gs.swe,  hist$hc.swe,  hist$lwd.swe, trim=0, na.rm=T), var$bwb.vol[var$year == pred.yr-1])
+#these could be formatted differntely to be saved to the gloabl env. within the function
+output.vol[1,] <- mod_out[[1]]
+pred.params.vol[1,] <- mod_out[[2]]
+
+# --------------------------------------------------
+# Subset Big Wood at Stanton Winter flows, Snotel from Chocolate Gulch, Galena & Galena Summit, Hyndman, Lost-Wood Divide and Dollarhide
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bws.vol, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+# Big Wood at Stanton linear model
+bws_mod<-lm(log(bws.vol)~log(bws.wq)+log(cg.swe+ g.swe+ gs.swe+ hc.swe+ lwd.swe), data=hist) 
+
+#April 1 data to use for prediction 
+pred.dat<-data.frame(array(NA,c(1,6)))
+names(pred.dat)<-c("bws.wq","cg.swe","g.swe","gs.swe","hc.swe","lwd.swe")
+pred.dat$bws.wq<- var$bws.wq[var$year == pred.yr] #this years base flow
+pred.dat$cg.swe<- var$cg.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$g.swe<- var$g.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$gs.swe<- var$gs.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$hc.swe<- var$hc.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$lwd.swe<- var$lwd.swe[var$year == pred.yr] # current April 1 SWE
+
+# Big Wood at Stanton Model output
+mod_out<- modOut(bws_mod, pred.dat, hist$bws.wq, hist$bws.vol, mean(hist$cg.swe,  hist$g.swe,  hist$gs.swe,  hist$hc.swe,  hist$lwd.swe, trim=0, na.rm=T), var$bws.vol[var$year == pred.yr-1])
+#these could be formatted differntely to be saved to the gloabl env. within the function
+output.vol[2,] <- mod_out[[1]]
+pred.params.vol[2,] <- mod_out[[2]]
+
+
+# --------------------------------------------------
+# Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
+hist <- var[var$year < pred.yr,] %>% select(sc.vol, sc.wq, ga.swe, sp.swe) 
+# Silver Creek linear model
+sc_mod<-lm(log(sc.vol)~log(sc.wq)+log(ga.swe+sp.swe), data=hist) 
+
+#April 1 data to use for prediction 
+pred.dat<-data.frame(array(NA,c(1,3)))
+names(pred.dat)<-c("sc.wq","ga.swe","sp.swe")
+pred.dat$sc.wq<- var$sc.wq[var$year == pred.yr] #this years base flow
+pred.dat$ga.swe<- var$ga.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$sp.swe<- var$sp.swe[var$year == pred.yr] # current April 1 SWE
+
+# Silver Creek Model output
+mod_out<- modOut(sc_mod, pred.dat, hist$sc.wq, hist$sc.vol, mean(hist$ga.swe+hist$sp.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
+output.vol[5,] <- mod_out[[1]]
+pred.params.vol[5,] <- mod_out[[2]]
