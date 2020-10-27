@@ -40,7 +40,7 @@ hist$log.ccd <- log(hist$ccd.swe)
 hist$log.sr <- log(hist$sr.swe)
 hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
 #use regsubsets to plot the results
-regsubsets.out<-regsubsets(var$cc.vol[var$year < pred.yr]~., data=hist, nbest=1, nvmax=4)
+regsubsets.out<-regsubsets(log(var$cc.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=4)
 
 
 
