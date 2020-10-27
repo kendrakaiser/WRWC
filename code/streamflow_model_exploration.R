@@ -42,8 +42,39 @@ hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
 #use regsubsets to plot the results
 regsubsets.out<-regsubsets(log(var$cc.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=4)
 
+#big wood at hailey
+hist <- var[var$year < pred.yr,] %>% select(bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+hist$log.wq <- log(hist$bwb.wq)
+hist$log.cg<- log(hist$cg.swe)
+hist$log.g <- log(hist$g.swe)
+hist$log.gs<- log(hist$gs.swe)
+hist$log.hc <- log(hist$hc.swe)
+hist$log.lwd <- log(hist$lwd.swe)
+#use regsubsets to plot the results
+regsubsets.out<-regsubsets(log(var$bwb.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
 
 
+#big wood at stanton
+hist <- var[var$year < pred.yr,] %>% select(bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+hist$log.wq <- log(hist$bws.wq)
+hist$log.cg<- log(hist$cg.swe)
+hist$log.g <- log(hist$g.swe)
+hist$log.gs<- log(hist$gs.swe)
+hist$log.hc <- log(hist$hc.swe)
+hist$log.lwd <- log(hist$lwd.swe)
+#use regsubsets to explore models
+regsubsets.out<-regsubsets(log(var$bws.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
+
+# Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
+hist <- var[var$year < pred.yr,] %>% select(sc.vol, sc.wq, ga.swe, sp.swe) 
+hist$log.sp <- log(hist$sp.swe)
+hist$log.wq <- log(hist$sc.wq)
+hist$log.ga<- log(hist$ga.swe)
+hist$log.sum<- log(hist$ga.swe+hist$sp.swe)
+
+# Silver Creek regsubsets 
+regsubsets.out<-regsubsets(log(sc.vol[var$year < pred.yr])~., data=hist, nbest=3, nvmax=5)
+  
 
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
 quartz(title="Adjusted R^2",10,10)
@@ -57,4 +88,53 @@ plot(rs$bic, rs$adjr2, xlab="BIC", ylab="adj R2")
 # ------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for Center of Mass Predictions
 # ------------------------------------------------------------------------------ # 
+
+#camas creek
+hist <- var[var$year < pred.yr,] %>% select(cc.wq, ccd.swe, sr.swe, t.ccd, t.sr) 
+hist$log.wq <- log(hist$cc.wq)
+hist$log.ccd <- log(hist$ccd.swe)
+hist$log.sr <- log(hist$sr.swe)
+hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
+#use regsubsets to plot the results
+regsubsets.out<-regsubsets(var$cc.cm[var$year < pred.yr]~., data=hist, nbest=3, nvmax=5)
+
+#big wood at hailey
+hist <- var[var$year < pred.yr,] %>% select(bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
+hist$log.wq <- log(hist$bwb.wq)
+hist$log.cg<- log(hist$cg.swe)
+hist$log.g <- log(hist$g.swe)
+hist$log.gs<- log(hist$gs.swe)
+hist$log.hc <- log(hist$hc.swe)
+hist$log.lwd <- log(hist$lwd.swe)
+#use regsubsets to plot the results
+regsubsets.out<-regsubsets(log(var$bwb.cm[var$year < pred.yr])~., data=hist, nbest=3, nvmax=8)
+
+
+#big wood at stanton
+hist <- var[var$year < pred.yr,] %>% select(bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
+hist$log.cg<- log(hist$cg.swe)
+hist$log.g<- log(hist$g.swe)
+hist$log.gs<- log(hist$gs.swe)
+hist$log.hc <- log(hist$hc.swe)
+hist$log.lwd <- log(hist$lwd.swe)
+#use regsubsets to explore models
+regsubsets.out<-regsubsets(log(var$bws.cm[var$year < pred.yr])~., data=hist, nbest=2, nvmax=8)
+
+# Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
+hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, ga.swe, sp.swe, t.ga, t.sp) 
+hist$log.sp <- log(hist$sp.swe)
+hist$log.wq <- log(hist$sc.wq)
+hist$log.ga<- log(hist$ga.swe)
+hist$log.sum<- log(hist$ga.swe+hist$sp.swe)
+
+# Silver Creek regsubsets 
+regsubsets.out<-regsubsets(log(sc.cm[var$year < pred.yr])~., data=hist, nbest=3, nvmax=8)
+
+regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
+quartz(title="Adjusted R^2",10,10)
+plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
+quartz(title="BIC",10,10)
+plot(regsubsets.out, scale = "bic", main="BIC For the best model of a given size")
+rs<-summary(regsubsets.out)
+plot(rs$bic, rs$adjr2, xlab="BIC", ylab="adj R2")
 
