@@ -40,7 +40,8 @@ colnames(wy)<-c("Date","day")
 # volumes
 output.vol<-array(NA,c(length(stream.id),8))
 rownames(output.vol)<-stream.id
-colnames(output.vol)<-c("cfs % of mean","swe % of mean", "ask RVK fit", "ask RVK fit", "ask RVK fit", "ask RVK fit", "ask RVK fit", "Prev Year % of mean Volume")
+colnames(output.vol)<-c("Predictors Vol % of mean","Predictors swe % of mean", "Pred. Vol (cfs)", "Pred. Vol % of mean", "90% exc. cfs", "90% exc. % or mean", "Prev Year Vol (cfs)", "Prev Year % of mean Volume")
+
 pred.params.vol<-array(NA,c(5,2))
 rownames(pred.params.vol)<-c("bwb.vol","bws.vol","cc.vol","bwr.vol","sc.vol")
 colnames(pred.params.vol)<-c("log.vol","sigma")
@@ -49,6 +50,7 @@ colnames(pred.params.vol)<-c("log.vol","sigma")
 output.cm<-data.frame(array(NA,c(5,5)))
 rownames(output.cm)<-stream.id
 colnames(output.cm)<-c("temp-mean","% of mean","cm","cm-mean","cm.date")
+
 pred.params.cm<-array(NA,c(5,2))
 rownames(pred.params.cm)<-c("bwb.cm","bws.cm","cc.cm","bwr.cm","sc.cm")
 colnames(pred.params.cm)<-c("cm","sigma")
@@ -185,9 +187,26 @@ pred.dat$ga.swe<- var$ga.swe[var$year == pred.yr] # current April 1 SWE
 pred.dat$sp.swe<- var$sp.swe[var$year == pred.yr] # current April 1 SWE
 
 # Silver Creek Model output
-mod_out<- modOut(sc_mod, pred.dat, hist$sc.wq, hist$sc.vol, mean(hist$ga.swe+hist$sp.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
-output.vol[5,] <- mod_out[[1]]
-pred.params.vol[5,] <- mod_out[[2]]
+#mod_out<- modOut(sc_mod, pred.dat, hist$sc.wq, hist$sc.vol, mean(hist$ga.swe+hist$sp.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
+
+sig<-summary(sc_mod)$sigma
+pred.params.vol[1,2]<-sig
+#predict this years total volume at 95 % confidence
+predictions<-predict(sc_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+pred.params.vol[1,1]<-mean(predictions$fit, na.rm=T)
+#This years percent of mean winter flow
+output.vol[5,1]<-round(pred.dat[1,1]/mean(hist$sc.wq, na.rm=T),3) 
+output.vol[5,2]<-round(sum(pred.dat[1,2:3])/mean(hist$ga.swe+hist$sp.swe),3) 
+output.vol[5,3]<-round(predictions$fit[1]+sig^2/2/(1.98*183),0) 
+output.vol[5,4]<-round(predictions$fit[1]+sig^2/2/mean(hist$sc.vol, na.rm=T),3) 
+predictions<-predict(sc_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.8)
+output.vol[5,5]<-round(predictions$fit[2]/(1.98*183),0) 
+output.vol[5,6]<-round(predictions$fit[2]/mean(hist$sc.vol, na.rm=T),3) 
+lastQ<- var$sc.vol[var$year == pred.yr-1]
+output.vol[5,7]<-round(lastQ/(1.98*183),0) # last years volume in cfs
+output.vol[5,8]<-round(lastQ/mean(hist$sc.vol, na.rm=T),3) 
+
+output.vol<-output.vol[-4,]
 
 # ------------------------------------------------------------------------------ # 
 #
@@ -221,3 +240,5 @@ hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, ga.swe, sp.swe, t.sp)
 # Silver Creek linear model
 sc_mod.cm<-lm(sc.cm~log(sc.wq)+ga.swe+log(sp.swe), data=hist) 
 mod_sum[4,2]<-summary(sc_mod.cm)$adj.r.squared 
+
+mod_sum<- round(mod_sum, 3)
