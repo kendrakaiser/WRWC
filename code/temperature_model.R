@@ -123,12 +123,11 @@ for(i in 1:length(site.key)){
 }
 lines(first.yr:(last.yr+1),c(fits,pred), lwd=3)
 plotCI(last.yr+1,pred,pch=18,cex=2,col=1,uiw=2*se.pred,add=T,lwd=2)
-dev.off()
 
-legend("bottomright",bg="white",box.col=1, 
+legend("topleft",bg="white",box.col=1, 
        lwd = c(1,1,3,2),pch=c(NA_integer_,NA_integer_,NA_integer_,18),pt.cex=c(0,0,0,2), col=c("gray50","gray50",1,1),lty=c(2,1,1,1),
        legend = c("Individual site data","Individual site trends","Watershed mean trend","2021 prediction & 95% CI"))
-
+dev.off()
 
 
 # ----
