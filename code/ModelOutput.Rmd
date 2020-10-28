@@ -1,0 +1,54 @@
+---
+title: "WRWC Model Run"
+author: "Kendra Kaiser"
+date: "10/27/2020"
+output: html_document
+number_sections: true
+---
+
+```{r include=FALSE}
+library(knitr)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(fasstr)
+
+knitr::opts_chunk$set(echo = FALSE)
+cd = '~/Desktop/Data/WRWC'
+usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
+snotel_sites = read.csv(file.path(cd,'snotel_sites.csv'))
+q = read.csv(file.path(cd,'streamflow_data.csv'))
+q$Date <- as.Date(q$Date)
+q$doy <- yday(q$Date)
+```
+
+## Wood River Model Summary
+
+The WRWC Modeling Suite predicts spring air temperatures, total summer runoff volumes, "center of mass", and timing of delivery calls in the Big Wood River Basin, Camas Creek and Silver Creek (Table 1, Figure 1). 
+
+```{r cars}
+kable(usgs_sites[c(1,2,3,5),] %>% select(station_nm, huc_cd, begin_date, end_date, abv), caption = "USGS Sites")
+
+kable(snotel_sites %>% select(start, end, site_name, huc8, abv), caption = "Snotel Sites")
+```
+
+## Big Wood Basin
+
+```{r pressure, echo=FALSE}
+ggplot(data =q, mapping = aes(x=as.Date(Date), y=Flow))+
+  geom_line(aes(color= abv))
+
+plot_annual_stats(data = q, values= Flow, groups = abv, water_year_start = 10, ignore_missing=TRUE)
+
+site.flow <- q %>% filter(abv == 'bwb') %>% group_by(doy) %>% summarize(mean(Flow, na.rm = TRUE)) 
+bws <- q %>% filter(abv == 'bws') %>% group_by(doy) %>% summarize(mean(Flow, na.rm = TRUE)) 
+cc <- q %>% filter(abv == 'cc') %>% group_by(doy) %>% summarize(mean(Flow, na.rm = TRUE)) 
+sc <- q %>% filter(abv == 'sc') %>% group_by(doy) %>% summarize(mean(Flow, na.rm = TRUE)) 
+site.flows<- c(site.flow, bws[,2], cc[,2], sc[,2])
+colnames(site.flows)<-c("doy", "bwb", "bws", "cc", "sc")
+
+#ggplot(data = q, mapping = aes(x=q$doy, y=Flow))+
+ # geom_line(aes(color= abv)) +
+  #facet_wrap(facets = vars(abv))
+```
