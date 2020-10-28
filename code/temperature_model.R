@@ -109,29 +109,27 @@ write.csv(apr.jun.temps,"rand.apr.jun.temp.csv",row.names=F)
 # ___
 
 png(filename = "Apr_Jun_ModTemp.png",
-    width = 7.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, family = "", restoreConsole = TRUE,
-    antialias="cleartype")
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") #antialias="cleartype"
 
-plot(tdata$year,tdata$Apr.Jun.tempF,type="n",xlab="Year",xlim=c(first.yr,(last.yr+1)),
-     ylab="Temperature (F)",main="Mean April-June Temperature All SnoTel Sites",ylim=c(0,15))
+plot(tdata$year,tdata$Apr.Jun.tempF,type="n",xlab="Year",xlim=c(first.yr,(last.yr+1)), ylab="Temperature (F)",main="Mean April-June Temperature All SnoTel Sites",ylim=c(0,15))
 abline(h=seq(0,20,5),col="gray85",lty=2)
 abline(v=seq(1990,last.yr+1,5),col="gray85",lty=2)
 
 for(i in 1:length(site.key)){
   lines(tdata$year[tdata$site==site.key[i]],
         tdata$Apr.Jun.tempF[tdata$site==site.key[i]],col="gray50",lty=2)
-  abline(lm(tdata$Apr.Jun.tempF[tdata$site==site.key[i]]~tdata$year[tdata$site==site.key[i]]),
-         col="gray50",lty=1)
+  abline(lm(tdata$Apr.Jun.tempF[tdata$site==site.key[i]]~tdata$year[tdata$site==site.key[i]]),col="gray50",lty=1)
 }
-lines(first.yr:(last.yr+1),c(fits,pred),lwd=3)
+lines(first.yr:(last.yr+1),c(fits,pred), lwd=3)
 plotCI(last.yr+1,pred,pch=18,cex=2,col=1,uiw=2*se.pred,add=T,lwd=2)
+dev.off()
 
 legend("bottomright",bg="white",box.col=1, 
        lwd = c(1,1,3,2),pch=c(NA_integer_,NA_integer_,NA_integer_,18),pt.cex=c(0,0,0,2), col=c("gray50","gray50",1,1),lty=c(2,1,1,1),
        legend = c("Individual site data","Individual site trends","Watershed mean trend","2021 prediction & 95% CI"))
 
-dev.off()
+
 
 # ----
 # Temperature predictions per HUC8
