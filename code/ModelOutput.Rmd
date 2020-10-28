@@ -1,7 +1,7 @@
 ---
 title: "WRWC Model Run"
 author: "Kendra Kaiser"
-date: "10/27/2020"
+date: "10/28/2020"
 output: html_document
 number_sections: true
 ---
@@ -21,49 +21,50 @@ snotel_sites = read.csv(file.path(cd,'snotel_sites.csv'))
 q = read.csv(file.path(cd,'streamflow_data.csv'))
 q$Date <- as.Date(q$Date)
 q$doy <- yday(q$Date)
+q<- q %>% filter(abv != 'bwr')
 ```
 
 ## Wood River Model Summary
 
 The WRWC Modeling Suite predicts spring air temperatures, total summer runoff volumes, "center of mass", and timing of delivery calls in the Big Wood River Basin, Camas Creek and Silver Creek (Table 1, Figure 1). 
 
-```{r cars}
+### Data Inputs
+```{r data}
 kable(usgs_sites[c(1,2,3,5),] %>% select(station_nm, huc_cd, begin_date, end_date, abv), caption = "USGS Sites")
 
 kable(snotel_sites %>% select(start, end, site_name, huc8, abv), caption = "Snotel Sites")
 ```
 
-## Big Wood Basin
+## Data Summary
+e.g. timeseries of streamflow from all gages
+```{r All Data, echo=FALSE}
+ggplot(data = q, mapping = aes(x=as.Date(Date), y=Flow))+
+  geom_line(aes(color= abv))+
+  xlab('Date')+
+  ylab('Flow (cfs)')
+```
 
-```{r pressure, echo=FALSE}
-ggplot(data =q, mapping = aes(x=as.Date(Date), y=Flow))+
-  geom_line(aes(color= abv))
+### Big Wood at Hailey
+can add year-to-date data with exceednece probabilities
 
-#Toy data
-data <- data.frame(Date = seq(ymd('1980-01-01'), ymd('2000-01-01'), 1))
-data$Q <- sin(yday(data$Date)*2*pi/365) + rnorm(length(data$Date))+ 3
+```{r Big Wood, echo=FALSE}
 #Calculate day of water-year
-water_year_begin <- ymd('1980-06-01')
-data$DOY <- (yday(data$Date) - yday(water_year_begin)) %% 365 +1
+water_year_begin <- ymd('1987-10-01')-1
+#deal with leap years
+q$doWY<- ((q$doy - yday(water_year_begin)) %% ifelse(leap_year(year(q$Date)), 366, 365)) +1
+
 #Summary stats.
-data <- group_by(data, DOY) %>% mutate(meanQ=mean(Q), maxQ=max(Q), minQ=min(Q))
+data <- group_by(q, doWY) %>% filter(abv == 'bwb') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
 #Plot
-ggplot(data=data, mapping=aes(x=DOY))+
+ggplot(data=data, mapping=aes(x=doWY))+
   geom_line(mapping=aes(y=meanQ), color='red')+
   geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)
-
-#------
-
-plot_annual_stats(data = q, values= Flow, groups = abv, water_year_start = 10, ignore_missing=TRUE)
-
-site.flow <- q %>% filter(abv == 'bwb') %>% group_by(doy) %>% summarize(mean(Flow, na.rm = TRUE)) 
-bws <- q %>% filter(abv == 'bws') %>% group_by(doy) %>% summarize(mean(Flow, na.rm = TRUE)) 
-cc <- q %>% filter(abv == 'cc') %>% group_by(doy) %>% summarize(mean(Flow, na.rm = TRUE)) 
-sc <- q %>% filter(abv == 'sc') %>% group_by(doy) %>% summarize(mean(Flow, na.rm = TRUE)) 
-site.flows<- c(site.flow, bws[,2], cc[,2], sc[,2])
-colnames(site.flows)<-c("doy", "bwb", "bws", "cc", "sc")
-
-#ggplot(data = q, mapping = aes(x=q$doy, y=Flow))+
- # geom_line(aes(color= abv)) +
-  #facet_wrap(facets = vars(abv))
 ```
+
+Data summary from Snotel Sites in the Big Wood
+
+## Model Output, by sub-basin
+### temperature model output
+### streamflow volume model output
+### streamflow timing model output
+### curtailment date model output 
