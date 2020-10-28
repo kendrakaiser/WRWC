@@ -124,6 +124,12 @@ mod_out<- modOut(cc_mod, pred.dat, hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
+#Plot modeled data for visual evaluation -- need to fix so that units are correct
+# add the fitted model line?
+fits<-fitted(cc_mod)*(1.98*183)
+
+plot(var$cc.vol[6:32],c(fits), lwd=3, xlab="Observed", ylab="Predicted",main="Camas Creek April-Sept Streamflow Vol (ac-ft)")
+
 
 # --------------------------------------------------
 # Subset Big Wood Winter flows, Snotel from  Galena & Galena Summit, Hyndman
