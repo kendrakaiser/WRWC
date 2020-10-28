@@ -39,6 +39,21 @@ kable(snotel_sites %>% select(start, end, site_name, huc8, abv), caption = "Snot
 ggplot(data =q, mapping = aes(x=as.Date(Date), y=Flow))+
   geom_line(aes(color= abv))
 
+#Toy data
+data <- data.frame(Date = seq(ymd('1980-01-01'), ymd('2000-01-01'), 1))
+data$Q <- sin(yday(data$Date)*2*pi/365) + rnorm(length(data$Date))+ 3
+#Calculate day of water-year
+water_year_begin <- ymd('1980-06-01')
+data$DOY <- (yday(data$Date) - yday(water_year_begin)) %% 365 +1
+#Summary stats.
+data <- group_by(data, DOY) %>% mutate(meanQ=mean(Q), maxQ=max(Q), minQ=min(Q))
+#Plot
+ggplot(data=data, mapping=aes(x=DOY))+
+  geom_line(mapping=aes(y=meanQ), color='red')+
+  geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)
+
+#------
+
 plot_annual_stats(data = q, values= Flow, groups = abv, water_year_start = 10, ignore_missing=TRUE)
 
 site.flow <- q %>% filter(abv == 'bwb') %>% group_by(doy) %>% summarize(mean(Flow, na.rm = TRUE)) 
