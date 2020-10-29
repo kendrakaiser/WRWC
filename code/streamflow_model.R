@@ -124,11 +124,10 @@ mod_out<- modOut(cc_mod, pred.dat, hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
-#Plot modeled data for visual evaluation -- need to fix so that units are correct
-# add the fitted model line?
-fits<-fitted(cc_mod)*(1.98*183)
-
-plot(var$cc.vol[6:32],c(fits), lwd=3, xlab="Observed", ylab="Predicted",main="Camas Creek April-Sept Streamflow Vol (ac-ft)")
+#Plot modeled data for visual evaluation 
+fits<-exp(fitted(cc_mod))
+plot(var$cc.vol[6:32],c(fits), lwd=2, xlab="Observed", ylab="Predicted",main="Camas Creek April-Sept Streamflow Vol (ac-ft)")
+abline(0,1,col="gray50",lty=1)
 
 
 # --------------------------------------------------
@@ -150,15 +149,21 @@ pred.dat$lwd.swe<- var$lwd.swe[var$year == pred.yr] # current April 1 SWE
 
 # Big Wood at Hailey Model output
 mod_out<- modOut(bwb_mod, pred.dat, hist$bwb.wq, hist$bwb.vol, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol[var$year == pred.yr-1])
-#these could be formatted differntely to be saved to the gloabl env. within the function
+#these could be formatted differently to be saved to the gloabl env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
+
+
+#Plot modeled data for visual evaluation 
+fits<-exp(fitted(bwb_mod))
+plot(var$bwb.vol[1:32]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey April-Sept Streamflow Vol (ac-ft)")
+abline(0,1,col="gray50",lty=1)
 
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Chocolate Gulch, Galena & Galena Summit, Hyndman, Lost-Wood Divide and Dollarhide
 hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bws.vol, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
 # Big Wood at Stanton linear model
-bws_mod<-lm(log(bws.vol)~bws.wq+g.swe+ log(gs.swe)+ log(hc.swe), data=hist) 
+bws_mod<-lm(log(bws.vol)~bws.wq+ g.swe+ log(gs.swe)+ log(hc.swe), data=hist) 
 mod_sum[2,1]<-summary(bws_mod)$adj.r.squared
 
 #April 1 data to use for prediction 
@@ -177,6 +182,10 @@ mod_out<- modOut(bws_mod, pred.dat, hist$bws.wq, hist$bws.vol, mean(hist$cg.swe,
 output.vol[2,] <- mod_out[[1]]
 pred.params.vol[2,] <- mod_out[[2]]
 
+#Plot modeled data for visual evaluation 
+fits<-exp(fitted(bws_mod))
+plot(var$bws.vol[10:32]/1000,c(fits)/1000, lwd=2, xlim=c(0,715), ylim=c(0,715), xlab="Observed", ylab="Predicted",main="Big Wood at Stanton April-Sept Streamflow Vol (1000 ac-ft)")
+abline(0,1,col="gray50",lty=1)
 
 # --------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
@@ -193,8 +202,6 @@ pred.dat$ga.swe<- var$ga.swe[var$year == pred.yr] # current April 1 SWE
 pred.dat$sp.swe<- var$sp.swe[var$year == pred.yr] # current April 1 SWE
 
 # Silver Creek Model output
-#mod_out<- modOut(sc_mod, pred.dat, hist$sc.wq, hist$sc.vol, mean(hist$ga.swe+hist$sp.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
-
 sig<-summary(sc_mod)$sigma
 pred.params.vol[1,2]<-sig
 #predict this years total volume at 95 % confidence
@@ -214,6 +221,11 @@ output.vol[5,8]<-round(lastQ/mean(hist$sc.vol, na.rm=T),3)
 
 output.vol<-output.vol[-4,]
 
+
+#Plot modeled data for visual evaluation 
+fits<-fitted(sc_mod)
+plot(var$sc.vol[1:32]/1000,c(fits)/1000, lwd=2, xlim=c(22,65), ylim=c(22,65), xlab="Observed", ylab="Predicted", main="Silver Creek April-Sept Streamflow Vol (1000 ac-ft)")
+abline(0,1,col="gray50",lty=1)
 # ------------------------------------------------------------------------------ # 
 #
 # Center of Mass Predictions
