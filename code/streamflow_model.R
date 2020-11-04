@@ -5,8 +5,11 @@
 # Linear models to predict total April-September streamflow volume and center of mass 
 # based on average winter flows, current SWE and temperature; model selection explored
 # 'streamflow_model_xploration.R' using BIC
-# ----------------------------------------------------------------------------- # 
-
+#
+# This model was informed by the statstical tools developed for the Henry's Fork 
+# Foundation by Rob VanKirk
+# -----------------------------------------------------------------------------  
+#+ setup, echo= FALSE
 library(MASS)
 library(plotrix)
 library(mvtnorm)
@@ -17,7 +20,7 @@ cd = '~/Desktop/Data/WRWC'
 
 pred.yr <- 2020
 
-# Import Data ------------------------------------------------------------------ # 
+# Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
 swe_q = read.csv(file.path(cd,'all_April1.csv'))
@@ -27,13 +30,13 @@ var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
 
 temp.ran = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
-# ------------------------------------------------------------------------------ # 
+# ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates
 wy<-seq(as.Date("2018-10-01"),as.Date("2019-09-30"),"day") #update to automate based on new.yr
 wy<-data.frame(wy,1:365)
 colnames(wy)<-c("Date","day")
 
-# ------------------------------------------------------------------------------ # 
+# ------------------------------------------------------------------------------  
 # Setup output arrays
 # ------------------------------------------------------------------------------ # 
 
@@ -63,7 +66,7 @@ mod_sum<-data.frame(array(NA,c(4,2)))
 colnames(mod_sum)<-c("Vol Adj-R2", "CM ADj-R2")
 rownames(mod_sum)<-c("bwb","bws","cc","sc")
 
-# ------------------------------------------------------------------------------ # 
+# ------------------------------------------------------------------------------  
 #
 # April-Sept Volume Predictions
 #
@@ -112,7 +115,7 @@ hist <- var[var$year < pred.yr,] %>% select(cc.vol, cc.wq, ccd.swe, sr.swe)
 cc_mod<-lm(log(cc.vol)~log(cc.wq)+sr.swe+ccd.swe, data=hist) 
 mod_sum[3,1]<-summary(cc_mod)$adj.r.squared
 
-#April 1 data to use for prediction 
+#April 1 CC data to use for prediction 
 pred.dat<-data.frame(array(NA,c(1,3)))
 names(pred.dat)<-c("cc.wq","ccd.swe","sr.swe")
 pred.dat$cc.wq<- var$cc.wq[var$year == pred.yr] #this years base flow
@@ -124,11 +127,15 @@ mod_out<- modOut(cc_mod, pred.dat, hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
-#Plot modeled data for visual evaluation 
-fits<-exp(fitted(cc_mod))
-plot(var$cc.vol[6:32],c(fits), lwd=2, xlab="Observed", ylab="Predicted",main="Camas Creek April-Sept Streamflow Vol (ac-ft)")
-abline(0,1,col="gray50",lty=1)
+#Plot CC modeled data for visual evaluation 
+png(filename = "CC_modelFit.png",
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
 
+fits<-exp(fitted(cc_mod))
+plot(var$cc.vol[6:32]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+abline(0,1,col="gray50",lty=1)
+dev.off()
 
 # --------------------------------------------------
 # Subset Big Wood Winter flows, Snotel from  Galena & Galena Summit, Hyndman
@@ -137,7 +144,7 @@ hist <- var[var$year < pred.yr,] %>% select(bwb.vol, bwb.wq, g.swe, gs.swe, hc.s
 bwb_mod<-lm(log(bwb.vol)~log(bwb.wq)+log(g.swe)+ log(gs.swe)+ log(hc.swe), data=hist) 
 mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 
-#April 1 data to use for prediction 
+#April 1 bwb data to use for prediction 
 pred.dat<-data.frame(array(NA,c(1,6)))
 names(pred.dat)<-c("bwb.wq","cg.swe","g.swe","gs.swe","hc.swe","lwd.swe")
 pred.dat$bwb.wq<- var$bwb.wq[var$year == pred.yr] #this years base flow
@@ -154,11 +161,15 @@ output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
 
 
-#Plot modeled data for visual evaluation 
-fits<-exp(fitted(bwb_mod))
-plot(var$bwb.vol[1:32]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey April-Sept Streamflow Vol (ac-ft)")
-abline(0,1,col="gray50",lty=1)
+#Plot bwb modeled data for visual evaluation 
+png(filename = "BWB_modelFit.png",
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
 
+fits<-exp(fitted(bwb_mod))
+plot(var$bwb.vol[1:32]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
+abline(0,1,col="gray50",lty=1)
+dev.off()
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Chocolate Gulch, Galena & Galena Summit, Hyndman, Lost-Wood Divide and Dollarhide
 hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bws.vol, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
@@ -166,7 +177,7 @@ hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bws.vol, bws.wq, c
 bws_mod<-lm(log(bws.vol)~bws.wq+ g.swe+ log(gs.swe)+ log(hc.swe), data=hist) 
 mod_sum[2,1]<-summary(bws_mod)$adj.r.squared
 
-#April 1 data to use for prediction 
+#April 1 bws data to use for prediction 
 pred.dat<-data.frame(array(NA,c(1,6)))
 names(pred.dat)<-c("bws.wq","cg.swe","g.swe","gs.swe","hc.swe","lwd.swe")
 pred.dat$bws.wq<- var$bws.wq[var$year == pred.yr] #this years base flow
@@ -178,14 +189,19 @@ pred.dat$lwd.swe<- var$lwd.swe[var$year == pred.yr] # current April 1 SWE
 
 # Big Wood at Stanton Model output
 mod_out<- modOut(bws_mod, pred.dat, hist$bws.wq, hist$bws.vol, mean(hist$cg.swe,  hist$g.swe,  hist$gs.swe,  hist$hc.swe,  hist$lwd.swe, trim=0, na.rm=T), var$bws.vol[var$year == pred.yr-1])
-#these could be formatted differntely to be saved to the gloabl env. within the function
+
 output.vol[2,] <- mod_out[[1]]
 pred.params.vol[2,] <- mod_out[[2]]
 
-#Plot modeled data for visual evaluation 
+#Plot modeled bws data for visual evaluation 
+png(filename = "BWS_modelFit.png",
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+
 fits<-exp(fitted(bws_mod))
-plot(var$bws.vol[10:32]/1000,c(fits)/1000, lwd=2, xlim=c(0,715), ylim=c(0,715), xlab="Observed", ylab="Predicted",main="Big Wood at Stanton April-Sept Streamflow Vol (1000 ac-ft)")
+plot(var$bws.vol[10:32]/1000,c(fits)/1000, lwd=2, xlim=c(0,715), ylim=c(0,715), xlab="Observed", ylab="Predicted",main="Big Wood at Stanton \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
+dev.off()
 
 # --------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
@@ -194,7 +210,7 @@ hist <- var[var$year < pred.yr,] %>% select(sc.vol, sc.wq, ga.swe, sp.swe)
 sc_mod<-lm(sc.vol~sc.wq+ga.swe+sp.swe, data=hist) 
 mod_sum[4,1]<-summary(sc_mod)$adj.r.squared
 
-#April 1 data to use for prediction 
+#April 1 sc data to use for prediction 
 pred.dat<-data.frame(array(NA,c(1,3)))
 names(pred.dat)<-c("sc.wq","ga.swe","sp.swe")
 pred.dat$sc.wq<- var$sc.wq[var$year == pred.yr] #this years base flow
@@ -222,11 +238,16 @@ output.vol[5,8]<-round(lastQ/mean(hist$sc.vol, na.rm=T),3)
 output.vol<-output.vol[-4,]
 
 
-#Plot modeled data for visual evaluation 
+#Plot sc modeled data for visual evaluation 
+png(filename = "SC_modelFit.png",
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+
 fits<-fitted(sc_mod)
-plot(var$sc.vol[1:32]/1000,c(fits)/1000, lwd=2, xlim=c(22,65), ylim=c(22,65), xlab="Observed", ylab="Predicted", main="Silver Creek April-Sept Streamflow Vol (1000 ac-ft)")
+plot(var$sc.vol[1:32]/1000,c(fits)/1000, lwd=2, xlim=c(22,65), ylim=c(22,65), xlab="Observed", ylab="Predicted", main="Silver Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
-# ------------------------------------------------------------------------------ # 
+dev.off()
+# ------------------------------------------------------------------------------  
 #
 # Center of Mass Predictions
 #
@@ -238,17 +259,27 @@ hist <- var[var$year < pred.yr,] %>% select(cc.cm, ccd.swe, t.sr)
 cc_mod.cm<-lm(cc.cm~log(ccd.swe) + t.sr, data=hist) 
 mod_sum[3,2]<-summary(cc_mod.cm)$adj.r.squared 
 
+#Plot sc modeled data for visual evaluation 
+#png(filename = "CC_CMmodelFit.png",
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+
+#fits<-fitted(cc_mod.cm)
+#plot(var$cc.cm[6:32],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Camas Creek Center of Mass")
+#abline(0,1,col="gray50",lty=1)
+#dev.off()
+
 
 #big wood at hailey
 hist <- var[var$year < pred.yr,] %>% select(bwb.cm, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
-#linear model
+#bwb linear model
 bwb_mod.cm <-lm(bwb.cm ~ g.swe+t.cg+ t.g+t.gs+t.hc+t.lw +log(cg.swe)+log(hc.swe), data=hist)
 mod_sum[1,2]<-summary(bwb_mod.cm)$adj.r.squared 
 
 
 #big wood at stanton
 hist <- var[var$year < pred.yr,] %>% select(bws.cm, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
-#linear model
+#bws linear model
 bws_mod.cm <-lm(bws.cm ~ g.swe + t.cg+ t.g +t.lw +log(cg.swe)+log(gs.swe)+log(hc.swe), data=hist)
 mod_sum[2,2]<-summary(bws_mod.cm)$adj.r.squared 
 
@@ -260,3 +291,11 @@ sc_mod.cm<-lm(sc.cm~log(sc.wq)+ga.swe+log(sp.swe), data=hist)
 mod_sum[4,2]<-summary(sc_mod.cm)$adj.r.squared 
 
 mod_sum<- round(mod_sum, 3)
+
+
+#options(knitr.duplicate.label = "allow")
+#rmarkdown::render("/Users/kek25/Documents/GitRepos/WRWC/code/streamflow_model.R")
+
+#ExceedanceProbabilities
+#excProb(x, threshold=0, random=FALSE, template=NULL, templateIdCol=NULL,
+        nuggetInPrediction=TRUE)
