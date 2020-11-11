@@ -77,8 +77,9 @@ hist$log.bbwq<- log(hist$bwb.wq)
 #hist$log.sum<- log(hist$ga.swe+hist$sp.swe)
 
 # Silver Creek regsubsets 
-regsubsets.out<-regsubsets(log(sc.vol[var$year < pred.yr])~., data=hist, nbest=3, nvmax=5)
-# 0.83 sc.wq, sp.swe, g.swe, log cg lowest BIC
+regsubsets.out<-regsubsets(sc.vol[var$year < pred.yr]~., data=hist, nbest=3, nvmax=5)
+# 0.83 sc.wq, sp.swe, g.swe, log cg.swe lowest BIC w log(sc.vol)
+#0.82 sc.wq, sp.swe, log(cg.swe) BIC=-35 compare the two
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
 quartz(title="Adjusted R^2",10,10)
 plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")

@@ -109,7 +109,7 @@ modOut<- function(mod, pred.dat, wq, vol, meanSWE, lastQ){
   return(list(output.vol, pred.params.vol))
 }
 
-# Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection
+# Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection 
 hist <- var[var$year < pred.yr,] %>% select(cc.vol, cc.wq, ccd.swe, sr.swe) 
 # Camas Creek linear model
 cc_mod<-lm(log(cc.vol)~log(cc.wq)+sr.swe+ccd.swe, data=hist) 
@@ -204,18 +204,20 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 
 # --------------------------------------------------
-# Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
-hist <- var[var$year < pred.yr,] %>% select(sc.vol, sc.wq, ga.swe, sp.swe) 
-# Silver Creek linear model -- note no log tranformations here, difference in travel times?
-sc_mod<-lm(sc.vol~sc.wq+ga.swe+sp.swe, data=hist) 
+# Subset Silver Creek Winter flows, Snotel from Swede Peak
+# sc.wq, sp.swe, g.swe, log cg
+hist <- var[var$year < pred.yr,] %>% select(sc.vol, sc.wq, sp.swe, g.swe, cg.swe) 
+# Silver Creek linear model, note mixture of SWE from Big Wood and Little Wood basins
+sc_mod<-lm(sc.vol~sc.wq+sp.swe + g.swe + log(cg.swe), data=hist)  #look at fit w.o g,swe
 mod_sum[4,1]<-summary(sc_mod)$adj.r.squared
 
 #April 1 sc data to use for prediction 
 pred.dat<-data.frame(array(NA,c(1,3)))
 names(pred.dat)<-c("sc.wq","ga.swe","sp.swe")
 pred.dat$sc.wq<- var$sc.wq[var$year == pred.yr] #this years base flow
-pred.dat$ga.swe<- var$ga.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$g.swe<- var$g.swe[var$year == pred.yr] # current April 1 SWE
 pred.dat$sp.swe<- var$sp.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$cg.swe<- var$cg.swe[var$year == pred.yr]
 
 # Silver Creek Model output
 sig<-summary(sc_mod)$sigma
