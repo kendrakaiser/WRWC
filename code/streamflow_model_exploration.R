@@ -66,9 +66,12 @@ hist$log.lwd <- log(hist$lwd.swe)
 regsubsets.out<-regsubsets(log(var$bws.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
 
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
-hist <- var[var$year < pred.yr,] %>% select(sc.vol, sc.wq, ga.swe, sp.swe) 
+hist <- var[var$year < pred.yr,] %>% select(sc.vol, sc.wq, bws.wq, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
 hist$log.sp <- log(hist$sp.swe)
 hist$log.wq <- log(hist$sc.wq)
+hist$log.bswq <- log(hist$bws.wq)
+hist$log.bbwq <- log(hist$bwb.wq)
+
 hist$log.ga<- log(hist$ga.swe)
 hist$log.sum<- log(hist$ga.swe+hist$sp.swe)
 
