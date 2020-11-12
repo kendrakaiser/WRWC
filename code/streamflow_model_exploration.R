@@ -79,7 +79,7 @@ hist$log.bbwq<- log(hist$bwb.wq)
 # Silver Creek regsubsets 
 regsubsets.out<-regsubsets(sc.vol[var$year < pred.yr]~., data=hist, nbest=3, nvmax=5)
 # 0.83 sc.wq, sp.swe, g.swe, log cg.swe lowest BIC w log(sc.vol)
-#0.82 sc.wq, sp.swe, log(cg.swe) BIC=-35 compare the two
+#0.82 sc.wq, sp.swe, log(cg.swe) BIC=-35 in both ... compare the two
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
 quartz(title="Adjusted R^2",10,10)
 plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
@@ -94,13 +94,14 @@ plot(rs$bic, rs$adjr2, xlab="BIC", ylab="adj R2")
 # ------------------------------------------------------------------------------ # 
 
 #camas creek
-hist <- var[var$year < pred.yr,] %>% select(cc.wq, ccd.swe, sr.swe, t.ccd, t.sr) 
+hist <- var[var$year < pred.yr,] %>% select(cc.wq, ccd.swe, sr.swe, t.ccd, t.sr, t.f) 
 hist$log.wq <- log(hist$cc.wq)
 hist$log.ccd <- log(hist$ccd.swe)
 hist$log.sr <- log(hist$sr.swe)
 hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
 #use regsubsets to plot the results
 regsubsets.out<-regsubsets(var$cc.cm[var$year < pred.yr]~., data=hist, nbest=3, nvmax=5)
+#between two best r2 (0.51) the lower BIC includes ccd.swe, sr.swe, t.f
 
 #big wood at hailey
 hist <- var[var$year < pred.yr,] %>% select(bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
@@ -125,7 +126,7 @@ hist$log.lwd <- log(hist$lwd.swe)
 regsubsets.out<-regsubsets(log(var$bws.cm[var$year < pred.yr])~., data=hist, nbest=2, nvmax=8)
 
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
-hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, ga.swe, sp.swe, t.ga, t.sp) 
+hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, ga.swe, sp.swe, t.ga, t.sp, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw, t.p) 
 hist$log.sp <- log(hist$sp.swe)
 hist$log.wq <- log(hist$sc.wq)
 hist$log.ga<- log(hist$ga.swe)
@@ -133,7 +134,7 @@ hist$log.sum<- log(hist$ga.swe+hist$sp.swe)
 
 # Silver Creek regsubsets 
 regsubsets.out<-regsubsets(log(sc.cm[var$year < pred.yr])~., data=hist, nbest=3, nvmax=8)
-
+#BIC is much lower for: cg.swe, hc.swe, lwd.swe, t.cg, t.gs, log(sp.swe), log(sc.wq) (r2=0.72!)
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
 quartz(title="Adjusted R^2",10,10)
 plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")

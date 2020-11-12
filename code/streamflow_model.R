@@ -255,16 +255,18 @@ dev.off()
 #
 # ------------------------------------------------------------------------------ # 
 
-# Subset Camas Creek Winter flows, Snotel & Temperatures from Soldier Ranger Station, camas creek divide 
-hist <- var[var$year < pred.yr,] %>% select(cc.cm, ccd.swe, t.sr) 
+# Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek 
+# divide & temperature from Fairfield agrimet site
+
+hist <- var[var$year < pred.yr,] %>% select(cc.cm, ccd.swe, sr.swe, t.f) 
 # Camas Creek linear model
-cc_mod.cm<-lm(cc.cm~log(ccd.swe) + t.sr, data=hist) 
+cc_mod.cm<-lm(cc.cm~ccd.swe + sr.swe+ t.f, data=hist) 
 mod_sum[3,2]<-summary(cc_mod.cm)$adj.r.squared 
 
 #Plot sc modeled data for visual evaluation 
 #png(filename = "CC_CMmodelFit.png",
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    #width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    #bg = "white", res = 600, type ="quartz") 
 
 #fits<-fitted(cc_mod.cm)
 #plot(var$cc.cm[6:32],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Camas Creek Center of Mass")
@@ -286,10 +288,11 @@ bws_mod.cm <-lm(bws.cm ~ g.swe + t.cg+ t.g +t.lw +log(cg.swe)+log(gs.swe)+log(hc
 mod_sum[2,2]<-summary(bws_mod.cm)$adj.r.squared 
 
 
-# Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
-hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, ga.swe, sp.swe, t.sp) 
+# Subset Silver Creek Winter flows, Snotel from Chocolate Gulch, Hyndaman, Lost Wood Div. & Swede Peak
+hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, cg.swe, hc.swe, lwd.swe, t.cg, t.gs, sp.swe) 
 # Silver Creek linear model
-sc_mod.cm<-lm(sc.cm~log(sc.wq)+ga.swe+log(sp.swe), data=hist) 
+# note here that this includes swe from the big wood and the little wood 
+sc_mod.cm<-lm(log(sc.cm)~ cg.swe+ hc.swe+ lwd.swe+ t.cg+ t.gs+ log(sp.swe)+ log(sc.wq), data=hist) 
 mod_sum[4,2]<-summary(sc_mod.cm)$adj.r.squared 
 
 mod_sum<- round(mod_sum, 3)
@@ -299,5 +302,4 @@ mod_sum<- round(mod_sum, 3)
 #rmarkdown::render("/Users/kek25/Documents/GitRepos/WRWC/code/streamflow_model.R")
 
 #ExceedanceProbabilities
-#excProb(x, threshold=0, random=FALSE, template=NULL, templateIdCol=NULL,
-        nuggetInPrediction=TRUE)
+#excProb(x, threshold=0, random=FALSE, template=NULL, templateIdCol=NULL,nuggetInPrediction=TRUE)
