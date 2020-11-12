@@ -43,10 +43,11 @@ colnames(wy)<-c("Date","day")
 # volumes
 output.vol<-array(NA,c(length(stream.id),8))
 rownames(output.vol)<-stream.id
+output.vol<-output.vol[-4,]
 colnames(output.vol)<-c("Predictors Vol % of mean","Predictors swe % of mean", "Pred. Vol (cfs)", "Pred. Vol % of mean", "90% exc. cfs", "90% exc. % or mean", "Prev Year Vol (cfs)", "Prev Year % of mean Volume")
 
-pred.params.vol<-array(NA,c(5,2))
-rownames(pred.params.vol)<-c("bwb.vol","bws.vol","cc.vol","bwr.vol","sc.vol")
+pred.params.vol<-array(NA,c(4,2))
+rownames(pred.params.vol)<-c("bwb.vol","bws.vol","cc.vol","sc.vol")
 colnames(pred.params.vol)<-c("log.vol","sigma")
 
 # center of mass
@@ -54,8 +55,8 @@ output.cm<-data.frame(array(NA,c(5,5)))
 rownames(output.cm)<-stream.id
 colnames(output.cm)<-c("temp-mean","% of mean","cm","cm-mean","cm.date")
 
-pred.params.cm<-array(NA,c(5,2))
-rownames(pred.params.cm)<-c("bwb.cm","bws.cm","cc.cm","bwr.cm","sc.cm")
+pred.params.cm<-array(NA,c(4,2))
+rownames(pred.params.cm)<-c("bwb.cm","bws.cm","cc.cm","sc.cm")
 colnames(pred.params.cm)<-c("cm","sigma")
 
 swe.new<-data.frame(t(c(rep(NA,10))))
@@ -208,36 +209,22 @@ dev.off()
 # sc.wq, sp.swe, g.swe, log cg
 hist <- var[var$year < pred.yr,] %>% select(sc.vol, sc.wq, sp.swe, g.swe, cg.swe) 
 # Silver Creek linear model, note mixture of SWE from Big Wood and Little Wood basins
-sc_mod<-lm(sc.vol~sc.wq+sp.swe + g.swe + log(cg.swe), data=hist)  #look at fit w.o g,swe
+sc_mod<-lm(log(sc.vol)~sc.wq+sp.swe + g.swe + log(cg.swe), data=hist)  #look at fit w.o g,swe
 mod_sum[4,1]<-summary(sc_mod)$adj.r.squared
 
 #April 1 sc data to use for prediction 
-pred.dat<-data.frame(array(NA,c(1,3)))
-names(pred.dat)<-c("sc.wq","ga.swe","sp.swe")
+pred.dat<-data.frame(array(NA,c(1,4)))
+names(pred.dat)<-c("sc.wq","sp.swe","g.swe","cg.swe")
 pred.dat$sc.wq<- var$sc.wq[var$year == pred.yr] #this years base flow
-pred.dat$g.swe<- var$g.swe[var$year == pred.yr] # current April 1 SWE
-pred.dat$sp.swe<- var$sp.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$sp.swe<- var$g.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$g.swe<- var$sp.swe[var$year == pred.yr] # current April 1 SWE
 pred.dat$cg.swe<- var$cg.swe[var$year == pred.yr]
 
 # Silver Creek Model output
-sig<-summary(sc_mod)$sigma
-pred.params.vol[1,2]<-sig
-#predict this years total volume at 95 % confidence
-predictions<-predict(sc_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-pred.params.vol[1,1]<-mean(predictions$fit, na.rm=T)
-#This years percent of mean winter flow
-output.vol[5,1]<-round(pred.dat[1,1]/mean(hist$sc.wq, na.rm=T),3) 
-output.vol[5,2]<-round(sum(pred.dat[1,2:3])/mean(hist$ga.swe+hist$sp.swe),3) 
-output.vol[5,3]<-round(predictions$fit[1]+sig^2/2/(1.98*183),0) 
-output.vol[5,4]<-round(predictions$fit[1]+sig^2/2/mean(hist$sc.vol, na.rm=T),3) 
-predictions<-predict(sc_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.8)
-output.vol[5,5]<-round(predictions$fit[2]/(1.98*183),0) 
-output.vol[5,6]<-round(predictions$fit[2]/mean(hist$sc.vol, na.rm=T),3) 
-lastQ<- var$sc.vol[var$year == pred.yr-1]
-output.vol[5,7]<-round(lastQ/(1.98*183),0) # last years volume in cfs
-output.vol[5,8]<-round(lastQ/mean(hist$sc.vol, na.rm=T),3) 
+mod_out<- modOut(sc_mod, pred.dat, hist$sc.wq, hist$sc.vol, mean(hist$sp.swe,  hist$g.swe,  hist$cg.swe, trim=0, na.rm=T), var$sc.vol[var$year == pred.yr-1])
 
-output.vol<-output.vol[-4,]
+output.vol[4,] <- mod_out[[1]]
+pred.params.vol[4,] <- mod_out[[2]]
 
 
 #Plot sc modeled data for visual evaluation 
@@ -296,6 +283,16 @@ sc_mod.cm<-lm(log(sc.cm)~ cg.swe+ hc.swe+ lwd.swe+ t.cg+ t.gs+ log(sp.swe)+ log(
 mod_sum[4,2]<-summary(sc_mod.cm)$adj.r.squared 
 
 mod_sum<- round(mod_sum, 3)
+
+
+### Save model outputs for simulation runs
+
+write.csv(output.vol,"pred.output.vol.csv",row.names=T)
+write.csv(pred.params.vol,"pred.params.vol.csv",row.names=T)
+
+
+write.csv(output.cm,"pred.output.cm.csv",row.names=T)
+write.csv(pred.params.cm,"pred.params.cm.csv",row.names=T)
 
 
 #options(knitr.duplicate.label = "allow")
