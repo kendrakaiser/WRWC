@@ -31,9 +31,9 @@ var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
 temp.ran = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 # ------------------------------------------------------------------------------  
-# Create sequence of non-leap year dates
-wy<-seq(as.Date("2018-10-01"),as.Date("2019-09-30"),"day") #update to automate based on new.yr
-wy<-data.frame(wy,1:365)
+# Create sequence of non-leap year dates, changed to start at the beinning of year in accordance with my calculation of cm, consider changin to day of wy
+wy<-seq(as.Date("2019-01-01"),as.Date("2019-09-30"),"day") #update to automate based on new.yr
+wy<-data.frame(wy,1:273)
 colnames(wy)<-c("Date","day")
 
 # ------------------------------------------------------------------------------  
@@ -53,6 +53,7 @@ colnames(pred.params.vol)<-c("log.vol","sigma")
 # center of mass
 output.cm<-data.frame(array(NA,c(5,5)))
 rownames(output.cm)<-stream.id
+output.cm<-output.cm[-4,]
 colnames(output.cm)<-c("temp-mean","% of mean","cm","cm-mean","cm.date")
 
 pred.params.cm<-array(NA,c(4,2))
@@ -241,14 +242,51 @@ dev.off()
 # Center of Mass Predictions
 #
 # ------------------------------------------------------------------------------ # 
+modOutcm<- function(mod.cm, pred.dat, pred.dat.temps, hist.temps, hist.cm){
+  '
+  mod.cm:           input model
+  pred.dat:         data.frame of prediction variables
+  pred.data.temps:  concatenated vectors of temperature data used in predictions
+  hist.temps:       concatenated vectors of historic temperature data
+  hist.cm:          historic cm
+  '
+  pred.params.cm<-array(NA,c(1,2))
+  output.cm<-array(NA,c(1,5))
+  
+  predictions<-predict(mod.cm,newdata=pred.dat)
+  
+  pred.params.cm[1,1]<-mean(predictions)
+  pred.params.cm[1,2]<-summary(mod.cm)$sigma
+  #sqrt(sig^2+var(predictions)) - this was in RVK code, but only one prediction, so not sure how to take the variance of it?
+  
+  output.cm[1,1]<-round(mean(pred.dat.temps)-mean(hist.temps,na.rm=T),3)
+  output.cm[1,2]<-round(sum(pred.dat.temps)/mean(hist.temps, na.rm =T),3) 
+  output.cm[1,3]<-round(mean(predictions),0) 
+  output.cm[1,4]<-round(mean(predictions)-mean(hist.cm,na.rm=T),0) 
+  output.cm[1,5]<-format(wy$Date[wy$day==round(mean(predictions),0)],"%b-%d")
+  
+  return(list(output.cm, pred.params.cm))
+}
 
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek 
 # divide & temperature from Fairfield agrimet site
-
 hist <- var[var$year < pred.yr,] %>% select(cc.cm, ccd.swe, sr.swe, t.f) 
 # Camas Creek linear model
 cc_mod.cm<-lm(cc.cm~ccd.swe + sr.swe+ t.f, data=hist) 
 mod_sum[3,2]<-summary(cc_mod.cm)$adj.r.squared 
+
+#April 1 cc data for prediction 
+pred.dat<-data.frame(array(NA,c(1,3)))
+names(pred.dat)<-c("ccd.swe","sr.swe","t.f")
+pred.dat$ccd.swe<- var$ccd.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$sr.swe<- var$sr.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$t.f<- var$t.f[var$year == pred.yr] 
+
+# Camas Creek Model output
+mod_out<- modOutcm(cc_mod.cm, pred.dat, pred.dat$t.f, hist$t.f, hist$cc.cm)
+
+output.cm[3,] <- mod_out[[1]]
+pred.params.cm[3,] <- mod_out[[2]]
 
 #Plot sc modeled data for visual evaluation 
 #png(filename = "CC_CMmodelFit.png",
@@ -262,35 +300,84 @@ mod_sum[3,2]<-summary(cc_mod.cm)$adj.r.squared
 
 
 #big wood at hailey
-hist <- var[var$year < pred.yr,] %>% select(bwb.cm, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
+hist <- var[var$year < pred.yr,] %>% select(bwb.cm, cg.swe, g.swe, hc.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
 #bwb linear model
 bwb_mod.cm <-lm(bwb.cm ~ g.swe+t.cg+ t.g+t.gs+t.hc+t.lw +log(cg.swe)+log(hc.swe), data=hist)
 mod_sum[1,2]<-summary(bwb_mod.cm)$adj.r.squared 
 
+#April 1 bwh data for prediction 
+pred.dat<-data.frame(array(NA,c(1,8)))
+names(pred.dat)<-c("g.swe", "cg.swe","hc.swe", "t.cg", "t.g","t.gs","t.hc","t.lw")
+pred.dat$g.swe<- var$g.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$cg.swe<- var$cg.swe[var$year == pred.yr]
+pred.dat$hc.swe<- var$hc.swe[var$year == pred.yr]
+pred.dat$t.cg<- var$t.cg[var$year == pred.yr] 
+pred.dat$t.g<- var$t.g[var$year == pred.yr] 
+pred.dat$t.gs<- var$t.gs[var$year == pred.yr] 
+pred.dat$t.hc<- var$t.hc[var$year == pred.yr] 
+pred.dat$t.lw<- var$t.lw[var$year == pred.yr] 
 
-#big wood at stanton
-hist <- var[var$year < pred.yr,] %>% select(bws.cm, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
-#bws linear model
+# Big Wood Hailey Model output
+mod_out<- modOutcm(bwb_mod.cm, pred.dat, c(pred.dat$t.cg,pred.dat$t.g,pred.dat$t.gs,pred.dat$t.hc,pred.dat$t.lw), c(hist$t.cg,hist$t.g,hist$t.gs,hist$t.hc,hist$t.lw), hist$bwb.cm)
+
+output.cm[1,] <- mod_out[[1]]
+pred.params.cm[1,] <- mod_out[[2]]
+
+# --------------------
+# Big wood at stanton
+# 
+hist <- var[var$year < pred.yr,] %>% select(bws.cm, cg.swe, g.swe, gs.swe, hc.swe, t.cg, t.g, t.lw) 
+# BWS linear model
 bws_mod.cm <-lm(bws.cm ~ g.swe + t.cg+ t.g +t.lw +log(cg.swe)+log(gs.swe)+log(hc.swe), data=hist)
 mod_sum[2,2]<-summary(bws_mod.cm)$adj.r.squared 
 
+# April 1 BWS data for prediction 
+pred.dat<-data.frame(array(NA,c(1,11)))
+names(pred.dat)<-c("g.swe", "cg.swe","hc.swe","gs.swe", "t.cg", "t.g","t.lw")
+pred.dat$g.swe<- var$g.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$cg.swe<- var$cg.swe[var$year == pred.yr]
+pred.dat$hc.swe<- var$hc.swe[var$year == pred.yr]
+pred.dat$gs.swe<- var$gs.swe[var$year == pred.yr]
+pred.dat$t.cg<- var$t.cg[var$year == pred.yr] 
+pred.dat$t.g<- var$t.g[var$year == pred.yr] 
+pred.dat$t.lw<- var$t.lw[var$year == pred.yr] 
 
+# BWS Model output
+mod_out<- modOutcm(bws_mod.cm, pred.dat, c(pred.dat$t.cg,pred.dat$t.g,pred.dat$t.lw), c(hist$t.cg,hist$t.g,hist$t.lw), hist$bws.cm)
+
+output.cm[2,] <- mod_out[[1]]
+pred.params.cm[2,] <- mod_out[[2]]
+
+# --------------------
 # Subset Silver Creek Winter flows, Snotel from Chocolate Gulch, Hyndaman, Lost Wood Div. & Swede Peak
+#
 hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, cg.swe, hc.swe, lwd.swe, t.cg, t.gs, sp.swe) 
 # Silver Creek linear model
 # note here that this includes swe from the big wood and the little wood 
-sc_mod.cm<-lm(log(sc.cm)~ cg.swe+ hc.swe+ lwd.swe+ t.cg+ t.gs+ log(sp.swe)+ log(sc.wq), data=hist) 
+sc_mod.cm<-lm(sc.cm~ cg.swe+ hc.swe+ lwd.swe+t.cg+t.gs+log(sp.swe)+log(sc.wq), data=hist) 
 mod_sum[4,2]<-summary(sc_mod.cm)$adj.r.squared 
-
 mod_sum<- round(mod_sum, 3)
+# April 1 SC data for prediction 
+pred.dat<-data.frame(array(NA,c(1,7)))
+names(pred.dat)<-c("cg.swe", "hc.swe","lwd.swe","sp.swe", "t.cg", "t.gs","sc.wq")
+pred.dat$cg.swe<- var$cg.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$hc.swe<- var$hc.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$lwd.swe<- var$lwd.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$sp.swe<- var$sp.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat$t.cg<- var$t.cg[var$year == pred.yr] 
+pred.dat$t.gs<- var$t.gs[var$year == pred.yr] 
+pred.dat$sc.wq<- var$sc.wq[var$year == pred.yr] 
 
+# SC Model output
+mod_out<- modOutcm(sc_mod.cm, pred.dat, c(pred.dat$t.cg,pred.dat$t.gs), c(hist$t.cg,hist$t.gs), hist$sc.cm)
+
+output.cm[4,] <- mod_out[[1]]
+pred.params.cm[4,] <- mod_out[[2]]
 
 ### Save model outputs for simulation runs
 
 write.csv(output.vol,"pred.output.vol.csv",row.names=T)
 write.csv(pred.params.vol,"pred.params.vol.csv",row.names=T)
-
-
 write.csv(output.cm,"pred.output.cm.csv",row.names=T)
 write.csv(pred.params.cm,"pred.params.cm.csv",row.names=T)
 
