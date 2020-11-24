@@ -39,7 +39,7 @@ streamflow_data$Date <- as.Date(streamflow_data$Date, format = "%Y-%m-%d")
 streamflow_data$mo <- month(streamflow_data$Date)
 streamflow_data$wy <- as.numeric(as.character(water_year(streamflow_data$Date, origin='usgs')))
 streamflow_data$day <- day(streamflow_data$Date)
-# Cleanup Streamdlow dataframe and join relevant site information
+# Cleanup Streamdlow data frame and join relevant site information
 streamflow_data <- streamflow_data %>% select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
 
 #Download reservoir data and site information
@@ -149,13 +149,13 @@ write.csv(snotel_data_out, file.path(cd,'snotel_data.csv'))
 write.csv(snotel_site_info, file.path(cd,'snotel_sites.csv'))
 
 # merge april 1 swe and streamflow metrics
-allApril1<- april1swe %>% select(-X) %>% inner_join(metrics, by ="year") 
+allApril1<- april1swe %>% inner_join(metrics, by ="year") 
 write.csv(allApril1, file.path(cd,'all_April1.csv'))
 
 # Download NRCS ET Agrimet data ----
 # OB = Air temperature
 # PC = precipitation, cumulative (units?)
-# SI = hourly soloar radiation (units?)
+# SI = hourly solar radiation (units?)
 # SQ = solar radiation, cumulative ??
 # additional: soil temp, humidity, vapor pressure
 
@@ -179,6 +179,7 @@ fafi$mo <- month(fafi$date_time)
 fafi$y <- year(fafi$date_time)
 #this is not working
 #fafi$wy <- water_year(fafi$date_time, origin='usgs')
+
 # update format of values
 for(i in 2:4) {
   fafi[, i]<- as.numeric(as.character(fafi[, i]))
@@ -192,7 +193,7 @@ colnames(fafiT) <- c("date_time","t", "site_name", 'month', 'y')
 
 # Download Picabo Data --------------------------------------
 # start: 1982-06-01; site number: 7040; 
-# Has SWE 1993-2002 and 2005-2017 - but can't be used predictively since it is no longer available
+# Has SWE 1993-2002 and 2005-2017 - but can't be used predicatively since it is no longer available
 
 # create increments to download data
 tenYearDates_p=c(as.character(seq.Date(from=as.Date("1982-06-01"), to=as.Date(end), by="10 years")), end)
@@ -220,13 +221,10 @@ piciT[, 3]<-'picabo'
 piciT<- cbind(piciT, pici[,4:5])
 colnames(piciT)<- c("date_time","t", "site_name", 'month', 'y')
 
-# Download Richmond Data - can't do this through AgriMet because Idaho Power Data ----
+# Download Richmond Data - can't do this through AgriMet because it's Idaho Power Data
 # start 3/27/2014 - 01-2020 daily temp; site number 7673
+# ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", DayEnd="2020-02-01", pCodes=c("OB", "PC"))
 
-ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", DayEnd="2020-02-01", pCodes=c("OB", "PC"))
-
-
-# Merge AgriMet Data
 
 # Merge & save AgriMet Data ---------------------------------
 agri_metT <- rbind(piciT, fafiT)
