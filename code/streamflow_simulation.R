@@ -42,28 +42,49 @@ rownames(cc.vol.s)<-rownames(cc.flow.s)<-rownames(bwb.vol.s)<-rownames(bwb.flow.
 # ------------------------------------------------------------------------------
 # Simulations
 #
+sim.flow <- function(year, nat.wy, vol){
+  "
+  year: selected cm.year from bootstrap sample
+  nat.wy: bootstraped set of predictions for natural flow (or regulated flow depending on location)
+  vol: selected flow from bootstrap sample
+
+  "
+  pred <- nat.wy[analogWY]*vol/sum(nat.wy[analogWY])*1.98
+  return (pred)
+}
 
 for(k in 1:ns){ 
-  # First calculate natural flow supply at the four gages
+  # Calculate natural flow supply at the four gages
   year<-cm.year[k,1]
   vol<-volumes[k,] #flow sample
+
+  bwb.nat.s[,k]<-sim.flow(year, bwb.nat.wy, vol$bwb)
+  bws.nat.s[,k]<-sim.flow(year, bws.nat.wy, vol$bws)
+  sc.nat.s[,k]<-sim.flow(year, sc.nat.wy, vol$sc)
+  cc.nat.s[,k]<-sim.flow(year, cc.nat.wy, vol$cc)
   
-  bwb.nat.s[,k]<-bwb.nat.wy[analog wy]* vol$bwb /sum(bwb.nat.wy[analog wy])*1.98
-  bws.nat.s[,k]<-bws.nat.wy[analog wy]* vol$bws /sum(bws.nat.wy[analog wy])*1.98
-  sc.nat.s[,k]<-sc.nat.wy[analog wy]* vol$sc /sum(sc.nat.wy[analog wy])*1.98
-  cc.nat.s[,k]<-cc.nat.wy[analog wy]* vol$cc /sum(cc.nat.wy[analog wy])*1.98
-   
-  bwb.vol.s[,k]<-bwb.vol.wy[analog wy]* vol$bwb /sum(bwb.vol.wy[analog wy])*1.98
-  bws.vol.s[,k]<-bws.vol.wy[analog wy]* vol$bws /sum(bws.vol.wy[analog wy])*1.98
-  sc.vol.s[,k]<-sc.vol.wy[analog wy]* vol$sc /sum(sc.vol.wy[analog wy])*1.98
-  cc.vol.s[,k]<-cc.vol.wy[analog wy]* vol$cc /sum(cc.vol.wy[analog wy])*1.98
-  
+  # Calculate diversions at the four gages
   yearDiv<-div.year[k,1]
   
-  bwb.div.s[,k] <- bwb.div.iy[analogwy]
-  bws.div.s[,k]<- bws.div.iy[analogwy]
-  sc.div.s[,k]<- sc.div.iy[analogwy]
+  bwb.div.s[,k] <- bwb.div.iy[yearDiv]
+  bws.div.s[,k]<- bws.div.iy[yearDiv]
+  sc.div.s[,k]<- sc.div.iy[yearDiv]
 }
+
+# ------------------------------------------------------------------------------
+# Calculate prediction Intervals
+numpreds<- 6 # nat+reg + div *2
+pi<-data.frame(array(NA,c(183,numpreds)))
+meanQ<-data.frame(array(NA,c(183,4)))
+
+pred.int<-(location){
+  lo<-apply(location,1,quantile,0.05)
+  hi<-apply(location,1,quantile,0.95)
+  meanQ<-apply(location,1,mean)
+  return(lo, hi, meanQ)
+}
+
+pi[,"cc"] <-pred.int(cc.nat.s)
 
 # ------------------------------------------------------------------------------
 # Save Output
