@@ -6,9 +6,13 @@
 # characteristics and associated water rights shutoff dates
 # ----------------------------------------------------------------------------- # 
 
-# define input parameters
-# cd
-# endDate
+# define input parameters in global environment
+cd <<- '~/Desktop/Data/WRWC'
+pred.yr <<- 2020
+
+source(file.path("code", "data_scraping.R"))
+source(file.path("code", "temperature_model.R"))
+source(file.path("code", "streamflow_model.R"))
 
 #run data scraping
 #run temperature model
