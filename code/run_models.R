@@ -13,8 +13,6 @@ pred.yr <<- 2020
 source(file.path("code", "data_scraping.R"))
 source(file.path("code", "temperature_model.R"))
 source(file.path("code", "streamflow_model.R"))
+source(file.path("code", "streamflow_simulation.R"))
 
-#run data scraping
-#run temperature model
-#run streamflow_model
 #run water_rights_model
