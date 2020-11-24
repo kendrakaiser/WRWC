@@ -10,14 +10,11 @@
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
 #+ setup, echo= FALSE
-library(MASS)
-library(plotrix)
-library(mvtnorm)
-library(tidyverse)
+source(file.path("code", "packages.R"))
 
 rm(list=ls())
-cd = '~/Desktop/Data/WRWC'
 
+cd = '~/Desktop/Data/WRWC'
 pred.yr <- 2020
 
 # Import Data ------------------------------------------------------------------  

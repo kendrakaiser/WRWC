@@ -4,19 +4,7 @@
 # June, 19, 2020
 # ------------------------------------------------------------------------------
 
-library(dataRetrieval)
-library(tidyverse)
-library(snotelr)
-library(XML)
-library(httr)
-library(dplyr)
-library(devtools)
-#devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
-library(RNRCS)
-library(plyr)
-library(readr)
-library(lubridate)
-library(lfstat)
+source(file.path("code", "packages.R"))
 
 # set data directory for saving data
 cd ='~/Desktop/Data/WRWC'
