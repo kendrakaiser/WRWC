@@ -1,4 +1,4 @@
-# ----------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------- #
 # Predictive Streamflow Model for the Wood River Water Collaborative
 # Kendra Kaiser
 # October 27th, 2020
@@ -378,6 +378,63 @@ write.csv(pred.params.vol,"pred.params.vol.csv",row.names=T)
 write.csv(output.cm,"pred.output.cm.csv",row.names=T)
 write.csv(pred.params.cm,"pred.params.cm.csv",row.names=T)
 
+# --------------------
+# Apr-Sept diversion & reach gain predictions
+#
+
+
+
+# --------------------
+# Draw random water years
+#
+
+# check correlations between flow conditions across the basins
+flow.data = var[var$year >= 1997,]
+flow.data= flow.data %>% select(bwb.vol, bwb.cm, bws.vol, bws.cm, cc.vol, cc.cm, sc.vol, sc.cm) 
+# make this an output table?
+cor.mat1< - round(cor(flow.data,use="pairwise.complete"),2)  
+
+# check correlations between natural flow and diversions
+
+#
+pred.pars<-rbind(pred.params.vol,pred.params.cm)
+cor.mat<-cor(cbind(log(flow.data[c(1,3,5,7)]),flow.data[c(2,4,6,8)]),use="pairwise.complete")
+
+outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2]))
+cov.mat<-cor.mat*outer.prod
+
+# output for simulations?
+write.csv(cov.mat,"cov.mat.csv",row.names=T)
+write.csv(pred.pars,"pred.pars.csv",row.names=T)
+
+
+# Draw flow volumes using mvnorm (ac-ft)
+flow.sample<-mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4])
+colnames(flow.sample)<-c("bwb","bws","cc","sc")
+
+write.csv(exp(flow.sample),"flow.sample.csv",row.names=F)
+
+# Draw center of mass timing
+cm.data = var[var$year >= 1997,]
+cm.data = cm.data %>% select(year, bwb.cm, bws.cm,cc.cm, sc.cm) 
+cm.data$prob<-NA
+
+for(i in 1:dim(cm.data)[1]){
+  vec<-cm.data[i,2:5]
+  cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-0.5,
+                          upper=as.numeric(vec)+0.5,mean=pred.params.cm[,1],sigma=cov.mat[5:8,5:8])[1]
+}
+
+
+cm.data$prob<-cm.data$prob/sum(cm.data$prob)
+
+CMyear.sample<-sample(cm.data$year,5000,replace=TRUE,prob=cm.data$prob)
+
+hist(CMyear.sample,breaks=seq(1997,2020,1))
+
+summary(as.factor(CMyear.sample))/5000
+
+write.csv(CMyear.sample,"CMyear.sample.csv",row.names=F)
 
 #options(knitr.duplicate.label = "allow")
 #rmarkdown::render("/Users/kek25/Documents/GitRepos/WRWC/code/streamflow_model.R")
