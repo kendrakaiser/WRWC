@@ -373,10 +373,10 @@ pred.params.cm[4,] <- mod_out[[2]]
 
 ### Save model outputs for simulation runs
 
-write.csv(output.vol,"pred.output.vol.csv",row.names=T)
-write.csv(pred.params.vol,"pred.params.vol.csv",row.names=T)
-write.csv(output.cm,"pred.output.cm.csv",row.names=T)
-write.csv(pred.params.cm,"pred.params.cm.csv",row.names=T)
+write.csv(output.vol, file.path(cd,"pred.output.vol.csv"),row.names=T)
+write.csv(pred.params.vol, file.path(cd,"pred.params.vol.csv"),row.names=T)
+write.csv(output.cm, file.path(cd,"pred.output.cm.csv"),row.names=T)
+write.csv(pred.params.cm, file.path(cd,"pred.params.cm.csv"),row.names=T)
 
 # --------------------
 # Apr-Sept diversion & reach gain predictions
@@ -404,15 +404,15 @@ outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2]))
 cov.mat<-cor.mat*outer.prod
 
 # output for simulations?
-write.csv(cov.mat,"cov.mat.csv",row.names=T)
-write.csv(pred.pars,"pred.pars.csv",row.names=T)
+write.csv(cov.mat, file.path(cd,"cov.mat.csv"),row.names=T)
+write.csv(pred.pars, file.path(cd,"pred.pars.csv"),row.names=T)
 
 
 # Draw flow volumes using mvnorm (ac-ft)
 flow.sample<-mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4])
 colnames(flow.sample)<-c("bwb","bws","cc","sc")
 
-write.csv(exp(flow.sample),"flow.sample.csv",row.names=F)
+write.csv(exp(flow.sample), file.path(cd,"flow.sample.csv"),row.names=F)
 
 # Draw center of mass timing
 cm.data = var[var$year >= 1997,]
@@ -434,7 +434,7 @@ hist(CMyear.sample,breaks=seq(1997,2020,1))
 
 summary(as.factor(CMyear.sample))/5000
 
-write.csv(CMyear.sample,"CMyear.sample.csv",row.names=F)
+write.csv(CMyear.sample, file.path(cd,"CMyear.sample.csv"),row.names=F)
 
 #options(knitr.duplicate.label = "allow")
 #rmarkdown::render("/Users/kek25/Documents/GitRepos/WRWC/code/streamflow_model.R")
