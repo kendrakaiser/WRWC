@@ -394,25 +394,30 @@ flow.data= flow.data %>% select(bwb.vol, bwb.cm, bws.vol, bws.cm, cc.vol, cc.cm,
 # make this an output table?
 cor.mat1< - round(cor(flow.data,use="pairwise.complete"),2)  
 
-# check correlations between natural flow and diversions
-
-#
+# check correlations between total volume and center of mass
 pred.pars<-rbind(pred.params.vol,pred.params.cm)
 cor.mat<-cor(cbind(log(flow.data[c(1,3,5,7)]),flow.data[c(2,4,6,8)]),use="pairwise.complete")
 
 outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2]))
 cov.mat<-cor.mat*outer.prod
 
-# output for simulations?
+# output from correlations, might not need to save?
 write.csv(cov.mat, file.path(cd,"cov.mat.csv"),row.names=T)
 write.csv(pred.pars, file.path(cd,"pred.pars.csv"),row.names=T)
 
 
 # Draw flow volumes using mvnorm (ac-ft)
-flow.sample<-mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4])
-colnames(flow.sample)<-c("bwb","bws","cc","sc")
+vol.sample<-mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4])
+colnames(vol.sample)<-c("bwb","bws","cc","sc")
 
-write.csv(exp(flow.sample), file.path(cd,"flow.sample.csv"),row.names=F)
+# Plot the pdfs of total annual flow from each model?
+#vol.bwb <- dnorm(exp(vol.sample[,1]))
+#h<-hist(exp(vol.sample[,1]))
+#h$counts = h$counts/sum(h$counts)
+#plot(h,xlab="Volume",ylab="Probability")
+#plot(density(exp(vol.sample[,1])))
+
+write.csv(exp(vol.sample), file.path(cd,"vol.sample.csv"),row.names=F)
 
 # Draw center of mass timing
 cm.data = var[var$year >= 1997,]
@@ -429,10 +434,10 @@ for(i in 1:dim(cm.data)[1]){
 cm.data$prob<-cm.data$prob/sum(cm.data$prob)
 
 CMyear.sample<-sample(cm.data$year,5000,replace=TRUE,prob=cm.data$prob)
-
-hist(CMyear.sample,breaks=seq(1997,2020,1))
-
+# Of the 5000 reploicates show the percentage that each year represents
 summary(as.factor(CMyear.sample))/5000
+
+
 
 write.csv(CMyear.sample, file.path(cd,"CMyear.sample.csv"),row.names=F)
 
