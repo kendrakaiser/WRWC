@@ -10,7 +10,7 @@
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
 #+ setup, echo= FALSE
-source(file.path("code", "packages.R"))
+source(file.path("~/github/WRWC/code", "packages.R"))
 
 rm(list=ls())
 
@@ -23,6 +23,7 @@ usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
 swe_q = read.csv(file.path(cd,'all_April1.csv'))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
 temps = read.csv(file.path(cd, 'ajTemps.csv'))
+#div = read.csv(file.path(cd, 'bwb_div.csv'))
 var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
 
 temp.ran = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
@@ -92,7 +93,7 @@ modOut<- function(mod, pred.dat, wq, vol, meanSWE, lastQ){
   output.vol[1,1]<-round(pred.dat[1,1]/mean(wq, na.rm=T),3) 
   #percent of mean SWE
   output.vol[1,2]<-round(sum(pred.dat[1,2:3])/meanSWE,3) 
-  # back-transformation of log-transformed data to expected value in original units, with lognormal   residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
+  # back-transformation of log-transformed data to expected value in original units, with lognormal residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
   output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/(1.98*183),0) 
   #Division by long-term mean to generate % of average volume, with lognormal residuals
   output.vol[1,4]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=T),3) 
@@ -109,7 +110,7 @@ modOut<- function(mod, pred.dat, wq, vol, meanSWE, lastQ){
 }
 
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection 
-hist <- var[var$year < pred.yr,] %>% select(cc.vol, cc.wq, ccd.swe, sr.swe) 
+hist <- var[var$year < pred.yr,] %>% select(cc.vol, cc.wq, ccd.swe, sr.swe) #vol is in ac-ft
 # Camas Creek linear model
 cc_mod<-lm(log(cc.vol)~log(cc.wq)+sr.swe+ccd.swe, data=hist) 
 mod_sum[3,1]<-summary(cc_mod)$adj.r.squared
@@ -385,14 +386,16 @@ write.csv(pred.params.cm, file.path(cd,"pred.params.cm.csv"),row.names=T)
 
 
 # --------------------
-# Draw random water years
-#
+# Draw a sample of volumes and water years with similar timing
+# These samples are drawn from multivariate normal distributions which are 
+# created from the correlation between total volume and center of mass (timing)
+# and the predicted volumes from each volume model
 
 # check correlations between flow conditions across the basins
 flow.data = var[var$year >= 1997,]
 flow.data= flow.data %>% select(bwb.vol, bwb.cm, bws.vol, bws.cm, cc.vol, cc.cm, sc.vol, sc.cm) 
 # make this an output table?
-cor.mat1< - round(cor(flow.data,use="pairwise.complete"),2)  
+cor.mat1<- round(cor(flow.data,use="pairwise.complete"),2)  
 
 # check correlations between total volume and center of mass
 pred.pars<-rbind(pred.params.vol,pred.params.cm)
@@ -406,7 +409,7 @@ write.csv(cov.mat, file.path(cd,"cov.mat.csv"),row.names=T)
 write.csv(pred.pars, file.path(cd,"pred.pars.csv"),row.names=T)
 
 
-# Draw flow volumes using mvnorm (ac-ft)
+# Draw flow volumes using multivariate normal distribution (ac-ft)
 vol.sample<-mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4])
 colnames(vol.sample)<-c("bwb","bws","cc","sc")
 
@@ -419,7 +422,7 @@ colnames(vol.sample)<-c("bwb","bws","cc","sc")
 
 write.csv(exp(vol.sample), file.path(cd,"vol.sample.csv"),row.names=F)
 
-# Draw center of mass timing
+# Draw sample of years with similar center of mass (timing)
 cm.data = var[var$year >= 1997,]
 cm.data = cm.data %>% select(year, bwb.cm, bws.cm,cc.cm, sc.cm) 
 cm.data$prob<-NA
@@ -430,14 +433,13 @@ for(i in 1:dim(cm.data)[1]){
                           upper=as.numeric(vec)+0.5,mean=pred.params.cm[,1],sigma=cov.mat[5:8,5:8])[1]
 }
 
-
 cm.data$prob<-cm.data$prob/sum(cm.data$prob)
 
 CMyear.sample<-sample(cm.data$year,5000,replace=TRUE,prob=cm.data$prob)
-# Of the 5000 reploicates show the percentage that each year represents
+
+# Of the 5000 replicates show the percentage that each year represents
+# add to output pdf
 summary(as.factor(CMyear.sample))/5000
-
-
 
 write.csv(CMyear.sample, file.path(cd,"CMyear.sample.csv"),row.names=F)
 
