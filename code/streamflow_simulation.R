@@ -21,17 +21,15 @@ dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30
 # natural flow and diversion records from which we will select the runoff timing
 streamflow<-read.csv(file.path(cd,"streamflow_data.csv"))
 
-bwb.nat.wy<-streamflow[streamflow$abv == 'bwb',]
+bwb.wy<-streamflow[streamflow$abv == 'bwb',]
 bws.nat.wy<-streamflow[streamflow$abv == 'bws',]
 cc.wy<-streamflow[streamflow$abv == 'cc',]
 sc.nat.wy<-streamflow[streamflow$abv == 'sc',]
 
 # distributions and diversion hydrographs. 
-# Random values of runoff years (based on CM) and runoff volumes. * alreadsy selected where?
-#
 
 cm.year<-read.csv(file.path(cd,"CMyear.sample.csv"))
-volumes<-read.csv(file.path(cd,"flow.sample.csv"))
+volumes<-read.csv(file.path(cd,"vol.sample.csv")) #ac-ft
 #div.year<-read.csv("Diversion.years.csv")
 
 
@@ -51,11 +49,10 @@ rownames(cc.vol.s)<-rownames(cc.flow.s)<-rownames(bwb.vol.s)<-
 #
 sim.flow <- function(nat.wy, vol){
   "
-  nat.wy: natural flow (or regulated flow depending on location)
-  vol: selected flow from bootstrap sample
-
+  nat.wy: natural flow (or regulated flow depending on location) (cfs)
+  vol: total volume from bootstrap sample (ac-ft)
   "
-  pred <- nat.wy*vol/sum(nat.wy)*1.98
+  pred <- nat.wy*vol/sum(nat.wy)
   return (pred)
 }
 
@@ -64,9 +61,10 @@ for(k in 1:ns){
   year<-cm.year[k,1]
   vol<-volumes[k,] #flow sample
 
-  cc<- cc.wy[cc.wy$wy == year, "Flow"]
+  cc<- cc.wy[cc.wy$wy == year, "Flow"]*1.98
+  bwb<- bwb.wy[bwb.wy$wy == year, "Flow"]*1.98
   
-  #bwb.nat.s[,k]<-sim.flow(year, bwb.nat.wy, vol$bwb)
+  bwb.flow.s[,k]<-sim.flow(bwb[183:365], vol$bwb)
   #bws.nat.s[,k]<-sim.flow(year, bws.nat.wy, vol$bws)
   #sc.nat.s[,k]<-sim.flow(year, sc.nat.wy, vol$sc)
   cc.flow.s[,k]<-sim.flow(cc[183:365], vol$cc)
@@ -93,24 +91,37 @@ pred.int<-function(location){
   return(cbind(lo, hi, meanQ))
 }
 
-#pi[,"bwb"] <-pred.int(bwb.nat.s)
+bwb.pi <-as.data.frame(pred.int(bwb.flow.s))
 #pi[,"bws"] <-pred.int(bws.nat.s)
 cc.pi<-as.data.frame(pred.int(cc.flow.s))
 
 # Plot Simulation Results
-
-png(filename = file.path(cd, "Camas_Creek_simulation.png"),
+# Big Wood @ Hailey
+png(filename = file.path(cd, "BigWood_Hailey_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
-plot(dates,apply(cc.sim,1,mean), type="n", xlab="Date", ylab ="Flow (cfs)",
-     main = "Streaflow at Camas Creek")
+plot(dates,apply(bwb.flow.s,1,mean), type="n", xlab="Date", ylab ="Flow (cfs)",
+     main = "Big Wood Streamflow at Hailey", ylim=c(min(bwb.pi$lo), max(bwb.pi$hi)))
+polygon(c(dates[1], dates, rev(dates) ), c(bwb.pi$lo[1], bwb.pi$hi, rev(bwb.pi$lo)), 
+        col = "gray90", border = NA)
+lines(dates,apply(bwb.flow.s,1,mean),lwd=2.5,col="blue")
+xy2020= bwb.wy[bwb.wy$wy == 2020, "Flow"]
+lines(dates,xy2020[183:365], lwd=2, col="green")
+dev.off()
+# Camas Creek
+png(filename = file.path(cd, "Camas_creek_Simulation.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+
+plot(dates,apply(cc.flow.s,1,mean), type="n", xlab="Date", ylab ="Flow (cfs)",
+     main = "Camas Creek Streamflow", ylim=c(min(cc.pi$lo), max(cc.pi$hi)))
 polygon(c(dates[1], dates, rev(dates) ), c(cc.pi$lo[1], cc.pi$hi, rev(cc.pi$lo)), 
         col = "gray90", border = NA)
-lines(dates,apply(cc.sim,1,mean),lwd=2.5,col="blue")
+lines(dates,apply(cc.flow.s,1,mean),lwd=2.5,col="blue")
 xy2020= cc.wy[cc.wy$wy == 2020, "Flow"]
 lines(dates,xy2020[183:365], lwd=2, col="green")
-
+dev.off()
 # ------------------------------------------------------------------------------
 # Save Output
 write.csv(bwb.nat.s, "BigWoodBullion.nat.sim.csv", row.names=dates)
