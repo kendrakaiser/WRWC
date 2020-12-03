@@ -17,21 +17,20 @@ bw.div$Date <- as.Date(bw.div$Date, format = "%m/%d/%y")
 bw.div$year<- format(bw.div$Date, "%Y")
 bw.div[is.na(bw.div)] <- 0
 bw.div$Osborn.24 <- as.numeric(bw.div$Osborn.24) #something is making this a character
-bw.div.sum<- bw.div %>% select(-c(Date)) %>% group_by(year) %>% summarise_each(funs(sum))
-bw.div.tot<- data.frame(matrix(nrow=nrow(bw.div.sum), ncol=3))
-colnames(bw.div.tot)<- c('year', 'abv.h', 'abv.s')
-bw.div.tot$year <- as.numeric(bw.div.sum$year)
-# Tom P2, Lewis 1, Ketchum 2, McCoy 3, Peters 17C1, Hiawatha 22, Osborn24, and Cove 33
-bw.div.tot$abv.h <-rowSums(cbind(bw.div.sum$Tom.P2, bw.div.sum$Lewis.1, bw.div.sum$Ketchum.2, 
-                       bw.div.sum$McCoy.3, bw.div.sum$Peters.17C, bw.div.sum$Hiawatha.22,
-                       bw.div.sum$Osborn.24, bw.div.sum$Cove.33), na.rm = TRUE)
+
+#summarize by location
+bw.div$abv.h <-rowSums(cbind(bw.div$Tom.P2, bw.div$Lewis.1, bw.div$Ketchum.2, 
+                                 bw.div$McCoy.3, bw.div$Peters.17C, bw.div$Hiawatha.22,
+                                 bw.div$Osborn.24, bw.div$Cove.33), na.rm = TRUE)
 #everything other than HICE
-bw.div.tot$abv.s <-rowSums(cbind(bw.div.sum$WRVID.45, bw.div.sum$Bannon.49, 
-                       bw.div.sum$Glendale.50, bw.div.sum$Baseline.55, bw.div.sum$Brown.57F1, 
-                       bw.div.sum$Brown.57F2, bw.div.sum$Black.61, bw.div.sum$Graf.62,
-                       bw.div.sum$Uhrig.63, bw.div.sum$Flood.64, na.rm=TRUE))
-  
-  
+bw.div$abv.s <-rowSums(cbind(bw.div$WRVID.45, bw.div$Bannon.49, 
+                                 bw.div$Glendale.50, bw.div$Baseline.55, bw.div$Brown.57F1, 
+                                 bw.div$Brown.57F2, bw.div$Black.61, bw.div$Graf.62,
+                                 bw.div$Uhrig.63, bw.div$Flood.64), na.rm=TRUE)
+bw.div.gage<- bw.div %>% select(c(Date, abv.h, abv.s))
+#summarize by year
+bw.div.sum<- bw.div %>% select(-c(Date)) %>% group_by(year) %>% summarise_each(funs(sum))
+bw.div.tot<- bw.div.sum %>% select(c(year, abv.h, abv.s))
 # ------------------------------------------------------------------------------
 # USGS Gages
 bwb = 13139510  #  Bullion Bridge, Big Wood at Hailey
@@ -62,6 +61,8 @@ streamflow_data$wy <- as.numeric(as.character(water_year(streamflow_data$Date, o
 streamflow_data$day <- day(streamflow_data$Date)
 # Cleanup Streamdlow data frame and join relevant site information
 streamflow_data <- streamflow_data %>% select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
+# add diversion data to streamflow dataframe
+streamflow_data <- inner_join(streamflow_data, bw.div.gage, by = 'Date')
 
 #Download reservoir data and site information
 res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
@@ -70,12 +71,17 @@ res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_in
 # ----------------------------------------------------------------------------------
 # calculate hydrologic metrics for each year for each station
 # winter "baseflow" (wb), Apr - Sept total Volume (vol), and center of mass (cm)
-stream.id<-c("bwb","bws","cc","bwr","sc")
+stream.id<-c("bwb","bws","cc","sc")
 years = min(streamflow_data$wy):max(streamflow_data$wy)
-metrics<-data.frame(matrix(ncol = 16, nrow= length(years)))
-names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm","bws.wq", "bws.vol","bws.cm","cc.wq","cc.vol","cc.cm", "bwr.wq", "bwr.vol","bwr.cm", "sc.wq","sc.vol", "sc.cm")
+metrics<-data.frame(matrix(ncol = 13, nrow= length(years)))
+names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm","bws.wq", "bws.vol","bws.cm","cc.wq","cc.vol","cc.cm", "sc.wq","sc.vol", "sc.cm")
 metrics$year<- years
 
+nat.cm<-data.frame(matrix(ncol = 1, nrow= length(years)))
+names(nat.cm)<-c("year")
+nat.cm$year<- years
+
+# calculate winter baseflow, annual irrigation season volume and center of mass
 for(i in 1:length(stream.id)){
   sub <- streamflow_data %>% filter(abv == unique(abv)[i])
   
@@ -99,16 +105,32 @@ for(i in 1:length(stream.id)){
   }
 }
 
-# Save flow data as a csv
-write.csv(streamflow_data, file.path(cd,'streamflow_data.csv'))
-write.csv(metrics, file.path(cd,'metrics.csv'))
-write.csv(site_info, file.path(cd,'usgs_sites.csv'))
+# calculate center of mass for "natural flow"
+for(i in 1:length(stream.id)){
+  sub <- streamflow_data %>% filter(abv == unique(abv)[i])
+  
+  if(unique(sub$abv) == 'bwb'){
+    sub$nat.flow <- sub$Flow + sub$abv.h
+  } else if (unique(sub$abv) == 'bws'){
+    sub$nat.flow = sub$Flow + sub$abv.s
+  } else {next}
+  
+  cm = matrix(ncol = 1, nrow= length(years))
+  for (y in 1: length(years)){
+  #center of mass between April 1 and July 31
+  sub3<- sub %>% filter(wy == years[y] & between(mo, 4, 7)) 
+  sub3$doy <- yday(as.Date(sub3$Date))
+  cm[y] <- sum(sub3$doy * sub3$nat.flow)/sum(sub3$nat.flow)
+  }
+  nat.cm<- cbind(nat.cm, cm)
+}
+colnames(nat.cm)<- c('year', 'bwb.cm.nat', 'bws.cm.nat')
 
 #save a figure that shows YTD streamflow over WY average and CV
 
-# Retrieve Snotel data ----------------------------------------------------
+# Retrieve Snotel sites ----------------------------------------------------
 
-# SNOTEL Sites ----
+# SNOTEL Sites 
 cg = 895 #  Chocolate Gulch (0301)
 g  = 489 #  Galena (0101)
 gs = 490 #  Galena Summit (0101)
@@ -125,7 +147,7 @@ snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "cc
 # Download snotel data ----
 snotel_data = snotel_download(snotel_sites, path = '~/Desktop/Data/WRWC/', internal = TRUE )
 
-# Pull out snotel site information
+# Pull out snotel site information ----
 snotel_site_info<-data.frame('id'=NA, 'start'=NA, 'end'=NA, 'lat'=NA, 'long'=NA, 'elev'=NA, 'description'=NA, 'site_name'=NA, 'huc8'=NA)
 snotel_site_info$start <-as.Date(NA)
 snotel_site_info$end <-as.Date(NA)
@@ -150,7 +172,7 @@ snotel_data_out$mo <- month(snotel_data_out$date)
 snotel_data_out$wy <- as.numeric(as.character(water_year(snotel_data_out$date, origin='usgs')))
 snotel_data_out$day <- day(snotel_data_out$date)
 
-#subset April 1 data for model 
+# subset April 1 data for model 
 # TODO: update this to pull Feb1 and Mar1 as well
 wy<- year(seq(as.Date("1979-04-01"),as.Date(end),"year"))
 april1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
@@ -164,13 +186,23 @@ for (i in 1:length(snotel_sites)) {
   april1swe[which(april1swe$year == start) : which(april1swe$year == year(end)),i+1]<- sub$snow_water_equivalent
   }
 
-# save snotel data as csvs
+# Save snotel data as csvs -----
 write.csv(april1swe, file.path(cd, 'april1swe.csv'))
 write.csv(snotel_data_out, file.path(cd,'snotel_data.csv'))
 write.csv(snotel_site_info, file.path(cd,'snotel_sites.csv'))
 
-# merge april 1 swe and streamflow metrics ----
+# Save flow data as csvs ------
+metrics <- metrics %>% inner_join(nat.cm, by= "year")
+
+write.csv(streamflow_data, file.path(cd,'streamflow_data.csv'))
+write.csv(metrics, file.path(cd,'metrics.csv'))
+write.csv(site_info, file.path(cd,'usgs_sites.csv'))
+
+# Merge april 1 swe and streamflow metrics & diversion data ----
 allApril1<- april1swe %>% inner_join(metrics, by ="year") %>% inner_join(bw.div.tot, by ="year") 
+# 'natural' flow is the volume at the gage plus the volume from upstream diversions
+allApril1$bwb.vol.nat <- allApril1$bwb.vol + allApril1$abv.h
+allApril1$bws.vol.nat <- allApril1$bws.vol + allApril1$abv.s
 write.csv(allApril1, file.path(cd,'all_April1.csv'))
 
 # Download NRCS ET Agrimet data ----
