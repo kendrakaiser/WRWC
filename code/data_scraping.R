@@ -11,6 +11,27 @@ cd ='~/Desktop/Data/WRWC'
 # set date for AgriMet Data download
 end = '2020-09-15'
 
+#import and manage diversion data
+bw.div <- read.csv(file.path(cd, 'bwr_diversion_data_1987_2019_111620.csv'))
+bw.div$Date <- as.Date(bw.div$Date, format = "%m/%d/%y")
+bw.div$year<- format(bw.div$Date, "%Y")
+bw.div[is.na(bw.div)] <- 0
+bw.div$Osborn.24 <- as.numeric(bw.div$Osborn.24) #something is making this a character
+bw.div.sum<- bw.div %>% select(-c(Date)) %>% group_by(year) %>% summarise_each(funs(sum))
+bw.div.tot<- data.frame(matrix(nrow=nrow(bw.div.sum), ncol=3))
+colnames(bw.div.tot)<- c('year', 'abv.h', 'abv.s')
+bw.div.tot$year <- as.numeric(bw.div.sum$year)
+# Tom P2, Lewis 1, Ketchum 2, McCoy 3, Peters 17C1, Hiawatha 22, Osborn24, and Cove 33
+bw.div.tot$abv.h <-rowSums(cbind(bw.div.sum$Tom.P2, bw.div.sum$Lewis.1, bw.div.sum$Ketchum.2, 
+                       bw.div.sum$McCoy.3, bw.div.sum$Peters.17C, bw.div.sum$Hiawatha.22,
+                       bw.div.sum$Osborn.24, bw.div.sum$Cove.33), na.rm = TRUE)
+#everything other than HICE
+bw.div.tot$abv.s <-rowSums(cbind(bw.div.sum$WRVID.45, bw.div.sum$Bannon.49, 
+                       bw.div.sum$Glendale.50, bw.div.sum$Baseline.55, bw.div.sum$Brown.57F1, 
+                       bw.div.sum$Brown.57F2, bw.div.sum$Black.61, bw.div.sum$Graf.62,
+                       bw.div.sum$Uhrig.63, bw.div.sum$Flood.64, na.rm=TRUE))
+  
+  
 # ------------------------------------------------------------------------------
 # USGS Gages
 bwb = 13139510  #  Bullion Bridge, Big Wood at Hailey
@@ -148,8 +169,8 @@ write.csv(april1swe, file.path(cd, 'april1swe.csv'))
 write.csv(snotel_data_out, file.path(cd,'snotel_data.csv'))
 write.csv(snotel_site_info, file.path(cd,'snotel_sites.csv'))
 
-# merge april 1 swe and streamflow metrics
-allApril1<- april1swe %>% inner_join(metrics, by ="year") 
+# merge april 1 swe and streamflow metrics ----
+allApril1<- april1swe %>% inner_join(metrics, by ="year") %>% inner_join(bw.div.tot, by ="year") 
 write.csv(allApril1, file.path(cd,'all_April1.csv'))
 
 # Download NRCS ET Agrimet data ----
