@@ -15,7 +15,7 @@ source(file.path("~/github/WRWC/code", "packages.R"))
 rm(list=ls())
 
 cd = '~/Desktop/Data/WRWC'
-pred.yr <- 2020
+pred.yr <- 2019
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
@@ -23,7 +23,6 @@ usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
 swe_q = read.csv(file.path(cd,'all_April1.csv'))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
 temps = read.csv(file.path(cd, 'ajTemps.csv'))
-#div = read.csv(file.path(cd, 'bwb_div.csv'))
 var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
 
 temp.ran = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
@@ -139,23 +138,22 @@ dev.off()
 
 # --------------------------------------------------
 # Subset Big Wood Winter flows, Snotel from  Galena & Galena Summit, Hyndman
-hist <- var[var$year < pred.yr,] %>% select(bwb.vol, bwb.wq, g.swe, gs.swe, hc.swe) 
+hist <- var[var$year < pred.yr,] %>% select(bw.nat.h, g.swe, gs.swe, hc.swe) 
 # Big Wood at Hailey linear model
-bwb_mod<-lm(log(bwb.vol)~log(bwb.wq)+log(g.swe)+ log(gs.swe)+ log(hc.swe), data=hist) 
+
+bwb_mod<-lm(log(bw.nat.h)~ g.swe+ log(gs.swe)+ hc.swe, data=hist) 
 mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 
 #April 1 bwb data to use for prediction 
-pred.dat<-data.frame(array(NA,c(1,6)))
-names(pred.dat)<-c("bwb.wq","cg.swe","g.swe","gs.swe","hc.swe","lwd.swe")
-pred.dat$bwb.wq<- var$bwb.wq[var$year == pred.yr] #this years base flow
-pred.dat$cg.swe<- var$cg.swe[var$year == pred.yr] # current April 1 SWE
+pred.dat<-data.frame(array(NA,c(1,3)))
+names(pred.dat)<-c("g.swe","gs.swe","hc.swe")
 pred.dat$g.swe<- var$g.swe[var$year == pred.yr] # current April 1 SWE
 pred.dat$gs.swe<- var$gs.swe[var$year == pred.yr] # current April 1 SWE
 pred.dat$hc.swe<- var$hc.swe[var$year == pred.yr] # current April 1 SWE
-pred.dat$lwd.swe<- var$lwd.swe[var$year == pred.yr] # current April 1 SWE
+
 
 # Big Wood at Hailey Model output
-mod_out<- modOut(bwb_mod, pred.dat, hist$bwb.wq, hist$bwb.vol, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol[var$year == pred.yr-1])
+mod_out<- modOut(bwb_mod, pred.dat, hist$bwb.wq, hist$bw.nat.h, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bw.nat.h[var$year == pred.yr-1])
 #these could be formatted differently to be saved to the gloabl env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]

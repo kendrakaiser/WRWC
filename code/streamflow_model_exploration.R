@@ -25,6 +25,8 @@ swe_q = read.csv(file.path(cd,'all_April1.csv'))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
 temps = read.csv(file.path(cd, 'ajTemps.csv'))
 var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
+# 'natural' flow at Hailey is the volume at the gage plus the volume from upstream
+var$bw.nat.h <- var$bwb.vol + var$abv.h
 
 temp.ran = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
@@ -42,7 +44,7 @@ hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
 #use regsubsets to plot the results
 regsubsets.out<-regsubsets(log(var$cc.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=4)
 
-#big wood at hailey
+#big wood at hailey, 'natural' flow
 hist <- var[var$year < pred.yr,] %>% select(bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
 hist$log.wq <- log(hist$bwb.wq)
 hist$log.cg<- log(hist$cg.swe)
@@ -51,8 +53,8 @@ hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 #use regsubsets to plot the results
-regsubsets.out<-regsubsets(log(var$bwb.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
-
+regsubsets.out<-regsubsets(log(var$bw.nat.h[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
+#g.swe, hc.swe, log.gs lowest bic and 0.84
 
 #big wood at stanton
 hist <- var[var$year < pred.yr,] %>% select(bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
