@@ -179,8 +179,8 @@ png(filename = file.path(cd,"SC_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
-fits<-fitted(sc_mod)
-plot(var$sc.vol[1:32]/1000,c(fits)/1000, lwd=2, xlim=c(22,65), ylim=c(22,65), xlab="Observed", ylab="Predicted", main="Silver Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+fits<-exp(fitted(sc_mod))
+plot(var$sc.vol[complete.cases(hist)]/1000,c(fits)/1000, lwd=2, xlim=c(100,780), ylim=c(100,780), xlab="Observed", ylab="Predicted", main="Silver Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
@@ -205,7 +205,7 @@ png(filename = file.path(cd,"CC_modelFit.png"),
     bg = "white", res = 600, type ="quartz") 
 
 fits<-exp(fitted(cc_mod))
-plot(var$cc.vol[6:32]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(var$cc.vol[complete.cases(hist)]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 # ------------------------------------------------------------------------------  
