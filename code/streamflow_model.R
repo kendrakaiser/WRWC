@@ -110,28 +110,28 @@ modOut<- function(mod, pred.dat, wq, vol, meanSWE, lastQ){
 
 # --------------------------------------------------
 # Subset Big Wood Winter flows, Snotel from  Galena & Galena Summit, Hyndman
-hist <- var[var$year < pred.yr,] %>% select(bw.nat.h, g.swe, gs.swe, hc.swe) 
+hist <- var[var$year < pred.yr,] %>% select(bwb.vol.nat, g.swe, gs.swe, hc.swe) 
 # Big Wood at Hailey linear model
 
-bwb_mod<-lm(log(bw.nat.h)~ g.swe+ log(gs.swe)+ hc.swe, data=hist) 
+bwb_mod<-lm(log(bwb.vol.nat)~ g.swe+ log(gs.swe)+ hc.swe, data=hist) 
 mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 
 #April 1 bwb Prediction Data
 pred.dat<-var[var$year == pred.yr,] %>% select(g.swe, gs.swe, hc.swe) 
 
 # Big Wood at Hailey Model output
-mod_out<- modOut(bwb_mod, pred.dat, hist$bwb.wq, hist$bw.nat.h, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bw.nat.h[var$year == pred.yr-1])
+mod_out<- modOut(bwb_mod, pred.dat, hist$bwb.wq, hist$bwb.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol.nat[var$year == pred.yr-1])
 #these could be formatted differently to be saved to the gloabl env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
 
 #Plot Big Wood at Hailey modeled data for visual evaluation 
-png(filename = "BWB_modelFit.png",
+png(filename = file.path(cd,"BWB_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
 fits<-exp(fitted(bwb_mod))
-plot(var$bwb.vol[1:32]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(var$bwb.vol.nat[var$year < pred.yr]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
@@ -139,24 +139,24 @@ dev.off()
 # Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
 hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bw.nat.s, bws.wq, g.swe, gs.swe, hc.swe) 
 # Big Wood at Stanton linear model
-bws_mod<-lm(log(bw.nat.s)~bws.wq+ log(g.swe) + log(gs.swe)+ log(hc.swe), data=hist) 
+bws_mod<-lm(log(bws.vol.nat)~bws.wq+ log(g.swe) + log(gs.swe)+ log(hc.swe), data=hist) 
 mod_sum[2,1]<-summary(bws_mod)$adj.r.squared
 
 #April 1 bws Prediction Data 
 pred.dat<-var[var$year == pred.yr,] %>% select(bws.wq, g.swe, gs.swe, hc.swe) 
 
 # Big Wood at Stanton Natural Flow Model output
-mod_out<- modOut(bws_mod, pred.dat, hist$bws.wq, hist$bw.nat.s, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bw.nat.s[var$year == pred.yr-1])
+mod_out<- modOut(bws_mod, pred.dat, hist$bws.wq, hist$bws.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bws.vol.nat[var$year == pred.yr-1])
 output.vol[2,] <- mod_out[[1]]
 pred.params.vol[2,] <- mod_out[[2]]
 
 #Plot modeled bws data for visual evaluation 
-png(filename = "BWS_modelFit.png",
+png(filename = file.path(cd,"BWS_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
 fits<-exp(fitted(bws_mod))
-plot(var$bw.nat.s[var$year < pred.yr & var$year > 1996]/1000,c(fits)/1000, lwd=2, xlim=c(0,730), ylim=c(0,730), xlab="Observed", ylab="Predicted",main="Big Wood at Stanton \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(var$bws.vol.nat[var$year < pred.yr & var$year > 1996]/1000,c(fits)/1000, lwd=2, xlim=c(0,730), ylim=c(0,730), xlab="Observed", ylab="Predicted",main="Big Wood at Stanton \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
@@ -175,7 +175,7 @@ output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
 # Plot sc modeled data for visual evaluation 
-png(filename = "SC_modelFit.png",
+png(filename = file.path(cd,"SC_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -200,7 +200,7 @@ output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
 #Plot CC modeled data for visual evaluation 
-png(filename = "CC_modelFit.png",
+png(filename = file.path(cd,"CC_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -253,10 +253,19 @@ mod_out<- modOutcm(bwb_mod.cm, pred.dat, c(pred.dat$t.g, pred.dat$t.gs, pred.dat
 output.cm[1,] <- mod_out[[1]]
 pred.params.cm[1,] <- mod_out[[2]]
 
+#Plot modeled data for visual evaluation 
+png(filename = file.path(cd,"BWH_CMmodelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+
+fits<-fitted(bwb_mod.cm)
+plot(var$bwb.cm.nat[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Big Wood at Hailey \n Center of Mass", xlim=c(144, 165), ylim=c(144,165))
+abline(0,1,col="gray50",lty=1)
+dev.off()
 # --------------------
 # Big Wood at Stanton
 # 
-hist <- var[var$year < pred.yr,] %>% select(bws.cm, lwd.swe, cg.swe, hc.swe, t.cg, t.g, t.hc, t.lw) 
+hist <- var[var$year < pred.yr,] %>% select(bws.cm.nat, lwd.swe, cg.swe, hc.swe, t.cg, t.g, t.hc, t.lw) 
 # BWS linear model
 bws_mod.cm <-lm(bws.cm.nat ~ lwd.swe +log(cg.swe)+log(hc.swe) + t.cg+ t.g + t.hc+ t.lw, data=hist)
 mod_sum[2,2]<-summary(bws_mod.cm)$adj.r.squared 
@@ -269,6 +278,15 @@ mod_out<- modOutcm(bws_mod.cm, pred.dat, c(pred.dat$t.cg,pred.dat$t.g,pred.dat$t
 output.cm[2,] <- mod_out[[1]]
 pred.params.cm[2,] <- mod_out[[2]]
 
+#Plot modeled data for visual evaluation 
+png(filename = file.path(cd,"BWS_CMmodelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+
+fits<-fitted(bws_mod.cm)
+plot(var$bws.cm.nat[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Big Wood at Stanton \n Center of Mass", xlim=c(140, 165), ylim=c(140,165))
+abline(0,1,col="gray50",lty=1)
+dev.off()
 # --------------------
 # Subset Silver Creek Winter flows, Snotel from Chocolate Gulch, Hyndaman, Lost Wood Div. & Swede Peak
 #
@@ -277,7 +295,7 @@ hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, cg.swe, hc.swe, lwd.sw
 # note here that this includes swe from the big wood and the little wood 
 sc_mod.cm<-lm(sc.cm~ cg.swe+ hc.swe+ lwd.swe+t.cg+t.gs+log(sp.swe)+log(sc.wq), data=hist) 
 mod_sum[4,2]<-summary(sc_mod.cm)$adj.r.squared 
-mod_sum<- round(mod_sum, 3)
+
 # April 1 SC Prediction Data 
 pred.dat<-var[var$year == pred.yr,] %>% select(sc.wq, cg.swe, hc.swe, lwd.swe, t.cg, t.gs, sp.swe) 
 
@@ -286,6 +304,16 @@ mod_out<- modOutcm(sc_mod.cm, pred.dat, c(pred.dat$t.cg,pred.dat$t.gs), c(hist$t
 output.cm[4,] <- mod_out[[1]]
 pred.params.cm[4,] <- mod_out[[2]]
 
+#Plot modeled data for visual evaluation 
+png(filename = file.path(cd,"SC_CMmodelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+
+fits<-fitted(sc_mod.cm)
+plot(var$sc.cm[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Silver Creek Center of Mass", xlim=c(139, 181), ylim=c(139,181))
+abline(0,1,col="gray50",lty=1)
+dev.off()
+
 # --------------------
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek 
 # divide & temperature from Fairfield agrimet site
@@ -293,26 +321,24 @@ hist <- var[var$year < pred.yr,] %>% select(cc.cm, ccd.swe, sr.swe, t.f)
 # Camas Creek linear model
 cc_mod.cm<-lm(cc.cm~ccd.swe + sr.swe+ t.f, data=hist) 
 mod_sum[3,2]<-summary(cc_mod.cm)$adj.r.squared 
-
+mod_sum<- round(mod_sum, 3)
 # April 1 CC Prediction Data 
 pred.dat<- var[var$year == pred.yr,] %>% select(ccd.swe, sr.swe, t.f) 
 
 # Camas Creek Model output
 mod_out<- modOutcm(cc_mod.cm, pred.dat, pred.dat$t.f, hist$t.f, hist$cc.cm)
-
 output.cm[3,] <- mod_out[[1]]
 pred.params.cm[3,] <- mod_out[[2]]
 
+#Plot modeled data for visual evaluation 
+png(filename = file.path(cd,"CC_CMmodelFit.png"),
+width = 5.5, height = 5.5,units = "in", pointsize = 12,
+bg = "white", res = 600, type ="quartz") 
 
-#Plot sc modeled data for visual evaluation 
-#png(filename = "CC_CMmodelFit.png",
-#width = 5.5, height = 5.5,units = "in", pointsize = 12,
-#bg = "white", res = 600, type ="quartz") 
-
-#fits<-fitted(cc_mod.cm)
-#plot(var$cc.cm[6:32],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Camas Creek Center of Mass")
-#abline(0,1,col="gray50",lty=1)
-#dev.off()
+fits<-fitted(cc_mod.cm)
+plot(var$cc.cm[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Camas Creek Center of Mass", xlim=c(110, 138), ylim=c(110,138))
+abline(0,1,col="gray50",lty=1)
+dev.off()
 
 ### Save model outputs for simulation runs
 
@@ -366,7 +392,7 @@ write.csv(exp(vol.sample), file.path(cd,"vol.sample.csv"),row.names=F)
 
 # Draw sample of years with similar center of mass (timing)
 cm.data = var[var$year >= 1997,]
-cm.data = cm.data %>% select(year, bwb.cm, bws.cm,cc.cm, sc.cm) 
+cm.data = cm.data %>% select(year, bwb.cm.nat, bws.cm.nat,cc.cm, sc.cm) 
 cm.data$prob<-NA
 
 for(i in 1:dim(cm.data)[1]){
