@@ -355,7 +355,9 @@ preds.params.div.gain<-data.frame(array(NA,c(2,3)))
 names(preds.params.div.gain)<-c("Vol","sigma","cor")
 rownames(preds.params.div.gain)<-c("Div","Gain")
 
-# Above Hailey plot(var$year, var$abv.h)
+# Above Hailey 
+plot(var$year, var$abv.h)
+plot(var$year[var$year >=2000], var$abv.h[var$year >=2000])
 hist <- var[var$year >=2000 & var$year < pred.yr,] %>% select(abv.h, g.swe, hc.swe, t.cg, t.lw) 
 # linear model 
 div_mod.h<-lm(abv.h~ g.swe+hc.swe+t.cg+t.lw, data=hist) 
@@ -368,10 +370,32 @@ preds.params.div.gain[1,1]<-preds.div$fit[1]
 preds.params.div.gain[1,2]<-preds.div$se.fit
 #preds.params.div.gain[1,3]<-cor(dat$Total.Div,dat$Reach.Gain)
 
+png(filename = file.path(cd,"Div.abv.Hailey.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+
 fits<-fitted(div_mod.h)
 plot(var$abv.h[var$year >=2000 & var$year < pred.yr],c(fits))
 abline(0,1,col="gray50",lty=1)
+dev.off()
+# Above Stanton Crossing the lm does really poorly (0.36)
 
+# losses between Hailey and Stanton
+plot(var$year, var$bws.loss)
+plot(var$year[var$year >=2000], var$bws.loss[var$year >=2000])
+
+hist <- var[var$year >=2000 & var$year < pred.yr,] %>% select(bws.loss, g.swe, hc.swe, t.g, t.cg, t.gs) 
+# linear model 
+bws.loss_mod<-lm(bws.loss~ g.swe+hc.swe+t.cg+ t.gs+t.gs, data=hist) 
+summary(bws.loss_mod)$adj.r.squared 
+# April 1 Prediction Data 
+pred.dat<- var[var$year == pred.yr,] %>% select(g.swe,hc.swe,t.cg, t.gs,t.gs) 
+# Model output
+preds.div<-predict(bws.loss_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+
+fits<-fitted(bws.loss_mod)
+plot(var$bws.loss[var$year >=2000 & var$year < pred.yr],c(fits))
+abline(0,1,col="gray50",lty=1)
 
 # --------------------
 # Draw a sample of volumes and water years with similar timing
