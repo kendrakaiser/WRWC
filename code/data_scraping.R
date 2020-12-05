@@ -203,6 +203,7 @@ allApril1<- april1swe %>% inner_join(metrics, by ="year") %>% inner_join(bw.div.
 # 'natural' flow is the volume at the gage plus the volume from upstream diversions
 allApril1$bwb.vol.nat <- allApril1$bwb.vol + allApril1$abv.h
 allApril1$bws.vol.nat <- allApril1$bws.vol + allApril1$abv.s
+allApril1$bws.loss <- allApril1$bws.vol.nat - allApril1$bwb.vol
 write.csv(allApril1, file.path(cd,'all_April1.csv'))
 
 # Download NRCS ET Agrimet data ----
