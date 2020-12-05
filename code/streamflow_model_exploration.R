@@ -92,6 +92,19 @@ rs<-summary(regsubsets.out)
 quartz(title="R2 v BIC",10,10)
 plot(rs$bic, rs$adjr2, xlab="BIC", ylab="adj R2")
 
+# -------------------------------------------------------------
+# Diversions above Hailey
+hist <- var[var$year >= 2000 & var$year < pred.yr,] %>% select(bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw, year) 
+hist$log.wq <- log(hist$bwb.wq)
+hist$log.cg<- log(hist$cg.swe)
+hist$log.g <- log(hist$g.swe)
+hist$log.gs<- log(hist$gs.swe)
+hist$log.hc <- log(hist$hc.swe)
+hist$log.lwd <- log(hist$lwd.swe)
+#use regsubsets to plot the results
+regsubsets.out<-regsubsets(var$abv.h[var$year >= 2000 & var$year < pred.yr]~., data=hist, nbest=3, nvmax=8)
+# g.swe, hc.swe, t.cg, t.lw post 2000, no trend with time
+
 # ------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for Center of Mass Predictions
 # ------------------------------------------------------------------------------ # 
@@ -107,7 +120,7 @@ hist$log.lwd <- log(hist$lwd.swe)
 #use regsubsets to plot the results
 regsubsets.out<-regsubsets(log(var$bwb.cm.nat[var$year < pred.yr])~., data=hist, nbest=3, nvmax=8)
 #g.swe+t.cg+ t.g+t.gs+t.hc+t.lw +log(cg.swe)+log(hc.swe) natural cm
-#g.swe, hc.swe, t.g, t.gs, t.lw, log.wq, log.cg log.gs
+# g.swe, hc.swe, t.cg, t.lw
 
 # -------------------------------------------------------------
 # Big Wood at Stanton
@@ -144,6 +157,7 @@ hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
 #use regsubsets to plot the results
 regsubsets.out<-regsubsets(var$cc.cm[var$year < pred.yr]~., data=hist, nbest=3, nvmax=5)
 #between two best r2 (0.51) the lower BIC includes ccd.swe, sr.swe, t.f
+
 
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
 quartz(title="Adjusted R^2",10,10)

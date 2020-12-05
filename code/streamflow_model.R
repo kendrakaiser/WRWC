@@ -351,6 +351,26 @@ write.csv(pred.params.cm, file.path(cd,"pred.params.cm.csv"),row.names=T)
 # Apr-Sept diversion & reach gain predictions
 #
 
+preds.params.div.gain<-data.frame(array(NA,c(2,3)))
+names(preds.params.div.gain)<-c("Vol","sigma","cor")
+rownames(preds.params.div.gain)<-c("Div","Gain")
+
+# Above Hailey plot(var$year, var$abv.h)
+hist <- var[var$year >=2000 & var$year < pred.yr,] %>% select(abv.h, g.swe, hc.swe, t.cg, t.lw) 
+# linear model 
+div_mod.h<-lm(abv.h~ g.swe+hc.swe+t.cg+t.lw, data=hist) 
+summary(div_mod.h)$adj.r.squared 
+# April 1 Prediction Data 
+pred.dat<- var[var$year == pred.yr,] %>% select(g.swe, hc.swe, t.cg, t.lw) 
+# Model output
+preds.div<-predict(div_mod.h,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+preds.params.div.gain[1,1]<-preds.div$fit[1]
+preds.params.div.gain[1,2]<-preds.div$se.fit
+#preds.params.div.gain[1,3]<-cor(dat$Total.Div,dat$Reach.Gain)
+
+fits<-fitted(div_mod.h)
+plot(var$abv.h[var$year >=2000 & var$year < pred.yr],c(fits))
+abline(0,1,col="gray50",lty=1)
 
 
 # --------------------
