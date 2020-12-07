@@ -15,7 +15,7 @@ library(leaps)
 rm(list=ls())
 cd = '~/Desktop/Data/WRWC'
 
-pred.yr <- 2020
+pred.yr <- 2019
 
 # Import Data ------------------------------------------------------------------ # 
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
@@ -41,12 +41,12 @@ hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 #use regsubsets to plot the results
-regsubsets.out<-regsubsets(log(var$bw.nat.h[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(log(var$bwh.vol.nat[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
 #g.swe, hc.swe, log.gs lowest bic and 0.84
 
 # -------------------------------------------------------------
 # Big Wood at Stanton, 'natural' flow
-hist <- var[var$year < pred.yr,] %>% select(bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
 hist$log.wq <- log(hist$bws.wq)
 hist$log.cg<- log(hist$cg.swe)
 hist$log.g <- log(hist$g.swe)
@@ -54,7 +54,7 @@ hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 #use regsubsets to explore models
-regsubsets.out<-regsubsets(log(var$bw.nat.s[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(log(var$bws.vol.nat[var$year < pred.yr & var$year > 1996])~., data=hist, nbest=1, nvmax=8)
 #lowest BIC is bws.wq + log.hc
 # highest r2 with the next lowest bic is bws.wq + log(g, gs, hc)
 
@@ -139,14 +139,14 @@ regsubsets.out<-regsubsets(log(var$bwb.cm.nat[var$year < pred.yr])~., data=hist,
 
 # -------------------------------------------------------------
 # Big Wood at Stanton
-hist <- var[var$year < pred.yr,] %>% select(bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
 hist$log.cg<- log(hist$cg.swe)
 hist$log.g<- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 #use regsubsets to explore models
-regsubsets.out<-regsubsets(log(var$bws.cm.nat[var$year < pred.yr])~., data=hist, nbest=2, nvmax=8)
+regsubsets.out<-regsubsets(log(var$bws.cm.nat[var$year < pred.yr & var$year > 1996])~., data=hist, nbest=2, nvmax=8)
 #bws.cm ~ g.swe + t.cg+ t.g +t.lw +log(cg.swe)+log(gs.swe)+log(hc.swe) w. 2020 
 #'natural' center of mass: lwd.swe, t.cg, t.g, t.hc, t.lw, log.cg log.hc 
 

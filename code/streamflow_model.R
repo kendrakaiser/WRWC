@@ -137,7 +137,7 @@ dev.off()
 
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bw.nat.s, bws.wq, g.swe, gs.swe, hc.swe) 
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bws.vol.nat, bws.wq, g.swe, gs.swe, hc.swe) 
 # Big Wood at Stanton linear model
 bws_mod<-lm(log(bws.vol.nat)~bws.wq+ log(g.swe) + log(gs.swe)+ log(hc.swe), data=hist) 
 mod_sum[2,1]<-summary(bws_mod)$adj.r.squared
@@ -351,9 +351,9 @@ write.csv(pred.params.cm, file.path(cd,"pred.params.cm.csv"),row.names=T)
 # Apr-Sept diversion & reach gain predictions
 #
 
-preds.params.div.gain<-data.frame(array(NA,c(2,3)))
-names(preds.params.div.gain)<-c("Vol","sigma","cor")
-rownames(preds.params.div.gain)<-c("Div","Gain")
+preds.params.di<-data.frame(array(NA,c(1,3)))
+names(preds.params.div)<-c("Vol","sigma","cor")
+rownames(preds.params.div)<-c("Div")
 
 # Above Hailey 
 plot(var$year, var$abv.h)
@@ -366,9 +366,9 @@ summary(div_mod.h)$adj.r.squared
 pred.dat<- var[var$year == pred.yr,] %>% select(g.swe, hc.swe, t.cg, t.lw) 
 # Model output
 preds.div<-predict(div_mod.h,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-preds.params.div.gain[1,1]<-preds.div$fit[1]
-preds.params.div.gain[1,2]<-preds.div$se.fit
-#preds.params.div.gain[1,3]<-cor(dat$Total.Div,dat$Reach.Gain)
+preds.params.div[1,1]<-preds.div$fit[1]
+preds.params.div[1,2]<-preds.div$se.fit
+#preds.params.div.[1,3]<-cor(dat$Total.Div,dat$Reach.Gain)
 
 png(filename = file.path(cd,"Div.abv.Hailey.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -378,7 +378,8 @@ fits<-fitted(div_mod.h)
 plot(var$abv.h[var$year >=2000 & var$year < pred.yr],c(fits))
 abline(0,1,col="gray50",lty=1)
 dev.off()
-# Above Stanton Crossing the lm does really poorly (0.36)
+
+# Above Stanton Crossing the lm does really poorly (0.36) - draw randomly or use a lm that includes natural flow estimate
 
 # losses between Hailey and Stanton
 plot(var$year, var$bws.loss)
@@ -403,9 +404,13 @@ abline(0,1,col="gray50",lty=1)
 # created from the correlation between total volume and center of mass (timing)
 # and the predicted volumes from each volume model
 
+# correlations between diversions -- 0.33 when you include all data, effectively none after 2000
+div.cor<-cor(var[var$year >= 2000,c('abv.h', 'abv.s', 'bws.loss')])
+round(div.cor,2) 
+
 # check correlations between flow conditions across the basins
 flow.data = var[var$year >= 1997,]
-flow.data= flow.data %>% select(bwb.vol, bwb.cm, bws.vol, bws.cm, cc.vol, cc.cm, sc.vol, sc.cm) 
+flow.data= flow.data %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, abv.h, abv.s) 
 # make this an output table?
 cor.mat1<- round(cor(flow.data,use="pairwise.complete"),2)  
 
@@ -423,7 +428,8 @@ write.csv(pred.pars, file.path(cd,"pred.pars.csv"),row.names=T)
 
 # Draw flow volumes using multivariate normal distribution (ac-ft)
 vol.sample<-mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4])
-colnames(vol.sample)<-c("bwb","bws","cc","sc")
+colnames(vol.sample)<-c("bwb.nat","bws.nat","cc","sc")
+write.csv(exp(vol.sample), file.path(cd,"vol.sample.csv"),row.names=F)
 
 # Plot the pdfs of total annual flow from each model?
 #vol.bwb <- dnorm(exp(vol.sample[,1]))
@@ -432,7 +438,7 @@ colnames(vol.sample)<-c("bwb","bws","cc","sc")
 #plot(h,xlab="Volume",ylab="Probability")
 #plot(density(exp(vol.sample[,1])))
 
-write.csv(exp(vol.sample), file.path(cd,"vol.sample.csv"),row.names=F)
+
 
 # Draw sample of years with similar center of mass (timing)
 cm.data = var[var$year >= 1997,]
