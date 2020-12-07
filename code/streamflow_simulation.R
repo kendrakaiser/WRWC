@@ -9,25 +9,24 @@
 # Reach gain
 
 cd <<- '~/Desktop/Data/WRWC'
-pred.yr <<- 2020 #Simyear
+pred.yr <<- 2019 #Simyear
 ns<-5000  #Number of simulations
 
 dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30",sep="")),"day")
 
 # ------------------------------------------------------------------------------
 # Import data
-# mean ET from each basin -- or from FAFI / PICO
+# mean ET from each basin -- or from FAFI / PICO ???
 # volume & bootstraps for each gage
 # natural flow and diversion records from which we will select the runoff timing
 streamflow<-read.csv(file.path(cd,"streamflow_data.csv"))
 
 bwb.wy<-streamflow[streamflow$abv == 'bwb',]
-bws.nat.wy<-streamflow[streamflow$abv == 'bws',]
+bws.wy<-streamflow[streamflow$abv == 'bws',]
 cc.wy<-streamflow[streamflow$abv == 'cc',]
 sc.nat.wy<-streamflow[streamflow$abv == 'sc',]
 
-# distributions and diversion hydrographs. 
-
+# distributions and diversion hydrographs 
 cm.year<-read.csv(file.path(cd,"CMyear.sample.csv"))
 volumes<-read.csv(file.path(cd,"vol.sample.csv")) #ac-ft
 #div.year<-read.csv("Diversion.years.csv")
@@ -57,19 +56,20 @@ sim.flow <- function(nat.wy, vol){
 }
 
 for(k in 1:ns){ 
-  # Calculate natural flow supply at the four gages
+  # Simulate natural flow supply at the four gages
   year<-cm.year[k,1]
   vol<-volumes[k,] #flow sample
 
-  cc<- cc.wy[cc.wy$wy == year, "Flow"]*1.98
-  bwb<- bwb.wy[bwb.wy$wy == year, "Flow"]*1.98
+  cc <- cc.wy[cc.wy$wy == year, "Flow"]*1.98
+  bwb<- bwb.wy[bwb.wy$wy == year, "bwb.nat.q"]*1.98
+  bws<- bws.wy[bws.wy$wy == year, "bws.nat.q"]*1.98
   
   bwb.flow.s[,k]<-sim.flow(bwb[183:365], vol$bwb)
-  #bws.nat.s[,k]<-sim.flow(year, bws.nat.wy, vol$bws)
+  bws.flow.s[,k]<-sim.flow(bws[183:365], vol$bws)
   #sc.nat.s[,k]<-sim.flow(year, sc.nat.wy, vol$sc)
   cc.flow.s[,k]<-sim.flow(cc[183:365], vol$cc)
   
-  # Calculate diversions at the three gages
+  # Simulate diversions at the three gages
   #yearDiv<-div.year[k,1]
   
   #bwb.div.s[,k] <- bwb.div.iy[yearDiv]
@@ -92,8 +92,8 @@ pred.int<-function(location){
 }
 
 bwb.pi <-as.data.frame(pred.int(bwb.flow.s))
-#pi[,"bws"] <-pred.int(bws.nat.s)
-cc.pi<-as.data.frame(pred.int(cc.flow.s))
+bws.pi <-as.data.frame(pred.int(bws.flow.s)) #pi[,"bws"]
+cc.pi <-as.data.frame(pred.int(cc.flow.s))
 
 # Plot Simulation Results
 # Big Wood @ Hailey
