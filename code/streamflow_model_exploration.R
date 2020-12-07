@@ -107,6 +107,7 @@ regsubsets.out<-regsubsets(var$abv.h[var$year >= 2000 & var$year < pred.yr]~., d
 
 # Diversions above Stanton Crossing
 plot(var$year, var$abv.s)
+hist <- var[var$year >= 2000 & var$year < pred.yr,] %>% select(bwb.wq, bws.wq,, bwb.vol.nat, bws.vol.nat, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw, year) 
 regsubsets.out<-regsubsets(var$abv.s[var$year >= 2000 & var$year < pred.yr]~., data=hist, nbest=3, nvmax=8)
 # these all do really poorly, and no trends in the data at all, so pull randomly
 
