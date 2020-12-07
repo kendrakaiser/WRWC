@@ -116,7 +116,7 @@ plot(var$year[var$year >=2000], var$bws.loss[var$year >=2000])
 hist <- var[var$year >= 2000 & var$year < pred.yr,] %>% select(bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw, year) 
 #use regsubsets to plot the results
 regsubsets.out<-regsubsets(var$bws.loss[var$year >= 2000 & var$year < pred.yr]~., data=hist, nbest=2, nvmax=8)
-# t.cg, t.gs, lowest BIC
+# t.cg, t.gs, lowest BIC, R2 == 0.55
 # g.swe, hc.swe, t.g, t.cg, t.gs highest R2 and third lowest BIC
 
 # ------------------------------------------------------------------------------ # 
