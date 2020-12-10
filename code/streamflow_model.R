@@ -61,9 +61,9 @@ swe.new<-data.frame(t(c(rep(NA,10))))
 names(swe.new)<-c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
 
 # summary stats
-mod_sum<-data.frame(array(NA,c(4,2)))
+mod_sum<-data.frame(array(NA,c(7,2)))
 colnames(mod_sum)<-c("Vol Adj-R2", "CM ADj-R2")
-rownames(mod_sum)<-c("bwb","bws","cc","sc")
+rownames(mod_sum)<-c("bwb","bws","cc","sc", "abv.h", "abv.s", "losses")
 
 # ------------------------------------------------------------------------------  
 #
@@ -336,7 +336,8 @@ width = 5.5, height = 5.5,units = "in", pointsize = 12,
 bg = "white", res = 600, type ="quartz") 
 
 fits<-fitted(cc_mod.cm)
-plot(var$cc.cm[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Camas Creek Center of Mass", xlim=c(110, 138), ylim=c(110,138))
+plot(var$cc.cm[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", 
+     main="Camas Creek Center of Mass", xlim=c(110, 138), ylim=c(110,138))
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
@@ -351,17 +352,22 @@ write.csv(pred.params.cm, file.path(cd,"pred.params.cm.csv"),row.names=T)
 # Apr-Sept diversion & reach gain predictions
 #
 
-preds.params.di<-data.frame(array(NA,c(1,3)))
+preds.params.div<-data.frame(array(NA,c(1,3)))
 names(preds.params.div)<-c("Vol","sigma","cor")
 rownames(preds.params.div)<-c("Div")
 
 # Above Hailey 
-plot(var$year, var$abv.h)
+png(filename = file.path(cd,"Div.abv.Hailey.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+plot(var$year, var$abv.h, xlab="Year", ylab="Diversions (ac-ft)")
+dev.off()
+
 plot(var$year[var$year >=2000], var$abv.h[var$year >=2000])
 hist <- var[var$year >=2000 & var$year < pred.yr,] %>% select(abv.h, g.swe, hc.swe, t.cg, t.lw) 
 # linear model 
 div_mod.h<-lm(abv.h~ g.swe+hc.swe+t.cg+t.lw, data=hist) 
-summary(div_mod.h)$adj.r.squared 
+mod_sum[4,1]<-summary(div_mod.h)$adj.r.squared 
 # April 1 Prediction Data 
 pred.dat<- var[var$year == pred.yr,] %>% select(g.swe, hc.swe, t.cg, t.lw) 
 # Model output
@@ -370,50 +376,63 @@ preds.params.div[1,1]<-preds.div$fit[1]
 preds.params.div[1,2]<-preds.div$se.fit
 #preds.params.div.[1,3]<-cor(dat$Total.Div,dat$Reach.Gain)
 
-png(filename = file.path(cd,"Div.abv.Hailey.png"),
+png(filename = file.path(cd,"Div.abv.Hailey_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
 fits<-fitted(div_mod.h)
-plot(var$abv.h[var$year >=2000 & var$year < pred.yr],c(fits))
+plot(var$abv.h[var$year >=2000 & var$year < pred.yr],c(fits), xlab="Observed", 
+     ylab="Predicted", xlim=c(5200, 11350), ylim=c(5200, 11350))
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
 # Above Stanton Crossing the lm does really poorly (0.36) - draw randomly or use a lm that includes natural flow estimate
+png(filename = file.path(cd,"Div.abv.Stanton.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+plot(var$year, var$abv.s, xlab="Year", ylab="Diversions (ac-ft)")
+dev.off()
 
+mod_sum[5,1]<-0.36
 # losses between Hailey and Stanton
-plot(var$year, var$bws.loss)
+png(filename = file.path(cd,"Losses.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+plot(var$year, var$bws.loss, xlab="Year", ylab="Annual Losses (ac-ft)")
+dev.off()
+
 plot(var$year[var$year >=2000], var$bws.loss[var$year >=2000])
 
 hist <- var[var$year >=2000 & var$year < pred.yr,] %>% select(bws.loss, g.swe, hc.swe, t.g, t.cg, t.gs) 
 # linear model 
 bws.loss_mod<-lm(bws.loss~ g.swe+hc.swe+t.cg+ t.gs+t.gs, data=hist) 
-summary(bws.loss_mod)$adj.r.squared 
+mod_sum[6,1]<summary(bws.loss_mod)$adj.r.squared 
 # April 1 Prediction Data 
 pred.dat<- var[var$year == pred.yr,] %>% select(g.swe,hc.swe,t.cg, t.gs,t.gs) 
 # Model output
 preds.div<-predict(bws.loss_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
 
+png(filename = file.path(cd,"Losses_modelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
 fits<-fitted(bws.loss_mod)
-plot(var$bws.loss[var$year >=2000 & var$year < pred.yr],c(fits))
+plot(var$bws.loss[var$year >=2000 & var$year < pred.yr],c(fits), xlab="Observed", 
+     ylab="Predicted", xlim=c(-73000, -39900), ylim=c(-73000, -39900))
 abline(0,1,col="gray50",lty=1)
-
+dev.off()
+library(knitr)
+kable(mod_sum)
 # --------------------
 # Draw a sample of volumes and water years with similar timing
 # These samples are drawn from multivariate normal distributions which are 
 # created from the correlation between total volume and center of mass (timing)
 # and the predicted volumes from each volume model
 
-# correlations between diversions -- 0.33 when you include all data, effectively none after 2000
-div.cor<-cor(var[var$year >= 2000,c('abv.h', 'abv.s', 'bws.loss')])
-round(div.cor,2) 
-
 # check correlations between flow conditions across the basins
-flow.data = var[var$year >= 1997,]
-flow.data= flow.data %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, abv.h, abv.s) 
+flow.data = var[var$year >= 1997,] %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, abv.h, abv.s, bws.loss) 
 # make this an output table?
 cor.mat1<- round(cor(flow.data,use="pairwise.complete"),2)  
-
+cor.mat1
 # check correlations between total volume and center of mass
 pred.pars<-rbind(pred.params.vol,pred.params.cm)
 cor.mat<-cor(cbind(log(flow.data[c(1,3,5,7)]),flow.data[c(2,4,6,8)]),use="pairwise.complete")
@@ -438,8 +457,6 @@ write.csv(exp(vol.sample), file.path(cd,"vol.sample.csv"),row.names=F)
 #plot(h,xlab="Volume",ylab="Probability")
 #plot(density(exp(vol.sample[,1])))
 
-
-
 # Draw sample of years with similar center of mass (timing)
 cm.data = var[var$year >= 1997,]
 cm.data = cm.data %>% select(year, bwb.cm.nat, bws.cm.nat,cc.cm, sc.cm) 
@@ -452,14 +469,37 @@ for(i in 1:dim(cm.data)[1]){
 }
 
 cm.data$prob<-cm.data$prob/sum(cm.data$prob)
-
 CMyear.sample<-sample(cm.data$year,5000,replace=TRUE,prob=cm.data$prob)
 
 # Of the 5000 replicates show the percentage that each year represents
 # add to output pdf
-summary(as.factor(CMyear.sample))/5000
-
+cm_sum<-summary(as.factor(CMyear.sample))/5000
+cm_sum
 write.csv(CMyear.sample, file.path(cd,"CMyear.sample.csv"),row.names=F)
+
+# correlations between diversions -- 0.33 when you include all data, effectively none after 2000
+div<-var[var$year >= 2000,c('abv.h', 'abv.s', 'bws.loss')]
+div.cor<-cor(var[var$year >= 2000,c('abv.h', 'abv.s', 'bws.loss')],use="pairwise.complete")
+round(div.cor,2) 
+
+outer.prod<-as.matrix(preds.params.div[,2])%*%t(preds.params.div[,2]) 
+#there would need to be params for all three, but the regression on abv.s is really weak
+cov.mat<-div.cor*outer.prod
+#write.table()
+for(i in 1:dim(div)[1]){
+  vec<-div[i,]
+  div$prob[i]<-pmvnorm(lower=as.numeric(vec)-500,
+                                   upper=as.numeric(vec)+500,mean=preds.params.div[,1],sigma=cov.mat)[1]
+}
+
+div$prob<-div$prob/sum(div$prob)
+div.sample<-sample(var$year[var$year >= 2000],5000,replace=TRUE, prob=div$prob)
+# ran this with no defined probability, so picks years based on random normal
+summary(as.factor(div.sample))/5000
+write.csv(div.sample,file.path(cd,"diversion.years.csv"),row.names=F)
+
+
+
 
 #options(knitr.duplicate.label = "allow")
 #rmarkdown::render("/Users/kek25/Documents/GitRepos/WRWC/code/streamflow_model.R")
