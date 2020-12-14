@@ -63,6 +63,9 @@ streamflow_data$day <- day(streamflow_data$Date)
 streamflow_data <- streamflow_data %>% select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
 # add diversion data to streamflow dataframe
 streamflow_data <- inner_join(streamflow_data, bw.div.gage, by = 'Date')
+streamflow_data$bwb.nat.q[streamflow_data$abv == 'bwb'] <- streamflow_data$Flow[streamflow_data$abv == 'bwb'] + streamflow_data$abv.h[streamflow_data$abv == 'bwb']
+streamflow_data$bws.nat.q[streamflow_data$abv == 'bws'] <- streamflow_data$Flow[streamflow_data$abv == 'bws'] + streamflow_data$abv.s[streamflow_data$abv == 'bws'] + streamflow_data$abv.h[streamflow_data$abv == 'bws']
+streamflow_data$bw.div[streamflow_data$abv == 'bws'] <- streamflow_data$abv.s[streamflow_data$abv == 'bws'] + streamflow_data$abv.h[streamflow_data$abv == 'bws']
 
 #Download reservoir data and site information
 res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
@@ -112,7 +115,7 @@ for(i in 1:length(stream.id)){
   if(unique(sub$abv) == 'bwb'){
     sub$nat.flow <- sub$Flow + sub$abv.h
   } else if (unique(sub$abv) == 'bws'){
-    sub$nat.flow = sub$Flow + sub$abv.s
+    sub$nat.flow = sub$Flow + sub$abv.s + sub$abv.h
   } else {next}
   
   cm = matrix(ncol = 1, nrow= length(years))
@@ -199,10 +202,11 @@ write.csv(metrics, file.path(cd,'metrics.csv'))
 write.csv(site_info, file.path(cd,'usgs_sites.csv'))
 
 # Merge april 1 swe and streamflow metrics & diversion data ----
-allApril1<- april1swe %>% inner_join(metrics, by ="year") %>% inner_join(bw.div.tot, by ="year") 
+bw.div.tot$year<- as.integer(bw.div.tot$year)
+allApril1<- april1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") 
 # 'natural' flow is the volume at the gage plus the volume from upstream diversions
 allApril1$bwb.vol.nat <- allApril1$bwb.vol + allApril1$abv.h
-allApril1$bws.vol.nat <- allApril1$bws.vol + allApril1$abv.s
+allApril1$bws.vol.nat <- allApril1$bws.vol + allApril1$abv.s + allApril1$abv.h
 allApril1$bws.loss <- allApril1$bws.vol.nat - allApril1$bwb.vol
 write.csv(allApril1, file.path(cd,'all_April1.csv'))
 
