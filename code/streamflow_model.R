@@ -15,7 +15,7 @@ source(file.path("~/github/WRWC/code", "packages.R"))
 rm(list=ls())
 
 cd = '~/Desktop/Data/WRWC'
-pred.yr <- 2019
+pred.yr <- 2020
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
@@ -424,9 +424,9 @@ dev.off()
 
 # Total Diversions ----
 var$div <- var$abv.h + var$abv.s
-hist <- var[var$year >=1997 & var$year < 2020,] %>% select(div, bws.wq, cg.swe, hc.swe) 
+hist <- var[var$year >=1997 & var$year < pred.yr,] %>% select(div, bws.wq, cg.swe, hc.swe) 
 # linear model 
-div_mod<-lm(log(var$div[var$year >=1997 & var$year < 2020])~ log(cg.swe)+log(hc.swe)+log(bws.wq), data=hist) 
+div_mod<-lm(log(var$div[var$year >=1997 & var$year < pred.yr]) ~ log(cg.swe)+log(hc.swe)+log(bws.wq), data=hist) 
 summary(div_mod)$adj.r.squared 
 # April 1 Prediction Data 
 pred.dat<- var[var$year == pred.yr,] %>% select(bws.wq, cg.swe, hc.swe) 
@@ -454,11 +454,11 @@ dev.off()
 # between each gage
 
 # check correlations between flow conditions across the basins
-flow.data = var[var$year >= 1997,] %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, div) 
+flow.data = var[var$year >= 1997,] %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm,div) 
 
 # check correlations between total volume and center of mass
 pred.pars<-rbind(pred.params.vol, pred.params.div, pred.params.cm)
-cor.mat<-cor(cbind(log(flow.data[c(1,3,5,7,9)]),flow.data[c(2,4,6,8)]),use="pairwise.complete")
+cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
 round(cor.mat,2)
 outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2]))
 cov.mat<-cor.mat*outer.prod
@@ -481,14 +481,14 @@ write.csv(exp(vol.sample), file.path(cd,"vol.sample.csv"),row.names=F)
 #plot(density(exp(vol.sample[,1])))
 
 # Draw sample of years with similar center of mass (timing)
-cm.data = var[var$year >= 1997,]
+cm.data = var[var$year >= 1997 & var$year < pred.yr,]
 cm.data = cm.data %>% select(year, bwb.cm.nat, bws.cm.nat,cc.cm, sc.cm) 
 cm.data$prob<-NA
 
 for(i in 1:dim(cm.data)[1]){
   vec<-cm.data[i,2:5]
   cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-0.5,
-                          upper=as.numeric(vec)+0.5,mean=pred.params.cm[,1],sigma=cov.mat[5:8,5:8])[1]
+                          upper=as.numeric(vec)+0.5,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1]
 }
 
 cm.data$prob<-cm.data$prob/sum(cm.data$prob)
