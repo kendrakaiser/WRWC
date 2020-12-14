@@ -115,7 +115,8 @@ hist <- var[var$year < pred.yr,] %>% select(bwb.vol.nat, g.swe, gs.swe, hc.swe)
 
 bwb_mod<-lm(log(bwb.vol.nat)~ g.swe+ log(gs.swe)+ hc.swe, data=hist) 
 mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
-
+full_sum<- summary(bwb_mod)
+mse<- mean(full_sum$residuals^2)
 #April 1 bwb Prediction Data
 pred.dat<-var[var$year == pred.yr,] %>% select(g.swe, gs.swe, hc.swe) 
 
@@ -352,11 +353,11 @@ write.csv(pred.params.cm, file.path(cd,"pred.params.cm.csv"),row.names=T)
 # Apr-Sept diversion & reach gain predictions
 #
 
-preds.params.div<-data.frame(array(NA,c(1,3)))
-names(preds.params.div)<-c("Vol","sigma","cor")
-rownames(preds.params.div)<-c("Div")
+pred.params.div<-array(NA,c(1,2))
+colnames(pred.params.div)<-c("log.vol","sigma")
+rownames(pred.params.div)<-c("div")
 
-# Above Hailey 
+# Above Hailey -----
 png(filename = file.path(cd,"Div.abv.Hailey.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
@@ -406,7 +407,7 @@ plot(var$year[var$year >=2000], var$bws.loss[var$year >=2000])
 hist <- var[var$year >=2000 & var$year < pred.yr,] %>% select(bws.loss, g.swe, hc.swe, t.g, t.cg, t.gs) 
 # linear model 
 bws.loss_mod<-lm(bws.loss~ g.swe+hc.swe+t.cg+ t.gs+t.gs, data=hist) 
-mod_sum[6,1]<summary(bws.loss_mod)$adj.r.squared 
+mod_sum[6,1]<-summary(bws.loss_mod)$adj.r.squared 
 # April 1 Prediction Data 
 pred.dat<- var[var$year == pred.yr,] %>% select(g.swe,hc.swe,t.cg, t.gs,t.gs) 
 # Model output
@@ -420,23 +421,45 @@ plot(var$bws.loss[var$year >=2000 & var$year < pred.yr],c(fits), xlab="Observed"
      ylab="Predicted", xlim=c(-73000, -39900), ylim=c(-73000, -39900))
 abline(0,1,col="gray50",lty=1)
 dev.off()
-library(knitr)
-kable(mod_sum)
+
+# Total Diversions ----
+var$div <- var$abv.h + var$abv.s
+hist <- var[var$year >=1997 & var$year < 2020,] %>% select(div, bws.wq, cg.swe, hc.swe) 
+# linear model 
+div_mod<-lm(log(var$div[var$year >=1997 & var$year < 2020])~ log(cg.swe)+log(hc.swe)+log(bws.wq), data=hist) 
+summary(div_mod)$adj.r.squared 
+# April 1 Prediction Data 
+pred.dat<- var[var$year == pred.yr,] %>% select(bws.wq, cg.swe, hc.swe) 
+# Model output
+preds.div<-predict(div_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+
+pred.params.div[1,1]<-preds.div$fit[1]
+pred.params.div[1,2]<-preds.div$se.fit
+
+png(filename = file.path(cd,"Diversions_modelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+fits<-fitted(div_mod)
+plot(var$div[var$year >=1997 & var$year <2020],exp(c(fits)), xlab="Observed", 
+     ylab="Predicted", xlim=c(32500, 58800), ylim=c(32500, 58800))
+abline(0,1,col="gray50",lty=1)
+dev.off()
+
+#library(knitr)
+#kable(mod_sum)
 # --------------------
 # Draw a sample of volumes and water years with similar timing
 # These samples are drawn from multivariate normal distributions which are 
 # created from the correlation between total volume and center of mass (timing)
-# and the predicted volumes from each volume model
+# between each gage
 
 # check correlations between flow conditions across the basins
-flow.data = var[var$year >= 1997,] %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, abv.h, abv.s, bws.loss) 
-# make this an output table?
-cor.mat1<- round(cor(flow.data,use="pairwise.complete"),2)  
-cor.mat1
-# check correlations between total volume and center of mass
-pred.pars<-rbind(pred.params.vol,pred.params.cm)
-cor.mat<-cor(cbind(log(flow.data[c(1,3,5,7)]),flow.data[c(2,4,6,8)]),use="pairwise.complete")
+flow.data = var[var$year >= 1997,] %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, div) 
 
+# check correlations between total volume and center of mass
+pred.pars<-rbind(pred.params.vol, pred.params.div, pred.params.cm)
+cor.mat<-cor(cbind(log(flow.data[c(1,3,5,7,9)]),flow.data[c(2,4,6,8)]),use="pairwise.complete")
+round(cor.mat,2)
 outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2]))
 cov.mat<-cor.mat*outer.prod
 
@@ -444,10 +467,10 @@ cov.mat<-cor.mat*outer.prod
 write.csv(cov.mat, file.path(cd,"cov.mat.csv"),row.names=T)
 write.csv(pred.pars, file.path(cd,"pred.pars.csv"),row.names=T)
 
-
+vol.pars<-rbind(pred.params.vol, pred.params.div)
 # Draw flow volumes using multivariate normal distribution (ac-ft)
-vol.sample<-mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4])
-colnames(vol.sample)<-c("bwb.nat","bws.nat","cc","sc")
+vol.sample<-mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat[1:5,1:5])
+colnames(vol.sample)<-c("bwb.nat","bws.nat","cc","sc", "div")
 write.csv(exp(vol.sample), file.path(cd,"vol.sample.csv"),row.names=F)
 
 # Plot the pdfs of total annual flow from each model?
