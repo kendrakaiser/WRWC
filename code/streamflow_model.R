@@ -500,30 +500,6 @@ cm_sum<-summary(as.factor(CMyear.sample))/5000
 cm_sum
 write.csv(CMyear.sample, file.path(cd,"CMyear.sample.csv"),row.names=F)
 
-# correlations between diversions -- 0.33 when you include all data, effectively none after 2000
-div<-var[var$year >= 2000,c('abv.h', 'abv.s', 'bws.loss')]
-div.cor<-cor(var[var$year >= 2000,c('abv.h', 'abv.s', 'bws.loss')],use="pairwise.complete")
-round(div.cor,2) 
-
-outer.prod<-as.matrix(preds.params.div[,2])%*%t(preds.params.div[,2]) 
-#there would need to be params for all three, but the regression on abv.s is really weak
-cov.mat<-div.cor*outer.prod
-#write.table()
-for(i in 1:dim(div)[1]){
-  vec<-div[i,]
-  div$prob[i]<-pmvnorm(lower=as.numeric(vec)-500,
-                                   upper=as.numeric(vec)+500,mean=preds.params.div[,1],sigma=cov.mat)[1]
-}
-
-div$prob<-div$prob/sum(div$prob)
-div.sample<-sample(var$year[var$year >= 2000],5000,replace=TRUE, prob=div$prob)
-# ran this with no defined probability, so picks years based on random normal
-summary(as.factor(div.sample))/5000
-write.csv(div.sample,file.path(cd,"diversion.years.csv"),row.names=F)
-
-
-
-
 #options(knitr.duplicate.label = "allow")
 #rmarkdown::render("/Users/kek25/Documents/GitRepos/WRWC/code/streamflow_model.R")
 
