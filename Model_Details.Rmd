@@ -109,7 +109,8 @@ mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 # 3. Subset April 1 Prediction Data
 pred.dat<-var[var$year == pred.yr,] %>% select(g.swe, gs.swe, hc.swe) 
 # 4. Big Wood at Hailey Model output
-mod_out<- modOut(bwb_mod, pred.dat, hist$bwb.wq, hist$bwb.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol.nat[var$year == pred.yr-1])
+mod_out<- modOut(bwb_mod, pred.dat, hist$bwb.wq, hist$bwb.vol.nat, mean(hist$g.swe,  
+hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol.nat[var$year == pred.yr-1])
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]] # standard error, "sigma"
 ```
@@ -120,7 +121,8 @@ After the streamflow volume model section of code, the same procedure is done fo
 # Big Wood at Hailey Natural Flow Volume model
 bwb_mod<-lm(log(bwb.vol.nat)~ g.swe+ log(gs.swe)+ hc.swe, data=hist) 
 # BW Hailey Natural Flow Center of Mass model
-bwb_mod.cm <-lm(bwb.cm.nat ~ log(bwb.wq) + g.swe+ hc.swe+ t.g +t.gs+t.lw+ log(cg.swe)+log(gs.swe), data=hist)
+bwb_mod.cm <-lm(bwb.cm.nat ~ log(bwb.wq) + g.swe+ hc.swe+ t.g +t.gs+t.lw+ 
+log(cg.swe)+log(gs.swe), data=hist)
 ```
 
 ```{r, Big Wood Hailey Model Fits, echo=FALSE, fig.cap="", fig.show="hold", out.width = '50%', fig.pos='H'}
@@ -143,6 +145,7 @@ knitr::include_graphics(c("figures/BWS_modelFit.png", "figures/BWS_CMmodelFit.pn
 ### Silver Creek
 
 The Silver Creek Model is unique in that it uses a mixture of SWE data from both the Big Wood and Little Wood Basins. While it is not traditional to use SWE from outside of a delineated HUC basin, none of the SNOTEL sites are adequate representations of the snow that is contributing to the Silver Creek Watershed. Given this data limitation and the groundwater interactions between Big Wood and Silver Creek, the model includes SWE data from Galena, Chocolate Gulch, and Swede Peak. This is one utility of using a statistical model, namely if SWE from these locations are correlated to flows in Silver Creek historically, they can do a sufficient job of predicting flows in the basin. Further discussion on viable next steps for the Silver Creek Model are discussed in the Recommendations section. 
+
 
 ```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
 # Silver Creek Flow Volume model
@@ -172,8 +175,10 @@ knitr::include_graphics(c("figures/CC_modelFit.png", "figures/CC_CMmodelFit.png"
 ### Big Wood Diversions
 ```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
 # Total Big Wood Diversion Volume linear model 
-div_mod<-lm(log(var$div[var$year >=1997 & var$year < pred.yr]) ~ log(cg.swe)+log(hc.swe)+log(bws.wq), data=hist) 
-# Data is subset to after 1997 when the Big Wood at Stanton gage came on board, revisit this model using bwb.wq so we can use the full dataset
+div_mod<-lm(log(var$div[var$year >=1997 & var$year < pred.yr]) ~ log(cg.swe)+log(hc.swe)
++log(bws.wq), data=hist) 
+# Data is subset to after 1997 when the Big Wood at Stanton gage came on board, 
+# revisit this model using bwb.wq so we can use the full dataset
 ```
 
 ```{r, Big Wood Diversions Model Fit, echo=FALSE, fig.cap="", fig.show="hold", fig.aling="left", out.width = '45%', fig.pos='H'}
@@ -195,16 +200,18 @@ knitr::include_graphics(c("figures/Diversions_modelFit.png", "figures/CC_CMmodel
 
 Given the proximity of the three basins, correlations between the basins' total annual irrigation season streamflow, diversions, and center of mass allow us to ensure that the predicted flows at each gage are representative of how regional climatic patterns will be effecting all locations. For example, we would not expect Camas Creek to have an ececptionally dry year in a year when the Big Wood is experiencing an exceptionally high streamflow year. The correltion between sites is combined with the standard error from each linear model to create a covariance matrix which is use to bootstrap model predictions.
 
+
 ```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
 # Correlation matrix between streamflow volumes, diversions and centers of mass
 cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
 # Create covariance matrix by multiplying by each models standard error
-pred.pars<-rbind(pred.params.vol, pred.params.div, pred.params.cm) # pred.pars[1,]: fitted values, 
-outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2])) # pred.pars[2,]: sigma (standard error) 
+# pred.pars[1,]: fitted values; pred.pars[2,]: sigma (standard error)  
+pred.pars<-rbind(pred.params.vol, pred.params.div, pred.params.cm) 
+outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2])) 
 cov.mat<-cor.mat*outer.prod
 ```
 
-```{r, Covariance_matrix, echo=FALSE, fig.cap="", fig.aling="left", out.width = '100%', fig.pos='H'}
+```{r, Covariance_matrix, echo=FALSE, fig.cap="Correlation matrix between gages", fig.aling="left", out.width = '100%', fig.pos='H'}
 knitr::include_graphics("figures/correlation_matrix.png")
 ```
 
@@ -217,6 +224,11 @@ vol.sample<-mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat[1:5,1:5]) # historica
 
 This results in a distribution of potential volumes for each gage, given the input predictor variables.
 -- put in a figure here showing the distribution of results as an example of the output 
+
+```{r, Sampled Volumes, echo=FALSE, fig.cap="Distrubution of sampled volumes at each gage", fig.aling="left", out.width = '100%', fig.pos='H'}
+knitr::include_graphics("figures/sampled_volumes.png")
+```
+
 
 A similar process is used for estimating the timing of runoff.
 
@@ -236,11 +248,17 @@ cm.data$prob<-cm.data$prob/sum(cm.data$prob) # turn into percentage
 CMyear.sample<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob)
 ```
 
+```{r, CM summary, echo=FALSE, fig.cap="Summary of center of mass sample", fig.aling="left", out.width = '40%', fig.pos='H'}
+knitr::include_graphics("figures/CM_summary.png")
+```
+
 The resulting matrices are then saved as `.csv` to be used in the final simulation model.
 
 ## 2.4 Streamflow Simulation
 
-The original streamflow data, sampled volumes and centers of mass are imported and the irrigation season hydrographs are simulated. This is done by selecting the timeseries of natural flow that corresponds with a given year from the center of mass sample and normalizing it by a volume from the multivariate distribution sample.
+The final irrigation season streamflow simulations are modeled in the `streamflow_simulation.R` script.
+
+The original streamflow data, sampled volumes and centers of mass are imported and the irrigation season hydrographs are simulated. This is done by selecting the timeseries of natural flow that corresponds with a given year from the center of mass sample and normalizing it by a volume from the multivariate distribution sample. This 'analog water year' approach effectively uses the linear models to estimate the most similar year in runoff timing, and normalizes (another way to say this?) that hydrograph based on the predicted volume estimates.
 
 ```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
 for(k in 1:ns){ # ns = number of simulations, in our case 5000
@@ -248,8 +266,8 @@ for(k in 1:ns){ # ns = number of simulations, in our case 5000
   year<-cm.year[k,1] # year sample
   vol<-volumes[k,] # volume sample
   
-  # select the irrigation season streamflow timeseries that corresponds with the center of mass sample
-  bwb<- bwb.wy[bwb.wy$wy == year, "bwb.nat.q"][183:365] 
+  # select the streamflow timeseries that corresponds with the center of mass sample
+  bwb<- bwb.wy[bwb.wy$wy == year, "bwb.nat.q"][183:365]  # irrigation season 
   # normalize the sampled hydrograph by the sampled volume
   bwb.flow.s[,k]<- bwb * vol/(sum(bwb)*1.98) 
   # 1.98 is the conversion from cfs to ac-ft, (cfs) * (ac-ft/ac-ft)
@@ -264,6 +282,12 @@ pred.int<-function(location){
   
   return(cbind(lo, hi, meanQ))
 }
+```
+
+The following figure is an example model output figure for the Big Wood, you can see the prediction interval is quite narrow around the mean (blue) and in comparison to the year with the most similar center of mass (green)
+
+```{r, Simulation example, echo=FALSE, fig.cap="Simulated flows on the Big Wood River at Hailey", fig.aling="left", out.width = '100%', fig.pos='H'}
+knitr::include_graphics("figures/BigWood_Hailey_Simulation.png")
 ```
 
 ## 2.5 Curtailment Model and Simulation
