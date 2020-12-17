@@ -3,11 +3,12 @@
 
 # load packages
 
+devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
+
 library(MASS)
 library(plotrix)
 library(mvtnorm)
 library(tidyverse)
-
 library(dataRetrieval)
 library(tidyverse)
 library(snotelr)
@@ -19,7 +20,6 @@ library(plyr)
 library(readr)
 library(lubridate)
 library(lfstat)
-
-devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
+library(gridExtra)
 library(RNRCS)
 
