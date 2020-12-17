@@ -15,7 +15,7 @@ source(file.path("~/github/WRWC/code", "packages.R"))
 rm(list=ls())
 
 cd = '~/Desktop/Data/WRWC'
-fig_dir = file.path("~/github/WRWC/figures/")
+fig_dir = "~/github/WRWC/figures/" #update this to be local
 
 pred.yr <- 2020
 
@@ -116,11 +116,10 @@ modOut<- function(mod, pred.dat, wq, vol, meanSWE, lastQ){
 # Subset Big Wood Winter flows, Snotel from  Galena & Galena Summit, Hyndman
 hist <- var[var$year < pred.yr,] %>% select(bwb.vol.nat, g.swe, gs.swe, hc.swe) 
 # Big Wood at Hailey linear model
-
 bwb_mod<-lm(log(bwb.vol.nat)~ g.swe+ log(gs.swe)+ hc.swe, data=hist) 
 mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
-full_sum<- summary(bwb_mod)
-mse<- mean(full_sum$residuals^2)
+#full_sum<- summary(bwb_mod)
+#mse<- mean(full_sum$residuals^2)
 #April 1 bwb Prediction Data
 pred.dat<-var[var$year == pred.yr,] %>% select(g.swe, gs.swe, hc.swe) 
 
@@ -357,7 +356,7 @@ plot(var$cc.cm[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Pred
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
-### Save model outputs for simulation runs
+### Save model outputs for simulation runs (is this actually used later?)
 
 write.csv(output.vol, file.path(cd,"pred.output.vol.csv"),row.names=T)
 write.csv(pred.params.vol, file.path(cd,"pred.params.vol.csv"),row.names=T)
@@ -471,24 +470,23 @@ dev.off()
 # check correlations between flow conditions across the basins
 flow.data = var[var$year >= 1997,] %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm,div) 
 
-# calculate correlations between gages total volume and center of mass
-pred.pars<-rbind(pred.params.vol, pred.params.div, pred.params.cm)
+# calculate correlations between gages' total volume, diversions and center of mass
 cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
 
 # create covariance matrix by multiplying by each models standard error
+pred.pars<-rbind(pred.params.vol, pred.params.div, pred.params.cm)
 outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2]))
 cov.mat<-cor.mat*outer.prod
 
-vol.pars<-rbind(pred.params.vol, pred.params.div)
-
 # Draw flow volumes using multivariate normal distribution (ac-ft)
+vol.pars<-rbind(pred.params.vol, pred.params.div)
 vol.sample<-mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat[1:5,1:5])
 colnames(vol.sample)<-c("bwb.nat","bws.nat","cc","sc", "div")
 write.csv(exp(vol.sample), file.path(cd,"vol.sample.csv"),row.names=F)
 
 #save correlation matrix for model details report
 cor.mat.out<-as.data.frame(round(cor.mat,2))
-png(file.path(fig_dir,"correlation_matrix.png"), height = 50*nrow(cor.mat.out), width = 200*ncol(cor.mat.out))
+png(file.path(fig_dir,"correlation_matrix.png"), height = 25*nrow(cor.mat.out), width = 80*ncol(cor.mat.out))
 grid.table(cor.mat.out)
 dev.off()
 # save output from correlations
@@ -514,7 +512,6 @@ for(i in 1:dim(cm.data)[1]){
   cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-0.5,
                           upper=as.numeric(vec)+0.5,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1]
 }
-
 cm.data$prob<-cm.data$prob/sum(cm.data$prob)
 # create array of years based on their similarity to prediction year
 CMyear.sample<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob)
