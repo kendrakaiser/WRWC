@@ -82,7 +82,7 @@ knitr::include_graphics("figures/Div.abv.Hailey.png") # change to total diversio
 
 ## 2.2 Temperature Model (tbd)
 
-## 2.3 Streamflow Models
+## 2.3.1 Streamflow Models
 Initial model development was explored using the `streamflow_model_exlploration.R` script. The full suite of predictor variables were subset for each gage and the final set of predictor variables were determined using the `regsubsets` package, which enables visualization of adjusted R2 and BIC of each parameter set (e.g. Figure X). Final streamflow models are defined and synthesized in `streamflow_models.R`, this script also creates predictions for each model for the user defined year. 
 
 ```{r, Regsubsets BIC example, echo=FALSE, fig.cap="", fig.aling="left", out.width = '50%', fig.pos='H'}
@@ -171,21 +171,100 @@ knitr::include_graphics(c("figures/CC_modelFit.png", "figures/CC_CMmodelFit.png"
 
 ### Big Wood Diversions
 ```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
+# Total Big Wood Diversion Volume linear model 
+div_mod<-lm(log(var$div[var$year >=1997 & var$year < pred.yr]) ~ log(cg.swe)+log(hc.swe)+log(bws.wq), data=hist) 
+# Data is subset to after 1997 when the Big Wood at Stanton gage came on board, revisit this model using bwb.wq so we can use the full dataset
 ```
 
-```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
+```{r, Big Wood Diversions Model Fit, echo=FALSE, fig.cap="", fig.show="hold", fig.aling="left", out.width = '45%', fig.pos='H'}
+knitr::include_graphics(c("figures/Diversions_modelFit.png", "figures/CC_CMmodelFit.png"))
 ```
 
 ### Silver Creek Diversions
 
-explanation of use of covariance matrix for sampling from multivariate distribution
+```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
+# Total Silver Creek Diversion Volume linear model 
+# div_mod<-lm()
+```
+
+```{r,Silver Creek Diversions Model Fit, echo=FALSE, fig.cap="", fig.show="hold", fig.aling="left", out.width = '45%', fig.pos='H'}
+#knitr::include_graphics(c("figures/SC_diversions_modelFit.png", "figures/CC_CMmodelFit.png"))
+```
+
+## 2.3.2 Streamflow Correlations 
+
+Given the proximity of the three basins, correlations between the basins' total annual irrigation season streamflow, diversions, and center of mass allow us to ensure that the predicted flows at each gage are representative of how regional climatic patterns will be effecting all locations. For example, we would not expect Camas Creek to have an ececptionally dry year in a year when the Big Wood is experiencing an exceptionally high streamflow year. The correltion between sites is combined with the standard error from each linear model to create a covariance matrix which is use to bootstrap model predictions.
+
+```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
+# Correlation matrix between streamflow volumes, diversions and centers of mass
+cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
+# Create covariance matrix by multiplying by each models standard error
+pred.pars<-rbind(pred.params.vol, pred.params.div, pred.params.cm) # pred.pars[1,]: fitted values, 
+outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2])) # pred.pars[2,]: sigma (standard error) 
+cov.mat<-cor.mat*outer.prod
+```
+
 ```{r, Covariance_matrix, echo=FALSE, fig.cap="", fig.aling="left", out.width = '100%', fig.pos='H'}
 knitr::include_graphics("figures/correlation_matrix.png")
 ```
 
+Flow volumes are then sampled from the multivariate distribution.
+
+```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
+vol.pars<-rbind(pred.params.vol, pred.params.div) # only use predictions from volume models
+vol.sample<-mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat[1:5,1:5]) # historical covariance of volumes
+```
+
+This results in a distribution of potential volumes for each gage, given the input predictor variables.
+-- put in a figure here showing the distribution of results as an example of the output 
+
+A similar process is used for estimating the timing of runoff.
+
+```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
+cm.data = var[var$year >= 1997 & var$year < pred.yr,] # only use complete dataset
+cm.data = cm.data %>% select(year, bwb.cm.nat, bws.cm.nat,cc.cm, sc.cm) 
+cm.data$prob<-NA
+
+# pmvnorm calculates the distribution function of the multivariate normal distribution
+for(i in 1:dim(cm.data)[1]){
+  vec<-cm.data[i,2:5]
+  cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-0.5,
+                          upper=as.numeric(vec)+0.5,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1]
+}
+cm.data$prob<-cm.data$prob/sum(cm.data$prob) # turn into percentage 
+# create array of years based on their similarity to prediction year
+CMyear.sample<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob)
+```
+
+The resulting matrices are then saved as `.csv` to be used in the final simulation model.
+
 ## 2.4 Streamflow Simulation
 
-simulation and prediction intervals
+The original streamflow data, sampled volumes and centers of mass are imported and the irrigation season hydrographs are simulated. This is done by selecting the timeseries of natural flow that corresponds with a given year from the center of mass sample and normalizing it by a volume from the multivariate distribution sample.
+
+```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
+for(k in 1:ns){ # ns = number of simulations, in our case 5000
+  # Simulate natural flow supply at the four gages and total diversions
+  year<-cm.year[k,1] # year sample
+  vol<-volumes[k,] # volume sample
+  
+  # select the irrigation season streamflow timeseries that corresponds with the center of mass sample
+  bwb<- bwb.wy[bwb.wy$wy == year, "bwb.nat.q"][183:365] 
+  # normalize the sampled hydrograph by the sampled volume
+  bwb.flow.s[,k]<- bwb * vol/(sum(bwb)*1.98) 
+  # 1.98 is the conversion from cfs to ac-ft, (cfs) * (ac-ft/ac-ft)
+```
+
+Prediction intervals are calculated from the relevant quantiles from the simulation results
+```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
+pred.int<-function(location){
+  lo<-apply(location,1,quantile,0.05, na.rm=TRUE)
+  hi<-apply(location,1,quantile,0.95, na.rm=TRUE)
+  meanQ<-apply(location,1,mean, na.rm=TRUE)
+  
+  return(cbind(lo, hi, meanQ))
+}
+```
 
 ## 2.5 Curtailment Model and Simulation
 
