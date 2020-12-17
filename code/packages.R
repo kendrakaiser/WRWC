@@ -22,3 +22,4 @@ library(lfstat)
 
 devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
 library(RNRCS)
+
