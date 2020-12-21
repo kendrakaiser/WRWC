@@ -60,7 +60,7 @@ regsubsets.out<-regsubsets(log(var$bws.vol.nat[var$year < pred.yr & var$year > 1
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
-hist <- var[var$year < pred.yr,] %>% select(sc.vol, sc.wq, ga.swe, sp.swe, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+hist <- var[var$year < pred.yr,] %>% select(sc.vol.nat, sc.wq, ga.swe, sp.swe, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
 hist$log.sp <- log(hist$sp.swe)
 hist$log.wq <- log(hist$sc.wq)
 hist$log.cg<- log(hist$cg.swe)
@@ -68,9 +68,11 @@ hist$log.hc<- log(hist$hc.swe)
 hist$log.bbwq<- log(hist$bwb.wq)
 
 # Silver Creek regsubsets 
-regsubsets.out<-regsubsets(sc.vol[var$year < pred.yr]~., data=hist, nbest=3, nvmax=5)
+regsubsets.out<-regsubsets(log(sc.vol.nat[var$year < pred.yr])~., data=hist, nbest=3, nvmax=5)
 # 0.83 sc.wq, sp.swe, g.swe, log cg.swe lowest BIC w log(sc.vol)
 #0.82 sc.wq, sp.swe, log(cg.swe) BIC=-35 in both ... compare the two
+#0.9 sc.wq, sp.swe, bwb.wq
+#0.9 log(sc.vol.nat) sc.wq, ga.swe, g.swe, log(hc.swe), log(bwb.wq)
 
 # -------------------------------------------------------------
 # camas creek
