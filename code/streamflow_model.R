@@ -471,12 +471,16 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 # Silver Creek Diversions ----
 # g.swe, t.cg, t.gs,t.hc, log.cg, log.lwd
-hist <- var[var$year>1993 & var$year < pred.yr,] %>% select(sc.div, g.swe, t.cg, t.gs, t.hc, cg.swe, lwd.swe) 
+hist <- var[var$year>1993 & var$year < pred.yr,] %>% select(sc.div, g.swe, cg.swe, lwd.swe, t.cg, t.gs, t.hc) 
+hist$temps<- rowMeans(cbind(hist$t.cg, hist$t.gs, hist$t.hc), na.rm=TRUE)
 # linear model 
-sc.div_mod<-lm(log(var$sc.div[var$year>1993 & var$year < pred.yr]) ~ g.swe+ t.cg+ t.gs+ t.hc+log(cg.swe)+log(lwd.swe), data=hist) 
-summary(sc.div_mod)$adj.r.squared 
+sc.div_mod<-lm(log(var$sc.div[var$year>1993 & var$year < pred.yr]) ~ g.swe+ temps+log(cg.swe)+log(lwd.swe), data=hist) 
+summary(sc.div_mod)$adj.r.squared #not gonna work 
 # April 1 Prediction Data 
-pred.dat<- var[var$year == pred.yr,] %>% select(g.swe, t.cg, t.gs, t.hc, cg.swe, lwd.swe) 
+params<- var[var$year == pred.yr,] %>% select(g.swe, cg.swe, lwd.swe)
+pred.dat<- params %>% slice(rep(1:n(), 5000))
+pred.dat$temps<- temp.ran$aj.temps.scd
+
 # Model output
 preds.div<-predict(sc.div_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
 
