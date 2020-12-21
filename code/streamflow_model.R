@@ -251,10 +251,10 @@ modOutcm<- function(mod.cm, pred.dat, pred.dat.temps, hist.temps, hist.cm, pred.
   return(list(output.cm, pred.params.cm))
 }
 
-# Big Wood at hailey
+# Big Wood at hailey center of mass
 hist <- var[var$year < pred.yr,] %>% select(bwb.cm.nat, bwb.wq, g.swe, hc.swe, t.g, t.gs, t.lw, cg.swe, gs.swe) 
 hist$temps <-rowMeans(cbind(hist$t.g, hist$t.gs, hist$t.lw), na.rm=TRUE)
-# BW Hailey linear model
+# BW Hailey center of mass linear model
 bwb_mod.cm <-lm(bwb.cm.nat ~ log(bwb.wq) + g.swe+ hc.swe+ temps+ log(cg.swe)+log(gs.swe), data=hist)
 mod_sum[1,2]<-summary(bwb_mod.cm)$adj.r.squared 
 
@@ -264,7 +264,8 @@ pred.dat<- params %>% slice(rep(1:n(), 5000))
 pred.dat$temps<- temp.ran$aj.temps.bwh
 
 # Big Wood Hailey Model output
-mod_out<- modOutcm(bwb_mod.cm, pred.dat, pred.dat$temps, c(hist$t.g,hist$t.gs,hist$t.lw), hist$bwb.cm.nat, params[2:5], cbind(hist[,3:4], hist[,8:9]))
+mod_out<- modOutcm(bwb_mod.cm, pred.dat, pred.dat$temps, c(hist$t.g,hist$t.gs,hist$t.lw), 
+                   hist$bwb.cm.nat, params[2:5], cbind(hist[,3:4], hist[,8:9]))
 output.cm[1,] <- mod_out[[1]]
 pred.params.cm[1,] <- mod_out[[2]]
 
@@ -281,15 +282,19 @@ dev.off()
 # Big Wood at Stanton
 # 
 hist <- var[var$year < pred.yr,] %>% select(bws.cm.nat, lwd.swe, cg.swe, hc.swe, t.cg, t.g, t.hc, t.lw) 
-# BWS linear model
-bws_mod.cm <-lm(bws.cm.nat ~ lwd.swe +log(cg.swe)+log(hc.swe) + t.cg+ t.g + t.hc+ t.lw, data=hist)
+hist$temps <-rowMeans(cbind(hist$t.g, hist$t.g, hist$t.hc), na.rm=TRUE)
+# BWS linear model - update temperature options if time allows, dropped from 0.934 to 0.62 with the lme temp
+bws_mod.cm <-lm(bws.cm.nat ~ lwd.swe +log(cg.swe)+log(hc.swe) + temps, data=hist)
 mod_sum[2,2]<-summary(bws_mod.cm)$adj.r.squared 
 
 # April 1 Prediction Data 
-pred.dat<- var[var$year == pred.yr,] %>% select(lwd.swe, cg.swe, hc.swe, t.cg, t.g, t.hc, t.lw) 
+params<- var[var$year == pred.yr,] %>% select(lwd.swe, cg.swe, hc.swe) 
+pred.dat<- params %>% slice(rep(1:n(), 5000))
+pred.dat$temps<- temp.ran$aj.temps.bws
 
 # BWS Model output
-mod_out<- modOutcm(bws_mod.cm, pred.dat, c(pred.dat$t.cg,pred.dat$t.g,pred.dat$t.lw), c(hist$t.cg,hist$t.g,hist$t.lw), hist$bws.cm.nat)
+mod_out<- modOutcm(bws_mod.cm, pred.dat, pred.dat$temps, c(hist$t.cg,hist$t.g,hist$t.lw), 
+                   hist$bws.cm.nat, params, hist[,2:4])
 output.cm[2,] <- mod_out[[1]]
 pred.params.cm[2,] <- mod_out[[2]]
 
@@ -305,17 +310,21 @@ dev.off()
 # --------------------
 # Subset Silver Creek Winter flows, Snotel from Chocolate Gulch, Hyndaman, Lost Wood Div. & Swede Peak
 #
-hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, cg.swe, hc.swe, lwd.swe, t.cg, t.gs, sp.swe) 
+hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, cg.swe, hc.swe, lwd.swe, sp.swe, t.cg, t.gs) 
+hist$temps <-rowMeans(cbind(hist$t.cg, hist$t.gs), na.rm=TRUE)
 # Silver Creek linear model
 # note here that this includes swe from the big wood and the little wood 
-sc_mod.cm<-lm(sc.cm~ cg.swe+ hc.swe+ lwd.swe+t.cg+t.gs+log(sp.swe)+log(sc.wq), data=hist) 
+sc_mod.cm<-lm(sc.cm~ cg.swe+ hc.swe+ lwd.swe+temps+log(sp.swe)+log(sc.wq), data=hist) 
 mod_sum[4,2]<-summary(sc_mod.cm)$adj.r.squared 
 
 # April 1 SC Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% select(sc.wq, cg.swe, hc.swe, lwd.swe, t.cg, t.gs, sp.swe) 
+params<-var[var$year == pred.yr,] %>% select(sc.wq, cg.swe, hc.swe, lwd.swe, sp.swe) 
+pred.dat<- params %>% slice(rep(1:n(), 5000))
+pred.dat$temps<- temp.ran$aj.temps.sc
 
 # SC Model output
-mod_out<- modOutcm(sc_mod.cm, pred.dat, c(pred.dat$t.cg,pred.dat$t.gs), c(hist$t.cg,hist$t.gs), hist$sc.cm)
+mod_out<- modOutcm(sc_mod.cm, pred.dat, pred.dat$temps, c(hist$t.cg,hist$t.gs), 
+                   hist$sc.cm, params[2:5], hist[,3:6])
 output.cm[4,] <- mod_out[[1]]
 pred.params.cm[4,] <- mod_out[[2]]
 
@@ -338,10 +347,12 @@ cc_mod.cm<-lm(cc.cm~ccd.swe + sr.swe+ t.f, data=hist)
 mod_sum[3,2]<-summary(cc_mod.cm)$adj.r.squared 
 mod_sum<- round(mod_sum, 3)
 # April 1 CC Prediction Data 
-pred.dat<- var[var$year == pred.yr,] %>% select(ccd.swe, sr.swe, t.f) 
+params<- var[var$year == pred.yr,] %>% select(ccd.swe, sr.swe) 
+pred.dat<- params %>% slice(rep(1:n(), 5000))
+pred.dat$t.f<- temp.ran$aj.temps.cc
 
 # Camas Creek Model output
-mod_out<- modOutcm(cc_mod.cm, pred.dat, pred.dat$t.f, hist$t.f, hist$cc.cm)
+mod_out<- modOutcm(cc_mod.cm, pred.dat, pred.dat$t.f, hist$t.f, hist$cc.cm, params, hist[,2:3])
 output.cm[3,] <- mod_out[[1]]
 pred.params.cm[3,] <- mod_out[[2]]
 
