@@ -398,8 +398,8 @@ mod_sum[4,1]<-summary(div_mod.h)$adj.r.squared
 pred.dat<- var[var$year == pred.yr,] %>% select(g.swe, hc.swe, t.cg, t.lw) 
 # Model output
 preds.div<-predict(div_mod.h,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-preds.params.div[1,1]<-preds.div$fit[1]
-preds.params.div[1,2]<-preds.div$se.fit
+#preds.params.div[1,1]<-preds.div$fit[1]
+#preds.params.div[1,2]<-preds.div$se.fit
 #preds.params.div.[1,3]<-cor(dat$Total.Div,dat$Reach.Gain)
 
 png(filename = file.path(fig_dir,"Div.abv.Hailey_modelFit.png"),
@@ -485,7 +485,7 @@ pred.dat$temps<- temp.ran$aj.temps.scd
 preds.div<-predict(sc.div_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
 
 pred.params.div[2,1]<-preds.div$fit[1]
-pred.params.div[2,2]<-preds.div$se.fit
+pred.params.div[2,2]<-mean(preds.div$se.fit)
 
 png(filename = file.path(fig_dir,"SilverCreek_Diversions_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -505,10 +505,10 @@ dev.off()
 # between each gage
 
 # check correlations between flow conditions across the basins
-flow.data = var[var$year >= 1997,] %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm,div) 
+flow.data = var[var$year >= 1997,] %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, div, sc.div) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
-cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
+cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9, 10)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
 
 # create covariance matrix by multiplying by each models standard error
 pred.pars<-rbind(pred.params.vol, pred.params.div, pred.params.cm)
@@ -517,8 +517,8 @@ cov.mat<-cor.mat*outer.prod
 
 # Draw flow volumes using multivariate normal distribution (ac-ft)
 vol.pars<-rbind(pred.params.vol, pred.params.div)
-vol.sample<-mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat[1:5,1:5])
-colnames(vol.sample)<-c("bwb.nat","bws.nat","cc","sc", "div")
+vol.sample<-mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat[1:6,1:6])
+colnames(vol.sample)<-c("bwb.nat","bws.nat","cc","sc", "div", "sc.div")
 write.csv(exp(vol.sample), file.path(cd,"vol.sample.csv"),row.names=F)
 
 #save correlation matrix for model details report
