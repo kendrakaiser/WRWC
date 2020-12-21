@@ -15,7 +15,7 @@ source(file.path("~/github/WRWC/code", "packages.R"))
 rm(list=ls())
 
 cd = '~/Desktop/Data/WRWC'
-fig_dir = '~/Desktop/Data/WRWC/figures' #update this to be local
+fig_dir = '~/Desktop/Data/WRWC/figures' 
 
 pred.yr <- 2020
 
@@ -29,7 +29,7 @@ var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
 
 write.csv(var, file.path(cd,'April1_vars.csv'))
 
-temp.ran = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
+temp.ran = read.csv(file.path(cd,'aj_pred.temps.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 # ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates, changed to start at the beginning of year in accordance with my calculation of cm, consider changin to day of wy
@@ -60,9 +60,6 @@ colnames(output.cm)<-c("temp-mean","% of mean","cm","cm-mean","cm.date")
 pred.params.cm<-array(NA,c(4,2))
 rownames(pred.params.cm)<-c("bwb.cm","bws.cm","cc.cm","sc.cm")
 colnames(pred.params.cm)<-c("cm","sigma")
-
-swe.new<-data.frame(t(c(rep(NA,10))))
-names(swe.new)<-c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
 
 # summary stats
 mod_sum<-data.frame(array(NA,c(7,2)))
@@ -228,25 +225,25 @@ dev.off()
 # Center of Mass Predictions
 #
 # ------------------------------------------------------------------------------ # 
-modOutcm<- function(mod.cm, pred.dat, pred.dat.temps, hist.temps, hist.cm){
+modOutcm<- function(mod.cm, pred.dat, pred.dat.temps, hist.temps, hist.cm, pred.swe, hist.swe){
   '
   mod.cm:           input model
   pred.dat:         data.frame of prediction variables
-  pred.data.temps:  concatenated vectors of temperature data used in predictions
+  pred.data.temps:  vector of modeled temperature data 
   hist.temps:       concatenated vectors of historic temperature data
   hist.cm:          historic cm
   '
   pred.params.cm<-array(NA,c(1,2))
   output.cm<-array(NA,c(1,5))
+  sig<-summary(mod.cm)$sigma
   
   predictions<-predict(mod.cm,newdata=pred.dat)
   
   pred.params.cm[1,1]<-mean(predictions)
-  pred.params.cm[1,2]<-summary(mod.cm)$sigma
-  #sqrt(sig^2+var(predictions)) - this was in RVK code, but only one prediction, so not sure how to take the variance of it?
+  pred.params.cm[1,2]<-sqrt(sig^2+var(predictions)) 
   
   output.cm[1,1]<-round(mean(pred.dat.temps)-mean(hist.temps,na.rm=T),3)
-  output.cm[1,2]<-round(sum(pred.dat.temps)/mean(hist.temps, na.rm =T),3) 
+  output.cm[1,2]<-round(sum(pred.swe)/mean(as.matrix(hist.swe), na.rm =T),3) 
   output.cm[1,3]<-round(mean(predictions),0) 
   output.cm[1,4]<-round(mean(predictions)-mean(hist.cm,na.rm=T),0) 
   output.cm[1,5]<-format(wy$Date[wy$day==round(mean(predictions),0)],"%b-%d")
@@ -256,15 +253,18 @@ modOutcm<- function(mod.cm, pred.dat, pred.dat.temps, hist.temps, hist.cm){
 
 # Big Wood at hailey
 hist <- var[var$year < pred.yr,] %>% select(bwb.cm.nat, bwb.wq, g.swe, hc.swe, t.g, t.gs, t.lw, cg.swe, gs.swe) 
+hist$temps <-rowMeans(cbind(hist$t.g, hist$t.gs, hist$t.lw), na.rm=TRUE)
 # BW Hailey linear model
-bwb_mod.cm <-lm(bwb.cm.nat ~ log(bwb.wq) + g.swe+ hc.swe+ t.g +t.gs+t.lw+ log(cg.swe)+log(gs.swe), data=hist)
+bwb_mod.cm <-lm(bwb.cm.nat ~ log(bwb.wq) + g.swe+ hc.swe+ temps+ log(cg.swe)+log(gs.swe), data=hist)
 mod_sum[1,2]<-summary(bwb_mod.cm)$adj.r.squared 
 
-# April 1 Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% select(bwb.wq, g.swe, hc.swe, t.g, t.gs, t.lw, cg.swe, gs.swe) 
+# April 1 Prediction Data with modeled temperature data
+params<-var[var$year == pred.yr,] %>% select(bwb.wq, g.swe, hc.swe, cg.swe, gs.swe)
+pred.dat<- params %>% slice(rep(1:n(), 5000))
+pred.dat$temps<- temp.ran$aj.temps.bwh
 
 # Big Wood Hailey Model output
-mod_out<- modOutcm(bwb_mod.cm, pred.dat, c(pred.dat$t.g, pred.dat$t.gs, pred.dat$t.lw), c(hist$t.g,hist$t.gs,hist$t.lw), hist$bwb.cm.nat)
+mod_out<- modOutcm(bwb_mod.cm, pred.dat, pred.dat$temps, c(hist$t.g,hist$t.gs,hist$t.lw), hist$bwb.cm.nat, params[2:5], cbind(hist[,3:4], hist[,8:9]))
 output.cm[1,] <- mod_out[[1]]
 pred.params.cm[1,] <- mod_out[[2]]
 
@@ -367,9 +367,9 @@ write.csv(pred.params.cm, file.path(cd,"pred.params.cm.csv"),row.names=T)
 # Apr-Sept diversion & reach gain predictions
 #
 
-pred.params.div<-array(NA,c(1,2))
+pred.params.div<-array(NA,c(2,2))
 colnames(pred.params.div)<-c("log.vol","sigma")
-rownames(pred.params.div)<-c("div")
+rownames(pred.params.div)<-c("bw.div", "sc.div")
 
 # Above Hailey -----
 png(filename = file.path(fig_dir,"Div.abv.Hailey.png"),
@@ -436,7 +436,7 @@ plot(var$bws.loss[var$year >=2000 & var$year < pred.yr],c(fits), xlab="Observed"
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
-# Total Diversions ----
+# Total Big Wood Diversions ----
 var$div <- var$abv.h + var$abv.s
 hist <- var[var$year >=1997 & var$year < pred.yr,] %>% select(div, bws.wq, cg.swe, hc.swe) 
 # linear model 
@@ -456,6 +456,28 @@ png(filename = file.path(fig_dir,"Diversions_modelFit.png"),
 fits<-fitted(div_mod)
 plot(var$div[var$year >=1997 & var$year <2020],exp(c(fits)), xlab="Observed", 
      ylab="Predicted", xlim=c(32500, 58800), ylim=c(32500, 58800))
+abline(0,1,col="gray50",lty=1)
+dev.off()
+# Silver Creek Diversions ----
+# g.swe, t.cg, t.gs,t.hc, log.cg, log.lwd
+hist <- var[var$year>1993 & var$year < pred.yr,] %>% select(sc.div, g.swe, t.cg, t.gs, t.hc, cg.swe, lwd.swe) 
+# linear model 
+sc.div_mod<-lm(log(var$sc.div[var$year>1993 & var$year < pred.yr]) ~ g.swe+ t.cg+ t.gs+ t.hc+log(cg.swe)+log(lwd.swe), data=hist) 
+summary(sc.div_mod)$adj.r.squared 
+# April 1 Prediction Data 
+pred.dat<- var[var$year == pred.yr,] %>% select(g.swe, t.cg, t.gs, t.hc, cg.swe, lwd.swe) 
+# Model output
+preds.div<-predict(sc.div_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+
+pred.params.div[2,1]<-preds.div$fit[1]
+pred.params.div[2,2]<-preds.div$se.fit
+
+png(filename = file.path(fig_dir,"SilverCreek_Diversions_modelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+fits<-fitted(sc.div_mod)
+plot(var$sc.div[var$year>1993 & var$year <2020],exp(c(fits)), xlab="Observed", 
+     ylab="Predicted", xlim=c(3300, 8200), ylim=c(3300, 8200))
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
