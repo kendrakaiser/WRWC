@@ -219,6 +219,7 @@ allApril1<- april1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.t
 allApril1$bwb.vol.nat <- allApril1$bwb.vol + allApril1$abv.h
 allApril1$bws.vol.nat <- allApril1$bws.vol + allApril1$abv.s + allApril1$abv.h
 allApril1$bws.loss <- allApril1$bws.vol.nat - allApril1$bwb.vol
+allApril1$sc.vol.nat<- allApril1$sc.vol + allApril1$sc.div
 write.csv(allApril1, file.path(cd,'all_April1.csv'))
 
 # Download NRCS ET Agrimet data ----
