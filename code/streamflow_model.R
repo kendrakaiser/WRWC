@@ -15,7 +15,7 @@ source(file.path("~/github/WRWC/code", "packages.R"))
 rm(list=ls())
 
 cd = '~/Desktop/Data/WRWC'
-fig_dir = "~/github/WRWC/figures/" #update this to be local
+fig_dir = '~/Desktop/Data/WRWC/figures' #update this to be local
 
 pred.yr <- 2020
 
@@ -177,15 +177,15 @@ dev.off()
 
 # --------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Swede Peak
-hist <- var[var$year < pred.yr,] %>% select(sc.vol, sc.wq, sp.swe, g.swe, cg.swe) 
+hist <- var[var$year < pred.yr,] %>% select(sc.vol.nat, sc.wq, ga.swe, g.swe, hc.swe, bwb.wq) 
 # Silver Creek linear model, note mixture of SWE from Big Wood and Little Wood basins
-sc_mod<-lm(log(sc.vol)~sc.wq+sp.swe + g.swe + log(cg.swe), data=hist)  #look at fit w.o g.swe
+sc_mod<-lm(log(sc.vol.nat)~ sc.wq+ga.swe + g.swe + log(hc.swe) + log(bwb.wq), data=hist)
 mod_sum[4,1]<-summary(sc_mod)$adj.r.squared
 
 # April 1 SC Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% select(sc.wq, sp.swe, g.swe, cg.swe) 
+pred.dat<-var[var$year == pred.yr,] %>% select(sc.wq, ga.swe, g.swe, hc.swe, bwb.wq) 
 # Silver Creek Model output
-mod_out<- modOut(sc_mod, pred.dat, hist$sc.wq, hist$sc.vol, mean(hist$sp.swe,  hist$g.swe,  hist$cg.swe, trim=0, na.rm=T), var$sc.vol[var$year == pred.yr-1])
+mod_out<- modOut(sc_mod, pred.dat, hist$sc.wq, hist$sc.vol.nat, mean(hist$ga.swe,  hist$g.swe,  hist$hc.swe, trim=0, na.rm=T), var$sc.vol.nat[var$year == pred.yr-1])
 output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
@@ -195,7 +195,7 @@ png(filename = file.path(fig_dir,"SC_modelFit.png"),
     bg = "white", res = 600, type ="quartz") 
 
 fits<-exp(fitted(sc_mod))
-plot(var$sc.vol[complete.cases(hist)]/1000,c(fits)/1000, lwd=2, xlim=c(100,780), ylim=c(100,780), xlab="Observed", ylab="Predicted", main="Silver Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(hist$sc.vol.nat[complete.cases(hist)]/1000,c(fits)/1000, lwd=2, xlim=c(100,780), ylim=c(100,780), xlab="Observed", ylab="Predicted", main="Silver Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
@@ -494,12 +494,23 @@ write.csv(cov.mat, file.path(cd,"cov.mat.csv"),row.names=T)
 write.csv(pred.pars, file.path(cd,"pred.pars.csv"),row.names=T)
 
 # Plot boxplots of total annual flow from each model -> modelOutput.Rmd
+library(viridis)
+png(filename = file.path(fig_dir,"sampled_volumes.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
 
-#vol.bwb <- dnorm(exp(vol.sample[,1]))
-#h<-hist(exp(vol.sample[,1]))
-#h$counts = h$counts/sum(h$counts)
-#plot(h,xlab="Volume",ylab="Probability")
-#plot(density(exp(vol.sample[,1])))
+as.data.frame(exp(vol.sample)/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
+  ggplot( aes(x=site, y=value, fill=site)) +
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=11)
+  ) +
+  ggtitle("Sampled Irrigation Season Volumes") +
+  xlab("")+
+  ylab("Irrigation Season Volume (10,000 ac-ft)")
+dev.off()
 
 # Draw sample of years with similar center of mass (timing)
 cm.data = var[var$year >= 1997 & var$year < pred.yr,]
