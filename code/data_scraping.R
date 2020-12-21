@@ -9,7 +9,7 @@ source(file.path("code", "packages.R"))
 # set data directory for saving data
 cd ='~/Desktop/Data/WRWC'
 # set date for AgriMet Data download
-end = '2020-09-15'
+end = '2020-10-01'
 
 #import and manage diversion data
 bw.div <- read.csv(file.path(cd, 'bwr_diversion_data_1987_2019_111620.csv'))
@@ -17,6 +17,15 @@ bw.div$Date <- as.Date(bw.div$Date, format = "%m/%d/%y")
 bw.div$year<- format(bw.div$Date, "%Y")
 bw.div[is.na(bw.div)] <- 0
 bw.div$Osborn.24 <- as.numeric(bw.div$Osborn.24) #something is making this a character
+sc.div <- read.csv(file.path(cd, 'sc_diversiondata_1987_2019_121620.csv'))
+sc.div$Date <- as.Date(sc.div$Date, format = "%m/%d/%y")
+sc.div$year<- format(sc.div$Date, "%Y")
+sc.div.sum<- sc.div %>% select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
+sc.div.tot <- data.frame(matrix(nrow=dim(sc.div.sum)[1], ncol =2))
+colnames(sc.div.tot)<- c("year", "sc.div")
+sc.div.tot$year <- as.integer(sc.div.sum$year)
+sc.div.tot$sc.div <- rowSums(sc.div.sum[,2:11], na.rm = TRUE)
+
 
 #summarize by location
 bw.div$abv.h <-rowSums(cbind(bw.div$Tom.P2, bw.div$Lewis.1, bw.div$Ketchum.2, 
@@ -29,8 +38,10 @@ bw.div$abv.s <-rowSums(cbind(bw.div$WRVID.45, bw.div$Bannon.49,
                                  bw.div$Uhrig.63, bw.div$Flood.64), na.rm=TRUE)
 bw.div.gage<- bw.div %>% select(c(Date, abv.h, abv.s))
 #summarize by year
-bw.div.sum<- bw.div %>% select(-c(Date)) %>% group_by(year) %>% summarise_each(funs(sum))
+bw.div.sum<- bw.div %>% select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
+
 bw.div.tot<- bw.div.sum %>% select(c(year, abv.h, abv.s))
+
 # ------------------------------------------------------------------------------
 # USGS Gages
 bwb = 13139510  #  Bullion Bridge, Big Wood at Hailey
@@ -203,7 +214,7 @@ write.csv(site_info, file.path(cd,'usgs_sites.csv'))
 
 # Merge april 1 swe and streamflow metrics & diversion data ----
 bw.div.tot$year<- as.integer(bw.div.tot$year)
-allApril1<- april1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") 
+allApril1<- april1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
 # 'natural' flow is the volume at the gage plus the volume from upstream diversions
 allApril1$bwb.vol.nat <- allApril1$bwb.vol + allApril1$abv.h
 allApril1$bws.vol.nat <- allApril1$bws.vol + allApril1$abv.s + allApril1$abv.h
