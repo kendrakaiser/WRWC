@@ -72,11 +72,11 @@ streamflow_data$Date <- as.Date(streamflow_data$Date, format = "%Y-%m-%d")
 streamflow_data$mo <- month(streamflow_data$Date)
 streamflow_data$wy <- as.numeric(as.character(water_year(streamflow_data$Date, origin='usgs')))
 streamflow_data$day <- day(streamflow_data$Date)
-# Cleanup Streamdlow data frame and join relevant site information
+# Cleanup Streamflow data frame and join relevant site information
 streamflow_data <- streamflow_data %>% select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
 # add diversion data to streamflow dataframe
-streamflow_data <- inner_join(streamflow_data, bw.div.gage, by = 'Date')
-streamflow_data <- inner_join(streamflow_data, sc.div %>% select(c(Date, sc.div)), by = 'Date')
+streamflow_data <- outer_join(streamflow_data, bw.div.gage, by = 'Date')
+streamflow_data <- outer_join(streamflow_data, sc.div %>% select(c(Date, sc.div)), by = 'Date')
 
 streamflow_data$bwb.nat.q[streamflow_data$abv == 'bwb'] <- streamflow_data$Flow[streamflow_data$abv == 'bwb'] + streamflow_data$abv.h[streamflow_data$abv == 'bwb']
 streamflow_data$bws.nat.q[streamflow_data$abv == 'bws'] <- streamflow_data$Flow[streamflow_data$abv == 'bws'] + streamflow_data$abv.s[streamflow_data$abv == 'bws'] + streamflow_data$abv.h[streamflow_data$abv == 'bws']
@@ -84,8 +84,8 @@ streamflow_data$bw.div[streamflow_data$abv == 'bws'] <- streamflow_data$abv.s[st
 streamflow_data$sc.nat[streamflow_data$abv == 'sc'] <- streamflow_data$Flow[streamflow_data$abv == 'sc'] + streamflow_data$sc.div[streamflow_data$abv == 'sc']
 
 #Download reservoir data and site information
-res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
-res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_info$begin_date[2], endDate = res_info$end_date[2]) %>% renameNWISColumns() %>% data.frame
+#res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
+#res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_info$begin_date[2], endDate = res_info$end_date[2]) %>% renameNWISColumns() %>% data.frame
 
 # ----------------------------------------------------------------------------------
 # calculate hydrologic metrics for each year for each station
@@ -102,7 +102,7 @@ nat.cm$year<- years
 
 # calculate winter baseflow, annual irrigation season volume and center of mass
 for(i in 1:length(stream.id)){
-  sub <- streamflow_data %>% filter(abv == unique(abv)[i])
+  sub <- streamflow_data %>% filter(abv == stream.id[i])
   
   for (y in 1: length(years)){
     #average winter flow
@@ -126,7 +126,7 @@ for(i in 1:length(stream.id)){
 
 # calculate center of mass for "natural flow"
 for(i in 1:length(stream.id)){
-  sub <- streamflow_data %>% filter(abv == unique(abv)[i])
+  sub <- streamflow_data %>% filter(abv == unique(abv)[i]) %>% filter(wy < pred.yr)
   
   if(unique(sub$abv) == 'bwb'){
     sub$nat.flow <- sub$Flow + sub$abv.h
