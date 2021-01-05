@@ -14,8 +14,8 @@ library(leaps)
 
 rm(list=ls())
 cd = '~/Desktop/Data/WRWC'
-
-pred.yr <- 2019
+fig_dir = '~/Desktop/Data/WRWC/figures' 
+pred.yr <- 2020
 
 # Import Data ------------------------------------------------------------------ # 
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
@@ -41,7 +41,7 @@ hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 #use regsubsets to plot the results
-regsubsets.out<-regsubsets(log(var$bwh.vol.nat[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(log(var$bwb.vol.nat[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
 #g.swe, hc.swe, log.gs lowest bic and 0.84
 
 # -------------------------------------------------------------
@@ -69,10 +69,6 @@ hist$log.bbwq<- log(hist$bwb.wq)
 
 # Silver Creek regsubsets 
 regsubsets.out<-regsubsets(log(sc.vol.nat[var$year < pred.yr])~., data=hist, nbest=3, nvmax=5)
-# 0.83 sc.wq, sp.swe, g.swe, log cg.swe lowest BIC w log(sc.vol)
-#0.82 sc.wq, sp.swe, log(cg.swe) BIC=-35 in both ... compare the two
-#0.9 sc.wq, sp.swe, bwb.wq
-#0.9 log(sc.vol.nat) sc.wq, ga.swe, g.swe, log(hc.swe), log(bwb.wq)
 
 # -------------------------------------------------------------
 # camas creek
@@ -109,7 +105,7 @@ regsubsets.out<-regsubsets(var$abv.h[var$year >= 1997 & var$year < pred.yr]~., d
 
 # Diversions above Stanton Crossing
 plot(var$year, var$abv.s)
-hist <- var[var$year >= 1997 & var$year < pred.yr,] %>% select(bwb.wq, bws.wq,, bwb.vol.nat, bws.vol.nat, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw, year) 
+hist <- var[var$year >= 1997 & var$year < pred.yr,] %>% select(bwb.wq, bws.wq, bwb.vol.nat, bws.vol.nat, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw, year) 
 regsubsets.out<-regsubsets(var$abv.s[var$year >= 1997 & var$year < pred.yr]~., data=hist, nbest=3, nvmax=8)
 # these all do really poorly, and no trends in the data at all, so pull randomly
 
@@ -133,7 +129,20 @@ hist$log.lwd <- log(hist$lwd.swe)
 hist<-hist %>% select(-cg.swe, -hc.swe, -bwb.wq)
 regsubsets.out<-regsubsets(var$div[var$year >= 1997 & var$year < 2020]~., data=hist, nbest=3, nvmax=8)
 
+# Silver Creek Diversions
+hist <- var[var$year < 2020,] %>% select(sc.wq, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw, t.f, year) 
+hist$log.scwq <- log(hist$sc.wq)
+hist$log.wq <- log(hist$bwb.wq)
+hist$log.cg<- log(hist$cg.swe)
+hist$log.g <- log(hist$g.swe)
+hist$log.gs<- log(hist$gs.swe)
+hist$log.hc <- log(hist$hc.swe)
+hist$log.lwd <- log(hist$lwd.swe)
 
+regsubsets.out<-regsubsets(log(var$sc.div[var$year < 2020])~., data=hist, nbest=3, nvmax=8)
+
+# g.swe, t.cg, t.gs,t.hc, log.cg, log.lwd
+#lod(div) g.swe, t.cg, t.gs, t.hc, log.cg, loglwd
 # ------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for Center of Mass Predictions
 # ------------------------------------------------------------------------------ # 
@@ -189,10 +198,16 @@ regsubsets.out<-regsubsets(var$cc.cm[var$year < pred.yr]~., data=hist, nbest=3, 
 
 
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
+png(filename = file.path(fig_dir, "Regsubsets_example.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+#quartz(title="BIC",10,10)
+plot(regsubsets.out, scale = "bic", main="BIC For the best model of a given size")
+dev.off()
+
 quartz(title="Adjusted R^2",10,10)
 plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
-quartz(title="BIC",10,10)
-plot(regsubsets.out, scale = "bic", main="BIC For the best model of a given size")
+
 rs<-summary(regsubsets.out)
 quartz(title="BIC v R2",10,10)
 plot(rs$bic, rs$adjr2, xlab="BIC", ylab="adj R2")

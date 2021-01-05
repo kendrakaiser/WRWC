@@ -75,8 +75,8 @@ streamflow_data$day <- day(streamflow_data$Date)
 # Cleanup Streamflow data frame and join relevant site information
 streamflow_data <- streamflow_data %>% select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
 # add diversion data to streamflow dataframe
-streamflow_data <- outer_join(streamflow_data, bw.div.gage, by = 'Date')
-streamflow_data <- outer_join(streamflow_data, sc.div %>% select(c(Date, sc.div)), by = 'Date')
+streamflow_data <- inner_join(streamflow_data, bw.div.gage, by = 'Date')
+streamflow_data <- inner_join(streamflow_data, sc.div %>% select(c(Date, sc.div)), by = 'Date')
 
 streamflow_data$bwb.nat.q[streamflow_data$abv == 'bwb'] <- streamflow_data$Flow[streamflow_data$abv == 'bwb'] + streamflow_data$abv.h[streamflow_data$abv == 'bwb']
 streamflow_data$bws.nat.q[streamflow_data$abv == 'bws'] <- streamflow_data$Flow[streamflow_data$abv == 'bws'] + streamflow_data$abv.s[streamflow_data$abv == 'bws'] + streamflow_data$abv.h[streamflow_data$abv == 'bws']
@@ -126,7 +126,7 @@ for(i in 1:length(stream.id)){
 
 # calculate center of mass for "natural flow"
 for(i in 1:length(stream.id)){
-  sub <- streamflow_data %>% filter(abv == unique(abv)[i]) %>% filter(wy < pred.yr)
+  sub <- streamflow_data %>% filter(abv == unique(abv)[i]) %>% filter(wy < 2020)
   
   if(unique(sub$abv) == 'bwb'){
     sub$nat.flow <- sub$Flow + sub$abv.h
@@ -163,10 +163,10 @@ sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
 snotel_sites = c(cg, g, gs, hc, lwd, ds, ccd, sr, ga, sp)
 snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "ccd.swe", "sr.swe", "ga.swe", "sp.swe")
 
-# Download snotel data ----
+# Download Snotel data ----
 snotel_data = snotel_download(snotel_sites, path = '~/Desktop/Data/WRWC/', internal = TRUE )
 
-# Pull out snotel site information ----
+# Pull out Snotel site information ----
 snotel_site_info<-data.frame('id'=NA, 'start'=NA, 'end'=NA, 'lat'=NA, 'long'=NA, 'elev'=NA, 'description'=NA, 'site_name'=NA, 'huc8'=NA)
 snotel_site_info$start <-as.Date(NA)
 snotel_site_info$end <-as.Date(NA)
@@ -205,7 +205,7 @@ for (i in 1:length(snotel_sites)) {
   april1swe[which(april1swe$year == start) : which(april1swe$year == year(end)),i+1]<- sub$snow_water_equivalent
   }
 
-# Save snotel data as csvs -----
+# Save Snotel data as csvs -----
 write.csv(april1swe, file.path(cd, 'april1swe.csv'))
 write.csv(snotel_data_out, file.path(cd,'snotel_data.csv'))
 write.csv(snotel_site_info, file.path(cd,'snotel_sites.csv'))
@@ -217,7 +217,7 @@ write.csv(streamflow_data, file.path(cd,'streamflow_data.csv'))
 write.csv(metrics, file.path(cd,'metrics.csv'))
 write.csv(site_info, file.path(cd,'usgs_sites.csv'))
 
-# Merge april 1 swe and streamflow metrics & diversion data ----
+# Merge April 1 SWE and streamflow metrics & diversion data ----
 bw.div.tot$year<- as.integer(bw.div.tot$year)
 allApril1<- april1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
 # 'natural' flow is the volume at the gage plus the volume from upstream diversions

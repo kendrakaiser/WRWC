@@ -9,15 +9,15 @@
 # This model was informed by the statstical tools developed for the Henry's Fork 
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
-#+ setup, echo= FALSE
+
 source(file.path("~/github/WRWC/code", "packages.R"))
 
 rm(list=ls())
 
 cd = '~/Desktop/Data/WRWC'
-fig_dir = '~/Desktop/Data/WRWC/figures' 
-
-pred.yr <- 2020
+fig_dir = file.path(cd, "figures")
+#water year (e.g. April 1, 2020 is wy 2019)
+pred.yr <- 2019
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
@@ -121,7 +121,7 @@ mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 pred.dat<-var[var$year == pred.yr,] %>% select(g.swe, gs.swe, hc.swe) 
 
 # Big Wood at Hailey Model output
-mod_out<- modOut(bwb_mod, pred.dat, hist$bwb.wq, hist$bwb.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol.nat[var$year == pred.yr-1])
+mod_out<- modOut(bwb_mod, pred.dat, var$bwb.wq[var$year < pred.yr], hist$bwb.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol.nat[var$year == pred.yr-1])
 #these could be formatted differently to be saved to the gloabl env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
@@ -174,9 +174,9 @@ dev.off()
 
 # --------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Swede Peak
-hist <- var[var$year < pred.yr,] %>% select(sc.vol.nat, sc.wq, ga.swe, g.swe, hc.swe, bwb.wq) 
+hist <- var[var$year < pred.yr,] %>% select(sc.vol.nat, sc.wq, ga.swe, sp.swe, cg.swe, hc.swe) 
 # Silver Creek linear model, note mixture of SWE from Big Wood and Little Wood basins
-sc_mod<-lm(log(sc.vol.nat)~ sc.wq+ga.swe + g.swe + log(hc.swe) + log(bwb.wq), data=hist)
+sc_mod<-lm(log(sc.vol.nat)~ sc.wq + ga.swe+ sp.swe + cg.swe+log(hc.swe), data=hist)
 mod_sum[4,1]<-summary(sc_mod)$adj.r.squared
 
 # April 1 SC Prediction Data 
@@ -192,7 +192,7 @@ png(filename = file.path(fig_dir,"SC_modelFit.png"),
     bg = "white", res = 600, type ="quartz") 
 
 fits<-exp(fitted(sc_mod))
-plot(hist$sc.vol.nat[complete.cases(hist)]/1000,c(fits)/1000, lwd=2, xlim=c(100,780), ylim=c(100,780), xlab="Observed", ylab="Predicted", main="Silver Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(hist$sc.vol.nat[complete.cases(hist)]/100,c(fits)/100, lwd=2, xlim=c(310,720), ylim=c(310,720), xlab="Observed", ylab="Predicted", main="Silver Creek \nApril-Sept Streamflow Vol (100 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
@@ -357,7 +357,7 @@ output.cm[3,] <- mod_out[[1]]
 pred.params.cm[3,] <- mod_out[[2]]
 
 #Plot modeled data for visual evaluation 
-png(filename = file.path(cd,"CC_CMmodelFit.png"),
+png(filename = file.path(fig_dir,"CC_CMmodelFit.png"),
 width = 5.5, height = 5.5,units = "in", pointsize = 12,
 bg = "white", res = 600, type ="quartz") 
 
@@ -465,10 +465,11 @@ png(filename = file.path(fig_dir,"Diversions_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 fits<-fitted(div_mod)
-plot(var$div[var$year >=1997 & var$year <2020],exp(c(fits)), xlab="Observed", 
+plot(var$div[var$year >=1997 & var$year < pred.yr],exp(c(fits)), xlab="Observed", 
      ylab="Predicted", xlim=c(32500, 58800), ylim=c(32500, 58800))
 abline(0,1,col="gray50",lty=1)
 dev.off()
+
 # Silver Creek Diversions ----
 # g.swe, t.cg, t.gs,t.hc, log.cg, log.lwd
 hist <- var[var$year>1993 & var$year < pred.yr,] %>% select(sc.div, g.swe, cg.swe, lwd.swe, t.cg, t.gs, t.hc) 
@@ -491,13 +492,11 @@ png(filename = file.path(fig_dir,"SilverCreek_Diversions_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 fits<-fitted(sc.div_mod)
-plot(var$sc.div[var$year>1993 & var$year <2020],exp(c(fits)), xlab="Observed", 
+plot(var$sc.div[var$year>1993 & var$year < pred.yr],exp(c(fits)), xlab="Observed", 
      ylab="Predicted", xlim=c(3300, 8200), ylim=c(3300, 8200))
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
-#library(knitr)
-#kable(mod_sum)
 # --------------------
 # Draw a sample of volumes and water years with similar timing
 # These samples are drawn from multivariate normal distributions which are 
@@ -508,7 +507,7 @@ dev.off()
 flow.data = var[var$year >= 1997,] %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, div, sc.div) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
-cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9, 10)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
+cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9,10)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
 
 # create covariance matrix by multiplying by each models standard error
 pred.pars<-rbind(pred.params.vol, pred.params.div, pred.params.cm)
@@ -557,12 +556,13 @@ cm.data$prob<-NA
 # pmvnorm calculates the distribution function of the multivariate normal distribution
 for(i in 1:dim(cm.data)[1]){
   vec<-cm.data[i,2:5]
-  cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-0.5,
-                          upper=as.numeric(vec)+0.5,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1]
+  cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-1.0,
+                          upper=as.numeric(vec)+1.0,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1]
 }
 cm.data$prob<-cm.data$prob/sum(cm.data$prob)
-# create array of years based on their similarity to prediction year
-CMyear.sample<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob)
+# create normal distribution of years 
+CMyear.sample<-sample(cm.data$year,5000,replace=TRUE) 
+# adding `prob=cm.data$prob` will make it based on similar years
 
 # Of the 5000 replicates show the percentage that each year represents
 # add to output pdf
@@ -576,8 +576,4 @@ dev.off()
 
 write.csv(CMyear.sample, file.path(cd,"CMyear.sample.csv"),row.names=F)
 
-#options(knitr.duplicate.label = "allow")
-#rmarkdown::render("/Users/kek25/Documents/GitRepos/WRWC/code/streamflow_model.R")
 
-#ExceedanceProbabilities
-#excProb(x, threshold=0, random=FALSE, template=NULL, templateIdCol=NULL,nuggetInPrediction=TRUE)
