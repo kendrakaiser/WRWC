@@ -16,7 +16,6 @@ rm(list=ls())
 
 cd = '~/Desktop/Data/WRWC'
 fig_dir = file.path(cd, "figures")
-#water year (e.g. April 1, 2020 is wy 2019)
 pred.yr <- 2019
 
 # Import Data ------------------------------------------------------------------  
@@ -26,6 +25,8 @@ swe_q = read.csv(file.path(cd,'all_April1.csv'))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
 temps = read.csv(file.path(cd, 'ajTemps.csv'))
 var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
+var$div <- var$abv.h + var$abv.s
+curtailments = read.csv(file.path(cd,'historic_shutoff_dates_071520.csv'))
 
 write.csv(var, file.path(cd,'April1_vars.csv'))
 
@@ -62,9 +63,9 @@ rownames(pred.params.cm)<-c("bwb.cm","bws.cm","cc.cm","sc.cm")
 colnames(pred.params.cm)<-c("cm","sigma")
 
 # summary stats
-mod_sum<-data.frame(array(NA,c(7,2)))
-colnames(mod_sum)<-c("Vol Adj-R2", "CM ADj-R2")
-rownames(mod_sum)<-c("bwb","bws","cc","sc", "abv.h", "abv.s", "losses")
+mod_sum<-data.frame(array(NA,c(6,2)))
+colnames(mod_sum)<-c("Vol Adj-R2", "CM Adj-R2")
+rownames(mod_sum)<-c("bwb","bws","cc","sc", "bw.div", "sc.div")
 
 # ------------------------------------------------------------------------------  
 #
@@ -135,17 +136,6 @@ fits<-exp(fitted(bwb_mod))
 plot(var$bwb.vol.nat[var$year < pred.yr]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
-
-# testing leave one out cross validation
-library(caret)
-hist <- var[var$year < pred.yr,] %>% select(g.swe, gs.swe, hc.swe) 
-hist$gs.swe<- log(hist$gs.swe)
-y=log(var$bwb.vol.nat[var$year < pred.yr])
-
-model <- train(x= hist, y=y, method = "lm",
-               trControl = trainControl(method = "LOOCV"))
-rmse<-model$results$RMSE
-
 
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
@@ -220,6 +210,8 @@ fits<-exp(fitted(cc_mod))
 plot(var$cc.vol[complete.cases(hist)]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
+
+
 # ------------------------------------------------------------------------------  
 #
 # Center of Mass Predictions
@@ -270,7 +262,7 @@ output.cm[1,] <- mod_out[[1]]
 pred.params.cm[1,] <- mod_out[[2]]
 
 #Plot modeled data for visual evaluation 
-png(filename = file.path(fig_dir,"BWH_CMmodelFit.png"),
+png(filename = file.path(fig_dir,"BWB_CMmodelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -307,6 +299,7 @@ fits<-fitted(bws_mod.cm)
 plot(var$bws.cm.nat[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Big Wood at Stanton \n Center of Mass", xlim=c(140, 165), ylim=c(140,165))
 abline(0,1,col="gray50",lty=1)
 dev.off()
+
 # --------------------
 # Subset Silver Creek Winter flows, Snotel from Chocolate Gulch, Hyndaman, Lost Wood Div. & Swede Peak
 #
@@ -345,7 +338,7 @@ hist <- var[var$year < pred.yr,] %>% select(cc.cm, ccd.swe, sr.swe, t.f)
 # Camas Creek linear model
 cc_mod.cm<-lm(cc.cm~ccd.swe + sr.swe+ t.f, data=hist) 
 mod_sum[3,2]<-summary(cc_mod.cm)$adj.r.squared 
-mod_sum<- round(mod_sum, 3)
+
 # April 1 CC Prediction Data 
 params<- var[var$year == pred.yr,] %>% select(ccd.swe, sr.swe) 
 pred.dat<- params %>% slice(rep(1:n(), 5000))
@@ -448,11 +441,11 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 
 # Total Big Wood Diversions ----
-var$div <- var$abv.h + var$abv.s
+
 hist <- var[var$year >=1997 & var$year < pred.yr,] %>% select(div, bws.wq, cg.swe, hc.swe) 
 # linear model 
 div_mod<-lm(log(var$div[var$year >=1997 & var$year < pred.yr]) ~ log(cg.swe)+log(hc.swe)+log(bws.wq), data=hist) 
-summary(div_mod)$adj.r.squared 
+mod_sum[5,1] <- summary(div_mod)$adj.r.squared 
 # April 1 Prediction Data 
 pred.dat<- var[var$year == pred.yr,] %>% select(bws.wq, cg.swe, hc.swe) 
 # Model output
@@ -476,7 +469,7 @@ hist <- var[var$year>1993 & var$year < pred.yr,] %>% select(sc.div, g.swe, cg.sw
 hist$temps<- rowMeans(cbind(hist$t.cg, hist$t.gs, hist$t.hc), na.rm=TRUE)
 # linear model 
 sc.div_mod<-lm(log(var$sc.div[var$year>1993 & var$year < pred.yr]) ~ g.swe+ temps+log(cg.swe)+log(lwd.swe), data=hist) 
-summary(sc.div_mod)$adj.r.squared #not gonna work 
+mod_sum[6,1] <- summary(sc.div_mod)$adj.r.squared #not gonna work 
 # April 1 Prediction Data 
 params<- var[var$year == pred.yr,] %>% select(g.swe, cg.swe, lwd.swe)
 pred.dat<- params %>% slice(rep(1:n(), 5000))
@@ -496,6 +489,13 @@ plot(var$sc.div[var$year>1993 & var$year < pred.yr],exp(c(fits)), xlab="Observed
      ylab="Predicted", xlim=c(3300, 8200), ylim=c(3300, 8200))
 abline(0,1,col="gray50",lty=1)
 dev.off()
+
+
+mod_sum<- round(mod_sum, 3)
+png(file.path(fig_dir,"model_summary.png"), height = 25*nrow(mod_sum), width = 100*ncol(mod_sum))
+grid.table(mod_sum)
+dev.off()
+
 
 # --------------------
 # Draw a sample of volumes and water years with similar timing
@@ -536,7 +536,7 @@ png(filename = file.path(fig_dir,"sampled_volumes.png"),
     bg = "white", res = 600, type ="quartz") 
 
 as.data.frame(exp(vol.sample)/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
-  ggplot( aes(x=site, y=value, fill=site)) +
+  ggplot(aes(x=site, y=value, fill=site)) +
   geom_boxplot() +
   scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
   theme(
@@ -556,24 +556,47 @@ cm.data$prob<-NA
 # pmvnorm calculates the distribution function of the multivariate normal distribution
 for(i in 1:dim(cm.data)[1]){
   vec<-cm.data[i,2:5]
-  cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-1.0,
-                          upper=as.numeric(vec)+1.0,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1]
+  cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-0.75,
+                          upper=as.numeric(vec)+0.75,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1]
 }
 cm.data$prob<-cm.data$prob/sum(cm.data$prob)
 # create normal distribution of years 
 CMyear.sample<-sample(cm.data$year,5000,replace=TRUE) 
-# adding `prob=cm.data$prob` will make it based on similar years
-
 # Of the 5000 replicates show the percentage that each year represents
-# add to output pdf
 cm_sum<-as.data.frame(summary(as.factor(CMyear.sample))/5000)
 colnames(cm_sum)<- c("% of sample")
 cm_sum<- cm_sum*100
-
 png(file.path(fig_dir,"CM_summary.png"), height = 50*nrow(cm_sum), width = 200*ncol(cm_sum))
 grid.table(cm_sum)
 dev.off()
 
+#save the probabilities for use in the simulation
 write.csv(CMyear.sample, file.path(cd,"CMyear.sample.csv"),row.names=F)
 
+# this version makes the probabilities based on pvnorm distribution, 
+# this is not used in the simulations, but is useful for reference
+CMyear.sample.prob<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob) 
+cm_prob<-as.data.frame(summary(as.factor(CMyear.sample.prob))/5000)
+colnames(cm_prob)<- c("% of sample")
+cm_prob- cm_prob*100
+png(file.path(fig_dir,"CM_summary_prob.png"), height = 50*nrow(cm_prob), width = 200*ncol(cm_prob))
+grid.table(cm_prob)
+dev.off()
+
+
+
+# --------------------
+# Curtailment predictions
+#
+
+curt_sub<- curtailments %>% select(-c(water_right_date,shut_off_date))
+curt_sub$subbasin<-factor(curt_sub$subbasin)
+curt_sub$water_right_cat<-factor(curt_sub$water_right_cat)
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% select(year, subbasin, water_right_cat, shut_off_julian, div, sc.div)
+
+curt_mod <- lm(shut_off_julian ~ subbasin + water_right_cat + div + sc.div, data = curt)
+summary(curt_mod)
+
+# April 1 Prediction Data 
+params<- var[var$year == pred.yr,] %>% select(g.swe, cg.swe, lwd.swe)
 
