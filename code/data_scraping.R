@@ -258,7 +258,7 @@ if (run_date == 'feb1'){
 
 # 'natural' flow is the volume at the gage plus the volume from upstream diversions
 alldat$bwb.vol.nat <- alldat$bwb.vol + alldat$abv.h
-alldat$bws.vol.nat <- alldat$bws.vol + alldat$abv.s + allApril1$abv.h
+alldat$bws.vol.nat <- alldat$bws.vol + alldat$abv.s + alldat$abv.h
 alldat$bws.loss <- alldat$bws.vol.nat - alldat$bwb.vol
 alldat$sc.vol.nat<- alldat$sc.vol + alldat$sc.div
 
