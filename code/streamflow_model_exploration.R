@@ -212,3 +212,26 @@ rs<-summary(regsubsets.out)
 quartz(title="BIC v R2",10,10)
 plot(rs$bic, rs$adjr2, xlab="BIC", ylab="adj R2")
 
+
+# curtailments
+curtailments = read.csv(file.path(cd,'historic_shutoff_dates_071520.csv'))
+#bigwood A
+curt_sub<- curtailments %>% select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% select(shut_off_julian, div, bwb.wq, bwb.vol.nat, t.cg, t.g, t.gs, t.hc, t.lw )
+# div, bwb.vol.nat, t.lw
+
+#bigwood B
+curt_sub<- curtailments %>% select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="B") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% select(shut_off_julian, div, bwb.wq, bwb.vol.nat, t.cg, t.g, t.gs, t.hc, t.lw )
+# div, bwb.wq, bwb.vol.nat, t.cg, t.lw
+
+#bigwood c
+curt_sub<- curtailments %>% select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="C") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% select(shut_off_julian, div, bwb.wq, bwb.vol.nat, t.cg, t.g, t.gs, t.hc, t.lw )
+#  bwb.vol.nat, t.gs
+
+#use regsubsets to plot the results
+regsubsets.out<-regsubsets(shut_off_julian~., data=curt, nbest=3, nvmax=5)
+regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
+quartz(title="Adjusted R^2",10,10)
+plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
