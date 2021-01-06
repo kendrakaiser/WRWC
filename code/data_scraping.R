@@ -6,10 +6,13 @@
 
 source(file.path("code", "packages.R"))
 
+#set run date for pulling swe data
+run_date = 'feb1'
 # set data directory for saving data
 cd ='~/Desktop/Data/WRWC'
 # set date for AgriMet Data download
 end = '2020-10-01'
+
 
 #import and manage diversion data
 bw.div <- read.csv(file.path(cd, 'bwr_diversion_data_1987_2019_111620.csv'))
@@ -182,9 +185,8 @@ for (i in 1:length(snotel_sites)){
 snotel_site_info$site_name <- c('chocolate gulch', 'galena', 'galena summit', 'hyndman', 'lost-wood divide', 'dollarhide summit', 'camas creek divide', 'soldier r.s.', 'garfield r.s.', 'swede peak')
 snotel_site_info$abv<- snotel_abrv
 snotel_site_info$huc8 <- c(219,219,219,219,219,219,220,220,221,221)
-# remove unecessary columns from snotel data frame
+# remove unnecessary columns from Snotel data frame
 snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, latitude, longitude, elev, county, description))
-
 snotel_data_out$site_name<-trimws(snotel_data_out$site_name)
 snotel_data_out$date <- as.Date(snotel_data_out$date, format = "%Y-%m-%d")
 snotel_data_out$mo <- month(snotel_data_out$date)
@@ -192,7 +194,6 @@ snotel_data_out$wy <- as.numeric(as.character(water_year(snotel_data_out$date, o
 snotel_data_out$day <- day(snotel_data_out$date)
 
 # subset April 1 data for model 
-# TODO: update this to pull Feb1 and Mar1 as well
 wy<- year(seq(as.Date("1979-04-01"),as.Date(end),"year"))
 april1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
 colnames(april1swe)<- c('year', snotel_abrv)
@@ -203,10 +204,37 @@ for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 4 & snotel_data_out$day ==1,]
   start<- min(sub$wy)
   april1swe[which(april1swe$year == start) : which(april1swe$year == year(end)),i+1]<- sub$snow_water_equivalent
-  }
+}
+
+# subset March 1 data for model 
+mar1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
+colnames(mar1swe)<- c('year', snotel_abrv)
+mar1swe[,1]<- wy
+mar1swe<-as.data.frame(mar1swe)
+
+for (i in 1:length(snotel_sites)) {
+  sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 3 & snotel_data_out$day ==1,]
+  start<- min(sub$wy)
+  mar1swe[which(mar1swe$year == start) : which(mar1swe$year == year(end)),i+1]<- sub$snow_water_equivalent
+}
+
+# subset February 1 data for model 
+feb1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
+colnames(feb1swe)<- c('year', snotel_abrv)
+feb1swe[,1]<- wy
+feb1swe<-as.data.frame(feb1swe)
+
+for (i in 1:length(snotel_sites)) {
+  sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 2 & snotel_data_out$day ==1,]
+  start<- min(sub$wy)
+  feb1swe[which(feb1swe$year == start) : which(feb1swe$year == year(end)),i+1]<- sub$snow_water_equivalent
+}
 
 # Save Snotel data as csvs -----
 write.csv(april1swe, file.path(cd, 'april1swe.csv'))
+write.csv(mar1swe, file.path(cd, 'mar1swe.csv'))
+write.csv(feb1swe, file.path(cd, 'feb1swe.csv'))
+
 write.csv(snotel_data_out, file.path(cd,'snotel_data.csv'))
 write.csv(snotel_site_info, file.path(cd,'snotel_sites.csv'))
 
@@ -219,13 +247,22 @@ write.csv(site_info, file.path(cd,'usgs_sites.csv'))
 
 # Merge April 1 SWE and streamflow metrics & diversion data ----
 bw.div.tot$year<- as.integer(bw.div.tot$year)
-allApril1<- april1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
+
+if (run_date == 'feb1'){
+  alldat<- feb1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
+} else if (run_date == 'march1'){
+  alldat<- mar1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
+} else if (run_date == 'april1'){
+  alldat<- april1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
+}
+
 # 'natural' flow is the volume at the gage plus the volume from upstream diversions
-allApril1$bwb.vol.nat <- allApril1$bwb.vol + allApril1$abv.h
-allApril1$bws.vol.nat <- allApril1$bws.vol + allApril1$abv.s + allApril1$abv.h
-allApril1$bws.loss <- allApril1$bws.vol.nat - allApril1$bwb.vol
-allApril1$sc.vol.nat<- allApril1$sc.vol + allApril1$sc.div
-write.csv(allApril1, file.path(cd,'all_April1.csv'))
+alldat$bwb.vol.nat <- alldat$bwb.vol + alldat$abv.h
+alldat$bws.vol.nat <- alldat$bws.vol + alldat$abv.s + allApril1$abv.h
+alldat$bws.loss <- alldat$bws.vol.nat - alldat$bwb.vol
+alldat$sc.vol.nat<- alldat$sc.vol + alldat$sc.div
+
+write.csv(alldat, file.path(cd,'all_dat.csv'))
 
 # Download NRCS ET Agrimet data ----
 # OB = Air temperature
