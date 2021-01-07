@@ -16,19 +16,20 @@ rm(list=ls())
 
 cd = '~/Desktop/Data/WRWC'
 fig_dir = '~/github/WRWC/figures'
+input = 'all_dat_apr.csv'
 pred.yr <- 2019
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
-swe_q = read.csv(file.path(cd,'all_dat.csv'))
+swe_q = read.csv(file.path(cd,input))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
 temps = read.csv(file.path(cd, 'ajTemps.csv'))
 var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
 var$div <- var$abv.h + var$abv.s
 curtailments = read.csv(file.path(cd,'historic_shutoff_dates_071520.csv'))
 
-write.csv(var, file.path(cd,'April1_vars.csv'))
+write.csv(var, file.path(cd,'April_output/April1_vars.csv'))
 
 temp.ran = read.csv(file.path(cd,'aj_pred.temps.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
@@ -127,7 +128,7 @@ output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
 
 #Plot Big Wood at Hailey modeled data for visual evaluation 
-png(filename = file.path(fig_dir,"BWB_modelFit.png"),
+png(filename = file.path(fig_dir,"April/BWB_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -152,7 +153,7 @@ output.vol[2,] <- mod_out[[1]]
 pred.params.vol[2,] <- mod_out[[2]]
 
 #Plot modeled bws data for visual evaluation 
-png(filename = file.path(fig_dir,"BWS_modelFit.png"),
+png(filename = file.path(fig_dir,"April/BWS_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -176,7 +177,7 @@ output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
 # Plot sc modeled data for visual evaluation 
-png(filename = file.path(fig_dir,"SC_modelFit.png"),
+png(filename = file.path(fig_dir,"April/SC_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -201,7 +202,7 @@ output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
 #Plot CC modeled data for visual evaluation 
-png(filename = file.path(fig_dir,"CC_modelFit.png"),
+png(filename = file.path(fig_dir,"April/CC_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -261,7 +262,7 @@ output.cm[1,] <- mod_out[[1]]
 pred.params.cm[1,] <- mod_out[[2]]
 
 #Plot modeled data for visual evaluation 
-png(filename = file.path(fig_dir,"BWB_CMmodelFit.png"),
+png(filename = file.path(fig_dir,"April/BWB_CMmodelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -290,7 +291,7 @@ output.cm[2,] <- mod_out[[1]]
 pred.params.cm[2,] <- mod_out[[2]]
 
 #Plot modeled data for visual evaluation 
-png(filename = file.path(fig_dir,"BWS_CMmodelFit.png"),
+png(filename = file.path(fig_dir,"April/BWS_CMmodelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -321,7 +322,7 @@ output.cm[4,] <- mod_out[[1]]
 pred.params.cm[4,] <- mod_out[[2]]
 
 #Plot modeled data for visual evaluation 
-png(filename = file.path(fig_dir,"SC_CMmodelFit.png"),
+png(filename = file.path(fig_dir,"April/SC_CMmodelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -349,7 +350,7 @@ output.cm[3,] <- mod_out[[1]]
 pred.params.cm[3,] <- mod_out[[2]]
 
 #Plot modeled data for visual evaluation 
-png(filename = file.path(fig_dir,"CC_CMmodelFit.png"),
+png(filename = file.path(fig_dir,"April/CC_CMmodelFit.png"),
 width = 5.5, height = 5.5,units = "in", pointsize = 12,
 bg = "white", res = 600, type ="quartz") 
 
@@ -359,12 +360,12 @@ plot(var$cc.cm[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Pred
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
-### Save model outputs for simulation runs (is this actually used later?)
+### Save model outputs 
 
-write.csv(output.vol, file.path(cd,"pred.output.vol.csv"),row.names=T)
-write.csv(pred.params.vol, file.path(cd,"pred.params.vol.csv"),row.names=T)
-write.csv(output.cm, file.path(cd,"pred.output.cm.csv"),row.names=T)
-write.csv(pred.params.cm, file.path(cd,"pred.params.cm.csv"),row.names=T)
+write.csv(output.vol, file.path(cd,"April_output/pred.output.vol.csv"),row.names=T)
+write.csv(pred.params.vol, file.path(cd,"April_output/pred.params.vol.csv"),row.names=T)
+write.csv(output.cm, file.path(cd,"April_output/pred.output.cm.csv"),row.names=T)
+write.csv(pred.params.cm, file.path(cd,"April_output/pred.params.cm.csv"),row.names=T)
 
 # --------------------
 # Apr-Sept diversion & reach gain predictions
@@ -375,7 +376,7 @@ colnames(pred.params.div)<-c("log.vol","sigma")
 rownames(pred.params.div)<-c("bw.div", "sc.div")
 
 # Above Hailey -----
-png(filename = file.path(fig_dir,"Div.abv.Hailey.png"),
+png(filename = file.path(fig_dir,"April/Div.abv.Hailey.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(var$year, var$abv.h, xlab="Year", ylab="Diversions (ac-ft)")
@@ -394,7 +395,7 @@ preds.div<-predict(div_mod.h,newdata=pred.dat,se.fit=T,interval="prediction",lev
 #preds.params.div[1,2]<-preds.div$se.fit
 #preds.params.div.[1,3]<-cor(dat$Total.Div,dat$Reach.Gain)
 
-png(filename = file.path(fig_dir,"Div.abv.Hailey_modelFit.png"),
+png(filename = file.path(fig_dir,"April/Div.abv.Hailey_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -405,7 +406,7 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 
 # Above Stanton Crossing the lm does really poorly (0.36) - draw randomly or use a lm that includes natural flow estimate
-png(filename = file.path(fig_dir,"Div.abv.Stanton.png"),
+png(filename = file.path(fig_dir,"April/Div.abv.Stanton.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(var$year, var$abv.s, xlab="Year", ylab="Diversions (ac-ft)")
@@ -413,7 +414,7 @@ dev.off()
 
 mod_sum[5,1]<-0.36
 # losses between Hailey and Stanton
-png(filename = file.path(fig_dir,"Losses.png"),
+png(filename = file.path(fig_dir,"April/Losses.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(var$year, var$bws.loss, xlab="Year", ylab="Annual Losses (ac-ft)")
@@ -430,7 +431,7 @@ pred.dat<- var[var$year == pred.yr,] %>% select(g.swe,hc.swe,t.cg, t.gs,t.gs)
 # Model output
 preds.div<-predict(bws.loss_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
 
-png(filename = file.path(fig_dir,"Losses_modelFit.png"),
+png(filename = file.path(fig_dir,"April/Losses_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 fits<-fitted(bws.loss_mod)
@@ -453,7 +454,7 @@ preds.div<-predict(div_mod,newdata=pred.dat,se.fit=T,interval="prediction",level
 pred.params.div[1,1]<-preds.div$fit[1]
 pred.params.div[1,2]<-preds.div$se.fit
 
-png(filename = file.path(fig_dir,"Diversions_modelFit.png"),
+png(filename = file.path(fig_dir,"April/Diversions_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 fits<-fitted(div_mod)
@@ -480,7 +481,7 @@ preds.div<-predict(sc.div_mod,newdata=pred.dat,se.fit=T,interval="prediction",le
 pred.params.div[2,1]<-preds.div$fit[1]
 pred.params.div[2,2]<-mean(preds.div$se.fit)
 
-png(filename = file.path(fig_dir,"SilverCreek_Diversions_modelFit.png"),
+png(filename = file.path(fig_dir,"April/SC_Diversions_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 fits<-fitted(sc.div_mod)
@@ -491,7 +492,7 @@ dev.off()
 
 
 mod_sum<- round(mod_sum, 3)
-png(file.path(fig_dir,"model_summary.png"), height = 25*nrow(mod_sum), width = 100*ncol(mod_sum))
+png(file.path(fig_dir,"April/model_summary.png"), height = 25*nrow(mod_sum), width = 100*ncol(mod_sum))
 grid.table(mod_sum)
 dev.off()
 
@@ -517,20 +518,20 @@ cov.mat<-cor.mat*outer.prod
 vol.pars<-rbind(pred.params.vol, pred.params.div)
 vol.sample<-mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat[1:6,1:6])
 colnames(vol.sample)<-c("bwb.nat","bws.nat","cc","sc", "div", "sc.div")
-write.csv(exp(vol.sample), file.path(cd,"vol.sample.april.csv"),row.names=F)
+write.csv(exp(vol.sample), file.path(cd,"April_output/vol.sample.csv"),row.names=F)
 
 #save correlation matrix for model details report
 cor.mat.out<-as.data.frame(round(cor.mat,2))
-png(file.path(fig_dir,"correlation_matrix.png"), height = 25*nrow(cor.mat.out), width = 80*ncol(cor.mat.out))
+png(file.path(fig_dir,"April/correlation_matrix.png"), height = 25*nrow(cor.mat.out), width = 80*ncol(cor.mat.out))
 grid.table(cor.mat.out)
 dev.off()
 # save output from correlations
-write.csv(cov.mat, file.path(cd,"cov.mat.csv"),row.names=T)
-write.csv(pred.pars, file.path(cd,"pred.pars.csv"),row.names=T)
+write.csv(cov.mat, file.path(cd,"April_output/cov.mat.csv"),row.names=T)
+write.csv(pred.pars, file.path(cd,"April_output/pred.pars.csv"),row.names=T)
 
 # Plot boxplots of total annual flow from each model -> modelOutput.Rmd
 library(viridis)
-png(filename = file.path(fig_dir,"sampled_volumes.png"),
+png(filename = file.path(fig_dir,"April/sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -565,12 +566,12 @@ CMyear.sample<-sample(cm.data$year,5000,replace=TRUE)
 cm_sum<-as.data.frame(summary(as.factor(CMyear.sample))/5000)
 colnames(cm_sum)<- c("% of sample")
 cm_sum<- cm_sum*100
-png(file.path(fig_dir,"CM_summary.png"), height = 50*nrow(cm_sum), width = 200*ncol(cm_sum))
+png(file.path(fig_dir,"April/CM_summary.png"), height = 50*nrow(cm_sum), width = 200*ncol(cm_sum))
 grid.table(cm_sum)
 dev.off()
 
 #save the probabilities for use in the simulation
-write.csv(CMyear.sample, file.path(cd,"CMyear.sample.csv"),row.names=F)
+write.csv(CMyear.sample, file.path(cd,"April_output/CMyear.sample.csv"),row.names=F)
 
 # this version makes the probabilities based on pvnorm distribution, 
 # this is not used in the simulations, but is useful for reference
@@ -578,7 +579,7 @@ CMyear.sample.prob<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob)
 cm_prob<-as.data.frame(summary(as.factor(CMyear.sample.prob))/5000)
 colnames(cm_prob)<- c("% of sample")
 cm_prob- cm_prob*100
-png(file.path(fig_dir,"CM_summary_prob.png"), height = 50*nrow(cm_prob), width = 200*ncol(cm_prob))
+png(file.path(fig_dir,"April/CM_summary_prob.png"), height = 50*nrow(cm_prob), width = 200*ncol(cm_prob))
 grid.table(cm_prob)
 dev.off()
 

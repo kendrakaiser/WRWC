@@ -7,15 +7,22 @@
 # Uses modeled temperature data from linear random effects model
 # Uses multivariate models of natural streamflow and diversions
 
-
 cd <<- '~/Desktop/Data/WRWC'
 fig_dir = '~/github/WRWC/figures' 
+
 #set run date for pulling & saving data
 run_date = 'feb1'
+pred.yr <<- 2019 
 
-pred.yr <<- 2019 #Simyear
+if (run_date == 'feb1'){
+  model_out = '~/Desktop/Data/WRWC/February_output/'
+} else if (run_date == 'march1'){
+  model_out = '~/Desktop/Data/WRWC/March_output/'
+} else if (run_date == 'april1'){
+  model_out = '~/Desktop/Data/WRWC/April_output/'
+}
+
 ns<-5000  #Number of simulations
-
 dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30",sep="")),"day")
 
 # ------------------------------------------------------------------------------
@@ -32,16 +39,8 @@ cc.wy<-streamflow[streamflow$abv == 'cc',]
 sc.wy<-streamflow[streamflow$abv == 'sc',]
 
 # distributions and diversion hydrographs 
-cm.year<-read.csv(file.path(cd,"CMyear.sample.csv"))
-if (run_date == 'feb1'){
-  filename = "vol.sample.feb.csv"
-} else if (run_date == 'march1'){
-  filename = "vol.sample.march.csv"
-} else if (run_date == 'april1'){
-  filename = "vol.sample.april.csv"
-}
-
-volumes<-read.csv(file.path(cd,filename)) #ac-ft
+cm.year<-read.csv(file.path(model_out,"CMyear.sample.csv"))
+volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
 
 # ------------------------------------------------------------------------------
 # Create arrays to store outputs of stochastic simulations
