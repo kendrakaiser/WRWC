@@ -163,7 +163,7 @@ sc_mod<-lm(log(sc.vol.nat)~ sc.wq + ga.swe+ sp.swe + cg.swe+log(hc.swe), data=hi
 mod_sum[4,1]<-summary(sc_mod)$adj.r.squared
 
 # April 1 SC Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% select(sc.wq, ga.swe, g.swe, hc.swe, bwb.wq) 
+pred.dat<-var[var$year == pred.yr,] %>% select(sc.wq, ga.swe, sp.swe, cg.swe, hc.swe) 
 # Silver Creek Model output
 mod_out<- modOut(sc_mod, pred.dat, hist$sc.wq, hist$sc.vol.nat, mean(hist$ga.swe,  hist$g.swe,  hist$hc.swe, trim=0, na.rm=T), var$sc.vol.nat[var$year == pred.yr-1])
 output.vol[4,] <- mod_out[[1]]
