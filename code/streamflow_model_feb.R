@@ -305,7 +305,6 @@ CMyear.sample<-sample(cm.data$year,5000,replace=TRUE)
 write.csv(CMyear.sample, file.path(cd, "February_output/CMyear.sample.csv"),row.names=F)
 
 
-
 # --------------------
 # Curtailment predictions
 #

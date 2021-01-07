@@ -18,7 +18,7 @@ end_date <<- '2020-10-01'
 # Relative file paths 
 fig_dir <<- '~/github/WRWC/figures'
 input_dir <<- file.path(cd, 'input')
-data_out <<- file.path(cd, 'data')
+data_dir <<- file.path(cd, 'data')
 
 # ---- Run Model code
 

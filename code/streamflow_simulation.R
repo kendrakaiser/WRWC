@@ -14,6 +14,8 @@
 #run_date = 'feb1'
 #pred.yr <<- 2019 
 
+rm.all.but(c("cd", "pred.yr", "run_date", "fig_dir", "input_dir", "data_dir", "input"))
+
 if (run_date == 'feb1'){
   model_out = '~/Desktop/Data/WRWC/February_output/'
 } else if (run_date == 'march1'){
@@ -30,7 +32,7 @@ dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30
 # mean ET from each basin -- or from FAFI / PICO ???
 # volume & bootstraps for each gage
 # natural flow and diversion records from which we will select the runoff timing
-streamflow<-read.csv(file.path(cd,"streamflow_data.csv"))
+streamflow<-read.csv(file.path(data_dir,"streamflow_data.csv"))
 streamflow$year <- year(streamflow$Date)
 
 bwb.wy<-streamflow[streamflow$abv == 'bwb',]
@@ -76,10 +78,10 @@ for(k in 1:ns){
   sc.div <- sc.wy[sc.wy$wy == year, "sc.div"][183:365]
   cc <- cc.wy[cc.wy$wy == year, "Flow"][183:365]
   
-  bwb.flow.s[,k]<-sim.flow(bwb, vol$bwb)
-  bws.flow.s[,k]<-sim.flow(bws, vol$bws)
-  bw.div.s[,k]<-sim.flow(bw.div, vol$div)
-  sc.flow.s[,k]<-sim.flow(sc, vol$sc)
+  bwb.flow.s[,k]<-sim.flow(bwb, vol$bwb.nat)
+  bws.flow.s[,k]<-sim.flow(bws, vol$bws.nat)
+  bw.div.s[,k]<-sim.flow(bw.div, vol$div) # only in april
+  sc.flow.s[,k]<-sim.flow(sc, vol$sc.nat)
   sc.div.s[,k]<-sim.flow(sc.div, vol$sc.div)
   cc.flow.s[,k]<-sim.flow(cc, vol$cc)
 }
@@ -112,8 +114,16 @@ pi[,13:15]<-as.data.frame(pred.int(sc.div.s))
 pi[,16:18]<-as.data.frame(pred.int(cc.flow.s))
 
 # Plot Simulation Results
+if (run_date == 'feb1'){
+  mo_fig_dir = file.path(fig_dir, 'February')
+} else if (run_date == 'march1'){
+  mo_fig_dir = file.path(fig_dir, 'March')
+} else if (run_date == 'april1'){
+  mo_fig_dir = file.path(fig_dir, 'April')
+}
+
 # Big Wood @ Hailey
-png(filename = file.path(fig_dir, "BigWood_Hailey_Simulation.png"),
+png(filename = file.path(mo_fig_dir, "BWB_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(dates, pi[,3], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -127,7 +137,7 @@ dev.off()
 
 
 # Big Wood @ Stanton
-png(filename = file.path(fig_dir, "BigWood_Stanton_Simulation.png"),
+png(filename = file.path(mo_fig_dir, "BWS_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(dates, pi[,6], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -140,10 +150,10 @@ lines(dates,pi[,6],lwd=2.5,col="blue")
 dev.off()
 
 # Silver Creek
-png(filename = file.path(fig_dir, "Silver_creek_Simulation.png"),
+png(filename = file.path(mo_fig_dir, "SC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
-plot(dates,pi[,12], type="n", xlab="Date", ylab ="Flow (cfs)",
+plot(dates, pi[,12], type="n", xlab="Date", ylab ="Flow (cfs)",
      main = "Silver Creek Natural Streamflow Simulation", ylim=c(min(pi[,10]), max(pi[,11])))
 polygon(c(dates[1], dates, rev(dates) ), c(pi[1,10], pi[,11], rev(pi[,10])), 
         col = "gray90", border = NA)
@@ -153,7 +163,7 @@ lines(dates,pi[,12],lwd=2.5,col="blue")
 dev.off()
 
 # Camas Creek
-png(filename = file.path(fig_dir, "Camas_creek_Simulation.png"),
+png(filename = file.path(mo_fig_dir, "CC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(dates,pi[,18], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -164,12 +174,19 @@ lines(dates,pi[,18],lwd=2.5,col="blue")
 dev.off()
 # ------------------------------------------------------------------------------
 # Save Output
-write.csv(bwb.flow.s, "BigWoodBullion.nat.sim.csv", row.names=dates)
-write.csv(bws.flow.s, "BigWoodStanton.nat.sim.csv", row.names=dates)
-write.csv(bw.div.s, "BigWoodStanton.div.sim.csv", row.names=dates)
 
-write.csv(cc.flow.s, "CamasCreek.flow.sim.csv", row.names=dates)
+if (run_date == 'feb1'){
+  out_dir = file.path(cd, 'February_output')
+} else if (run_date == 'march1'){
+  out_dir = file.path(cd, 'March_output')
+} else if (run_date == 'april1'){
+  out_dir = file.path(cd, 'April_output')
+}
 
-write.csv(sc.flow.s, "SilverCreek.nat.sim.csv", row.names=dates)
-write.csv(sc.div.s, "SilverCreek.div.sim.csv", row.names=dates)
+write.csv(bwb.flow.s, file.path(out_dir, "BWB.nat.sim.csv"), row.names=dates)
+write.csv(bws.flow.s, file.path(out_dir, "BWS.nat.sim.csv"), row.names=dates)
+write.csv(bw.div.s, file.path(out_dir, "BW.div.sim.csv"), row.names=dates)
+write.csv(cc.flow.s, file.path(out_dir, "CC.flow.sim.csv"), row.names=dates)
+write.csv(sc.flow.s, file.path(out_dir, "SC.nat.sim.csv"), row.names=dates)
+write.csv(sc.div.s, file.path(out_dir, "SC.div.sim.csv"), row.names=dates)
 
