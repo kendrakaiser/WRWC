@@ -16,6 +16,8 @@ library(tidyr)
 # import data ----
 cd = '~/Desktop/Data/WRWC'
 fig_dir = '~/Desktop/Data/WRWC/figures' 
+data_out = file.path(cd, 'data')
+
 snotel = read.csv(file.path(cd,'snotel_data.csv'))
 agrimet = read.csv(file.path(cd,'agri_metT.csv'))
 
@@ -59,7 +61,7 @@ tdata.wide <-pivot_wider(tdata, names_from = site, values_from = Apr.Jun.tempF)
 colnames(tdata.wide)<-c("year", "t.cg","t.ccd", "t.sr", "t.ds","t.g","t.ga", "t.hc", "t.lw", "t.gs", "t.sp","t.p", "t.f")
 
 snotel_abrv <- c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
-write.csv(tdata.wide, file.path(cd, 'ajTemps.csv'))
+write.csv(tdata.wide, file.path(data_out, 'ajTemps.csv'))
 
 #plot all data
 png(filename = file.path(fig_dir,"Temperatures.png"),
@@ -164,6 +166,6 @@ aj.temps.scd<-rnorm(nboot,mean=pred,sd=se.pred)
 
 
 aj.pred.temps<-cbind(aj.temps.bwh, aj.temps.bws, aj.temps.sc, aj.temps.cc, aj.temps.scd)
-write.csv(aj.pred.temps, file.path(cd, 'aj_pred.temps.csv'))
+write.csv(aj.pred.temps, file.path(data_out, 'aj_pred.temps.csv'))
 
 
