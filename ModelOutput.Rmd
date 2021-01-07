@@ -31,7 +31,7 @@ q$doy <- yday(q$Date)
 q<- q %>% filter(abv != 'bwr')
 
 #knitr::opts_knit$set(root.dir = '~/Desktop/Data/WRWC')
-#fig_dir = '~/figures'
+fig_dir = '~/github/WRWC/figures'
 ```
 
 ## Wood River Model Summary

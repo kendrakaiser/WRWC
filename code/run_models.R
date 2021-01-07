@@ -14,6 +14,8 @@ run_date <<- 'feb1'
 # set date for AgriMet Data download
 end <<- '2020-10-01'
 
+fig_dir = '~/github/WRWC/figures'
+
 source(file.path("code", "data_scraping.R"))
 source(file.path("code", "temperature_model.R"))
 

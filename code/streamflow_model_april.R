@@ -15,7 +15,7 @@ source(file.path("~/github/WRWC/code", "packages.R"))
 rm(list=ls())
 
 cd = '~/Desktop/Data/WRWC'
-fig_dir = file.path(cd, "figures")
+fig_dir = '~/github/WRWC/figures'
 pred.yr <- 2019
 
 # Import Data ------------------------------------------------------------------  

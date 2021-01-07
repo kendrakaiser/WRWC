@@ -14,7 +14,7 @@ library(leaps)
 
 rm(list=ls())
 cd = '~/Desktop/Data/WRWC'
-fig_dir = '~/Desktop/Data/WRWC/figures' 
+fig_dir = '~/github/WRWC/figures' 
 pred.yr <- 2020
 
 # Import Data ------------------------------------------------------------------ # 
