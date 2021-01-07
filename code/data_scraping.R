@@ -7,7 +7,7 @@
 source(file.path("code", "packages.R"))
 
 #set run date for pulling swe data
-run_date = 'march1'
+run_date = 'feb1'
 # set data directory for saving data
 cd ='~/Desktop/Data/WRWC'
 # set date for AgriMet Data download
