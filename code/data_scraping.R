@@ -4,17 +4,6 @@
 # June, 19, 2020
 # ------------------------------------------------------------------------------
 
-#source('~/github/WRWC/code/packages.R')
-
-#set run date for pulling swe data
-#run_date = 'feb1'
-# set data directory for saving data
-#input_dir ='~/Desktop/Data/WRWC/input'
-#data_out = '~/Desktop/Data/WRWC/data'
-# set date for AgriMet Data download
-# end_date = '2020-10-01'
-
-
 #import and manage diversion data
 bw.div <- read.csv(file.path(input_dir, 'bwr_diversion_data_1987_2019_111620.csv'))
 bw.div$Date <- as.Date(bw.div$Date, format = "%m/%d/%y")
@@ -168,7 +157,7 @@ snotel_sites = c(cg, g, gs, hc, lwd, ds, ccd, sr, ga, sp)
 snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "ccd.swe", "sr.swe", "ga.swe", "sp.swe")
 
 # Download Snotel data ----
-snotel_data = snotel_download(snotel_sites, path = '~/Desktop/Data/WRWC/', internal = TRUE )
+snotel_data = snotel_download(snotel_sites, path = data_dir, internal = TRUE )
 
 # Pull out Snotel site information ----
 snotel_site_info<-data.frame('id'=NA, 'start'=NA, 'end'=NA, 'lat'=NA, 'long'=NA, 'elev'=NA, 'description'=NA, 'site_name'=NA, 'huc8'=NA)
@@ -195,7 +184,7 @@ snotel_data_out$wy <- as.numeric(as.character(water_year(snotel_data_out$date, o
 snotel_data_out$day <- day(snotel_data_out$date)
 
 # subset April 1 data for model 
-wy<- year(seq(as.Date("1979-04-01"),as.Date(end),"year"))
+wy<- year(seq(as.Date("1979-04-01"),as.Date(end_date),"year"))
 april1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
 colnames(april1swe)<- c('year', snotel_abrv)
 april1swe[,1]<- wy
@@ -204,7 +193,7 @@ april1swe<-as.data.frame(april1swe)
 for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 4 & snotel_data_out$day ==1,]
   start<- min(sub$wy)
-  april1swe[which(april1swe$year == start) : which(april1swe$year == year(end)),i+1]<- sub$snow_water_equivalent
+  april1swe[which(april1swe$year == start) : which(april1swe$year == year(end_date)),i+1]<- sub$snow_water_equivalent
 }
 
 # subset March 1 data for model 
@@ -216,7 +205,7 @@ mar1swe<-as.data.frame(mar1swe)
 for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 3 & snotel_data_out$day ==1,]
   start<- min(sub$wy)
-  mar1swe[which(mar1swe$year == start) : which(mar1swe$year == year(end)),i+1]<- sub$snow_water_equivalent
+  mar1swe[which(mar1swe$year == start) : which(mar1swe$year == year(end_date)),i+1]<- sub$snow_water_equivalent
 }
 
 # subset February 1 data for model 
@@ -228,23 +217,23 @@ feb1swe<-as.data.frame(feb1swe)
 for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 2 & snotel_data_out$day ==1,]
   start<- min(sub$wy)
-  feb1swe[which(feb1swe$year == start) : which(feb1swe$year == year(end)),i+1]<- sub$snow_water_equivalent
+  feb1swe[which(feb1swe$year == start) : which(feb1swe$year == year(end_date)),i+1]<- sub$snow_water_equivalent
 }
 
 # Save Snotel data as csvs -----
-write.csv(april1swe, file.path(data_out, 'april1swe.csv'))
-write.csv(mar1swe, file.path(data_out, 'mar1swe.csv'))
-write.csv(feb1swe, file.path(data_out, 'feb1swe.csv'))
+write.csv(april1swe, file.path(data_dir, 'april1swe.csv'))
+write.csv(mar1swe, file.path(data_dir, 'mar1swe.csv'))
+write.csv(feb1swe, file.path(data_dir, 'feb1swe.csv'))
 
-write.csv(snotel_data_out, file.path(data_out,'snotel_data.csv'))
-write.csv(snotel_site_info, file.path(data_out,'snotel_sites.csv'))
+write.csv(snotel_data_out, file.path(data_dir,'snotel_data.csv'))
+write.csv(snotel_site_info, file.path(data_dir,'snotel_sites.csv'))
 
 # Save flow data as csvs ------
 metrics <- metrics %>% inner_join(nat.cm, by= "year")
 
-write.csv(streamflow_data, file.path(data_out,'streamflow_data.csv'))
-write.csv(metrics, file.path(data_out,'metrics.csv'))
-write.csv(site_info, file.path(data_out,'usgs_sites.csv'))
+write.csv(streamflow_data, file.path(data_dir,'streamflow_data.csv'))
+write.csv(metrics, file.path(data_dir,'metrics.csv'))
+write.csv(site_info, file.path(data_dir,'usgs_sites.csv'))
 
 # Merge April 1 SWE and streamflow metrics & diversion data ----
 bw.div.tot$year<- as.integer(bw.div.tot$year)
@@ -271,7 +260,7 @@ if (run_date == 'feb1'){
   filename = 'all_dat_apr.csv'
 }
 
-write.csv(alldat, file.path(data_out,filename))
+write.csv(alldat, file.path(data_dir,filename))
 
 # Download NRCS ET Agrimet data ----
 # OB = Air temperature
@@ -343,10 +332,10 @@ colnames(piciT)<- c("date_time","t", "site_name", 'month', 'y')
 
 # Merge & save AgriMet Data ---------------------------------
 agri_metT <- rbind(piciT, fafiT)
-write.csv(agri_metT, file.path(data_out,'agri_metT.csv'))
+write.csv(agri_metT, file.path(data_dir,'agri_metT.csv'))
 
 agri_met<- full_join(pici, fafi, by='date_time')
-write.csv(agri_met, file.path(data_out,'agri_met.csv'))
+write.csv(agri_met, file.path(data_dir,'agri_met.csv'))
 
 # Additional Data Sources ----
 # National Operational Hydrologic Remote Sensing Center data - max SWE at 17 locations?
