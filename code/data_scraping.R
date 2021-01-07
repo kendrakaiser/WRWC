@@ -7,7 +7,7 @@
 source(file.path("code", "packages.R"))
 
 #set run date for pulling swe data
-run_date = 'feb1'
+run_date = 'march1'
 # set data directory for saving data
 cd ='~/Desktop/Data/WRWC'
 # set date for AgriMet Data download
@@ -109,7 +109,7 @@ for(i in 1:length(stream.id)){
   
   for (y in 1: length(years)){
     #average winter flow
-    sub1<- sub %>% filter(wy == years[y] & (mo >= 10 | mo < 4))
+    sub1<- sub %>% filter(wy == years[y] & (mo >= 10 | mo < 2))
     wq <- mean(sub1$Flow)
     
     #total april-september flow
@@ -262,7 +262,15 @@ alldat$bws.vol.nat <- alldat$bws.vol + alldat$abv.s + alldat$abv.h
 alldat$bws.loss <- alldat$bws.vol.nat - alldat$bwb.vol
 alldat$sc.vol.nat<- alldat$sc.vol + alldat$sc.div
 
-write.csv(alldat, file.path(cd,'all_dat.csv'))
+if (run_date == 'feb1'){
+  filename = 'all_dat_feb.csv'
+} else if (run_date == 'march1'){
+  filename = 'all_dat_mar.csv'
+} else if (run_date == 'april1'){
+  filename = 'all_dat_apr.csv'
+}
+
+write.csv(alldat, file.path(cd,filename))
 
 # Download NRCS ET Agrimet data ----
 # OB = Air temperature
