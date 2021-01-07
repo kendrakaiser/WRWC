@@ -16,22 +16,24 @@ rm(list=ls())
 
 cd = '~/Desktop/Data/WRWC'
 fig_dir = '~/github/WRWC/figures'
+data_dir = file.path(cd, 'data')
+input_dir = file.path(cd, 'input')
 input = 'all_dat_apr.csv'
 pred.yr <- 2019
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
-usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
-swe_q = read.csv(file.path(cd,input))
+usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
+swe_q = read.csv(file.path(data_dir,input))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
-temps = read.csv(file.path(cd, 'ajTemps.csv'))
+temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
 var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
 var$div <- var$abv.h + var$abv.s
-curtailments = read.csv(file.path(cd,'historic_shutoff_dates_071520.csv'))
+curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
 
-write.csv(var, file.path(cd,'April_output/April1_vars.csv'))
+write.csv(var, file.path(cd,'April_output/all_vars.csv'))
 
-temp.ran = read.csv(file.path(cd,'aj_pred.temps.csv'))
+temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 # ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates, changed to start at the beginning of year in accordance with my calculation of cm, consider changin to day of wy

@@ -7,12 +7,12 @@
 # Uses modeled temperature data from linear random effects model
 # Uses multivariate models of natural streamflow and diversions
 
-cd <<- '~/Desktop/Data/WRWC'
-fig_dir = '~/github/WRWC/figures' 
+#cd <<- '~/Desktop/Data/WRWC'
+#fig_dir = '~/github/WRWC/figures' 
 
 #set run date for pulling & saving data
-run_date = 'feb1'
-pred.yr <<- 2019 
+#run_date = 'feb1'
+#pred.yr <<- 2019 
 
 if (run_date == 'feb1'){
   model_out = '~/Desktop/Data/WRWC/February_output/'

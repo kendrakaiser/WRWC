@@ -6,33 +6,39 @@
 # characteristics and associated water rights shutoff dates
 # ----------------------------------------------------------------------------- # 
 
-# define input parameters in global environment
+# Set input parameters and directories in global environment for each model run
 cd <<- '~/Desktop/Data/WRWC'
+# set prediction year
 pred.yr <<- 2020
-#set run date for pulling swe data 'feb1', 'march1', 'april1'
+# set run date for pulling swe data 'feb1', 'march1', 'april1'
 run_date <<- 'feb1'
-# set date for AgriMet Data download
-end <<- '2020-10-01'
+# set end date for AgriMet Data download
+end_date <<- '2020-10-01'
 
-fig_dir = '~/github/WRWC/figures'
+# Relative file paths 
+fig_dir <<- '~/github/WRWC/figures'
+input_dir <<- file.path(cd, 'input')
+data_out <<- file.path(cd, 'data')
 
-source(file.path("code", "data_scraping.R"))
-source(file.path("code", "temperature_model.R"))
+# ---- Run Model code
 
-#change depending on model run date ("streamflow_model_feb.R", "streamflow_model_march.R", "streamflow_model_april.R")
+source('~/github/WRWC/code/packages.R')
+source('~/github/WRWC/code/data_scraping.R')
+source('~/github/WRWC/code/temperature_models.R')
+
+# sets input file name and runs model code depending on model run date 
 if (run_date == 'feb1'){
   input <<- 'all_dat_feb.csv'
-  source(file.path("code", "streamflow_model_feb.R"))
+  source('~/github/WRWC/code/streamflow_model_feb.R')
 } else if (run_date == 'march1'){
   input <<- 'all_dat_mar.csv'
-  source(file.path("code", "streamflow_model_march.R"))
+  source('~/github/WRWC/code/streamflow_model_march.R')
 } else if (run_date == 'april1'){
-  input <<- 'all_dat_mar.csv'
-  source(file.path("code", "streamflow_model_april.R"))
+  input <<- 'all_dat_apr.csv'
+  source('~/github/WRWC/code/streamflow_model_april.R')
 }
 
-
-source(file.path("code", "streamflow_simulation.R"))
+source('~/github/WRWC/code/streamflow_simulation.R')
 
 
 # knit Model Results Rmd

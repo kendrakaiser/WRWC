@@ -10,28 +10,30 @@
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
 
-source(file.path("~/github/WRWC/code", "packages.R"))
+#source(file.path("~/github/WRWC/code", "packages.R"))
 
 rm(list=ls())
 
-cd = '~/Desktop/Data/WRWC'
-fig_dir = '~/github/WRWC/figures' 
-input = 'all_dat_feb.csv'
-pred.yr <- 2019
+#cd = '~/Desktop/Data/WRWC'
+#fig_dir = '~/github/WRWC/figures'
+#data_dir = file.path(cd, 'data')
+#input_dir = file.path(cd, 'input')
+#input = 'all_dat_feb.csv'
+#pred.yr <- 2019
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
-usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
-swe_q = read.csv(file.path(cd, input))
+usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
+swe_q = read.csv(file.path(data_dir, input))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
-temps = read.csv(file.path(cd, 'ajTemps.csv'))
+temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
 var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
 var$div <- var$abv.h + var$abv.s
-curtailments = read.csv(file.path(cd,'historic_shutoff_dates_071520.csv'))
+curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
 
-write.csv(var, file.path(cd,'February_output/Feb1_vars.csv'))
+write.csv(var, file.path(cd,'February_output/all_vars.csv'))
 
-temp.ran = read.csv(file.path(cd,'aj_pred.temps.csv'))
+temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 # ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates, changed to start at the beginning of year in accordance with my calculation of cm, consider changin to day of wy
@@ -302,6 +304,9 @@ as.data.frame(exp(vol.sample)/10000) %>% pivot_longer(everything(),  names_to = 
   ylab("Irrigation Season Volume (10,000 ac-ft)")
 dev.off()
 
+# Draw sample of years with similar center of mass (timing)
+cm.data = var[var$year >= 1997 & var$year < pred.yr,]
+cm.data = cm.data %>% select(year, bwb.cm.nat, bws.cm.nat,cc.cm, sc.cm) 
 
 # create normal distribution of years 
 CMyear.sample<-sample(cm.data$year,5000,replace=TRUE) 
@@ -324,6 +329,6 @@ curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% select(year, subbasin, w
 curt_mod <- lm(shut_off_julian ~ subbasin + div + sc.div, data = curt)
 summary(curt_mod)
 
-# April 1 Prediction Data 
+# Feb 1 Prediction Data 
 params<- var[var$year == pred.yr,] %>% select(g.swe, cg.swe, lwd.swe)
 

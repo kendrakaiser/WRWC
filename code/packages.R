@@ -3,7 +3,7 @@
 
 # load packages
 
-#devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
+devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
 
 library(MASS)
 library(plotrix)
