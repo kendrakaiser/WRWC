@@ -21,7 +21,7 @@ pred.yr <- 2020
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 #q = read.csv(file.path(cd,'streamflow_data.csv'))
 usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
-swe_q = read.csv(file.path(cd,'all_April1.csv'))
+swe_q = read.csv(file.path(cd,'all_dat_mar.csv'))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
 temps = read.csv(file.path(cd, 'ajTemps.csv'))
 var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
@@ -42,7 +42,9 @@ hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 #use regsubsets to plot the results
 regsubsets.out<-regsubsets(log(var$bwb.vol.nat[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
-#g.swe, hc.swe, log.gs lowest bic and 0.84
+#Apr 1 g.swe, hc.swe, log.gs lowest bic and 0.84
+# Feb 1 log.gs
+# Mar 1 log.gs
 
 # -------------------------------------------------------------
 # Big Wood at Stanton, 'natural' flow
@@ -55,8 +57,11 @@ hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 #use regsubsets to explore models
 regsubsets.out<-regsubsets(log(var$bws.vol.nat[var$year < pred.yr & var$year > 1996])~., data=hist, nbest=1, nvmax=8)
-#lowest BIC is bws.wq + log.hc
-# highest r2 with the next lowest bic is bws.wq + log(g, gs, hc)
+# April 1 lowest BIC is bws.wq + log.hc
+# April 1 highest r2 with the next lowest bic is bws.wq + log(g, gs, hc)
+
+# Feb 1 log.wq, log.cg
+# Mar 1 bws.wq gs.swe
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
@@ -69,6 +74,8 @@ hist$log.bbwq<- log(hist$bwb.wq)
 
 # Silver Creek regsubsets 
 regsubsets.out<-regsubsets(log(sc.vol.nat[var$year < pred.yr])~., data=hist, nbest=3, nvmax=5)
+# Feb 1 ga.swe, sp.swe, bwb.wq, hc.swe
+# Mar 1 sc.wq sp.swe, hc.swe
 
 # -------------------------------------------------------------
 # camas creek
@@ -79,6 +86,9 @@ hist$log.sr <- log(hist$sr.swe)
 hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
 
 regsubsets.out<-regsubsets(log(var$cc.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=4)
+
+# Feb 1 ccd.swe, log.wq
+# Mar 1 ccd.swe, log.wq
 
 # use regsubsets to plot the results
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
@@ -129,6 +139,9 @@ hist$log.lwd <- log(hist$lwd.swe)
 hist<-hist %>% select(-cg.swe, -hc.swe, -bwb.wq)
 regsubsets.out<-regsubsets(var$div[var$year >= 1997 & var$year < 2020]~., data=hist, nbest=3, nvmax=8)
 
+# Feb 1 Max R2 of 0.13 -- wont work
+# Mar 1 log gs r2 0.27
+
 # Silver Creek Diversions
 hist <- var[var$year < 2020,] %>% select(sc.wq, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw, t.f, year) 
 hist$log.scwq <- log(hist$sc.wq)
@@ -142,7 +155,10 @@ hist$log.lwd <- log(hist$lwd.swe)
 regsubsets.out<-regsubsets(log(var$sc.div[var$year < 2020])~., data=hist, nbest=3, nvmax=8)
 
 # g.swe, t.cg, t.gs,t.hc, log.cg, log.lwd
-#lod(div) g.swe, t.cg, t.gs, t.hc, log.cg, loglwd
+# log(div) g.swe, t.cg, t.gs, t.hc, log.cg, loglwd
+
+# Feb 1 t.f, log.sc.wq, log.g, log.lwd
+# Mar 1 g.swe, t.cg, t.f, log.sc.wq, log bwb.wq, log.hc.swe
 # ------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for Center of Mass Predictions
 # ------------------------------------------------------------------------------ # 

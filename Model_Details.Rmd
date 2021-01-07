@@ -14,15 +14,15 @@ header-includes:
 ---
 \newpage
 
-```{r include=FALSE}
-fig_dir = '~/Desktop/Data/WRWC/figures'
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '~/Desktop/Data/WRWC')
 library(gridExtra)
 ```
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r test, include=TRUE}
+getwd()
 ```
-
 # 1. Introduction
 The Wood River Collaborative is a grassroots effort to tackle water usage challenges among irrigators, municipalities, and protect minimum flows for fish and wildlife habitat. Its many, basin-wide participants include private citizens, representatives of water agencies, non-profit organizations, private interests and the public sector. The outcome of the collaboration is to bring all stakeholders together and develop strategies and tools for best use of water for consumptive use, while conserving water for groundwater and in-stream flows.
 
@@ -45,7 +45,7 @@ Individual multivariate linear regression models were developed for each of thes
 Once the linear regression models were developed for total irrigation season volume and timing at each location, multivariate distributions were used to stochastically model hydrographs for each location. The residuals (standard error) from each of the regression models and correlations between gauge stations are used to create the multivariate distributions. This ensures that given a set of predictor variables (e.g. SWE, temp) the predicted volumes will be statistically consistent across gage locations (e.g. the models wont predict that Camas Creek will have really low runoff year while the Big Wood has a really high runoff year because they are statistically correlated). Repeated, random selection from these multivariate distributions produces a sample of predicted volumes and timing of streamflow. The samples of total volume and streamflow timing are then used to create simulations of the irrigation season hydrograph. Variability in final model outputs is quantified by percentiles of the resulting predictions. 
 
 ```{r, Model_Workflow, echo=FALSE, fig.cap="", fig.aling="left", out.width = '80%'}
-knitr::include_graphics(file.path(fig_dir,"ModelWorkflow_details.png"))
+#knitr::include_graphics("figures/ModelWorkflow_details.png")
 ```
 
 ## Reproducibility
@@ -76,8 +76,8 @@ SC:
 
 Smaller diversions were not included in this model version as they were considered to be minor given time constraints.
 
-```{r, Historic_diversions, echo=FALSE, fig.cap="", fig.aling="left", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(file.path(fig_dir,"Div.abv.Hailey.png")) # change to total diversions
+```{r, Historic_diversions, echo=FALSE, fig.cap="Diversions Above Hailey, will update to show total diversions", fig.aling="left", out.width = '50%', fig.pos='H'}
+knitr::include_graphics("figures/Div.abv.Hailey.png") # change to total diversions
 ```
 
 ## 2.2 Temperature Model
@@ -182,7 +182,7 @@ log(cg.swe)+log(gs.swe), data=hist)
 ```
 
 ```{r, Big Wood Hailey Model Fits, echo=FALSE, fig.cap="", fig.show="hold", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(c(file.path(fig_dir,"BWB_modelFit.png"), file.path(fig_dir,"BWB_CMmodelFit.png")))
+knitr::include_graphics(c("figures/BWB_modelFit.png", "figures/BWB_CMmodelFit.png"))
 ```
 
 ### Big Wood at Stanton Crossing
@@ -195,7 +195,7 @@ bws_mod.cm <-lm(bws.cm.nat ~ lwd.swe +log(cg.swe)+log(hc.swe) + t.cg + t.g + t.h
 ```
 
 ```{r, Big Wood Stanton Model Fit, echo=FALSE, fig.cap="", fig.show="hold", fig.aling="left", out.width = '45%', fig.pos='H'}
-knitr::include_graphics(c(file.path(fig_dir,"BWS_modelFit.png"), file.path(fig_dir,"BWS_CMmodelFit.png")))
+knitr::include_graphics(c("figures/BWS_modelFit.png", "figures/BWS_CMmodelFit.png"))
 ```
 
 ### Silver Creek
@@ -211,7 +211,7 @@ sc_mod<-lm(log(sc.vol.nat)~ sc.wq+ga.swe + g.swe + log(hc.swe) + log(bwb.wq), da
 ```
 
 ```{r, Silver Creek Model Fit, echo=FALSE, fig.cap="", fig.show="hold", fig.aling="left", out.width = '45%', fig.pos='H'}
-knitr::include_graphics(c(file.path(fig_dir,"SC_modelFit.png"), file.path(fig_dir,"SC_CMmodelFit.png")))
+knitr::include_graphics(c("figures/SC_modelFit.png", "figures/SC_CMmodelFit.png"))
 ```
 
 ### Camas Creek
@@ -224,7 +224,7 @@ cc_mod.cm<-lm(cc.cm~ccd.swe + sr.swe+ t.f, data=hist)
 ```
 
 ```{r, Camas Creek Model Fit, echo=FALSE, fig.cap="", fig.show="hold", fig.aling="left", out.width = '45%', fig.pos='H'}
-knitr::include_graphics(c(file.path(fig_dir,"CC_modelFit.png"), file.path(fig_dir,"CC_CMmodelFit.png")))
+knitr::include_graphics(c("figures/CC_modelFit.png", "figures/CC_CMmodelFit.png"))
 ```
 
 ### Big Wood Diversions
@@ -237,7 +237,7 @@ div_mod<-lm(log(var$div[var$year >=1997 & var$year < pred.yr]) ~ log(cg.swe)+log
 ```
 
 ```{r, Big Wood Diversions Model Fit, echo=FALSE, fig.cap="", fig.show="hold", fig.aling="left", out.width = '45%', fig.pos='H'}
-knitr::include_graphics(file.path(fig_dir,"Diversions_modelFit.png"))
+knitr::include_graphics("figures/Diversions_modelFit.png")
 ```
 
 ### Silver Creek Diversions
@@ -247,7 +247,7 @@ sc.div_mod<-lm(log(var$sc.div[var$year>1993 & var$year < pred.yr]) ~ g.swe+ temp
 ```
 
 ```{r,Silver Creek Diversions Model Fit, echo=FALSE, fig.cap="", fig.show="hold", fig.aling="left", out.width = '45%', fig.pos='H'}
-knitr::include_graphics(file.path(fig_dir,"SilverCreek_Diversions_modelFit.png"))
+knitr::include_graphics("figures/SilverCreek_Diversions_modelFit.png")
 ```
 
 ## 2.3.2 Streamflow Correlations 
@@ -266,7 +266,7 @@ cov.mat<-cor.mat*outer.prod
 ```
 
 ```{r, Covariance_matrix, echo=FALSE, fig.cap="Correlation matrix between gages", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics(file.path(fig_dir,"correlation_matrix.png"))
+knitr::include_graphics("figures/correlation_matrix.png")
 ```
 
 Flow volumes are then sampled from the multivariate distribution.
@@ -280,7 +280,7 @@ This results in a distribution of potential volumes for each gage, given the inp
 -- put in a figure here showing the distribution of results as an example of the output 
 
 ```{r, Sampled Volumes, echo=FALSE, fig.cap="Distrubution of sampled volumes at each gage", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics(file.path(fig_dir,"sampled_volumes.png"))
+knitr::include_graphics("figures/sampled_volumes.png")
 ```
 
 
@@ -303,7 +303,7 @@ CMyear.sample<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob)
 ```
 
 ```{r, CM summary, echo=FALSE, fig.cap="Summary of center of mass sample", fig.aling="left", out.width = '40%', fig.pos='H'}
-knitr::include_graphics(file.path(fig_dir,"CM_summary.png"))
+knitr::include_graphics("figures/CM_summary.png")
 ```
 
 The resulting matrices are then saved as `.csv` to be used in the final simulation model.
@@ -338,22 +338,26 @@ pred.int<-function(location){
 }
 ```
 
-The following figure is an example model output figure for the Big Wood, you can see the prediction interval is quite narrow around the mean (blue) and in comparison to the year with the most similar center of mass (green)
-
-```{r, BWH Simulation, echo=FALSE, fig.cap="Simulated flows on the Big Wood River at Hailey", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics(file.path(fig_dir,"BigWood_Hailey_Simulation.png"))
+The following figure is an example model output figure for each basin, the average simulated hydrograph (blue), the prediction interval (shaded grey), and the actual hydrograph (green) for 2019. 
+```{r, testr, echo=TRUE}
+getwd()
+file.path('~/Desktop/Data/WRWC', "figures/BigWood_Hailey_Simulation.png")
 ```
 
-```{r, BWS Simulatione, echo=FALSE, fig.cap="Simulated flows on the Big Wood River at Stanton Crossing", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics(file.path(fig_dir,"BigWood_Stanton_Simulation.png"))
+```{r, BWH Simulation, echo=FALSE, fig.cap="Simulated flows on the Big Wood River at Hailey", fig.aling="left", out.width = '100%', fig.pos='H'}
+knitr::include_graphics("figures/BigWood_Hailey_Simulation_2019.png")
+```
+
+```{r, BWS Simulation, echo=FALSE, fig.cap="Simulated flows on the Big Wood River at Stanton Crossing", fig.aling="left", out.width = '100%', fig.pos='H'}
+#knitr::include_graphics("figures/BigWood_Stanton_Simulation.png")
 ```
 
 ```{r, SC Simulation, echo=FALSE, fig.cap="Simulated flows on Silver Creek", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics(file.path(fig_dir,"Silver_creek_Simulation.png"))
+#knitr::include_graphics("figures/Silver_creek_Simulation.png")
 ```
 
 ```{r, CC Simulation, echo=FALSE, fig.cap="Simulated flows on Camas Creek", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics(file.path(fig_dir,"Camas_creek_Simulation.png"))
+#knitr::include_graphics("figures/Camas_creek_Simulation.png")
 ```
 ## 2.5 Curtailment Model and Simulation
 

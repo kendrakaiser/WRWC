@@ -128,7 +128,7 @@ dev.off()
 
 
 # Big Wood @ Stanton
-png(filename = file.path(fig_dir, "BigWood_Stanton_Simulation_2019.png"),
+png(filename = file.path(fig_dir, "BigWood_Stanton_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(dates, pi[,6], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -136,12 +136,12 @@ plot(dates, pi[,6], type="n", xlab="Date", ylab ="Flow (cfs)",
 polygon(c(dates[1], dates, rev(dates)), c(pi[1,4], pi[,5], rev(pi[,4])), 
         col = "gray90", border = NA)
 lines(dates,pi[,6],lwd=2.5,col="blue")
-flow= bws.wy[bws.wy$wy == pred.yr, "bws.nat.q"]
-lines(dates,flow[183:365], lwd=2, col="green")
+#flow= bws.wy[bws.wy$wy == pred.yr, "bws.nat.q"]
+#lines(dates,flow[183:365], lwd=2, col="green")
 dev.off()
 
 # Silver Creek
-png(filename = file.path(fig_dir, "Silver_creek_Simulation_2019.png"),
+png(filename = file.path(fig_dir, "Silver_creek_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(dates,pi[,12], type="n", xlab="Date", ylab ="Flow (cfs)",
