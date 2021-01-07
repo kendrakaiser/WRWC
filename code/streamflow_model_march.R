@@ -263,7 +263,7 @@ cov.mat<-cor.mat*outer.prod
 # Draw flow volumes using multivariate normal distribution (ac-ft)
 vol.pars<-rbind(pred.params.vol, pred.params.div)
 vol.sample<-mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat)
-colnames(vol.sample)<-c("bwb.nat","bws.nat","cc","sc.nat", "div", "sc.div")
+colnames(vol.sample)<-c("bwb.nat","bws.nat","cc","sc.nat", "sc.div")
 write.csv(exp(vol.sample), file.path(cd,"March_output/vol.sample.csv"),row.names=F)
 
 #save correlation matrix for model details report
