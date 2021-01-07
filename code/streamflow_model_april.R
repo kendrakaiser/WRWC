@@ -10,16 +10,7 @@
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
 
-source(file.path("~/github/WRWC/code", "packages.R"))
-
-rm(list=ls())
-
-cd = '~/Desktop/Data/WRWC'
-fig_dir = '~/github/WRWC/figures'
-data_dir = file.path(cd, 'data')
-input_dir = file.path(cd, 'input')
-input = 'all_dat_apr.csv'
-pred.yr <- 2019
+rm.all.but(c("cd", "pred.yr", "run_date", "fig_dir", "input_dir", "data_dir", "input"))
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
