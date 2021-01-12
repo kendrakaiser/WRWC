@@ -7,7 +7,16 @@
 # ----------------------------------------------------------------------------- # 
 
 # Set input parameters and directories in global environment for each model run
+
+# GitHub File Paths
+git_dir <<- '~/github/WRWC'
+fig_dir <<- file.path(git_dir, 'figures')
+input_dir <<- file.path(git_dir, 'input')
+
+# Local File Paths
 cd <<- '~/Desktop/Data/WRWC'
+data_dir <<- file.path(cd, 'data')
+
 # set prediction year
 pred.yr <<- 2019
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
@@ -15,10 +24,8 @@ run_date <<- 'april1'
 # set end date for AgriMet Data download
 end_date <<- '2020-10-01'
 
-# Relative file paths 
-fig_dir <<- '~/github/WRWC/figures'
-input_dir <<- file.path(cd, 'input')
-data_dir <<- file.path(cd, 'data')
+
+
 
 # ---- Run Model code
 

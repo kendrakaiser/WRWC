@@ -1,10 +1,10 @@
 ## packages.R
 # All packages needed to run WRWC scripts
 
+# install.packages(c('MASS', 'plotrix', 'mvtnorm', 'tidyverse', 'dataRetrieval', 'snotelr', 'XML', 'httr', 'dplyr', 'devtools', 'plyr', 'readr', 'lubridate', 'lfstat', 'gridExtra', 'varhandle'))
+# devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
+
 # load packages
-
-devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
-
 library(MASS)
 library(plotrix)
 library(mvtnorm)
