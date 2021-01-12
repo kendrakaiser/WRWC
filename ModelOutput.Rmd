@@ -1,7 +1,7 @@
 ---
 title: "WRWC Model Run"
 author: "Kendra Kaiser"
-date: "10/28/2020"
+date: "01/072020"
 output: 
   pdf_document:
     toc: yes
@@ -22,16 +22,21 @@ library(lubridate)
 library(fasstr)
 
 knitr::opts_chunk$set(echo = FALSE)
-cd = '~/Desktop/Data/WRWC'
-usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
-snotel_sites = read.csv(file.path(cd,'snotel_sites.csv'))
-q = read.csv(file.path(cd,'streamflow_data.csv'))
+
+cd <- '~/Desktop/Data/WRWC'
+data_dir <- file.path(cd, 'data')
+fig_dir <<- '~/github/WRWC/figures'
+fig_dir_mo <- file.path(fig_dir, 'March')
+
+usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
+snotel_sites = read.csv(file.path(data_dir,'snotel_sites.csv'))
+q = read.csv(file.path(data_dir,'streamflow_data.csv'))
 q$Date <- as.Date(q$Date)
 q$doy <- yday(q$Date)
 q<- q %>% filter(abv != 'bwr')
 
 #knitr::opts_knit$set(root.dir = '~/Desktop/Data/WRWC')
-fig_dir = '~/github/WRWC/figures'
+
 ```
 
 ## Wood River Model Summary
@@ -79,24 +84,24 @@ Data summary from Snotel Sites in the Big Wood
 
 ### streamflow volume model output
 ```{r, sampled volumes, echo=FALSE, fig.cap="Simulated volumes", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics("figures/sampled_volumes.png")
+knitr::include_graphics(file.path(fig_dir_mo,"sampled_volumes.png"))
 ```
 
 ### streamflow simulations
 ```{r, bwh sim, echo=FALSE, fig.cap="Simulated volumes", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics("figures/BigWood_Hailey_Simulation.png")
+knitr::include_graphics(file.path(fig_dir_mo, "BWB_Simulation.png"))
 ```
 
 ```{r, bws sim, echo=FALSE, fig.cap="Simulated volumes", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics("figures/BigWood_Stanton_Simulation.png")
+knitr::include_graphics(file.path(fig_dir_mo, "BWS_Simulation.png"))
 ```
 
 ```{r, sc sim, echo=FALSE, fig.cap="Simulated volumes", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics("figures/Silver_creek_Simulation.png")
+knitr::include_graphics(file.path(fig_dir_mo,"SC_Simulation.png"))
 ```
 
 ```{r, cc sim, echo=FALSE, fig.cap="Simulated volumes", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics("figures/Camas_creek_Simulation.png")
+knitr::include_graphics(file.path(fig_dir_mo,"CC_Simulation.png"))
 ```
 
 

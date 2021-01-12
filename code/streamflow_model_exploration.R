@@ -13,7 +13,7 @@ library(tidyverse)
 library(leaps)
 
 rm(list=ls())
-cd = '~/Desktop/Data/WRWC'
+cd = '~/Desktop/Data/WRWC/data'
 fig_dir = '~/github/WRWC/figures' 
 pred.yr <- 2020
 
@@ -21,11 +21,10 @@ pred.yr <- 2020
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 #q = read.csv(file.path(cd,'streamflow_data.csv'))
 usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
-swe_q = read.csv(file.path(cd,'all_dat_mar.csv'))
+swe_q = read.csv(file.path(cd,'all_dat_apr.csv'))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
 temps = read.csv(file.path(cd, 'ajTemps.csv'))
 var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
-temp.ran = read.csv(file.path(cd,'rand.apr.jun.temp.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 
 # ------------------------------------------------------------------------------ # 

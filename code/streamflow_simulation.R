@@ -7,21 +7,14 @@
 # Uses modeled temperature data from linear random effects model
 # Uses multivariate models of natural streamflow and diversions
 
-#cd <<- '~/Desktop/Data/WRWC'
-#fig_dir = '~/github/WRWC/figures' 
-
-#set run date for pulling & saving data
-#run_date = 'feb1'
-#pred.yr <<- 2019 
-
 rm.all.but(c("cd", "pred.yr", "run_date", "fig_dir", "input_dir", "data_dir", "input"))
 
 if (run_date == 'feb1'){
-  model_out = '~/Desktop/Data/WRWC/February_output/'
+  model_out = '~/Desktop/Data/WRWC/February_output'
 } else if (run_date == 'march1'){
-  model_out = '~/Desktop/Data/WRWC/March_output/'
+  model_out = '~/Desktop/Data/WRWC/March_output'
 } else if (run_date == 'april1'){
-  model_out = '~/Desktop/Data/WRWC/April_output/'
+  model_out = '~/Desktop/Data/WRWC/April_output'
 }
 
 ns<-5000  #Number of simulations
@@ -44,6 +37,15 @@ sc.wy<-streamflow[streamflow$abv == 'sc',]
 cm.year<-read.csv(file.path(model_out,"CMyear.sample.csv"))
 volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
 
+
+plot(dates, bwb.wy$Flow[bwb.wy$wy == 2006][183:365], xlab="Date", ylab ="Flow (cfs)", type='l', col="black", ylim=c(0,6650))
+lines(dates,bwb.wy$Flow[bwb.wy$wy == 2014][183:365], lwd=1, col="black")
+lines(dates,bwb.wy$Flow[bwb.wy$wy == 2013][183:365], lwd=1, col="black")
+lines(dates,bwb.wy$Flow[bwb.wy$wy == 2019][183:365], lwd=1, col="blue")
+lines(dates,bwb.wy$Flow[bwb.wy$wy == 1998][183:365], lwd=1, col="red")
+
+tst=cumsum(bwb.wy$Flow[bwb.wy$wy == 2019][183:365])
+plot(dates, tst, xlab="Date", ylab ="Cumulative Flow (cfs)", type='l')
 # ------------------------------------------------------------------------------
 # Create arrays to store outputs of stochastic simulations
 #
@@ -86,7 +88,7 @@ for(k in 1:ns){
   cc.flow.s[,k]<-sim.flow(cc, vol$cc)
 }
 
-#matplot(bwb.flow.s, type='l',col = "gray90" )
+matplot(bwb.flow.s, type='l',col = "gray90" )
 #matplot(sc.flow.s, type='l',col = "gray90" )
 
 # ------------------------------------------------------------------------------
@@ -150,7 +152,7 @@ lines(dates,pi[,6],lwd=2.5,col="blue")
 dev.off()
 
 # Silver Creek
-png(filename = file.path(mo_fig_dir, "SC_Simulation.png"),
+png(filename = file.path(mo_fig_dir, "SC_Simulation_2019.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(dates, pi[,12], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -163,7 +165,7 @@ lines(dates,pi[,12],lwd=2.5,col="blue")
 dev.off()
 
 # Camas Creek
-png(filename = file.path(mo_fig_dir, "CC_Simulation.png"),
+png(filename = file.path(mo_fig_dir, "CC_Simulation_2019.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(dates,pi[,18], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -171,6 +173,8 @@ plot(dates,pi[,18], type="n", xlab="Date", ylab ="Flow (cfs)",
 polygon(c(dates[1], dates, rev(dates) ), c(pi[1,16], pi[,17], rev(pi[,16])), 
         col = "gray90", border = NA)
 lines(dates,pi[,18],lwd=2.5,col="blue")
+#flow= cc.wy[cc.wy$wy == pred.yr, "Flow"]
+#lines(dates,flow[183:365], lwd=2, col="green")
 dev.off()
 # ------------------------------------------------------------------------------
 # Save Output

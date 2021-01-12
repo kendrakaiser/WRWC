@@ -45,7 +45,7 @@ Individual multivariate linear regression models were developed for each of thes
 Once the linear regression models were developed for total irrigation season volume and timing at each location, multivariate distributions were used to stochastically model hydrographs for each location. The residuals (standard error) from each of the regression models and correlations between gauge stations are used to create the multivariate distributions. This ensures that given a set of predictor variables (e.g. SWE, temp) the predicted volumes will be statistically consistent across gage locations (e.g. the models wont predict that Camas Creek will have really low runoff year while the Big Wood has a really high runoff year because they are statistically correlated). Repeated, random selection from these multivariate distributions produces a sample of predicted volumes and timing of streamflow. The samples of total volume and streamflow timing are then used to create simulations of the irrigation season hydrograph. Variability in final model outputs is quantified by percentiles of the resulting predictions. 
 
 ```{r, Model_Workflow, echo=FALSE, fig.cap="", fig.aling="left", out.width = '80%'}
-#knitr::include_graphics("figures/ModelWorkflow_details.png")
+knitr::include_graphics("figures/ModelWorkflow_details.png")
 ```
 
 ## Reproducibility
@@ -303,7 +303,7 @@ CMyear.sample<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob)
 ```
 
 ```{r, CM summary, echo=FALSE, fig.cap="Summary of center of mass sample", fig.aling="left", out.width = '40%', fig.pos='H'}
-knitr::include_graphics("figures/CM_summary.png")
+knitr::include_graphics("figures/CM_summary_prob.png")
 ```
 
 The resulting matrices are then saved as `.csv` to be used in the final simulation model.
@@ -345,7 +345,7 @@ file.path('~/Desktop/Data/WRWC', "figures/BigWood_Hailey_Simulation.png")
 ```
 
 ```{r, BWH Simulation, echo=FALSE, fig.cap="Simulated flows on the Big Wood River at Hailey", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics("figures/BigWood_Hailey_Simulation_2019.png")
+knitr::include_graphics("figures/BigWood_Stanton_Simulation_2019.png")
 ```
 
 ```{r, BWS Simulation, echo=FALSE, fig.cap="Simulated flows on the Big Wood River at Stanton Crossing", fig.aling="left", out.width = '100%', fig.pos='H'}
