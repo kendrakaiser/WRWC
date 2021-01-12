@@ -22,7 +22,7 @@ Once RStudio is installed you will need to install a suite of packages to make t
  There are two sets of file paths for the project. The first are the paths to where you saved the gitHub code files, and the second set is a local folder where final datasets and .csv files will be saved. The github file directories contain the code and a folder for output figures, these figures need to be in the same directory as the `.Rmd` file in order for the model run report to compile correctly. The local folder where output is saved will be overwritten every time the model is run, so if saving model outputs is of interest, create another subfolder with a naming convention like '2021-02-01_ModelRun_lastname' where you copy and paste model outputs.
  
  You will need to create the following set of subfolders in the local folder for data to be saved to: 
-![alt text](https://github.com/kendrakaiser/WRWC/blob/master/local_file_dir.png?raw=true)
+![alt text](https://github.com/kendrakaiser/WRWC/blob/master/figures/local_file_dir.png?raw=true)
 
  # Run the Models
  
