@@ -57,6 +57,6 @@ end_date <<- '2020-10-01'
 ```
  
 # Model Support
-If you run the model and an error occurs, the process for getting help is to raise an 'issue', you can do this by ..., this will automatically send me an email so that I can help resolve the issue. 
+If you run the model and an error occurs, the process for getting help is to raise an 'issue', you can do this by following these steps https://docs.github.com/en/free-pro-team@latest/github/managing-your-work-on-github/creating-an-issue. This will automatically send me an email so that I can help resolve the issue. 
 
 
