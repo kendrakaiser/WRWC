@@ -58,7 +58,7 @@ site_info$abv <- c("bwb", "bws", "cc", "bwr", 'sc')
 site_info <- site_info %>% select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abv)
 
 # Dowload data from all sites into one dataframe
-streamflow_data <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = site_info$end_date) %>% renameNWISColumns() %>% data.frame
+streamflow_data <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = max(site_info$end_date)) %>% renameNWISColumns() %>% data.frame
 
 #Re-format dates and pull out month /day/ water year
 streamflow_data$Date <- as.Date(streamflow_data$Date, format = "%Y-%m-%d")
@@ -192,8 +192,7 @@ april1swe<-as.data.frame(april1swe)
 
 for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 4 & snotel_data_out$day ==1,]
-  start<- min(sub$wy)
-  april1swe[which(april1swe$year == start) : which(april1swe$year == year(end_date)),i+1]<- sub$snow_water_equivalent
+  april1swe[which(april1swe$year == min(sub$wy)) : which(april1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
 }
 
 # subset March 1 data for model 
@@ -204,8 +203,7 @@ mar1swe<-as.data.frame(mar1swe)
 
 for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 3 & snotel_data_out$day ==1,]
-  start<- min(sub$wy)
-  mar1swe[which(mar1swe$year == start) : which(mar1swe$year == year(end_date)),i+1]<- sub$snow_water_equivalent
+  mar1swe[which(mar1swe$year == min(sub$wy)) : which(mar1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
 }
 
 # subset February 1 data for model 
@@ -216,8 +214,7 @@ feb1swe<-as.data.frame(feb1swe)
 
 for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 2 & snotel_data_out$day ==1,]
-  start<- min(sub$wy)
-  feb1swe[which(feb1swe$year == start) : which(feb1swe$year == year(end_date)),i+1]<- sub$snow_water_equivalent
+  feb1swe[which(feb1swe$year == min(sub$wy)) : which(feb1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
 }
 
 # Save Snotel data as csvs -----
