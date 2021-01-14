@@ -523,7 +523,6 @@ write.csv(cov.mat, file.path(cd,"April_output/cov.mat.csv"),row.names=T)
 write.csv(pred.pars, file.path(cd,"April_output/pred.pars.csv"),row.names=T)
 
 # Plot boxplots of total annual flow from each model -> modelOutput.Rmd
-library(viridis)
 png(filename = file.path(fig_dir,"April/sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
