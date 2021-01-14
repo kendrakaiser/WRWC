@@ -27,7 +27,7 @@ Once RStudio is installed you will need to install a suite of packages to make t
 
  # Run the Models
  
- The only script you need to open to run the models is `run_models.R`. In this script you will modify the following variables:
+ The only script you need to open to run the models is `run_models.R`. In this script you will modify the file paths and run date as described below.
  
 ## File paths
 There are two sets of file paths for the project. The first are the paths to where you saved the gitHub code files, in the example: `'~/github/WRWC/`, and the second set is the local folder where final datasets and .csv files will be saved. 
@@ -39,7 +39,7 @@ fig_dir <<- file.path(git_dir, 'figures') # with proper file drectory set up thi
 input_dir <<- file.path(git_dir, 'input') # do not change
 
 # Local File Paths
-cd <<- '~/Desktop/Data/WRWC'
+cd <<- '~/Desktop/WRWC'
 data_dir <<- file.path(cd, 'data') # do not change
 ```
 
