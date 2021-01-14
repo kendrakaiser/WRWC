@@ -22,11 +22,12 @@ Once RStudio is installed you will need to install a suite of packages to make t
  There are two sets of file paths for the project. The first are the paths to where you saved the gitHub code files, and the second set is a local folder where final datasets and .csv files will be saved. The github file directories contain the code and a folder for output figures, these figures need to be in the same directory as the `.Rmd` file in order for the model run report to compile correctly. The local folder where output is saved will be overwritten every time the model is run, so if saving model outputs is of interest, create another subfolder with a naming convention like '2021-02-01_ModelRun_lastname' where you copy and paste model outputs.
  
  You will need to create the following set of subfolders in the local folder for data to be saved to: 
-![alt text](https://github.com/kendrakaiser/WRWC/blob/master/figures/local_file_dir.png?raw=true)
+ 
+![alt text ><](https://github.com/kendrakaiser/WRWC/blob/master/figures/local_file_dir.png?raw=true)
 
  # Run the Models
  
- The only script you need to open to run the models is `run_models.R`. In this script you will modify the following variables:
+ The only script you need to open to run the models is `run_models.R`. In this script you will modify the file paths and run date as described below.
  
 ## File paths
 There are two sets of file paths for the project. The first are the paths to where you saved the gitHub code files, in the example: `'~/github/WRWC/`, and the second set is the local folder where final datasets and .csv files will be saved. 
@@ -38,7 +39,7 @@ fig_dir <<- file.path(git_dir, 'figures') # with proper file drectory set up thi
 input_dir <<- file.path(git_dir, 'input') # do not change
 
 # Local File Paths
-cd <<- '~/Desktop/Data/WRWC'
+cd <<- '~/Desktop/WRWC'
 data_dir <<- file.path(cd, 'data') # do not change
 ```
 
@@ -57,6 +58,6 @@ end_date <<- '2020-10-01'
 ```
  
 # Model Support
-If you run the model and an error occurs, the process for getting help is to raise an 'issue', you can do this by ..., this will automatically send me an email so that I can help resolve the issue. 
+If you run the model and an error occurs, the process for getting help is to raise an 'issue', you can do this by following these steps https://docs.github.com/en/free-pro-team@latest/github/managing-your-work-on-github/creating-an-issue. This will automatically send me an email so that I can help resolve the issue. 
 
 
