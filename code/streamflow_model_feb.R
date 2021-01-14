@@ -10,7 +10,7 @@
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
 
-rm.all.but(c("cd", "pred.yr", "run_date", "fig_dir", "input_dir", "data_dir", "input"))
+rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", "data_dir", "input"))
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
@@ -272,6 +272,7 @@ cor.mat.out<-as.data.frame(round(cor.mat,2))
 png(file.path(fig_dir,"February/correlation_matrix.png"), height = 25*nrow(cor.mat.out), width = 80*ncol(cor.mat.out))
 grid.table(cor.mat.out)
 dev.off()
+
 # save output from correlations
 write.csv(cov.mat, file.path(cd,"February_output/cov.mat.csv"),row.names=T)
 write.csv(pred.pars, file.path(cd,"February_output/pred.pars.csv"),row.names=T)
