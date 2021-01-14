@@ -14,15 +14,15 @@ fig_dir <<- file.path(git_dir, 'figures')
 input_dir <<- file.path(git_dir, 'input')
 
 # Local File Paths
-cd <<- '~/Desktop/Data/WRWC'
+cd <<- '~/Desktop/WRWC'
 data_dir <<- file.path(cd, 'data')
 
 # set prediction year
-pred.yr <<- 2019
+pred.yr <<- 2020
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
-run_date <<- 'april1'
+run_date <<- 'feb1'
 # set end date for AgriMet Data download
-end_date <<- '2020-10-01'
+end_date <<- '2021-01-01'
 
 
 
