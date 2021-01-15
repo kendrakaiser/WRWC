@@ -10,7 +10,7 @@ Install RStudio on your computer https://rstudio.com/products/rstudio/download/
 Once RStudio is installed you will need to install a suite of packages to make the model run. You can install them by running the following line of code in the 'console'.
 
 ```
- install.packages(c('MASS', 'plotrix', 'mvtnorm', 'tidyverse', 'dataRetrieval', 'snotelr', 'XML', 'httr', 'dplyr', 'devtools', 'plyr', 'readr', 'lubridate', 'lfstat', 'gridExtra', 'varhandle'))
+ install.packages(c('MASS', 'plotrix', 'mvtnorm', 'tidyverse', 'dataRetrieval', 'snotelr', 'XML', 'httr', 'dplyr', 'devtools', 'plyr', 'readr', 'lubridate', 'lfstat', 'gridExtra', 'varhandle', 'viridis'))
  ```
  
  One package, 'RNRCS', is pulled directly from the developers github repo, to install this package run 
