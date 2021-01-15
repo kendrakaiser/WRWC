@@ -14,7 +14,7 @@ fig_dir <<- file.path(git_dir, 'figures')
 input_dir <<- file.path(git_dir, 'input')
 
 # Local File Paths
-cd <<- '~/Desktop/WRWC'
+cd <<- '~/Desktop/Data/WRWC'
 data_dir <<- file.path(cd, 'data')
 
 # set prediction year
@@ -23,31 +23,32 @@ pred.yr <<- 2020
 run_date <<- 'feb1'
 # set end date for AgriMet Data download
 end_date <<- '2021-01-01'
-
-
-
+# info for model run report
+author = "Kendra Kaiser"
+todays_date = "01/14/2021"
 
 # ---- Run Model code
 
-source('~/github/WRWC/code/packages.R')
-source('~/github/WRWC/code/data_scraping.R')
-source('~/github/WRWC/code/temperature_models.R')
+source(file.path(git_dir, 'code/packages.R'))
+source(file.path(git_dir, 'code/data_scraping.R'))
+source(file.path(git_dir, 'code/temperature_models.R'))
 
 # sets input file name and runs model code depending on model run date 
 if (run_date == 'feb1'){
   input <<- 'all_dat_feb.csv'
-  source('~/github/WRWC/code/streamflow_model_feb.R')
+  source(file.path(git_dir, 'code/streamflow_model_feb.R'))
+  fig_dir_mo <<- 'figures/February'
 } else if (run_date == 'march1'){
   input <<- 'all_dat_mar.csv'
-  source('~/github/WRWC/code/streamflow_model_march.R')
+  source(file.path(git_dir, 'code/streamflow_model_march.R'))
+  fig_dir_mo <<- 'figures/March'
 } else if (run_date == 'april1'){
   input <<- 'all_dat_apr.csv'
-  source('~/github/WRWC/code/streamflow_model_april.R')
+  source(file.path(git_dir, 'code/streamflow_model_april.R'))
+  fig_dir_mo <<- 'figures/April'
 }
 
-source('~/github/WRWC/code/streamflow_simulation.R')
+source(file.path(git_dir, 'code/streamflow_simulation.R'))
 
-
-# knit Model Results Rmd
-#fig_dir_mo <<- file.path(fig_dir, 'March')
-#source('~/github/WRWC/ModelOutput.Rmd')
+# knit Model Results PDF
+rmarkdown::render(file.path(git_dir, 'ModelOutput.Rmd'), params = list(fig_dir_mo = fig_dir_mo, author = author, todays_date=todays_date))

@@ -7,7 +7,8 @@
 # Uses modeled temperature data from linear random effects model
 # Uses multivariate models of natural streamflow and diversions
 
-rm.all.but(c("cd", "pred.yr", "run_date", "fig_dir", "input_dir", "data_dir", "input"))
+rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
+             "data_dir", "input", "fig_dir_mo", "author", "todays_date"))
 
 if (run_date == 'feb1'){
   model_out = '~/Desktop/Data/WRWC/February_output'
