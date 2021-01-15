@@ -288,6 +288,7 @@ as.data.frame(exp(vol.sample)/10000) %>% pivot_longer(everything(),  names_to = 
     legend.position="none",
     plot.title = element_text(size=11)
   ) +
+  theme_bw()+
   ggtitle("Sampled Irrigation Season Volumes") +
   xlab("")+
   ylab("Irrigation Season Volume (10,000 ac-ft)")
