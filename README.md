@@ -56,7 +56,16 @@ run_date <<- 'april1'
 end_date <<- '2020-10-01'
 
 ```
+ ## Information for Model Run Report
  
+ This information is printed at the top of the model run report and is valuable for tracking model outputs over time.
+ 
+ ```
+ # info for model run report
+author = "Kendra Kaiser"
+todays_date = "01/14/2021"
+```
+
 # Model Support
 If you run the model and an error occurs, the process for getting help is to raise an 'issue', you can do this by following these steps https://docs.github.com/en/free-pro-team@latest/github/managing-your-work-on-github/creating-an-issue. This will automatically send me an email so that I can help resolve the issue. 
 
