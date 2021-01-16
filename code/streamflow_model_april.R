@@ -582,19 +582,20 @@ dev.off()
 # Curtailment predictions
 #
 
-curt_sub<- curtailments %>% dplyr::select(-c(water_right_date, shut_off_date)) %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_ab_magic')
+#curt_sub<- curtailments %>% dplyr::select(-c(water_right_date, shut_off_date)) %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_ab_magic')
 
-curt_sub$subbasin<-factor(curt_sub$subbasin)
-curt_sub$water_right_cat<-factor(curt_sub$water_right_cat)
+#curt_sub$subbasin<-factor(curt_sub$subbasin)
+#curt_sub$water_right_cat<-factor(curt_sub$water_right_cat)
 
-curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(year, subbasin, water_right_cat, shut_off_julian, div, sc.div)
+#curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(year, subbasin, water_right_cat, shut_off_julian, div, sc.div)
 
-curt_mod <- lm(shut_off_julian ~ subbasin + div + sc.div, data = curt)
-summary(curt_mod)
+#curt_mod <- lm(shut_off_julian ~ subbasin + div + sc.div, data = curt)
+#summary(curt_mod)
+sb<-unique(curtailments$subbasin)
 
-pred.params.curt<-array(NA,c(3,4))
+pred.params.curt<-array(NA,c(9,4))
 colnames(pred.params.curt)<-c("adjR2","sigma", "pred.date", "act.date")
-rownames(pred.params.curt)<-c("WR 3/24/1883", "WR 10/14/1884", "WR 6/1/1886")
+rownames(pred.params.curt)<-c("WR 3/24/1883", "WR 10/14/1884", "WR 6/1/1886", "BL Magic 3/24/1883", "BL Magic 10/14/1884", "BL Magic 6/1/1886", "SC 3/24/1883", "SC 10/14/1884", "SC 6/1/1886")
 
 # bigwood A (3/24/1883)
 # div, bwb.vol.nat, t.lw
@@ -602,7 +603,6 @@ curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>
 curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(year, shut_off_julian, div, bwb.vol.nat, t.lw)
 # linear model 
 bw.a_mod<-lm(curt$shut_off_julian ~ div + bwb.vol.nat + t.lw, data=curt) 
-
 # April 1 Prediction Data 
 pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(div, bwb.vol.nat, t.lw)
 # Model output
@@ -617,7 +617,6 @@ curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>
 curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_julian, div, bwb.wq, bwb.vol.nat, t.cg, t.lw, year)
 # linear model 
 bw.b_mod<-lm(curt$shut_off_julian ~ div +bwb.wq+ bwb.vol.nat + t.cg+t.lw, data=curt) 
-
 # April 1 Prediction Data 
 pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(div, bwb.wq, bwb.vol.nat, t.cg, t.lw)
 # Model output
@@ -632,7 +631,6 @@ curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>
 curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_julian, bwb.vol.nat, t.gs, year)
 # linear model 
 bw.c_mod<-lm(curt$shut_off_julian ~ bwb.vol.nat + t.gs, data=curt) 
-
 # April 1 Prediction Data 
 pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(bwb.vol.nat, t.gs)
 # Model output
@@ -641,6 +639,95 @@ pred.params.curt[3,3]<-preds.curt$fit[1]
 pred.params.curt[3,2]<-mean(preds.curt$se.fit)
 pred.params.curt[3,1]<-summary(bw.c_mod)$adj.r.squared 
 
+# Below Magic Curtailments ----------
+# bigwood below magic A (3/24/1883)
+# 
+curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(year, shut_off_julian, div, bwb.vol.nat, t.lw)
+# linear model 
+bw.a_mod<-lm(curt$shut_off_julian ~ div + bwb.vol.nat + t.lw, data=curt) 
+# April 1 Prediction Data 
+pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(div, bwb.vol.nat, t.lw)
+# Model output
+preds.curt<-predict(bw.a_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+pred.params.curt[1,3]<-preds.curt$fit[1]
+pred.params.curt[1,2]<-mean(preds.curt$se.fit)
+pred.params.curt[1,1]<-summary(bw.a_mod)$adj.r.squared 
+
+# bigwood below magic B (10/14/1884)
+# 
+curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="B") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_julian, div, bwb.wq, bwb.vol.nat, t.cg, t.lw, year)
+# linear model 
+bw.b_mod<-lm(curt$shut_off_julian ~ div +bwb.wq+ bwb.vol.nat + t.cg+t.lw, data=curt) 
+# April 1 Prediction Data 
+pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(div, bwb.wq, bwb.vol.nat, t.cg, t.lw)
+# Model output
+preds.curt<-predict(bw.b_mod,newdata=pred.dat, se.fit=T,interval="prediction",level=0.95)
+pred.params.curt[2,3]<-preds.curt$fit[1]
+pred.params.curt[2,2]<-mean(preds.curt$se.fit)
+pred.params.curt[2,1]<-summary(bw.b_mod)$adj.r.squared 
+
+# bigwood below magic c (6/1/1886)
+# 
+curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="C") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_julian, bwb.vol.nat, t.gs, year)
+# linear model 
+bw.c_mod<-lm(curt$shut_off_julian ~ bwb.vol.nat + t.gs, data=curt) 
+# April 1 Prediction Data 
+pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(bwb.vol.nat, t.gs)
+# Model output
+preds.curt<-predict(bw.c_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+pred.params.curt[3,3]<-preds.curt$fit[1]
+pred.params.curt[3,2]<-mean(preds.curt$se.fit)
+pred.params.curt[3,1]<-summary(bw.c_mod)$adj.r.squared 
+
+# Silver Creek Curtailments ----------
+# SC A (3/24/1883)
+# 
+curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(year, shut_off_julian, div, bwb.vol.nat, t.lw)
+# linear model 
+bw.a_mod<-lm(curt$shut_off_julian ~ div + bwb.vol.nat + t.lw, data=curt) 
+# April 1 Prediction Data 
+pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(div, bwb.vol.nat, t.lw)
+# Model output
+preds.curt<-predict(bw.a_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+pred.params.curt[1,3]<-preds.curt$fit[1]
+pred.params.curt[1,2]<-mean(preds.curt$se.fit)
+pred.params.curt[1,1]<-summary(bw.a_mod)$adj.r.squared 
+
+# SC B (10/14/1884)
+# 
+curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="B") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_julian, div, bwb.wq, bwb.vol.nat, t.cg, t.lw, year)
+# linear model 
+bw.b_mod<-lm(curt$shut_off_julian ~ div +bwb.wq+ bwb.vol.nat + t.cg+t.lw, data=curt) 
+# April 1 Prediction Data 
+pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(div, bwb.wq, bwb.vol.nat, t.cg, t.lw)
+# Model output
+preds.curt<-predict(bw.b_mod,newdata=pred.dat, se.fit=T,interval="prediction",level=0.95)
+pred.params.curt[2,3]<-preds.curt$fit[1]
+pred.params.curt[2,2]<-mean(preds.curt$se.fit)
+pred.params.curt[2,1]<-summary(bw.b_mod)$adj.r.squared 
+
+# SC C (6/1/1886)
+# 
+curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="C") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_julian, bwb.vol.nat, t.gs, year)
+# linear model 
+bw.c_mod<-lm(curt$shut_off_julian ~ bwb.vol.nat + t.gs, data=curt) 
+# April 1 Prediction Data 
+pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(bwb.vol.nat, t.gs)
+# Model output
+preds.curt<-predict(bw.c_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+pred.params.curt[3,3]<-preds.curt$fit[1]
+pred.params.curt[3,2]<-mean(preds.curt$se.fit)
+pred.params.curt[3,1]<-summary(bw.c_mod)$adj.r.squared 
+
+
+
+# Curtailment Summary ------
 pred.params.curt<- as.data.frame(pred.params.curt) %>% round(2)
 pred.params.curt$pred.date<-as.Date(pred.params.curt$pred.date, origin=as.Date("2019-01-01"), format='%m/%d')
 
