@@ -14,8 +14,6 @@ library(plotrix) #need for CI
 library(tidyr)
 
 # import data ----
-#cd = '~/Desktop/Data/WRWC'
-#fig_dir = '~/Desktop/Data/WRWC/figures' 
 data_out = file.path(cd, 'data')
 
 snotel = read.csv(file.path(data_out,'snotel_data.csv'))
@@ -25,7 +23,7 @@ agrimet = read.csv(file.path(data_out,'agri_metT.csv'))
 # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993
 
 first.yr<-1988
-last.yr<-2020
+last.yr<-pred.yr-1
 nyrs<-last.yr-first.yr+1
 site.key <- c(as.character(unique(snotel$site_name)), as.character(unique(agrimet$site_name)))
 
@@ -78,7 +76,7 @@ new.data$site<-(site.key)
 
 nboots<-2000
 nboot<-5000
-# ssite combinations needed for multivariate models
+# site combinations needed for multivariate models
 
 # BWH --------------------------------------------------------------------------
 # t.g +t.gs +t.lw
@@ -165,7 +163,25 @@ se.pred<-sqrt(var.est+var.site)
 aj.temps.scd<-rnorm(nboot,mean=pred,sd=se.pred)
 
 
-aj.pred.temps<-cbind(aj.temps.bwh, aj.temps.bws, aj.temps.sc, aj.temps.cc, aj.temps.scd)
+tdata.curt<- tdata[tdata$site %in% c("lost-wood divide" ,"galena summit", "galena", "swede peak"),]
+trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.curt, method="REML",na.action=na.omit)
+
+# predict this years temperature
+pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
+fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
+# Bootstrap 
+mu<-trend.reml$coef$fixed
+sig<-trend.reml$var
+rand.coefs<-mvrnorm(nboots,mu,sig)
+var.est<-var(rand.coefs%*%c(1,last.yr+1))
+var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key)
+se.pred<-sqrt(var.est+var.site)
+aj.temps.curt<-rnorm(nboot,mean=pred,sd=se.pred)
+
+
+
+
+aj.pred.temps<-cbind(aj.temps.bwh, aj.temps.bws, aj.temps.sc, aj.temps.cc, aj.temps.scd, aj.temps.curt)
 write.csv(aj.pred.temps, file.path(data_out, 'aj_pred.temps.csv'))
 
 
