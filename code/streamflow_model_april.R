@@ -18,7 +18,7 @@ usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 swe_q = read.csv(file.path(data_dir,input))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
 temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
-var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
+var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
 var$div <- var$abv.h + var$abv.s
 curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
 
@@ -106,13 +106,13 @@ modOut<- function(mod, pred.dat, wq, vol, meanSWE, lastQ){
 
 # --------------------------------------------------
 # Subset Big Wood Winter flows, Snotel from  Galena & Galena Summit, Hyndman
-hist <- var[var$year < pred.yr,] %>% select(bwb.vol.nat, g.swe, gs.swe, hc.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.vol.nat, g.swe, gs.swe, hc.swe) 
 # Big Wood at Hailey linear model
 bwb_mod<-lm(log(bwb.vol.nat)~ g.swe+ log(gs.swe)+ hc.swe, data=hist) 
 mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 
 #April 1 bwb Prediction Data
-pred.dat<-var[var$year == pred.yr,] %>% select(g.swe, gs.swe, hc.swe) 
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(g.swe, gs.swe, hc.swe) 
 
 # Big Wood at Hailey Model output
 mod_out<- modOut(bwb_mod, pred.dat, var$bwb.wq[var$year < pred.yr], hist$bwb.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol.nat[var$year == pred.yr-1])
@@ -132,13 +132,13 @@ dev.off()
 
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bws.vol.nat, bws.wq, g.swe, gs.swe, hc.swe) 
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(bws.vol.nat, bws.wq, g.swe, gs.swe, hc.swe) 
 # Big Wood at Stanton linear model
 bws_mod<-lm(log(bws.vol.nat)~bws.wq+ log(g.swe) + log(gs.swe)+ log(hc.swe), data=hist) 
 mod_sum[2,1]<-summary(bws_mod)$adj.r.squared
 
 #April 1 bws Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% select(bws.wq, g.swe, gs.swe, hc.swe) 
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(bws.wq, g.swe, gs.swe, hc.swe) 
 
 # Big Wood at Stanton Natural Flow Model output
 mod_out<- modOut(bws_mod, pred.dat, hist$bws.wq, hist$bws.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bws.vol.nat[var$year == pred.yr-1])
@@ -157,13 +157,13 @@ dev.off()
 
 # --------------------------------------------------
 # Subset Silver Creek 
-hist <- var[var$year < pred.yr,] %>% select(sc.vol.nat, sc.wq, ga.swe, sp.swe, cg.swe, hc.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(sc.vol.nat, sc.wq, ga.swe, sp.swe, cg.swe, hc.swe) 
 # Silver Creek linear model, note mixture of SWE from Big Wood and Little Wood basins
 sc_mod<-lm(log(sc.vol.nat)~ sc.wq + ga.swe+ sp.swe + cg.swe+log(hc.swe), data=hist)
 mod_sum[4,1]<-summary(sc_mod)$adj.r.squared
 
 # April 1 SC Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% select(sc.wq, ga.swe, sp.swe, cg.swe, hc.swe) 
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(sc.wq, ga.swe, sp.swe, cg.swe, hc.swe) 
 # Silver Creek Model output
 mod_out<- modOut(sc_mod, pred.dat, hist$sc.wq, hist$sc.vol.nat, mean(hist$ga.swe,  hist$g.swe,  hist$hc.swe, trim=0, na.rm=T), var$sc.vol.nat[var$year == pred.yr-1])
 output.vol[4,] <- mod_out[[1]]
@@ -181,13 +181,13 @@ dev.off()
 
 # --------------------------------------------------
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection 
-hist <- var[var$year < pred.yr,] %>% select(cc.vol, cc.wq, ccd.swe, sr.swe) #vol is in ac-ft
+hist <- var[var$year < pred.yr,] %>% dplyr::select(cc.vol, cc.wq, ccd.swe, sr.swe) #vol is in ac-ft
 # Camas Creek linear model
 cc_mod<-lm(log(cc.vol)~log(cc.wq)+sr.swe+ccd.swe, data=hist) 
 mod_sum[3,1]<-summary(cc_mod)$adj.r.squared
 
 #April 1 CC Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% select(cc.wq, ccd.swe, sr.swe)
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(cc.wq, ccd.swe, sr.swe)
 
 # Camas Creek Model output
 mod_out<- modOut(cc_mod, pred.dat, hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
@@ -237,14 +237,14 @@ modOutcm<- function(mod.cm, pred.dat, pred.dat.temps, hist.temps, hist.cm, pred.
 }
 
 # Big Wood at hailey center of mass
-hist <- var[var$year < pred.yr,] %>% select(bwb.cm.nat, bwb.wq, g.swe, hc.swe, t.g, t.gs, t.lw, cg.swe, gs.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.cm.nat, bwb.wq, g.swe, hc.swe, t.g, t.gs, t.lw, cg.swe, gs.swe) 
 hist$temps <-rowMeans(cbind(hist$t.g, hist$t.gs, hist$t.lw), na.rm=TRUE)
 # BW Hailey center of mass linear model
 bwb_mod.cm <-lm(bwb.cm.nat ~ log(bwb.wq) + g.swe+ hc.swe+ temps+ log(cg.swe)+log(gs.swe), data=hist)
 mod_sum[1,2]<-summary(bwb_mod.cm)$adj.r.squared 
 
 # April 1 Prediction Data with modeled temperature data
-params<-var[var$year == pred.yr,] %>% select(bwb.wq, g.swe, hc.swe, cg.swe, gs.swe)
+params<-var[var$year == pred.yr,] %>% dplyr::select(bwb.wq, g.swe, hc.swe, cg.swe, gs.swe)
 pred.dat<- params %>% slice(rep(1:n(), 5000))
 pred.dat$temps<- temp.ran$aj.temps.bwh
 
@@ -266,14 +266,14 @@ dev.off()
 # --------------------
 # Big Wood at Stanton
 # 
-hist <- var[var$year < pred.yr,] %>% select(bws.cm.nat, lwd.swe, cg.swe, hc.swe, t.cg, t.g, t.hc, t.lw) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(bws.cm.nat, lwd.swe, cg.swe, hc.swe, t.cg, t.g, t.hc, t.lw) 
 hist$temps <-rowMeans(cbind(hist$t.g, hist$t.g, hist$t.hc), na.rm=TRUE)
 # BWS linear model - update temperature options if time allows, dropped from 0.934 to 0.62 with the lme temp
 bws_mod.cm <-lm(bws.cm.nat ~ lwd.swe +log(cg.swe)+log(hc.swe) + temps, data=hist)
 mod_sum[2,2]<-summary(bws_mod.cm)$adj.r.squared 
 
 # April 1 Prediction Data 
-params<- var[var$year == pred.yr,] %>% select(lwd.swe, cg.swe, hc.swe) 
+params<- var[var$year == pred.yr,] %>% dplyr::select(lwd.swe, cg.swe, hc.swe) 
 pred.dat<- params %>% slice(rep(1:n(), 5000))
 pred.dat$temps<- temp.ran$aj.temps.bws
 
@@ -296,7 +296,7 @@ dev.off()
 # --------------------
 # Subset Silver Creek Winter flows, Snotel from Chocolate Gulch, Hyndaman, Lost Wood Div. & Swede Peak
 #
-hist <- var[var$year < pred.yr,] %>% select(sc.cm, sc.wq, cg.swe, hc.swe, lwd.swe, sp.swe, t.cg, t.gs) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(sc.cm, sc.wq, cg.swe, hc.swe, lwd.swe, sp.swe, t.cg, t.gs) 
 hist$temps <-rowMeans(cbind(hist$t.cg, hist$t.gs), na.rm=TRUE)
 # Silver Creek linear model
 # note here that this includes swe from the big wood and the little wood 
@@ -304,7 +304,7 @@ sc_mod.cm<-lm(sc.cm~ cg.swe+ hc.swe+ lwd.swe+temps+log(sp.swe)+log(sc.wq), data=
 mod_sum[4,2]<-summary(sc_mod.cm)$adj.r.squared 
 
 # April 1 SC Prediction Data 
-params<-var[var$year == pred.yr,] %>% select(sc.wq, cg.swe, hc.swe, lwd.swe, sp.swe) 
+params<-var[var$year == pred.yr,] %>% dplyr::select(sc.wq, cg.swe, hc.swe, lwd.swe, sp.swe) 
 pred.dat<- params %>% slice(rep(1:n(), 5000))
 pred.dat$temps<- temp.ran$aj.temps.sc
 
@@ -327,13 +327,13 @@ dev.off()
 # --------------------
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek 
 # divide & temperature from Fairfield agrimet site
-hist <- var[var$year < pred.yr,] %>% select(cc.cm, ccd.swe, sr.swe, t.f) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(cc.cm, ccd.swe, sr.swe, t.f) 
 # Camas Creek linear model
 cc_mod.cm<-lm(cc.cm~ccd.swe + sr.swe+ t.f, data=hist) 
 mod_sum[3,2]<-summary(cc_mod.cm)$adj.r.squared 
 
 # April 1 CC Prediction Data 
-params<- var[var$year == pred.yr,] %>% select(ccd.swe, sr.swe) 
+params<- var[var$year == pred.yr,] %>% dplyr::select(ccd.swe, sr.swe) 
 pred.dat<- params %>% slice(rep(1:n(), 5000))
 pred.dat$t.f<- temp.ran$aj.temps.cc
 
@@ -376,12 +376,12 @@ plot(var$year, var$abv.h, xlab="Year", ylab="Diversions (ac-ft)")
 dev.off()
 
 plot(var$year[var$year >=2000], var$abv.h[var$year >=2000])
-hist <- var[var$year >=2000 & var$year < pred.yr,] %>% select(abv.h, g.swe, hc.swe, t.cg, t.lw) 
+hist <- var[var$year >=2000 & var$year < pred.yr,] %>% dplyr::select(abv.h, g.swe, hc.swe, t.cg, t.lw) 
 # linear model 
 div_mod.h<-lm(abv.h~ g.swe+hc.swe+t.cg+t.lw, data=hist) 
 mod_sum[4,1]<-summary(div_mod.h)$adj.r.squared 
 # April 1 Prediction Data 
-pred.dat<- var[var$year == pred.yr,] %>% select(g.swe, hc.swe, t.cg, t.lw) 
+pred.dat<- var[var$year == pred.yr,] %>% dplyr::select(g.swe, hc.swe, t.cg, t.lw) 
 # Model output
 preds.div<-predict(div_mod.h,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
 #preds.params.div[1,1]<-preds.div$fit[1]
@@ -415,12 +415,12 @@ dev.off()
 
 plot(var$year[var$year >=2000], var$bws.loss[var$year >=2000])
 
-hist <- var[var$year >=2000 & var$year < pred.yr,] %>% select(bws.loss, g.swe, hc.swe, t.g, t.cg, t.gs) 
+hist <- var[var$year >=2000 & var$year < pred.yr,] %>% dplyr::select(bws.loss, g.swe, hc.swe, t.g, t.cg, t.gs) 
 # linear model 
 bws.loss_mod<-lm(bws.loss~ g.swe+hc.swe+t.cg+ t.gs+t.gs, data=hist) 
 mod_sum[6,1]<-summary(bws.loss_mod)$adj.r.squared 
 # April 1 Prediction Data 
-pred.dat<- var[var$year == pred.yr,] %>% select(g.swe,hc.swe,t.cg, t.gs,t.gs) 
+pred.dat<- var[var$year == pred.yr,] %>% dplyr::select(g.swe,hc.swe,t.cg, t.gs,t.gs) 
 # Model output
 preds.div<-predict(bws.loss_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
 
@@ -435,12 +435,12 @@ dev.off()
 
 # Total Big Wood Diversions ----
 
-hist <- var[var$year >=1997 & var$year < pred.yr,] %>% select(div, bws.wq, cg.swe, hc.swe) 
+hist <- var[var$year >=1997 & var$year < pred.yr,] %>% dplyr::select(div, bws.wq, cg.swe, hc.swe) 
 # linear model 
 div_mod<-lm(log(var$div[var$year >=1997 & var$year < pred.yr]) ~ log(cg.swe)+log(hc.swe)+log(bws.wq), data=hist) 
 mod_sum[5,1] <- summary(div_mod)$adj.r.squared 
 # April 1 Prediction Data 
-pred.dat<- var[var$year == pred.yr,] %>% select(bws.wq, cg.swe, hc.swe) 
+pred.dat<- var[var$year == pred.yr,] %>% dplyr::select(bws.wq, cg.swe, hc.swe) 
 # Model output
 preds.div<-predict(div_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
 
@@ -458,13 +458,13 @@ dev.off()
 
 # Silver Creek Diversions ----
 # g.swe, t.cg, t.gs,t.hc, log.cg, log.lwd
-hist <- var[var$year>1993 & var$year < pred.yr,] %>% select(sc.div, g.swe, cg.swe, lwd.swe, t.cg, t.gs, t.hc) 
+hist <- var[var$year>1993 & var$year < pred.yr,] %>% dplyr::select(sc.div, g.swe, cg.swe, lwd.swe, t.cg, t.gs, t.hc) 
 hist$temps<- rowMeans(cbind(hist$t.cg, hist$t.gs, hist$t.hc), na.rm=TRUE)
 # linear model 
 sc.div_mod<-lm(log(var$sc.div[var$year>1993 & var$year < pred.yr]) ~ g.swe+ temps+log(cg.swe)+log(lwd.swe), data=hist) 
 mod_sum[6,1] <- summary(sc.div_mod)$adj.r.squared #not gonna work 
 # April 1 Prediction Data 
-params<- var[var$year == pred.yr,] %>% select(g.swe, cg.swe, lwd.swe)
+params<- var[var$year == pred.yr,] %>% dplyr::select(g.swe, cg.swe, lwd.swe)
 pred.dat<- params %>% slice(rep(1:n(), 5000))
 pred.dat$temps<- temp.ran$aj.temps.scd
 
@@ -497,7 +497,7 @@ dev.off()
 # between each gage
 
 # check correlations between flow conditions across the basins
-flow.data = var[var$year >= 1997,] %>% select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, div, sc.div) 
+flow.data = var[var$year >= 1997,] %>% dplyr::select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, div, sc.div) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
 cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9,10)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
@@ -543,7 +543,7 @@ dev.off()
 
 # Draw sample of years with similar center of mass (timing)
 cm.data = var[var$year >= 1997 & var$year < pred.yr,]
-cm.data = cm.data %>% select(year, bwb.cm.nat, bws.cm.nat,cc.cm, sc.cm) 
+cm.data = cm.data %>% dplyr::select(year, bwb.cm.nat, bws.cm.nat,cc.cm, sc.cm) 
 cm.data$prob<-NA
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
@@ -582,12 +582,12 @@ dev.off()
 # Curtailment predictions
 #
 
-curt_sub<- curtailments %>% select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_ab_magic')
+curt_sub<- curtailments %>% dplyr::select(-c(water_right_date, shut_off_date)) %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_ab_magic')
 
 curt_sub$subbasin<-factor(curt_sub$subbasin)
 curt_sub$water_right_cat<-factor(curt_sub$water_right_cat)
 
-curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% select(year, subbasin, water_right_cat, shut_off_julian, div, sc.div)
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(year, subbasin, water_right_cat, shut_off_julian, div, sc.div)
 
 curt_mod <- lm(shut_off_julian ~ subbasin + div + sc.div, data = curt)
 summary(curt_mod)
@@ -596,30 +596,30 @@ pred.params.curt<-array(NA,c(3,4))
 colnames(pred.params.curt)<-c("adjR2","sigma", "pred.date", "act.date")
 rownames(pred.params.curt)<-c("WR 3/24/1883", "WR 10/14/1884", "WR 6/1/1886")
 
-#bigwood A (3/24/1883)
+# bigwood A (3/24/1883)
 # div, bwb.vol.nat, t.lw
-curt_sub<- curtailments %>% select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_ab_magic')
-curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% select(year, shut_off_julian, div, bwb.vol.nat, t.lw)
+curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(year, shut_off_julian, div, bwb.vol.nat, t.lw)
 # linear model 
 bw.a_mod<-lm(curt$shut_off_julian ~ div + bwb.vol.nat + t.lw, data=curt) 
 
 # April 1 Prediction Data 
-pred.dat<- curt[curt$year == pred.yr,] %>% select(div, bwb.vol.nat, t.lw)
+pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(div, bwb.vol.nat, t.lw)
 # Model output
 preds.curt<-predict(bw.a_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
 pred.params.curt[1,3]<-preds.curt$fit[1]
 pred.params.curt[1,2]<-mean(preds.curt$se.fit)
 pred.params.curt[1,1]<-summary(bw.a_mod)$adj.r.squared 
 
-#bigwood B (10/14/1884)
+# bigwood B (10/14/1884)
 # div, bwb.wq, bwb.vol.nat, t.cg, t.lw
-curt_sub<- curtailments %>% select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="B") %>% subset(subbasin == 'bw_ab_magic')
-curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% select(shut_off_julian, div, bwb.wq, bwb.vol.nat, t.cg, t.lw, year)
+curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="B") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_julian, div, bwb.wq, bwb.vol.nat, t.cg, t.lw, year)
 # linear model 
 bw.b_mod<-lm(curt$shut_off_julian ~ div +bwb.wq+ bwb.vol.nat + t.cg+t.lw, data=curt) 
 
 # April 1 Prediction Data 
-pred.dat<- curt[curt$year == pred.yr,] %>% select(div, bwb.wq, bwb.vol.nat, t.cg, t.lw)
+pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(div, bwb.wq, bwb.vol.nat, t.cg, t.lw)
 # Model output
 preds.curt<-predict(bw.b_mod,newdata=pred.dat, se.fit=T,interval="prediction",level=0.95)
 pred.params.curt[2,3]<-preds.curt$fit[1]
@@ -628,13 +628,13 @@ pred.params.curt[2,1]<-summary(bw.b_mod)$adj.r.squared
 
 #bigwood c (6/1/1886)
 # bwb.vol.nat, t.gs
-curt_sub<- curtailments %>% select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="C") %>% subset(subbasin == 'bw_ab_magic')
-curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% select(shut_off_julian, bwb.vol.nat, t.gs, year)
+curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="C") %>% subset(subbasin == 'bw_ab_magic')
+curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_julian, bwb.vol.nat, t.gs, year)
 # linear model 
 bw.c_mod<-lm(curt$shut_off_julian ~ bwb.vol.nat + t.gs, data=curt) 
 
 # April 1 Prediction Data 
-pred.dat<- curt[curt$year == pred.yr,] %>% select(bwb.vol.nat, t.gs)
+pred.dat<- curt[curt$year == pred.yr,] %>% dplyr::select(bwb.vol.nat, t.gs)
 # Model output
 preds.curt<-predict(bw.c_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
 pred.params.curt[3,3]<-preds.curt$fit[1]
