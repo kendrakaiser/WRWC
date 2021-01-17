@@ -28,7 +28,7 @@ temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 # ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates, changed to start at the beginning of year in accordance with my calculation of cm, consider changin to day of wy
-wy<-seq(as.Date("2019-01-01"),as.Date("2019-09-30"),"day") #update to automate based on new.yr
+wy<-seq(as.Date(paste(pred.yr,"-01-01",sep="")),as.Date(paste(pred.yr,"-09-30",sep="")),"day")
 wy<-data.frame(wy,1:273)
 colnames(wy)<-c("Date","day")
 
@@ -310,16 +310,4 @@ write.csv(CMyear.sample, file.path(cd, "February_output/CMyear.sample.csv"),row.
 # Curtailment predictions
 #
 
-curt_sub<- curtailments %>% select(-c(water_right_date,shut_off_date)) %>% subset(water_right_cat =="A") #%>% subset(subbasin == 'bw_ab_magic')#, water_right_cat =="A")
-
-curt_sub$subbasin<-factor(curt_sub$subbasin)
-curt_sub$water_right_cat<-factor(curt_sub$water_right_cat)
-
-curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% select(year, subbasin, water_right_cat, shut_off_julian, div, sc.div)
-
-curt_mod <- lm(shut_off_julian ~ subbasin + div + sc.div, data = curt)
-summary(curt_mod)
-
-# Feb 1 Prediction Data 
-params<- var[var$year == pred.yr,] %>% select(g.swe, cg.swe, lwd.swe)
 
