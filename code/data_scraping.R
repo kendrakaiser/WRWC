@@ -16,7 +16,7 @@ sc.div$Date <- as.Date(sc.div$Date, format = "%m/%d/%y")
 sc.div$year<- format(sc.div$Date, "%Y")
 sc.div$sc.div<- rowSums(sc.div[,2:11], na.rm = TRUE)
 
-sc.div.sum<- sc.div %>% select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
+sc.div.sum<- sc.div %>% dplyr::select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
 sc.div.tot <- data.frame(matrix(nrow=dim(sc.div.sum)[1], ncol =2))
 
 colnames(sc.div.tot)<- c("year", "sc.div")
@@ -32,10 +32,10 @@ bw.div$abv.s <-rowSums(cbind(bw.div$WRVID.45, bw.div$Bannon.49,
                                  bw.div$Glendale.50, bw.div$Baseline.55, bw.div$Brown.57F1, 
                                  bw.div$Brown.57F2, bw.div$Black.61, bw.div$Graf.62,
                                  bw.div$Uhrig.63, bw.div$Flood.64), na.rm=TRUE)
-bw.div.gage<- bw.div %>% select(c(Date, abv.h, abv.s))
+bw.div.gage<- bw.div %>% dplyr::select(c(Date, abv.h, abv.s))
 #summarize by year
-bw.div.sum<- bw.div %>% select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
-bw.div.tot<- bw.div.sum %>% select(c(year, abv.h, abv.s))
+bw.div.sum<- bw.div %>% dplyr::select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
+bw.div.tot<- bw.div.sum %>% dplyr::select(c(year, abv.h, abv.s))
 
 # ------------------------------------------------------------------------------
 # USGS Gages
@@ -55,7 +55,7 @@ sCode = "00054" # USGS code for reservoir storage (acre-feet)
 # Dataframe with information about sites and period of record, uv = instantaneous value
 site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeCd ='uv') 
 site_info$abv <- c("bwb", "bws", "cc", "bwr", 'sc')
-site_info <- site_info %>% select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abv)
+site_info <- site_info %>% dplyr::select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abv)
 
 # Dowload data from all sites into one dataframe
 streamflow_data <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = max(site_info$end_date)) %>% renameNWISColumns() %>% data.frame
@@ -66,10 +66,10 @@ streamflow_data$mo <- month(streamflow_data$Date)
 streamflow_data$wy <- as.numeric(as.character(water_year(streamflow_data$Date, origin='usgs')))
 streamflow_data$day <- day(streamflow_data$Date)
 # Cleanup Streamflow data frame and join relevant site information
-streamflow_data <- streamflow_data %>% select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
+streamflow_data <- streamflow_data %>% dplyr::select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
 # add diversion data to streamflow dataframe
 streamflow_data <- inner_join(streamflow_data, bw.div.gage, by = 'Date')
-streamflow_data <- inner_join(streamflow_data, sc.div %>% select(c(Date, sc.div)), by = 'Date')
+streamflow_data <- inner_join(streamflow_data, sc.div %>% dplyr::select(c(Date, sc.div)), by = 'Date')
 
 streamflow_data$bwb.nat.q[streamflow_data$abv == 'bwb'] <- streamflow_data$Flow[streamflow_data$abv == 'bwb'] + streamflow_data$abv.h[streamflow_data$abv == 'bwb']
 streamflow_data$bws.nat.q[streamflow_data$abv == 'bws'] <- streamflow_data$Flow[streamflow_data$abv == 'bws'] + streamflow_data$abv.s[streamflow_data$abv == 'bws'] + streamflow_data$abv.h[streamflow_data$abv == 'bws']
