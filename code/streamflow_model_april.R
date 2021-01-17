@@ -584,7 +584,7 @@ dev.off()
 # TODO test predicting summer ET as a variable for diversions
 
 pred.params.curt<-array(NA,c(9,3)) # 3 columns when comparing to actual shut off date
-colnames(pred.params.curt)<-c("adjR2","sigma", "pred.date") # add "act.date" for post-season evaluation
+colnames(pred.params.curt)<-c("adjR2", "pred.date","sigma") # add "act.date" for post-season evaluation
 rownames(pred.params.curt)<-c("WR 3/24/1883", "WR 10/14/1884", "WR 6/1/1886", "BL Magic 3/24/1883", "BL Magic 10/14/1884", "BL Magic 6/1/1886", "SC 3/24/1883", "SC 10/14/1884", "SC 6/1/1886")
 
 var$t.curt <- rowMeans(cbind(var$t.sp, var$t.g, var$t.gs, var$t.lw), na.rm=TRUE)
@@ -601,8 +601,8 @@ pred.dat$bwb.vol.nat <- exp(vol.sample$bwb.nat)
 pred.dat$t.curt<- temp.ran$aj.temps.curt
 # Model output
 preds.curt<-predict(bw.a_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-pred.params.curt[1,3]<-preds.curt$fit[1]
-pred.params.curt[1,2]<-mean(preds.curt$se.fit)
+pred.params.curt[1,2]<-mean(preds.curt$fit) # mean of predicted
+pred.params.curt[1,3]<-mean(preds.curt$se.fit)
 pred.params.curt[1,1]<-summary(bw.a_mod)$adj.r.squared 
 
 # Big Wood  B (10/14/1884)
@@ -619,8 +619,8 @@ pred.dat$div <- exp(vol.sample$div)
 pred.dat$bwb.vol.nat <- exp(vol.sample$bwb.nat)
 # Model output
 preds.curt<-predict(bw.b_mod,newdata=pred.dat, se.fit=T,interval="prediction",level=0.95)
-pred.params.curt[2,3]<-preds.curt$fit[1]
-pred.params.curt[2,2]<-mean(preds.curt$se.fit)
+pred.params.curt[2,2]<-mean(preds.curt$fit)
+pred.params.curt[2,3]<-mean(preds.curt$se.fit)
 pred.params.curt[2,1]<-summary(bw.b_mod)$adj.r.squared 
 
 # Big Wood c (6/1/1886)
@@ -634,8 +634,8 @@ pred.dat$t.curt<- temp.ran$aj.temps.curt
 pred.dat$bwb.vol.nat <- exp(vol.sample$bwb.nat)
 # Model output
 preds.curt<-predict(bw.c_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-pred.params.curt[3,3]<-preds.curt$fit[1]
-pred.params.curt[3,2]<-mean(preds.curt$se.fit)
+pred.params.curt[3,2]<-mean(preds.curt$fit)
+pred.params.curt[3,3]<-mean(preds.curt$se.fit)
 pred.params.curt[3,1]<-summary(bw.c_mod)$adj.r.squared 
 
 # Below Magic Curtailments ----------
@@ -650,8 +650,8 @@ pred.dat$t.curt <- temp.ran$aj.temps.curt
 pred.dat$div <- exp(vol.sample$div)
 # Model output
 preds.curt<-predict(bwl.a_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-pred.params.curt[4,3]<-preds.curt$fit[1]
-pred.params.curt[4,2]<-mean(preds.curt$se.fit)
+pred.params.curt[4,2]<-mean(preds.curt$fit)
+pred.params.curt[4,3]<-mean(preds.curt$se.fit)
 pred.params.curt[4,1]<-summary(bwl.a_mod)$adj.r.squared 
 
 # Big Wood below magic B (10/14/1884)
@@ -665,8 +665,8 @@ pred.dat$t.curt<- temp.ran$aj.temps.curt
 pred.dat$bwb.vol.nat <- exp(vol.sample$bwb.nat)
 # Model output
 preds.curt<-predict(bwl.b_mod,newdata=pred.dat, se.fit=T,interval="prediction",level=0.95)
-pred.params.curt[5,3]<-preds.curt$fit[1]
-pred.params.curt[5,2]<-mean(preds.curt$se.fit)
+pred.params.curt[5,2]<-mean(preds.curt$fit)
+pred.params.curt[5,3]<-mean(preds.curt$se.fit)
 pred.params.curt[5,1]<-summary(bwl.b_mod)$adj.r.squared 
 
 # Big Wood  below magic c (6/1/1886)
@@ -682,8 +682,8 @@ pred.dat$t.curt<- temp.ran$aj.temps.curt
 pred.dat$bwb.vol.nat <- exp(vol.sample$bwb.nat)
 # Model output
 preds.curt<-predict(bwl.c_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-pred.params.curt[6,3]<-preds.curt$fit[1]
-pred.params.curt[6,2]<-mean(preds.curt$se.fit)
+pred.params.curt[6,2]<-mean(preds.curt$fit)
+pred.params.curt[6,3]<-mean(preds.curt$se.fit)
 pred.params.curt[6,1]<-summary(bwl.c_mod)$adj.r.squared 
 
 # Silver Creek Curtailments ----------
@@ -699,8 +699,8 @@ pred.dat<- params %>% slice(rep(1:n(), 5000)) # repeat observed data to correspo
 pred.dat$sc.cm <- sample(cm.data$sc.cm,5000,replace=TRUE) # normal distribution of center of mass
 # Model output
 preds.curt<-predict(sc.a_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-pred.params.curt[7,3]<-preds.curt$fit[1]
-pred.params.curt[7,2]<-mean(preds.curt$se.fit)
+pred.params.curt[7,2]<-mean(preds.curt$fit)
+pred.params.curt[7,3]<-mean(preds.curt$se.fit)
 pred.params.curt[7,1]<-summary(sc.a_mod)$adj.r.squared 
 
 # SC B (10/14/1884)
@@ -715,8 +715,8 @@ pred.dat<- params %>% slice(rep(1:n(), 5000)) # repeat observed data to correspo
 pred.dat$sc.div <- exp(vol.sample$sc.div)
 # Model output
 preds.curt<-predict(sc.b_mod,newdata=pred.dat, se.fit=T,interval="prediction",level=0.95)
-pred.params.curt[8,3]<-preds.curt$fit[1]
-pred.params.curt[8,2]<-mean(preds.curt$se.fit)
+pred.params.curt[8,2]<-mean(preds.curt$fit)
+pred.params.curt[8,3]<-mean(preds.curt$se.fit)
 pred.params.curt[8,1]<-summary(sc.b_mod)$adj.r.squared 
 
 # SC C (6/1/1886)
@@ -732,8 +732,8 @@ pred.dat$t.curt<- temp.ran$aj.temps.curt
 pred.dat$sc.div <- exp(vol.sample$sc.div)
 # Model output
 preds.curt<-predict(sc.c_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-pred.params.curt[9,3]<-preds.curt$fit[1]
-pred.params.curt[9,2]<-mean(preds.curt$se.fit)
+pred.params.curt[9,2]<-mean(preds.curt$fit)
+pred.params.curt[9,3]<-mean(preds.curt$se.fit)
 pred.params.curt[9,1]<-summary(sc.c_mod)$adj.r.squared 
 
 
@@ -758,6 +758,36 @@ new_jul<-julian_curt[julian_curt$year >= 1997,]
 all.cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9,10)],flow.data[c(2,4,6,8)], new_jul[-1]),use="pairwise.complete")
 curt.cor.mat<-cor(julian_curt[-1], use="pairwise.complete")
 
+# create covariance matrix by multiplying by each models standard error
+curt.outer.prod<-as.matrix(pred.params.curt[,3])%*%t(as.matrix(pred.params.curt[,3]))
+curt.cov.mat<-curt.cor.mat*curt.outer.prod
+# Draw curtailment dates using multivariate normal distribution
+curt.sample<-data.frame(mvrnorm(n=5000,mu=(pred.params.curt[,2]),Sigma=curt.cov.mat))
+
+colnames(curt.sample)<-c("ubw_a", "ubw_b", "ubw_c", "lwbw_a", "lwbw_b", "lwbw_c", "sc_a", "sc_b", "sc_c")
+write.csv(curt.sample, file.path(cd,"April_output/curt.sample.csv"),row.names=F)
+
+# Plot boxplots of predicted curtailment dates from each model -> modelOutput.Rmd
+png(filename = file.path(fig_dir,"April/sampled_curtailments.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+
+curt.sample %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
+  ggplot(aes(x=site, y=as.Date(value, origin=as.Date(paste(pred.yr,"-01-01",sep=""))), fill=site)) +
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=11)
+  ) +
+  theme_bw()+
+  ggtitle("Sampled Curtialment Dates") +
+  xlab("")+
+  ylab("Curtailment Date")
+dev.off()
+
+
+# Change julian to actual date for readibility
 pred.params.curt<- as.data.frame(pred.params.curt) %>% round(2)
 pred.params.curt$pred.date<-as.Date(pred.params.curt$pred.date, origin=as.Date(paste(pred.yr,"-01-01",sep="")), format='%m/%d')
 
