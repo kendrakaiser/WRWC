@@ -5,8 +5,6 @@
 # 'snotelr', 'XML', 'httr', 'dplyr', 'devtools', 'plyr', 'readr', 'lubridate', 
 # 'lfstat', 'gridExtra', 'varhandle', 'viridis', 'ggplot2', 'nlme', 'tidyr'))
 
-# devtools::install_github(repo = "rhlee12/RNRCS", subdir = "/RNRCS/", force =TRUE)
-
 # load packages
 library(MASS)
 library(plotrix)
@@ -23,7 +21,7 @@ library(readr)
 library(lubridate)
 library(lfstat)
 library(gridExtra)
-library(RNRCS)
+#library(RNRCS)
 library(varhandle)
 library(viridis)
 library(ggplot2)

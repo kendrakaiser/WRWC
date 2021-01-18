@@ -4,6 +4,8 @@
 # June, 19, 2020
 # ------------------------------------------------------------------------------
 
+source(file.path(git_dir, 'code/grabAgriMetData.R'))
+       
 #import and manage diversion data
 bw.div <- read.csv(file.path(input_dir, 'bwr_diversion_data_1987_2019_111620.csv'))
 bw.div$Date <- as.Date(bw.div$Date, format = "%m/%d/%y")
@@ -280,6 +282,10 @@ for (i in 2:length(fiveYearDates)){
   fafi=plyr::rbind.fill(fafi, tempDF)
   rm(tempDF)
 }
+
+# The following Warning message is okay : In (function (..., deparse.level = 1)  : 
+# number of columns of result is not a multiple of vector length (arg 14042)
+
 # rename columns
 colnames(fafi)<- c("date_time", "fafi_t", "fafi_pc", "fafi_si", "fafi_sq")
 # update format of dates
