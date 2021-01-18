@@ -8,15 +8,7 @@
 # Uses multivariate models of natural streamflow and diversions
 
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
-             "data_dir", "input", "fig_dir_mo", "author", "todays_date"))
-
-if (run_date == 'feb1'){
-  model_out = '~/Desktop/Data/WRWC/February_output'
-} else if (run_date == 'march1'){
-  model_out = '~/Desktop/Data/WRWC/March_output'
-} else if (run_date == 'april1'){
-  model_out = '~/Desktop/Data/WRWC/April_output'
-}
+             "data_dir", "input", "fig_dir_mo", "author", "todays_date", "model_out"))
 
 ns<-5000  #Number of simulations
 dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30",sep="")),"day")
@@ -37,16 +29,16 @@ sc.wy<-streamflow[streamflow$abv == 'sc',]
 # distributions and diversion hydrographs 
 cm.year<-read.csv(file.path(model_out,"CMyear.sample.csv"))
 volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
+colnames(volumes)<-c("bwb.nat", "bws.nat","cc.vol", "sc.vol", "div", "sc.div")
+#Example figures for presentation
+#plot(dates, bwb.wy$Flow[bwb.wy$wy == 2006][183:365], xlab="Date", ylab ="Flow (cfs)", type='l', col="black", ylim=c(0,6650))
+#lines(dates,bwb.wy$Flow[bwb.wy$wy == 2014][183:365], lwd=1, col="black")
+#lines(dates,bwb.wy$Flow[bwb.wy$wy == 2013][183:365], lwd=1, col="black")
+#lines(dates,bwb.wy$Flow[bwb.wy$wy == 2019][183:365], lwd=1, col="blue")
+#lines(dates,bwb.wy$Flow[bwb.wy$wy == 1998][183:365], lwd=1, col="red")
+#tst=cumsum(bwb.wy$Flow[bwb.wy$wy == 2019][183:365])
+#plot(dates, tst, xlab="Date", ylab ="Cumulative Flow (cfs)", type='l')
 
-
-plot(dates, bwb.wy$Flow[bwb.wy$wy == 2006][183:365], xlab="Date", ylab ="Flow (cfs)", type='l', col="black", ylim=c(0,6650))
-lines(dates,bwb.wy$Flow[bwb.wy$wy == 2014][183:365], lwd=1, col="black")
-lines(dates,bwb.wy$Flow[bwb.wy$wy == 2013][183:365], lwd=1, col="black")
-lines(dates,bwb.wy$Flow[bwb.wy$wy == 2019][183:365], lwd=1, col="blue")
-lines(dates,bwb.wy$Flow[bwb.wy$wy == 1998][183:365], lwd=1, col="red")
-
-tst=cumsum(bwb.wy$Flow[bwb.wy$wy == 2019][183:365])
-plot(dates, tst, xlab="Date", ylab ="Cumulative Flow (cfs)", type='l')
 # ------------------------------------------------------------------------------
 # Create arrays to store outputs of stochastic simulations
 #
@@ -89,7 +81,7 @@ for(k in 1:ns){
   cc.flow.s[,k]<-sim.flow(cc, vol$cc)
 }
 
-matplot(bwb.flow.s, type='l',col = "gray90" )
+#matplot(bwb.flow.s, type='l',col = "gray90" )
 #matplot(sc.flow.s, type='l',col = "gray90" )
 
 # ------------------------------------------------------------------------------
