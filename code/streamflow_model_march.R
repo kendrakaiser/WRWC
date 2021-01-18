@@ -208,9 +208,8 @@ rownames(pred.params.div)<-c("sc.div")
 # Total Big Wood Diversions ----
 
 # draw from random normal distribution
-# create normal distribution of years 
-bw.div.sample<-sample(var$div,5000,replace=TRUE) 
-
+var.div<- var$div[!is.na(var$div)]
+bw.div.sample<-sample(var.div,5000,replace=TRUE) 
 
 # Silver Creek Diversions ----
 hist <- var[var$year>1993 & var$year < pred.yr,] %>% dplyr::select(sc.div, sc.wq, g.swe, lwd.swe, t.f, t.p) 
@@ -264,7 +263,10 @@ cov.mat<-cor.mat*outer.prod
 vol.pars<-rbind(pred.params.vol, pred.params.div)
 vol.sample<-mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat)
 colnames(vol.sample)<-c("bwb.nat","bws.nat","cc","sc.nat", "sc.div")
-write.csv(exp(vol.sample), file.path(cd,"March_output/vol.sample.csv"),row.names=F)
+vol.sample2<- cbind(vol.sample, log(bw.div.sample))
+colnames(vol.sample2)<-c("Big Wood Hailey", "Big Wood Stanton","Camas Creek","Silver Creek", "Silver Creek Div", "Big Wood Div")
+
+write.csv(exp(vol.sample2), file.path(cd,"March_output/vol.sample.csv"),row.names=F)
 
 #save correlation matrix for model details report
 cor.mat.out<-as.data.frame(round(cor.mat,2))
@@ -275,25 +277,36 @@ dev.off()
 write.csv(cov.mat, file.path(cd,"March_output/cov.mat.csv"),row.names=T)
 write.csv(pred.pars, file.path(cd,"March_output/pred.pars.csv"),row.names=T)
 
-# Plot boxplots of total annual flow from each model -> modelOutput.Rmd
+# Plot boxplots of total annual flow from each model
 png(filename = file.path(fig_dir,"March/sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
-as.data.frame(exp(vol.sample)/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
+as.data.frame(exp(vol.sample2[,1:3])/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
   ggplot(aes(x=site, y=value, fill=site)) +
   geom_boxplot() +
-  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
-  theme(
-    legend.position="none",
-    plot.title = element_text(size=11)
-  ) +
+  scale_fill_viridis(discrete = TRUE, alpha=0.7) +
   theme_bw()+
+  theme(legend.position="none") +
   ggtitle("Sampled Irrigation Season Volumes") +
   xlab("")+
   ylab("Irrigation Season Volume (10,000 ac-ft)")
 dev.off()
 
+png(filename = file.path(fig_dir,"March/sampled_sc_diversions.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+
+as.data.frame(exp(vol.sample2[,4:6])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
+  ggplot(aes(x=site, y=value, fill=site)) +
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha=0.7) +
+  theme_bw()+
+  theme(legend.position="none") +
+  ggtitle("") +
+  xlab("")+
+  ylab("Irrigation Volume (1,000 ac-ft)")
+dev.off()
 
 # Draw sample of years with similar center of mass (timing)
 cm.data = var[var$year >= 1997 & var$year < pred.yr,]
