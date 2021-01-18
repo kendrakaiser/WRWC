@@ -51,10 +51,12 @@ mo<- month(as.Date(params$todays_date, format = "%m/%d/%Y"))
 
 ## Wood River Model Summary
 
-The WRWC Modeling Suite predicts spring air temperatures, total summer runoff volumes, "center of mass", and timing of delivery calls in the Big Wood River Basin, Camas Creek and Silver Creek (Table 1, Figure 1). 
+The WRWC Modeling Suite predicts spring air temperatures, total summer runoff volumes, "center of mass", total diversions and timing of delivery calls in the Big Wood River Basin, Camas Creek and Silver Creek. 
 
 ### Data Inputs
-```{r data inputs, , out.width="75%"}
+
+Data is automatically downloaded from the USGS, NRCS and AgriMet (Fairfield and Picabo).
+```{r data inputs, , out.width="65%"}
 kable(usgs_sites[c(1,2,3,5),] %>% dplyr::select(station_nm, huc_cd, begin_date, end_date, abv), caption = "USGS Sites")
 
 kable(snotel_sites %>% dplyr::select(start, end, site_name, huc8, abv), caption = "Snotel Sites")
@@ -178,7 +180,7 @@ kable(swe, caption = "Mean and Year-to-Date SWE at Snotel Sites")
 
 ### Streamflow Volume Model Output
 
-This box plot shows the range of volumes that were calculated for each basin. The boxes represent the 25th - 75th percentiles, with the median in the solid line in the middle, circles are outliers. 
+These box plots shows the range of volumes that were calculated for each basin. The boxes represent the 25th - 75th percentiles, with the median in the solid line in the middle, circles are outliers. 
 
 ```{r, sampled volumes, echo=FALSE, out.width = '50%', fig.show="hold"}
 knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), file.path(params$fig_dir_mo, "sampled_sc_diversions.png")))
@@ -186,7 +188,7 @@ knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), f
 
 ### Streamflow Simulations
 
-Mean simulated streamflow is shown in the solid blue line and the 95% confidence interval is show in the shaded gray area.
+Mean simulated streamflow is shown in the solid blue line and the 95% confidence interval is shown in the shaded gray area.
 
 ```{r, bw sim, echo=FALSE, out.width = '50%', fig.show="hold"}
 knitr::include_graphics(c(file.path(params$fig_dir_mo, "BWB_Simulation.png"), file.path(params$fig_dir_mo, "BWS_Simulation.png")))
@@ -198,6 +200,15 @@ knitr::include_graphics(c(file.path(params$fig_dir_mo,"SC_Simulation.png"), file
 
 ### Curtailment Date Model Output 
 
+While the curtailment date models do fairly well at predicting curtailment dates with historic data (see the adjusted R2 in the table below), the combination of predicted streamflow volumes, diversions and summer temperatures limit their ability to accurately and concisely estimate curtailment dates. The 'sigma' value is the standard error, or the variance around the 'true' value. In many of the curtailment models, this standard error means that the prediction could be off by a week in either direction (early or late). Given the uncertainty in April predictions, there are no curtailment predictions for February or March.
+
+
+```{r curtailment summary, echo=FALSE, out.width = '110%', fig.align='center'}
+if (params$fig_dir_mo == 'figures/April'){  
+  knitr::include_graphics(file.path(params$fig_dir_mo, "curt_summary.png"))
+}
+```
+
 This box plot shows the range of volumes that were calculated from each basin. The boxes represent the 25th - 75th percentiles, with the median in the solid line in the middle, circles are outliers.
 
 ```{r, sampled curtailment dates, echo=FALSE, out.width = '80%', fig.align='center'}
@@ -206,8 +217,3 @@ if (params$fig_dir_mo == 'figures/April'){
 }
 ```
 
-```{r, curtailment summary, echo=FALSE, out.width = '80%', fig.align='center'}
-if (params$fig_dir_mo == 'figures/April'){
-  knitr::include_graphics(file.path(params$fig_dir_mo, ... = "curt_summary.png"))
-}
-```

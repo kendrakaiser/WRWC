@@ -35,7 +35,7 @@ The following suite of modeling tools were developed in response to stakeholder 
 # 2. Methodology & Model Fits
 
 ## Overview 
-Individual multivariate linear regression models were developed for each of these locations using USGS streamflow data, Snotel SWE and temperature data, AgriMet temperature data, and diversion data from Water District 37 (Table 1). The Baysian Information Criterion (define & cite) was used to select model parameters for each of the gage locations for both total irrigation season streamflow volume and timing, characterized by the center of mass. Center of mass definition here.... 
+Individual multivariate linear regression models were developed for each of these locations using USGS streamflow data, Snotel SWE and temperature data, AgriMet temperature data, and diversion data from Water District 37 (Table 1). The Baysian Information Criterion (BIC, 2008) was used to select model parameters for each of the gage locations for both total irrigation season streamflow volume and timing, characterized by the center of mass. Center of mass definition here.... 
 
 ```{r, Data_sources, echo=FALSE, fig.cap="Table 1: Data sources used in model development", fig.aling="left", out.width = '90%'}
 #knitr::include_graphics("figures/Data_sources.png")
@@ -365,4 +365,7 @@ knitr::include_graphics("figures/BigWood_Hailey_Simulation_2019.png")
 
 # 4. Recommendations
 
+# 5. Citations
+
+(2008) Bayesian Information Criteria. In: Information Criteria and Statistical Modeling. Springer Series in Statistics. Springer, New York, NY. https://doi.org/10.1007/978-0-387-71887-3_9
 

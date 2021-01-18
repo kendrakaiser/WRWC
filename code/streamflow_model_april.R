@@ -1,12 +1,17 @@
 # ---------------------------------------------------------------------------- #
 # Predictive Streamflow Model for the Wood River Water Collaborative
 # Kendra Kaiser
-# October 27th, 2020
-# Linear models to predict total April-September streamflow volume and center of mass 
-# based on average winter flows, current SWE and temperature; model selection explored
-# 'streamflow_model_xploration.R' using BIC
+# January 18th, 2021
 #
-# This model was informed by the statstical tools developed for the Henry's Fork 
+# Linear models to predict total April-September streamflow volume and center of mass 
+# based on average winter flows, current SWE and predicted temperature; 
+# model selection explored in 'streamflow_model_exploration.R' using BIC
+# 
+# Linear models are also used to predict total diversions for each basin and 
+# curtailment dates for three priority dates in the Big Wood above and below Magic 
+# reservoir and in Silver Creek
+#
+# This model was informed by the statistical tools developed for the Henry's Fork 
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
 
@@ -523,7 +528,7 @@ dev.off()
 write.csv(cov.mat, file.path(cd,"April_output/cov.mat.csv"),row.names=T)
 write.csv(pred.pars, file.path(cd,"April_output/pred.pars.csv"),row.names=T)
 
-# Plot boxplots of total annual flow from each model -> modelOutput.Rmd
+# Plot boxplots of total annual flow from each model
 png(filename = file.path(fig_dir,"April/sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 

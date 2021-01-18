@@ -16,7 +16,7 @@ agrimet = read.csv(file.path(data_out,'agri_metT.csv'))
 # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993
 
 first.yr<-1988
-last.yr<-pred.yr-1
+last.yr<-pred.yr
 nyrs<-last.yr-first.yr+1
 site.key <- c(as.character(unique(snotel$site_name)), as.character(unique(agrimet$site_name)))
 
