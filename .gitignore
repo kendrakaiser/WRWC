@@ -1,7 +1,8 @@
-figures/April/
-figures/March/
-figures/February/
+figures/April/*
+figures/March/*
+figures/February/*
 .Rhistory
 *.log
 *.tex
 *.DS_Store
+*.pdf
