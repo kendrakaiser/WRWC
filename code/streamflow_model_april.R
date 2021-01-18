@@ -10,7 +10,8 @@
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
 
-rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", "data_dir", "input"))
+rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
+             "data_dir", "input", "fig_dir_mo", "author", "todays_date"))
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
@@ -29,7 +30,7 @@ stream.id<-unique(as.character(usgs_sites$abv))
 # ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates, changed to start at the beginning of year in accordance with my calculation of cm, consider changing to day of wy
 wy<-seq(as.Date(paste(pred.yr,"-01-01",sep="")),as.Date(paste(pred.yr,"-09-30",sep="")),"day")
-wy<-data.frame(wy,1:273)
+wy<-data.frame(wy,1:length(wy))
 colnames(wy)<-c("Date","day")
 
 # ------------------------------------------------------------------------------  
@@ -497,7 +498,7 @@ dev.off()
 # between each gage
 
 # check correlations between flow conditions across the basins
-flow.data = var[var$year >= 1997,] %>% dplyr::select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, div, sc.div) 
+flow.data = var[var$year >= 1997 & var$year < 2020,] %>% dplyr::select(bwb.vol.nat, bwb.cm.nat, bws.vol.nat, bws.cm.nat, cc.vol, cc.cm, sc.vol, sc.cm, div, sc.div) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
 cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9,10)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
@@ -510,7 +511,7 @@ cov.mat<-cor.mat*outer.prod
 # Draw flow volumes using multivariate normal distribution (ac-ft)
 vol.pars<-rbind(pred.params.vol, pred.params.div)
 vol.sample<-data.frame(mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat[1:6,1:6]))
-colnames(vol.sample)<-c("bwb.nat","bws.nat","cc","sc.nat", "div", "sc.div")
+colnames(vol.sample)<-c("Big Wood Hailey", "Big Wood Stanton","Camas Creek","Silver Creek", "Big Wood Div", "Silver Creek Div")
 write.csv(exp(vol.sample), file.path(cd,"April_output/vol.sample.csv"),row.names=F)
 
 # save correlation matrix for model details report
@@ -527,18 +528,30 @@ png(filename = file.path(fig_dir,"April/sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
-as.data.frame(exp(vol.sample)/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
+as.data.frame(exp(vol.sample[,1:3])/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
   ggplot(aes(x=site, y=value, fill=site)) +
   geom_boxplot() +
-  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
-  theme(
-    legend.position="none",
-    plot.title = element_text(size=11)
-  ) +
+  scale_fill_viridis(discrete = TRUE, alpha=0.7) +
   theme_bw()+
+  theme(legend.position="none") +
   ggtitle("Sampled Irrigation Season Volumes") +
   xlab("")+
   ylab("Irrigation Season Volume (10,000 ac-ft)")
+dev.off()
+
+png(filename = file.path(fig_dir,"April/sampled_sc_diversions.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+
+as.data.frame(exp(vol.sample[,4:6])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
+  ggplot(aes(x=site, y=value, fill=site)) +
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha=0.7) +
+  theme_bw()+
+  theme(legend.position="none") +
+  ggtitle("") +
+  xlab("")+
+  ylab("Irrigation Volume (1,000 ac-ft)")
 dev.off()
 
 # Draw sample of years with similar center of mass (timing)
@@ -585,8 +598,8 @@ dev.off()
 
 pred.params.curt<-array(NA,c(9,3)) # 3 columns when comparing to actual shut off date
 colnames(pred.params.curt)<-c("adjR2", "pred.date","sigma") # add "act.date" for post-season evaluation
-rownames(pred.params.curt)<-c("WR 3/24/1883", "WR 10/14/1884", "WR 6/1/1886", "BL Magic 3/24/1883", "BL Magic 10/14/1884", "BL Magic 6/1/1886", "SC 3/24/1883", "SC 10/14/1884", "SC 6/1/1886")
-
+rownames(pred.params.curt)<-c("BW 3/24/1883", "BW 10/14/1884", "BW 6/1/1886", "BL Magic 3/24/1883", "BL Magic 10/14/1884", "BL Magic 6/1/1886", "SC 3/24/1883", "SC 10/14/1884", "SC 6/1/1886")
+colnames(vol.sample)<-c("bwb.nat", "bws.nat","cc.vol", "sc.vol", "div", "sc.div")
 var$t.curt <- rowMeans(cbind(var$t.sp, var$t.g, var$t.gs, var$t.lw), na.rm=TRUE)
 
 # Big Wood A (3/24/1883)
@@ -612,7 +625,7 @@ curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_j
 # linear model 
 bw.b_mod<-lm(shut_off_julian ~ div +bwb.wq+ bwb.vol.nat + t.curt, data=curt) 
 # April 1 Prediction Data 
-params<- curt[curt$year == pred.yr,] %>% dplyr::select(bwb.wq)
+params<- var[var$year == pred.yr,] %>% dplyr::select(bwb.wq)
 pred.dat<- params %>% slice(rep(1:n(), 5000)) # repeat observed data to correspond with predicted data
 pred.dat$t.curt<- temp.ran$aj.temps.curt
 pred.dat$div <- exp(vol.sample$div)
@@ -676,7 +689,7 @@ curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_j
 # linear model 
 bwl.c_mod<-lm(shut_off_julian ~ bwb.vol.nat + t.curt, data=curt) 
 # April 1 Prediction Data 
-params<- curt[curt$year == pred.yr,] %>% dplyr::select(bwb.wq)
+params<- var[var$year == pred.yr,]  %>% dplyr::select(bwb.wq)
 pred.dat<- params %>% slice(rep(1:n(), 5000)) # repeat observed data to correspond with predicted data
 pred.dat$t.curt<- temp.ran$aj.temps.curt
 pred.dat$bwb.vol.nat <- exp(vol.sample$bwb.nat)
@@ -694,7 +707,7 @@ curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_j
 # linear model 
 sc.a_mod<-lm(shut_off_julian ~ sc.cm + ga.swe+ sp.swe+ cg.swe+ g.swe, data=curt) 
 # April 1 Prediction Data 
-params<- curt[curt$year == pred.yr,] %>% dplyr::select(ga.swe, sp.swe, cg.swe, g.swe)
+params<- var[var$year == pred.yr,] %>% dplyr::select(ga.swe, sp.swe, cg.swe, g.swe)
 pred.dat<- params %>% slice(rep(1:n(), 5000)) # repeat observed data to correspond with predicted data
 pred.dat$sc.cm <- sample(cm.data$sc.cm,5000,replace=TRUE) # normal distribution of center of mass
 # Model output
@@ -710,7 +723,7 @@ curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_j
 # linear model 
 sc.b_mod<-lm(shut_off_julian ~ sc.div + ga.swe, data=curt) 
 # April 1 Prediction Data 
-params<- curt[curt$year == pred.yr,] %>% dplyr::select(ga.swe)
+params<- var[var$year == pred.yr,]  %>% dplyr::select(ga.swe)
 pred.dat<- params %>% slice(rep(1:n(), 5000)) # repeat observed data to correspond with predicted data
 pred.dat$sc.div <- exp(vol.sample$sc.div)
 # Model output
@@ -726,7 +739,7 @@ curt <- curt_sub  %>% inner_join(var, by = 'year')  %>% dplyr::select(shut_off_j
 # linear model 
 sc.c_mod<-lm(shut_off_julian ~ sc.div+ ga.swe+ cg.swe+ lwd.swe + t.curt, data=curt) 
 # April 1 Prediction Data 
-params<- curt[curt$year == pred.yr,] %>% dplyr::select(ga.swe, cg.swe, lwd.swe)
+params<- var[var$year == pred.yr,]  %>% dplyr::select(ga.swe, cg.swe, lwd.swe)
 pred.dat<- params %>% slice(rep(1:n(), 5000)) # repeat observed data to correspond with predicted data
 pred.dat$t.curt<- temp.ran$aj.temps.curt
 pred.dat$sc.div <- exp(vol.sample$sc.div)
@@ -764,7 +777,7 @@ curt.cov.mat<-curt.cor.mat*curt.outer.prod
 # Draw curtailment dates using multivariate normal distribution
 curt.sample<-data.frame(mvrnorm(n=5000,mu=(pred.params.curt[,2]),Sigma=curt.cov.mat))
 
-colnames(curt.sample)<-c("ubw_a", "ubw_b", "ubw_c", "lwbw_a", "lwbw_b", "lwbw_c", "sc_a", "sc_b", "sc_c")
+colnames(curt.sample)<-c("bw_a", "bw_b", "bw_c", "lwbw_a", "lwbw_b", "lwbw_c", "sc_a", "sc_b", "sc_c")
 write.csv(curt.sample, file.path(cd,"April_output/curt.sample.csv"),row.names=F)
 
 # Plot boxplots of predicted curtailment dates from each model -> modelOutput.Rmd
@@ -774,14 +787,11 @@ png(filename = file.path(fig_dir,"April/sampled_curtailments.png"),
 
 curt.sample %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
   ggplot(aes(x=site, y=as.Date(value, origin=as.Date(paste(pred.yr,"-01-01",sep=""))), fill=site)) +
-  geom_boxplot() +
-  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
-  theme(
-    legend.position="none",
-    plot.title = element_text(size=11)
-  ) +
   theme_bw()+
-  ggtitle("Sampled Curtialment Dates") +
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  theme(legend.position="none") +
+  ggtitle("Sampled Curtailment Dates") +
   xlab("")+
   ylab("Curtailment Date")
 dev.off()
