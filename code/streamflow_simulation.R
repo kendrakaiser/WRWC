@@ -29,7 +29,7 @@ sc.wy<-streamflow[streamflow$abv == 'sc',]
 # distributions and diversion hydrographs 
 cm.year<-read.csv(file.path(model_out,"CMyear.sample.csv"))
 volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
-colnames(volumes)<-c("bwb.nat", "bws.nat","cc.vol", "sc.vol", "div", "sc.div")
+colnames(volumes)<-c("bwb.nat", "bws.nat","cc.vol", "sc.nat", "div", "sc.div")
 #Example figures for presentation
 #plot(dates, bwb.wy$Flow[bwb.wy$wy == 2006][183:365], xlab="Date", ylab ="Flow (cfs)", type='l', col="black", ylim=c(0,6650))
 #lines(dates,bwb.wy$Flow[bwb.wy$wy == 2014][183:365], lwd=1, col="black")
