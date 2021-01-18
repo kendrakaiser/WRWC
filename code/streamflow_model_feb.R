@@ -18,7 +18,7 @@ usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 swe_q = read.csv(file.path(data_dir, input))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
 temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
-var = swe_q %>% select(-X) %>% inner_join(temps, by ="year") %>% select(-X)
+var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
 var$div <- var$abv.h + var$abv.s
 curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
 
@@ -98,12 +98,12 @@ modOut<- function(mod, pred.dat, wq, vol, swe, lastQ){
 
 # --------------------------------------------------
 # Big Wood Hailey variables
-hist <- var[var$year < pred.yr,] %>% select(bwb.vol.nat, gs.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.vol.nat, gs.swe) 
 # linear model
 bwb_mod<-lm(log(bwb.vol.nat)~ log(gs.swe), data=hist) 
 mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 #Feb 1 bwb Prediction Data
-pred.dat<-var[var$year == pred.yr,] %>% select(gs.swe) 
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(gs.swe) 
 
 # Big Wood at Hailey Model output
 mod_out<- modOut(bwb_mod, pred.dat, var$bwb.wq[var$year < pred.yr], hist$bwb.vol.nat, hist$gs.swe, var$bwb.vol.nat[var$year == pred.yr-1])
@@ -123,12 +123,12 @@ dev.off()
 
 # --------------------------------------------------
 # Big Wood at Stanton
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% select(bws.vol.nat, bws.wq, cg.swe) 
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(bws.vol.nat, bws.wq, cg.swe) 
 # Big Wood at Stanton linear model
 bws_mod<-lm(log(bws.vol.nat)~ log(bws.wq)+ log(cg.swe), data=hist) 
 mod_sum[2,1]<-summary(bws_mod)$adj.r.squared
 # Feb 1 BWS Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% select(bws.wq, cg.swe) 
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(bws.wq, cg.swe) 
 
 # Big Wood at Stanton Natural Flow Model output
 mod_out<- modOut(bws_mod, pred.dat, hist$bws.wq, hist$bws.vol.nat, hist$cg.swe, var$bws.vol.nat[var$year == pred.yr-1])
@@ -147,13 +147,13 @@ dev.off()
 
 # --------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Swede Peak
-hist <- var[var$year < pred.yr,] %>% select(sc.vol.nat, bwb.wq, ga.swe, sp.swe, hc.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(sc.vol.nat, bwb.wq, ga.swe, sp.swe, hc.swe) 
 # Silver Creek linear model, note mixture of SWE from Big Wood and Little Wood basins
 sc_mod<-lm(log(sc.vol.nat)~ ga.swe+ sp.swe + hc.swe + bwb.wq, data=hist)
 mod_sum[4,1]<-summary(sc_mod)$adj.r.squared
 
 # April 1 SC Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% select(bwb.wq, ga.swe, sp.swe, hc.swe) 
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(bwb.wq, ga.swe, sp.swe, hc.swe) 
 # Silver Creek Model output
 mod_out<- modOut(sc_mod, pred.dat, var$sc.wq[var$year < pred.yr], hist$sc.vol.nat, c(hist$ga.swe,hist$sp.swe,hist$hc.swe), var$sc.vol.nat[var$year == pred.yr-1])
 output.vol[4,] <- mod_out[[1]]
@@ -171,12 +171,12 @@ dev.off()
 
 # --------------------------------------------------
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection 
-hist <- var[var$year < pred.yr,] %>% select(cc.vol, cc.wq, ccd.swe) #vol is in ac-ft
+hist <- var[var$year < pred.yr,] %>% dplyr::select(cc.vol, cc.wq, ccd.swe) #vol is in ac-ft
 # Camas Creek linear model
 cc_mod<-lm(log(cc.vol)~log(cc.wq)+ccd.swe, data=hist) 
 mod_sum[3,1]<-summary(cc_mod)$adj.r.squared
 # February 1 CC Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% select(cc.wq, ccd.swe)
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(cc.wq, ccd.swe)
 # Camas Creek Model output
 mod_out<- modOut(cc_mod, pred.dat, hist$cc.wq, hist$cc.vol, hist$ccd.swe, var$cc.vol[var$year == pred.yr-1])
 output.vol[3,] <- mod_out[[1]]
@@ -214,13 +214,13 @@ bw.div.sample<-sample(var$div,5000,replace=TRUE)
 
 
 # Silver Creek Diversions ----
-hist <- var[var$year>1993 & var$year < pred.yr,] %>% select(sc.div, sc.wq, g.swe, lwd.swe, t.f, t.p) 
+hist <- var[var$year>1993 & var$year < pred.yr,] %>% dplyr::select(sc.div, sc.wq, g.swe, lwd.swe, t.f, t.p) 
 hist$temps<- rowMeans(cbind(hist$t.f, hist$t.p), na.rm=TRUE)
 # linear model 
 sc.div_mod<-lm(log(var$sc.div[var$year>1993 & var$year < pred.yr]) ~ log(sc.wq)+ temps+log(g.swe)+log(lwd.swe), data=hist) 
 mod_sum[6,1] <- summary(sc.div_mod)$adj.r.squared 
 # April 1 Prediction Data 
-params<- var[var$year == pred.yr,] %>% select(sc.wq, g.swe, lwd.swe)
+params<- var[var$year == pred.yr,] %>% dplyr::select(sc.wq, g.swe, lwd.swe)
 pred.dat<- params %>% slice(rep(1:n(), 5000))
 pred.dat$temps<- temp.ran$aj.temps.cc
 # Model output
@@ -251,7 +251,7 @@ dev.off()
 # created from the correlation between total volume at each gage
 
 # check correlations between flow conditions across the basins
-flow.data = var[var$year >= 1997,] %>% select(bwb.vol.nat, bws.vol.nat, cc.vol, sc.vol.nat, sc.div) 
+flow.data = var[var$year >= 1997,] %>% dplyr::select(bwb.vol.nat, bws.vol.nat, cc.vol, sc.vol.nat, sc.div) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
 cor.mat<-cor(flow.data, use="pairwise.complete")
@@ -298,7 +298,7 @@ dev.off()
 
 # Draw sample of years with similar center of mass (timing)
 cm.data = var[var$year >= 1997 & var$year < pred.yr,]
-cm.data = cm.data %>% select(year, bwb.cm.nat, bws.cm.nat,cc.cm, sc.cm) 
+cm.data = cm.data %>% dplyr::select(year, bwb.cm.nat, bws.cm.nat,cc.cm, sc.cm) 
 
 # create normal distribution of years 
 CMyear.sample<-sample(cm.data$year,5000,replace=TRUE) 
