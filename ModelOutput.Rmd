@@ -55,9 +55,9 @@ The WRWC Modeling Suite predicts spring air temperatures, total summer runoff vo
 
 ### Data Inputs
 ```{r data inputs, , out.width="75%"}
-kable(usgs_sites[c(1,2,3,5),] %>% select(station_nm, huc_cd, begin_date, end_date, abv), caption = "USGS Sites")
+kable(usgs_sites[c(1,2,3,5),] %>% dplyr::select(station_nm, huc_cd, begin_date, end_date, abv), caption = "USGS Sites")
 
-kable(snotel_sites %>% select(start, end, site_name, huc8, abv), caption = "Snotel Sites")
+kable(snotel_sites %>% dplyr::select(start, end, site_name, huc8, abv), caption = "Snotel Sites")
 ```
 
 ## Data Summary
@@ -206,7 +206,7 @@ if (params$fig_dir_mo == 'figures/April'){
 }
 ```
 
-```{r, sampled curtailment dates, echo=FALSE, out.width = '80%', fig.align='center'}
+```{r, curtailment summary, echo=FALSE, out.width = '80%', fig.align='center'}
 if (params$fig_dir_mo == 'figures/April'){
   knitr::include_graphics(file.path(params$fig_dir_mo, ... = "curt_summary.png"))
 }
