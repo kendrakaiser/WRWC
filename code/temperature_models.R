@@ -6,13 +6,6 @@
 # based on subsets of basins that preformed best in lm of center of mass etc
 # ----------------------------------------------------------------------------- # 
 
-# load packages ----
-library(ggplot2)
-library(nlme) #need for lme 
-library(MASS) #need for mvrnorm
-library(plotrix) #need for CI
-library(tidyr)
-
 # import data ----
 data_out = file.path(cd, 'data')
 
