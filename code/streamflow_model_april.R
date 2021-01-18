@@ -46,7 +46,7 @@ colnames(wy)<-c("Date","day")
 output.vol<-array(NA,c(length(stream.id),8))
 rownames(output.vol)<-stream.id
 output.vol<-output.vol[-4,]
-colnames(output.vol)<-c("Predictors Vol % of mean","Predictors swe % of mean", "Pred. Vol (cfs)", "Pred. Vol % of mean", "90% exc. cfs", "90% exc. % or mean", "Prev Year Vol (cfs)", "Prev Year % of mean Volume")
+colnames(output.vol)<-c("Predictors Vol\n% of mean","Predictors swe \n% of mean", "Pred. Vol \n(cfs)", "Pred. Vol \n% of mean", "90% exc. \ncfs", "90% exc. \n% of mean", "Prev Year \nVol (cfs)", "Prev Year \n% of mean Volume")
 
 pred.params.vol<-array(NA,c(4,2))
 rownames(pred.params.vol)<-c("bwb.vol","bws.vol","cc.vol","sc.vol")
@@ -360,6 +360,10 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 
 ### Save model outputs 
+
+png(file.path(fig_dir,"April/pred.volumes.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
+grid.table(output.vol)
+dev.off()
 
 write.csv(output.vol, file.path(cd,"April_output/pred.output.vol.csv"),row.names=T)
 write.csv(pred.params.vol, file.path(cd,"April_output/pred.params.vol.csv"),row.names=T)

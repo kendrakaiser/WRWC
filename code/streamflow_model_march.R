@@ -1,12 +1,14 @@
 # ---------------------------------------------------------------------------- #
 # Predictive Streamflow Model for the Wood River Water Collaborative
 # Kendra Kaiser
-# October 27th, 2020
-# Linear models to predict total April-September streamflow volume and center of mass 
-# based on average winter flows, current SWE and temperature; model selection explored
-# 'streamflow_model_xploration.R' using BIC
+# January 18th, 2021
 #
-# This model was informed by the statstical tools developed for the Henry's Fork 
+# Linear models to predict total April-September streamflow volume and center of mass,
+# based on average winter flows, current SWE and predicted spring temperature; 
+# model selection explored in 'streamflow_model_exploration.R' using BIC.
+# Linear model are also used to predict total diversions in the Big Wood and Silver Creek
+#
+# This model was informed by the statistical tools developed for the Henry's Fork 
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
@@ -39,7 +41,7 @@ colnames(wy)<-c("Date","day")
 output.vol<-array(NA,c(length(stream.id),8))
 rownames(output.vol)<-stream.id
 output.vol<-output.vol[-4,]
-colnames(output.vol)<-c("Predictors Vol % of mean","Predictors swe % of mean", "Pred. Vol (cfs)", "Pred. Vol % of mean", "90% exc. cfs", "90% exc. % or mean", "Prev Year Vol (cfs)", "Prev Year % of mean Volume")
+colnames(output.vol)<-c("Predictors Vol\n% of mean","Predictors swe \n% of mean", "Pred. Vol \n(cfs)", "Pred. Vol \n% of mean", "90% exc. \ncfs", "90% exc. \n% of mean", "Prev Year \nVol (cfs)", "Prev Year \n% of mean Volume")
 
 pred.params.vol<-array(NA,c(4,2))
 rownames(pred.params.vol)<-c("bwb.vol","bws.vol","cc.vol","sc.vol")
@@ -193,6 +195,10 @@ dev.off()
 
 
 ### Save model outputs for simulation runs 
+
+png(file.path(fig_dir,"March/pred.volumes.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
+grid.table(output.vol)
+dev.off()
 
 write.csv(output.vol, file.path(cd,"March_output/pred.output.vol.csv"),row.names=T)
 write.csv(pred.params.vol, file.path(cd,"March_output/pred.params.vol.csv"),row.names=T)
