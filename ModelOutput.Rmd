@@ -3,7 +3,7 @@ title: "WRWC Model Run"
 params:
     fig_dir_mo: 'figures/March'
     author: "Kendra Kaiser"
-    todays_date: "01/14/2020"
+    todays_date: "01/14/2021"
 author: author
 date: todays_date
 output: 
@@ -30,85 +30,169 @@ library(fasstr)
 knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_knit$set(verbose = TRUE)  
 
-data_dir <-  '~/Desktop/WRWC-model-out/data'
+data_dir <-  '~/Desktop/WRWC/data'
 git_dir <<- '~/github/WRWC'
 fig_dir <<- file.path(git_dir, 'figures')
 
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 snotel_sites = read.csv(file.path(data_dir,'snotel_sites.csv'))
+snotel_data = read.csv(file.path(data_dir,'snotel_data.csv'))
 q = read.csv(file.path(data_dir,'streamflow_data.csv'))
 q$Date <- as.Date(q$Date)
 q$doy <- yday(q$Date)
 q<- q %>% filter(abv != 'bwr')
+feb1swe = read.csv(file.path(data_dir, 'feb1swe.csv'))
+mar1swe = read.csv(file.path(data_dir, 'mar1swe.csv'))
+apr1swe = read.csv(file.path(data_dir, 'april1swe.csv'))
 
-
+yr<- year(as.Date(params$todays_date, format = "%m/%d/%Y"))
+mo<- month(as.Date(params$todays_date, format = "%m/%d/%Y"))
 ```
 
 ## Wood River Model Summary
 
 The WRWC Modeling Suite predicts spring air temperatures, total summer runoff volumes, "center of mass", and timing of delivery calls in the Big Wood River Basin, Camas Creek and Silver Creek (Table 1, Figure 1). 
 
-Center of mass is ...
-
 ### Data Inputs
-```{r data}
+```{r data inputs, , out.width="75%"}
 kable(usgs_sites[c(1,2,3,5),] %>% select(station_nm, huc_cd, begin_date, end_date, abv), caption = "USGS Sites")
 
 kable(snotel_sites %>% select(start, end, site_name, huc8, abv), caption = "Snotel Sites")
 ```
 
 ## Data Summary
-e.g. timeseries of streamflow from all gages
-```{r All Data, echo=FALSE}
-ggplot(data = q, mapping = aes(x=as.Date(Date), y=Flow))+
+
+### Time series of historic data from each USGS site.
+
+```{r Historic Streamflow Data, echo=FALSE, fig.show='hold', out.width="50%"}
+
+par(mar = c(4, 4, .1, .1))
+
+ggplot(data = q %>% filter(abv != 'sc'), mapping = aes(x=as.Date(Date), y=Flow))+
+  labs(title = "Historic Data: Big Wood River and Camas Creek") +
   geom_line(aes(color= abv))+
-  xlab('Date')+
-  ylab('Flow (cfs)')
+  labs(color = "Site")+
+  scale_colour_discrete(labels = c("Big Wood Hailey", "Big Wood Stanton Crossing", 
+                                   "Camas Creek")) +
+  xlab('Year')+
+  ylab('Flow (cfs)') +
+  theme_bw() +
+  theme(legend.position = c(.18, .84)) 
+  
+ggplot(data = q %>% filter(abv == 'sc'), mapping = aes(x=as.Date(Date), y=Flow))+
+  labs(title = "Historic Data: Silver Creek at Sportsman's Access ") +
+  geom_line(show.legend = FALSE)+
+  xlab('Year')+
+  ylab('Flow (cfs)')+
+  theme_bw()
 ```
 
-### Big Wood at Hailey
-can add year-to-date data with exceedence probabilities
+### Average Annual streamflow with maximum and minimum daily flows
 
-```{r Big Wood, echo=FALSE}
+```{r Big Wood, echo=FALSE, fig.show='hold', out.width="50%"}
 #Calculate day of water-year
 water_year_begin <- ymd('1987-10-01')-1
 #deal with leap years
 q$doWY<- ((q$doy - yday(water_year_begin)) %% ifelse(leap_year(year(q$Date)), 366, 365)) +1
 
-#Summary stats.
+# Summary stats
 data <- group_by(q, doWY) %>% filter(abv == 'bwb') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
-#Plot
+# Plot
 ggplot(data=data, mapping=aes(x=doWY))+
+  labs(title = "Big Wood River at Hailey")+
   geom_line(mapping=aes(y=meanQ), color='red')+
-  geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)
+  geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
+  xlab('DOY')+
+  ylab('Flow (cfs)')+
+  theme_bw()
+
+# Summary stats
+data <- group_by(q, doWY) %>% filter(abv == 'bws') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
+# Plot
+ggplot(data=data, mapping=aes(x=doWY))+
+  labs(title = "Big Wood River at Stanton Crossing") +
+  geom_line(mapping=aes(y=meanQ), color='red')+
+  geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
+  xlab('DOY')+
+  ylab('Flow (cfs)')+
+  theme_bw()
 ```
 
-Data summary from Snotel Sites in the Big Wood
+``` {r Camas and Silver Creek, echo=FALSE, fig.show='hold', out.width="50%"}
+# Summary stats
+data <- group_by(q, doWY) %>% filter(abv == 'cc') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
+# Plot
+ggplot(data=data, mapping=aes(x=doWY))+
+  labs(title = "Camas Creek") +
+  geom_line(mapping=aes(y=meanQ), color='red')+
+  geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
+  xlab('DOY')+
+  ylab('Flow (cfs)')+
+  theme_bw()
 
-## Model Output, by sub-basin
+# Summary stats
+data <- group_by(q, doWY) %>% filter(abv == 'sc') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
+# Plot
+ggplot(data=data, mapping=aes(x=doWY))+
+  labs(title = "Silver Creek") +
+  geom_line(mapping=aes(y=meanQ), color='red')+
+  geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
+  xlab('DOY')+
+  ylab('Flow (cfs)')+
+  theme_bw()
+```
 
-### streamflow volume model output
-```{r, sampled volumes, echo=FALSE, fig.cap="Simulated volumes", fig.aling="left", out.width = '100%', fig.pos='H'}
+### Snotel Data Summary
+``` {r Snotel Summary, echo=FALSE, out.width="75%", fig.align='center'}
+# Summary stats
+ggplot(data= (snotel_data %>% filter(wy == yr)), mapping= aes(x=as.Date(date), y=precipitation_cumulative))+
+  labs(title = "Year to Date Precipitation") +
+  geom_line(aes(color = site_name))+
+  labs(color = "Snotel Site")+
+  xlab('Date')+
+  ylab('Cumulative Precipitation (in)')+
+  theme_bw()
 
+#Calculate Historic Means
+feb_mean<- data.frame(colMeans(feb1swe[3:12], na.rm = TRUE))
+mar_mean<- data.frame(colMeans(mar1swe[3:12], na.rm = TRUE))
+apr_mean<- data.frame(colMeans(apr1swe[3:12], na.rm = TRUE))
+
+swe_means<- cbind(feb_mean, mar_mean, apr_mean)
+colnames(swe_means) <- c("Feb1", "Mar1", "Apr1")
+rownames(swe_means) <- c("Chocolate Gulch", "Galena", "Galena Summit", "Hyndman Creek", "Lost-Wood Divide", "Dollarhide Summit", "Camas Creek Divide", "Soldier R.S.", "Garfield R.S.", "Swede Peak")
+
+last_date<- max(snotel_data$date)
+ytd_swe<- snotel_data[snotel_data$date == last_date,] %>% dplyr::select(c(site_name, snow_water_equivalent))
+rownames(ytd_swe) <- c("Chocolate Gulch", "Camas Creek Divide", "Soldier R.S.", "Dollarhide Summit", "Galena", "Garfield R.S.", "Hyndman Creek", "Lost-Wood Divide", "Galena Summit", "Swede Peak")
+
+swe<- merge(round(swe_means,0), ytd_swe, by=0) %>% dplyr::select(-site_name)
+colnames(swe) <- c("Site", "Feb1", "Mar1", "Apr1", "YTD")
+
+kable(swe, caption = "Mean and Year-to-Date SWE at Snotel Sites")
+```
+
+
+## Model Output
+
+### Streamflow Volume Model Output
+
+This box plot shows the range of volumes that were calculated from each basin. The boxes represent the 25th - 75th percentiles, with the median in the solid line in the middle, circles are outliers.
+
+```{r, sampled volumes, echo=FALSE, fig.aling="center", out.width = '80%', fig.pos='H'}
 knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_volumes.png"))
 ```
 
-### streamflow simulations
-```{r, bwh sim, echo=FALSE, fig.cap="Simulated volumes", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics(file.path(params$fig_dir_mo, "BWB_Simulation.png"))
+### Streamflow Simulations
+
+Mean simulated streamflow is shown in the solid blue line and the 95% confidence interval is show in the shaded gray area.
+
+```{r, bw sim, echo=FALSE, out.width = '50%', fig.show="hold"}
+knitr::include_graphics(c(file.path(params$fig_dir_mo, "BWB_Simulation.png"), file.path(params$fig_dir_mo, "BWS_Simulation.png")))
 ```
 
-```{r, bws sim, echo=FALSE, fig.cap="Simulated volumes", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics(file.path(params$fig_dir_mo, "BWS_Simulation.png"))
+```{r, sc sim, echo=FALSE, out.width = '50%', fig.show="hold"}
+knitr::include_graphics(c(file.path(params$fig_dir_mo,"SC_Simulation.png"), file.path(params$fig_dir_mo,"CC_Simulation.png")))
 ```
 
-```{r, sc sim, echo=FALSE, fig.cap="Simulated volumes", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics(file.path(params$fig_dir_mo,"SC_Simulation.png"))
-```
-
-```{r, cc sim, echo=FALSE, fig.cap="Simulated volumes", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics(file.path(params$fig_dir_mo,"CC_Simulation.png"))
-```
-
-
-### curtailment date model output 
+### Curtailment Date Model Output 
