@@ -29,7 +29,7 @@ stream.id<-unique(as.character(usgs_sites$abv))
 # ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates, changed to start at the beginning of year in accordance with my calculation of cm, consider changin to day of wy
 wy<-seq(as.Date(paste(pred.yr,"-01-01",sep="")),as.Date(paste(pred.yr,"-09-30",sep="")),"day")
-wy<-data.frame(wy,1:273)
+wy<-data.frame(wy,1:length(wy))
 colnames(wy)<-c("Date","day")
 
 # ------------------------------------------------------------------------------  
