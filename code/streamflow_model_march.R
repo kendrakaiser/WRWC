@@ -80,7 +80,7 @@ modOut<- function(mod, pred.dat, wq, vol, swe, lastQ){
   #This years percent of mean winter flow
   output.vol[1,1]<-round(pred.dat[1,1]/mean(wq, na.rm=T),3) 
   #percent of mean SWE
-  output.vol[1,2]<-round(sum(swe)/meanSWE,3) 
+  output.vol[1,2]<-round(sum(swe, na.rm=TRUE)/meanSWE,3) 
   # back-transformation of log-transformed data to expected value in original units, with lognormal residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
   output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/(1.98*183),0) 
   #Division by long-term mean to generate % of average volume, with lognormal residuals
