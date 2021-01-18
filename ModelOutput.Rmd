@@ -2,12 +2,12 @@
 title: "WRWC Model Run"
 params:
     fig_dir_mo: 'figures/April'
-    author: "Kendra E Kaiser"
+    set_author: "Kendra E Kaiser"
     todays_date: "01/04/2021"
     data_dir:  '~/Desktop/WRWC/data'
     git_dir: '~/github/WRWC'
-author: author
-date: todays_date
+author: "`r params$set_author`"
+date: "`r params$todays_date`"
 output: 
   pdf_document:
     toc: yes

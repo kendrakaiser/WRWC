@@ -22,10 +22,10 @@ pred.yr <<- 2020
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
 run_date <<- 'april1'
 # set end date for AgriMet Data download
-end_date <<- '2021-01-01'
+end_date <<- '2021-01-17'
 # info for model run report
 author = "Kendra Kaiser"
-todays_date = "01/14/2021"
+todays_date = "01/18/2021"
 
 # ---- Run Model code
 
@@ -36,19 +36,26 @@ source(file.path(git_dir, 'code/temperature_models.R'))
 # sets input file name and runs model code depending on model run date 
 if (run_date == 'feb1'){
   input <<- 'all_dat_feb.csv'
-  source(file.path(git_dir, 'code/streamflow_model_feb.R'))
   fig_dir_mo <<- 'figures/February'
+  source(file.path(git_dir, 'code/streamflow_model_feb.R'))
+  model_out <<-  file.path(cd, 'February_output')
+  
 } else if (run_date == 'march1'){
   input <<- 'all_dat_mar.csv'
-  source(file.path(git_dir, 'code/streamflow_model_march.R'))
   fig_dir_mo <<- 'figures/March'
+  source(file.path(git_dir, 'code/streamflow_model_march.R'))
+  model_out <<-  file.path(cd, 'March_output')
+  
 } else if (run_date == 'april1'){
   input <<- 'all_dat_apr.csv'
-  source(file.path(git_dir, 'code/streamflow_model_april.R'))
   fig_dir_mo <<- 'figures/April'
+  source(file.path(git_dir, 'code/streamflow_model_april.R'))
+  model_out <<-  file.path(cd, 'April_output')
 }
 
 source(file.path(git_dir, 'code/streamflow_simulation.R'))
 
 # knit Model Results PDF
-rmarkdown::render(file.path(git_dir, 'ModelOutput.Rmd'), params = list(fig_dir_mo = fig_dir_mo, author = author, todays_date=todays_date))
+params_list = list(fig_dir_mo = fig_dir_mo, 
+                   set_author = author, todays_date=todays_date, data_dir = data_dir, git_dir = git_dir)
+rmarkdown::render(file.path(git_dir, 'ModelOutput.Rmd'), params = params_list)
