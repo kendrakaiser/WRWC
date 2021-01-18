@@ -1,7 +1,7 @@
 ---
 title: "WRWC Model Run"
 params:
-    fig_dir_mo: 'figures/March'
+    fig_dir_mo: 'figures/April'
     author: "Kendra Kaiser"
     todays_date: "01/14/2021"
 author: author
@@ -143,6 +143,7 @@ ggplot(data=data, mapping=aes(x=doWY))+
 ```
 
 ### Snotel Data Summary
+
 ``` {r Snotel Summary, echo=FALSE, out.width="75%", fig.align='center'}
 # Summary stats
 ggplot(data= (snotel_data %>% filter(wy == yr)), mapping= aes(x=as.Date(date), y=precipitation_cumulative))+
@@ -167,7 +168,7 @@ ytd_swe<- snotel_data[snotel_data$date == last_date,] %>% dplyr::select(c(site_n
 rownames(ytd_swe) <- c("Chocolate Gulch", "Camas Creek Divide", "Soldier R.S.", "Dollarhide Summit", "Galena", "Garfield R.S.", "Hyndman Creek", "Lost-Wood Divide", "Galena Summit", "Swede Peak")
 
 swe<- merge(round(swe_means,0), ytd_swe, by=0) %>% dplyr::select(-site_name)
-colnames(swe) <- c("Site", "Feb1", "Mar1", "Apr1", "YTD")
+colnames(swe) <- c("Site", "Feb1", "Mar1", "Apr1", last_date)
 
 kable(swe, caption = "Mean and Year-to-Date SWE at Snotel Sites")
 ```
@@ -177,10 +178,10 @@ kable(swe, caption = "Mean and Year-to-Date SWE at Snotel Sites")
 
 ### Streamflow Volume Model Output
 
-This box plot shows the range of volumes that were calculated from each basin. The boxes represent the 25th - 75th percentiles, with the median in the solid line in the middle, circles are outliers.
+This box plot shows the range of volumes that were calculated for each basin. The boxes represent the 25th - 75th percentiles, with the median in the solid line in the middle, circles are outliers. 
 
-```{r, sampled volumes, echo=FALSE, fig.aling="center", out.width = '80%', fig.pos='H'}
-knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_volumes.png"))
+```{r, sampled volumes, echo=FALSE, out.width = '50%', fig.show="hold"}
+knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), file.path(params$fig_dir_mo, "sampled_sc_diversions.png")))
 ```
 
 ### Streamflow Simulations
@@ -196,3 +197,17 @@ knitr::include_graphics(c(file.path(params$fig_dir_mo,"SC_Simulation.png"), file
 ```
 
 ### Curtailment Date Model Output 
+
+This box plot shows the range of volumes that were calculated from each basin. The boxes represent the 25th - 75th percentiles, with the median in the solid line in the middle, circles are outliers.
+
+```{r, sampled curtailment dates, echo=FALSE, out.width = '80%', fig.align='center'}
+if (params$fig_dir_mo == 'figures/April'){
+  knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_curtailments.png"))
+}
+```
+
+```{r, sampled curtailment dates, echo=FALSE, out.width = '80%', fig.align='center'}
+if (params$fig_dir_mo == 'figures/April'){
+  knitr::include_graphics(file.path(params$fig_dir_mo, ... = "curt_summary.png"))
+}
+```
