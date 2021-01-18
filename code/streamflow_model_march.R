@@ -9,8 +9,8 @@
 # This model was informed by the statstical tools developed for the Henry's Fork 
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
-rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", "data_dir", "input"))
-
+rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
+             "data_dir", "input", "fig_dir_mo", "author", "todays_date"))
 # Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))

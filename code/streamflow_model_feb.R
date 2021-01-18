@@ -10,7 +10,8 @@
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
 
-rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", "data_dir", "input"))
+rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
+             "data_dir", "input", "fig_dir_mo", "author", "todays_date"))
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
