@@ -145,7 +145,7 @@ lines(dates,pi[,6],lwd=2.5,col="blue")
 dev.off()
 
 # Silver Creek
-png(filename = file.path(mo_fig_dir, "SC_Simulation_2019.png"),
+png(filename = file.path(mo_fig_dir, "SC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(dates, pi[,12], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -158,7 +158,7 @@ lines(dates,pi[,12],lwd=2.5,col="blue")
 dev.off()
 
 # Camas Creek
-png(filename = file.path(mo_fig_dir, "CC_Simulation_2019.png"),
+png(filename = file.path(mo_fig_dir, "CC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(dates,pi[,18], type="n", xlab="Date", ylab ="Flow (cfs)",
