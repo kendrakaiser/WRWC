@@ -7,15 +7,11 @@
 # Uses modeled temperature data from linear random effects model
 # Uses multivariate models of natural streamflow and diversions
 
-rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
-             "data_dir", "input", "fig_dir_mo", "author", "todays_date", "model_out"))
-
 ns<-5000  #Number of simulations
 dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30",sep="")),"day")
 
 # ------------------------------------------------------------------------------
 # Import data
-# mean ET from each basin -- or from FAFI / PICO ???
 # volume & bootstraps for each gage
 # natural flow and diversion records from which we will select the runoff timing
 streamflow<-read.csv(file.path(data_dir,"streamflow_data.csv"))

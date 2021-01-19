@@ -53,9 +53,13 @@ if (run_date == 'feb1'){
   model_out <<-  file.path(cd, 'April_output')
 }
 
+rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
+             "data_dir", "input", "fig_dir_mo", "author", "todays_date", "model_out"))
+
 source(file.path(git_dir, 'code/streamflow_simulation.R'))
 
 # knit Model Results PDF
+detach(package:plyr) #plyr interferes with a grouping function needed for plotting
 params_list = list(fig_dir_mo = fig_dir_mo, set_author = author, 
                    todays_date=todays_date, data_dir = data_dir, 
                    git_dir = git_dir)

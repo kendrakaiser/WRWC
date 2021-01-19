@@ -1,9 +1,10 @@
 ## packages.R
 # All packages needed to run WRWC scripts
+# Once you have installed the packages locally, you can comment out the install packages lines with a #
 
-# install.packages(c('MASS', 'plotrix', 'mvtnorm', 'tidyverse', 'dataRetrieval', 
-# 'snotelr', 'XML', 'httr', 'dplyr', 'devtools', 'plyr', 'readr', 'lubridate', 
-# 'lfstat', 'gridExtra', 'varhandle', 'viridis', 'ggplot2', 'nlme', 'tidyr'))
+install.packages(c('MASS', 'plotrix', 'mvtnorm', 'tidyverse', 'dataRetrieval', 
+ 'snotelr', 'XML', 'httr', 'dplyr', 'devtools', 'plyr', 'readr', 'lubridate', 
+ 'lfstat', 'gridExtra', 'varhandle', 'viridis', 'ggplot2', 'nlme', 'tidyr', 'knitr', 'fasstr'))
 
 # load packages
 library(MASS)
@@ -14,9 +15,9 @@ library(dataRetrieval)
 library(snotelr)
 library(XML)
 library(httr)
+library(plyr)
 library(dplyr)
 library(devtools)
-library(plyr)
 library(readr)
 library(lubridate)
 library(lfstat)
@@ -27,3 +28,5 @@ library(viridis)
 library(ggplot2)
 library(nlme) 
 library(tidyr)
+library(knitr)
+library(fasstr)
