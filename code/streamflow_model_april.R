@@ -379,14 +379,11 @@ colnames(pred.params.div)<-c("log.vol","sigma")
 rownames(pred.params.div)<-c("bw.div", "sc.div")
 
 # Above Hailey -----
-png(filename = file.path(fig_dir,"April/Div.abv.Hailey.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
-plot(var$year, var$abv.h, xlab="Year", ylab="Diversions (ac-ft)")
-dev.off()
 
-plot(var$year[var$year >=2000], var$abv.h[var$year >=2000])
-hist <- var[var$year >=2000 & var$year < pred.yr,] %>% dplyr::select(abv.h, g.swe, hc.swe, t.cg, t.lw) 
+
+#plot(var$year[var$year >=2000], var$abv.h[var$year >=2000])
+#hist <- var[var$year >=2000 & var$year < pred.yr,] %>% dplyr::select(abv.h, g.swe, hc.swe, t.cg, t.lw) 
+
 # linear model 
 div_mod.h<-lm(abv.h~ g.swe+hc.swe+t.cg+t.lw, data=hist) 
 mod_sum[4,1]<-summary(div_mod.h)$adj.r.squared 
@@ -422,8 +419,7 @@ png(filename = file.path(fig_dir,"April/Losses.png"),
     bg = "white", res = 600, type ="quartz") 
 plot(var$year, var$bws.loss, xlab="Year", ylab="Annual Losses (ac-ft)")
 dev.off()
-
-plot(var$year[var$year >=2000], var$bws.loss[var$year >=2000])
+#plot(var$year[var$year >=2000], var$bws.loss[var$year >=2000])
 
 hist <- var[var$year >=2000 & var$year < pred.yr,] %>% dplyr::select(bws.loss, g.swe, hc.swe, t.g, t.cg, t.gs) 
 # linear model 
@@ -444,6 +440,11 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 
 # Total Big Wood Diversions ----
+png(filename = file.path(fig_dir,"April/Div.bw.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+plot(var$year, var$div, xlab="Year", ylab="Big Wood Diversions (ac-ft)")
+dev.off()
 
 hist <- var[var$year >=1997 & var$year < pred.yr,] %>% dplyr::select(div, bws.wq, cg.swe, hc.swe) 
 # linear model 
@@ -467,6 +468,13 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 
 # Silver Creek Diversions ----
+
+png(filename = file.path(fig_dir,"April/Div.sc.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+plot(var$year, var$sc.div, xlab="Year", ylab="Silver Creek Diversions (ac-ft)")
+dev.off()
+
 # g.swe, t.cg, t.gs,t.hc, log.cg, log.lwd
 hist <- var[var$year>1993 & var$year < pred.yr,] %>% dplyr::select(sc.div, g.swe, cg.swe, lwd.swe, t.cg, t.gs, t.hc) 
 hist$temps<- rowMeans(cbind(hist$t.cg, hist$t.gs, hist$t.hc), na.rm=TRUE)
@@ -644,6 +652,17 @@ preds.curt<-predict(bw.b_mod,newdata=pred.dat, se.fit=T,interval="prediction",le
 pred.params.curt[2,2]<-mean(preds.curt$fit)
 pred.params.curt[2,3]<-mean(preds.curt$se.fit)
 pred.params.curt[2,1]<-summary(bw.b_mod)$adj.r.squared 
+
+png(filename = file.path(fig_dir,"April/BigWoodB_curtailment.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+fits<-fitted(bw.b_mod)
+plot(curt$shut_off_julian[curt$year < pred.yr],c(fits), xlab="Observed", 
+     ylab="Predicted")
+abline(0,1,col="gray50",lty=1)
+dev.off()
+
+
 
 # Big Wood c (6/1/1886)
 # bwb.vol.nat, t.curt
