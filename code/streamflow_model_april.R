@@ -378,41 +378,41 @@ pred.params.div<-array(NA,c(2,2))
 colnames(pred.params.div)<-c("log.vol","sigma")
 rownames(pred.params.div)<-c("bw.div", "sc.div")
 
-# Above Hailey -----
-
-
-#plot(var$year[var$year >=2000], var$abv.h[var$year >=2000])
-#hist <- var[var$year >=2000 & var$year < pred.yr,] %>% dplyr::select(abv.h, g.swe, hc.swe, t.cg, t.lw) 
-
-# linear model 
-div_mod.h<-lm(abv.h~ g.swe+hc.swe+t.cg+t.lw, data=hist) 
-mod_sum[4,1]<-summary(div_mod.h)$adj.r.squared 
-# April 1 Prediction Data 
-pred.dat<- var[var$year == pred.yr,] %>% dplyr::select(g.swe, hc.swe, t.cg, t.lw) 
-# Model output
-preds.div<-predict(div_mod.h,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-#preds.params.div[1,1]<-preds.div$fit[1]
-#preds.params.div[1,2]<-preds.div$se.fit
-#preds.params.div.[1,3]<-cor(dat$Total.Div,dat$Reach.Gain)
-
-png(filename = file.path(fig_dir,"April/Div.abv.Hailey_modelFit.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
-
-fits<-fitted(div_mod.h)
-plot(var$abv.h[var$year >=2000 & var$year < pred.yr],c(fits), xlab="Observed", 
-     ylab="Predicted", xlim=c(5200, 11350), ylim=c(5200, 11350))
-abline(0,1,col="gray50",lty=1)
-dev.off()
-
-# Above Stanton Crossing the lm does really poorly (0.36) - draw randomly or use a lm that includes natural flow estimate
-png(filename = file.path(fig_dir,"April/Div.abv.Stanton.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
-plot(var$year, var$abv.s, xlab="Year", ylab="Diversions (ac-ft)")
-dev.off()
-
-mod_sum[5,1]<-0.36
+# # Above Hailey -----
+# 
+# 
+# #plot(var$year[var$year >=2000], var$abv.h[var$year >=2000])
+# #hist <- var[var$year >=2000 & var$year < pred.yr,] %>% dplyr::select(abv.h, g.swe, hc.swe, t.cg, t.lw) 
+# 
+# # linear model 
+# div_mod.h<-lm(abv.h~ g.swe+hc.swe+t.cg+t.lw, data=hist) 
+# mod_sum[4,1]<-summary(div_mod.h)$adj.r.squared 
+# # April 1 Prediction Data 
+# pred.dat<- var[var$year == pred.yr,] %>% dplyr::select(g.swe, hc.swe, t.cg, t.lw) 
+# # Model output
+# preds.div<-predict(div_mod.h,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+# #preds.params.div[1,1]<-preds.div$fit[1]
+# #preds.params.div[1,2]<-preds.div$se.fit
+# #preds.params.div.[1,3]<-cor(dat$Total.Div,dat$Reach.Gain)
+# 
+# png(filename = file.path(fig_dir,"April/Div.abv.Hailey_modelFit.png"),
+#     width = 5.5, height = 5.5,units = "in", pointsize = 12,
+#     bg = "white", res = 600, type ="quartz") 
+# 
+# fits<-fitted(div_mod.h)
+# plot(var$abv.h[var$year >=2000 & var$year < pred.yr],c(fits), xlab="Observed", 
+#      ylab="Predicted", xlim=c(5200, 11350), ylim=c(5200, 11350))
+# abline(0,1,col="gray50",lty=1)
+# dev.off()
+# 
+# # Above Stanton Crossing the lm does really poorly (0.36) - draw randomly or use a lm that includes natural flow estimate
+# png(filename = file.path(fig_dir,"April/Div.abv.Stanton.png"),
+#     width = 5.5, height = 5.5,units = "in", pointsize = 12,
+#     bg = "white", res = 600, type ="quartz") 
+# plot(var$year, var$abv.s, xlab="Year", ylab="Diversions (ac-ft)")
+# dev.off()
+# 
+# mod_sum[5,1]<-0.36
 # losses between Hailey and Stanton
 png(filename = file.path(fig_dir,"April/Losses.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
