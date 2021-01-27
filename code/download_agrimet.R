@@ -1,4 +1,4 @@
-# Download Agrimet Data seperately
+# Download Agrimet Data separately
 # Kendra Kaiser
 # January 27, 2020
 # ------------------------------------------------------------------------------
