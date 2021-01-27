@@ -8,29 +8,31 @@
 
 # Set input parameters and directories in global environment for each model run
 
-# GitHub File Paths
+# GitHub File Path
 git_dir <<- '~/github/WRWC'
-fig_dir <<- file.path(git_dir, 'figures')
-input_dir <<- file.path(git_dir, 'input')
-
-# Local File Paths
+# Local File Path
 cd <<- '~/Desktop/WRWC'
-data_dir <<- file.path(cd, 'data')
 
 # set prediction year
-pred.yr <<- 2020
+pred.yr <<- 2021
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
 run_date <<- 'feb1'
 # set end date for AgriMet Data download
-end_date <<- '2021-01-17'
+end_date <<- '2021-01-26'
 # info for model run report
 author <<- "Kendra Kaiser"
-todays_date <<- "01/18/2021"
+todays_date <<- "01/26/2021"
+
+# Output file paths - do not change
+fig_dir <<- file.path(git_dir, 'figures') # github
+input_dir <<- file.path(git_dir, 'input') # github
+data_dir <<- file.path(cd, 'data') # local
 
 # ---- Run Model code
 
 source(file.path(git_dir, 'code/packages.R'))
 source(file.path(git_dir, 'code/data_scraping.R'))
+#source(file.path(git_dir, 'code/download_agrimet.R'))
 source(file.path(git_dir, 'code/temperature_models.R'))
 
 # sets input file name and runs model code depending on model run date 

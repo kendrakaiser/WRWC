@@ -4,9 +4,9 @@
 # June, 19, 2020
 # ------------------------------------------------------------------------------
 
-source(file.path(git_dir, 'code/grabAgriMetData.R'))
-       
-#import and manage diversion data
+# ------------------------------------------------------------------------------     
+# import and manage diversion data
+# ------------------------------------------------------------------------------
 bw.div <- read.csv(file.path(input_dir, 'bwr_diversion_data_1987_2019_111620.csv'))
 bw.div$Date <- as.Date(bw.div$Date, format = "%m/%d/%y")
 bw.div$year<- format(bw.div$Date, "%Y")
@@ -41,6 +41,7 @@ bw.div.tot<- bw.div.sum %>% dplyr::select(c(year, abv.h, abv.s))
 
 # ------------------------------------------------------------------------------
 # USGS Gages
+# ------------------------------------------------------------------------------
 bwb = 13139510  #  Bullion Bridge, Big Wood at Hailey
 bws = 13140800  #  Stanton Crossing, Big Wood
 cc  = 13141500  #  Camas Creek near Blaine
@@ -85,6 +86,7 @@ streamflow_data$sc.nat[streamflow_data$abv == 'sc'] <- streamflow_data$Flow[stre
 # ----------------------------------------------------------------------------------
 # calculate hydrologic metrics for each year for each station
 # winter "baseflow" (wb), Apr - Sept total Volume (vol), and center of mass (cm)
+# ------------------------------------------------------------------------------
 stream.id<-c("bwb","bws","cc","sc")
 years = min(streamflow_data$wy):max(streamflow_data$wy)
 metrics<-data.frame(matrix(ncol = 13, nrow= length(years)))
@@ -140,8 +142,9 @@ for(i in 1:length(stream.id)){
 }
 colnames(nat.cm)<- c('year', 'bwb.cm.nat', 'bws.cm.nat')
 
-# Retrieve Snotel sites ----------------------------------------------------
-
+# ------------------------------------------------------------------------------
+# Retrieve Snotel Data 
+# ------------------------------------------------------------------------------
 # SNOTEL Sites 
 cg = 895 #  Chocolate Gulch (0301)
 g  = 489 #  Galena (0101)
@@ -217,6 +220,10 @@ for (i in 1:length(snotel_sites)) {
   feb1swe[which(feb1swe$year == min(sub$wy)) : which(feb1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
 }
 
+# ------------------------------------------------------------------------------
+# Save Data
+# ------------------------------------------------------------------------------
+
 # Save Snotel data as csvs -----
 write.csv(april1swe, file.path(data_dir, 'april1swe.csv'))
 write.csv(mar1swe, file.path(data_dir, 'mar1swe.csv'))
@@ -259,84 +266,6 @@ if (run_date == 'feb1'){
 
 write.csv(alldat, file.path(data_dir,filename))
 
-# Download NRCS ET Agrimet data ----
-# OB = Air temperature
-# PC = precipitation, cumulative (units?)
-# SI = hourly solar radiation (units?)
-# SQ = solar radiation, cumulative ??
-# additional: soil temp, humidity, vapor pressure
-
-# Download Fairfield Data ----------------------------------------
-# start: 06/25/1987; site number: 3108
-
-# create increments to download data
-fiveYearDates=c(as.character(seq.Date(from=as.Date("1987-06-25"), to=as.Date(end_date), by="5 years")), end_date)
-fafi = data.frame()
-
-# download site data in ten year increments to prevent timing out server, will produce warning, that's okay
-for (i in 2:length(fiveYearDates)){
-  tempDF=getAgriMet.data(site_id="FAFI", timescale="hourly", DayBgn = fiveYearDates[i-1], DayEnd=fiveYearDates[i], 
-                         pCodes=c("OB", "PC","SI", "SQ"))
-  fafi=plyr::rbind.fill(fafi, tempDF)
-  rm(tempDF)
-}
-
-# The following Warning message is okay : In (function (..., deparse.level = 1)  : 
-# number of columns of result is not a multiple of vector length (arg 14042)
-
-# rename columns
-colnames(fafi)<- c("date_time", "fafi_t", "fafi_pc", "fafi_si", "fafi_sq")
-# update format of dates
-fafi$date_time<- as.POSIXct(fafi$date_time, format ='%m/%d/%Y %H:%M')
-fafi$mo <- month(fafi$date_time)
-fafi$y <- year(fafi$date_time)
-# update format of values
-for(i in 2:4) {
-  fafi[, i]<- as.numeric(as.character(fafi[, i]))
-}
-fafi<-fafi[-1,] #remove first bad data value
-fafiT<-fafi[,1:2]
-fafiT[,3]<- 'fairfield'
-fafiT<-cbind(fafiT, fafi[,6:7])
-colnames(fafiT) <- c("date_time","t", "site_name", 'month', 'y')
-
-# Download Picabo Data --------------------------------------
-# start: 1982-06-01; site number: 7040; 
-# Has SWE 1993-2002 and 2005-2017 - but can't be used predicatively since it is no longer available
-
-# create increments to download data
-fiveYearDates_p=c(as.character(seq.Date(from=as.Date("1982-06-01"), to=as.Date(end_date), by="5 years")), end_date)
-pici = data.frame()
-
-# download site data in ten year increments to prevent timing out server
-for (i in 2:length(fiveYearDates_p)){
-  tempDF=getAgriMet.data(site_id="PICI", timescale="hourly", DayBgn = fiveYearDates_p[i-1], DayEnd=fiveYearDates_p[i], pCodes=c("OB", "PC")) 
-  pici=plyr::rbind.fill(pici, tempDF)
-}
-# rename columns 
-colnames(pici)<- c("date_time", "pici_t", "pici_pc")
-# update format of dates
-pici$date_time<- as.POSIXct(pici$date_time, format ='%m/%d/%Y %H:%M')
-pici$mo <- month(pici$date_time)
-pici$y <- year(pici$date_time)
-# update format of values
-pici[, 2]<- as.numeric(as.character(pici[, 2]))
-pici[, 3]<- as.numeric(as.character(pici[, 3]))
-piciT<- pici [,1:2]
-piciT[, 3]<-'picabo'
-piciT<- cbind(piciT, pici[,4:5])
-colnames(piciT)<- c("date_time","t", "site_name", 'month', 'y')
-
-# Download Richmond Data - can't do this through AgriMet because it's Idaho Power Data
-# start 3/27/2014 - 01-2020 daily temp; site number 7673
-# ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", DayEnd="2020-02-01", pCodes=c("OB", "PC"))
-
-# Merge & save AgriMet Data ---------------------------------
-agri_metT <- rbind(piciT, fafiT)
-write.csv(agri_metT, file.path(data_dir,'agri_metT.csv'))
-
-agri_met<- full_join(pici, fafi, by='date_time')
-write.csv(agri_met, file.path(data_dir,'agri_met.csv'))
 
 # Additional Data Sources ----
 # National Operational Hydrologic Remote Sensing Center data - max SWE at 17 locations?

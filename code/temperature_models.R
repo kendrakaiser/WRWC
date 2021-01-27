@@ -10,7 +10,7 @@
 data_out = file.path(cd, 'data')
 
 snotel = read.csv(file.path(data_out,'snotel_data.csv'))
-agrimet = read.csv(file.path(data_out,'agri_metT.csv'))
+agrimet = read.csv(file.path(input_dir,'agri_metT.csv'))
 
 # Analyze and Predict temperature trend ----
 # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993
