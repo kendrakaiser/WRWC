@@ -4,7 +4,8 @@
 
 # install.packages(c('MASS', 'plotrix', 'mvtnorm', 'tidyverse', 'dataRetrieval', 
 # 'snotelr', 'XML', 'httr', 'plyr', 'dplyr', 'devtools', 'readr', 'lubridate', 
-# 'lfstat', 'gridExtra', 'varhandle', 'viridis', 'ggplot2', 'nlme', 'tidyr', 'knitr', 'fasstr'))
+# 'lfstat', 'gridExtra', 'varhandle', 'viridis', 'ggplot2', 'nlme', 'tidyr', 
+# 'knitr', 'fasstr', 'stringr','kableExtra'))
 
 # load packages
 library(MASS)
@@ -30,3 +31,4 @@ library(nlme)
 library(tidyr)
 library(knitr)
 library(fasstr)
+library(stringr)
