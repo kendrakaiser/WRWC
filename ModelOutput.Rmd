@@ -6,6 +6,7 @@ params:
     todays_date: "01/04/2021"
     data_dir:  '~/Desktop/WRWC/data'
     git_dir: '~/github/WRWC'
+    input: 'all_dat_feb.csv'
 author: "`r params$set_author`"
 date: "`r params$todays_date`"
 output: 
@@ -21,13 +22,14 @@ header-includes:
     
 ---
 
-```{r include=FALSE}
+```{r setup, include=FALSE}
 library(knitr)
 library(tidyverse)
 library(ggplot2)
 library(dplyr)
 library(lubridate)
 library(fasstr)
+library(kableExtra)
 
 knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_knit$set(verbose = TRUE)  
@@ -45,6 +47,8 @@ feb1swe = read.csv(file.path(params$data_dir, 'feb1swe.csv'))
 mar1swe = read.csv(file.path(params$data_dir, 'mar1swe.csv'))
 apr1swe = read.csv(file.path(params$data_dir, 'april1swe.csv'))
 
+swe_q = read.csv(file.path(params$data_dir, params$input))
+
 yr<- year(as.Date(params$todays_date, format = "%m/%d/%Y"))
 mo<- month(as.Date(params$todays_date, format = "%m/%d/%Y"))
 ```
@@ -56,9 +60,11 @@ The WRWC Modeling Suite predicts spring air temperatures, total summer runoff vo
 ### Data Inputs
 
 Data is automatically downloaded from the USGS, NRCS and AgriMet (Fairfield and Picabo).
-```{r data inputs, , out.width="65%"}
-kable(usgs_sites[c(1,2,3,5),] %>% dplyr::select(station_nm, huc_cd, begin_date, end_date, abv), caption = "USGS Sites")
+```{r data info, echo=FALSE, out.width="45%"}
+kable(usgs_sites[c(1,2,3,5),] %>% dplyr::select(station_nm, huc_cd, begin_date, end_date, abv) %>% `colnames<-`(c("Station", "HUC", "Start", "End", "Abv")), caption = "USGS Sites") 
+```
 
+```{r snotel data info, echo=FALSE, out.width="65%"}
 kable(snotel_sites %>% dplyr::select(start, end, site_name, huc8, abv), caption = "Snotel Sites")
 ```
 
@@ -67,13 +73,13 @@ kable(snotel_sites %>% dplyr::select(start, end, site_name, huc8, abv), caption 
 ### Time series of historic data from each USGS site.
 
 ```{r Historic Streamflow Data, echo=FALSE, fig.show='hold', out.width="50%"}
-png(filename = file.path(fig_dir,"historic_streamflow.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
-
+#png(filename = file.path(fig_dir,"historic_streamflow.png"),
+ #   width = 5.5, height = 5.5,units = "in", pointsize = 12,
+  #  bg = "white", res = 600, type ="quartz") 
+#dev.off()
 par(mar = c(4, 4, .1, .1))
-
-ggplot(data = q %>% filter(abv != 'sc'), mapping = aes(x=as.Date(Date), y=Flow))+
+dat<-q %>% filter(abv != 'sc')
+ggplot(data = dat, mapping = aes(x=as.Date(Date), y=Flow))+
   labs(title = "Historic Data: Big Wood River and Camas Creek") +
   geom_line(aes(color= abv))+
   labs(color = "Site")+
@@ -83,14 +89,15 @@ ggplot(data = q %>% filter(abv != 'sc'), mapping = aes(x=as.Date(Date), y=Flow))
   ylab('Flow (cfs)') +
   theme_bw() +
   theme(legend.position = c(.18, .84)) 
-  
-ggplot(data = q %>% filter(abv == 'sc'), mapping = aes(x=as.Date(Date), y=Flow))+
+
+dat<-q %>% filter(abv == 'sc') 
+ggplot(data = dat, mapping = aes(x=as.Date(Date), y=Flow))+
   labs(title = "Historic Data: Silver Creek at Sportsman's Access ") +
   geom_line(show.legend = FALSE)+
   xlab('Year')+
   ylab('Flow (cfs)')+
   theme_bw()
-dev.off()
+
 ```
 
 ### Average Annual streamflow with maximum and minimum daily flows
@@ -169,14 +176,17 @@ swe_means<- cbind(feb_mean, mar_mean, apr_mean)
 colnames(swe_means) <- c("Feb1", "Mar1", "Apr1")
 rownames(swe_means) <- c("Chocolate Gulch", "Galena", "Galena Summit", "Hyndman Creek", "Lost-Wood Divide", "Dollarhide Summit", "Camas Creek Divide", "Soldier R.S.", "Garfield R.S.", "Swede Peak")
 
-last_date<- max(snotel_data$date)
+last_date<- as.Date(max(snotel_data$date))-1
 ytd_swe<- snotel_data[snotel_data$date == last_date,] %>% dplyr::select(c(site_name, snow_water_equivalent))
 rownames(ytd_swe) <- c("Chocolate Gulch", "Camas Creek Divide", "Soldier R.S.", "Dollarhide Summit", "Galena", "Garfield R.S.", "Hyndman Creek", "Lost-Wood Divide", "Galena Summit", "Swede Peak")
 
 swe<- merge(round(swe_means,0), ytd_swe, by=0) %>% dplyr::select(-site_name)
-colnames(swe) <- c("Site", "Feb1", "Mar1", "Apr1", last_date)
+#update this to auto select the month to compare average to
+swe$per <- round(swe[,5]/swe$Feb1,2)*100
+da<-format(last_date, "%b %d")
 
-kable(swe, caption = "Mean and Year-to-Date SWE at Snotel Sites")
+swe %>% mutate(per = cell_spec(per, color = ifelse(per > 75, "blue","red"))) %>% `colnames<-`(c("Site", "Feb1", "Mar1", "Apr1", da, "Per of Avg"))  %>% kable(align=rep('c', 6), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
+ 
 ```
 
 
@@ -195,7 +205,8 @@ knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), f
 Mean simulated streamflow is shown in the solid blue line and the 95% confidence interval is shown in the shaded gray area.
 
 ```{r, bw sim, echo=FALSE, out.width = '50%', fig.show="hold"}
-knitr::include_graphics(c(file.path(params$fig_dir_mo, "BWB_Simulation.png"), file.path(params$fig_dir_mo, "BWS_Simulation.png")))
+knitr::include_graphics(c(file.path(params$fig_dir_mo, "BWB_Simulation.png"), 
+                          file.path(params$fig_dir_mo, "BWS_Simulation.png")))
 ```
 
 ```{r, sc sim, echo=FALSE, out.width = '50%', fig.show="hold"}
