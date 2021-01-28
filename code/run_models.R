@@ -14,7 +14,7 @@ git_dir <<- '~/github/WRWC'
 cd <<- '~/Desktop/WRWC'
 
 # set prediction year
-pred.yr <<- 2021
+pred.yr <<- 2020
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
 run_date <<- 'feb1'
 # set end date for AgriMet Data download
@@ -64,5 +64,5 @@ source(file.path(git_dir, 'code/streamflow_simulation.R'))
 detach(package:plyr) #plyr interferes with a grouping function needed for plotting
 params_list = list(fig_dir_mo = fig_dir_mo, set_author = author, 
                    todays_date=todays_date, data_dir = data_dir, 
-                   git_dir = git_dir)
+                   git_dir = git_dir, input = input)
 rmarkdown::render(file.path(git_dir, 'ModelOutput.Rmd'), params = params_list)
