@@ -288,15 +288,31 @@ dev.off()
 write.csv(cov.mat, file.path(cd,"February_output/cov.mat.csv"),row.names=T)
 write.csv(pred.pars, file.path(cd,"February_output/pred.pars.csv"),row.names=T)
 
+
+vol.hist<- as.data.frame(var %>% dplyr::select(c(bwb.vol.nat, bws.vol.nat, cc.vol)) %>% `colnames<-`(c("Big Wood Hailey Hist", "Big Wood Stanton Hist","Camas Creek Hist")) %>%pivot_longer(everything(),  names_to = "site", values_to = "value") )
+vol.hist$value<-vol.hist$value/10000
+vol.hist.sm<-as.data.frame(var %>% dplyr::select(c(sc.vol.nat, sc.div, div)) %>% `colnames<-`(c("Silver Creek Hist", "Silver Creek Div Hist", "Big Wood Div Hist")) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") )
+vol.hist.sm$value<-vol.hist.sm$value/1000
+colnames(vol.sample2)<-c("Big Wood Hailey Pred", "Big Wood Stanton Pred","Camas Creek Pred", "Silver Creek Pred", "Silver Creek Div Pred", "Big Wood Div Pred")
+
+vol.pred <-as.data.frame(exp(vol.sample2[,1:3])/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+vol.pred.sm <- as.data.frame(exp(vol.sample2[,4:6])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+
+vol.big<- rbind(vol.hist, vol.pred)
+vol.sm<- rbind(vol.hist.sm, vol.pred.sm)
+
+
 # Plot boxplots of total annual flow from each model
 png(filename = file.path(fig_dir,"February/sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
-as.data.frame(exp(vol.sample2[,1:3])/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
+vol.big %>%
   ggplot(aes(x=site, y=value, fill=site)) +
-  geom_boxplot() +
-  scale_fill_viridis(discrete = TRUE, alpha=0.7) +
+  geom_boxplot(alpha=0.7) +
+  scale_fill_manual(values=c("grey90","#69b3a2", "grey90","#69b3a2", "grey90","#69b3a2")) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  scale_y_continuous(breaks = round(seq(0, max(vol.big$value, na.rm=TRUE), by = 10),1))+
   theme_bw()+
   theme(legend.position="none") +
   ggtitle("Sampled Irrigation Season Volumes") +
@@ -308,10 +324,12 @@ png(filename = file.path(fig_dir,"February/sampled_sc_diversions.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
-as.data.frame(exp(vol.sample2[,4:6])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
+vol.sm %>%
   ggplot(aes(x=site, y=value, fill=site)) +
   geom_boxplot() +
   scale_fill_viridis(discrete = TRUE, alpha=0.7) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  scale_y_continuous(breaks = round(seq(0, max(vol.sm$value, na.rm=TRUE), by = 10),1))+
   theme_bw()+
   theme(legend.position="none") +
   ggtitle("") +
