@@ -301,8 +301,6 @@ vol.pred.sm <- as.data.frame(exp(vol.sample2[,4:6])/1000) %>% pivot_longer(every
 
 vol.big<- rbind(vol.hist, vol.pred)
 vol.sm<- rbind(vol.hist.sm, vol.pred.sm)
-vol.big<- vol.big
-vol.sm<-  vol.sm
 
 # Plot boxplots of total annual flow from each model
 png(filename = file.path(fig_dir,"February/sampled_volumes.png"),

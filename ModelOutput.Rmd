@@ -148,7 +148,7 @@ knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), f
 
 ### Streamflow Simulations
 
-Mean simulated streamflow is shown in the solid blue line, mean daily streamflow is shown in black and the 95% confidence interval around the simulations is shown in the shaded gray area.
+Mean simulated 'natural' streamflow is shown in the solid blue line, the average historic daily 'natural' streamflow is shown in black and the 95% confidence interval around the simulations is shown in the shaded gray area.
 
 ```{r, bw sim, echo=FALSE, out.width = '50%', fig.show="hold"}
 knitr::include_graphics(c(file.path(params$fig_dir_mo, "BWB_Simulation.png"), 
