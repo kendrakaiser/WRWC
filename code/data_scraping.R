@@ -70,9 +70,10 @@ streamflow_data$wy <- as.numeric(as.character(water_year(streamflow_data$Date, o
 streamflow_data$day <- day(streamflow_data$Date)
 # Cleanup Streamflow data frame and join relevant site information
 streamflow_data <- streamflow_data %>% dplyr::select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
+
 # add diversion data to streamflow dataframe
-streamflow_data <- inner_join(streamflow_data, bw.div.gage, by = 'Date')
-streamflow_data <- inner_join(streamflow_data, sc.div %>% dplyr::select(c(Date, sc.div)), by = 'Date')
+streamflow_data <- full_join(streamflow_data, bw.div.gage, by = 'Date')
+streamflow_data <- full_join(streamflow_data, sc.div %>% dplyr::select(c(Date, sc.div)), by = 'Date')
 
 streamflow_data$bwb.nat.q[streamflow_data$abv == 'bwb'] <- streamflow_data$Flow[streamflow_data$abv == 'bwb'] + streamflow_data$abv.h[streamflow_data$abv == 'bwb']
 streamflow_data$bws.nat.q[streamflow_data$abv == 'bws'] <- streamflow_data$Flow[streamflow_data$abv == 'bws'] + streamflow_data$abv.s[streamflow_data$abv == 'bws'] + streamflow_data$abv.h[streamflow_data$abv == 'bws']
@@ -187,7 +188,7 @@ snotel_data_out$wy <- as.numeric(as.character(water_year(snotel_data_out$date, o
 snotel_data_out$day <- day(snotel_data_out$date)
 
 # subset April 1 data for model 
-wy<- year(seq(as.Date("1979-04-01"),as.Date(end_date),"year"))
+wy<- seq(1979, year(end_date))
 april1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
 colnames(april1swe)<- c('year', snotel_abrv)
 april1swe[,1]<- wy
@@ -233,7 +234,7 @@ write.csv(snotel_data_out, file.path(data_dir,'snotel_data.csv'))
 write.csv(snotel_site_info, file.path(data_dir,'snotel_sites.csv'))
 
 # Save flow data as csvs ------
-metrics <- metrics %>% inner_join(nat.cm, by= "year")
+metrics <- metrics %>% full_join(nat.cm, by= "year")
 
 write.csv(streamflow_data, file.path(data_dir,'streamflow_data.csv'))
 write.csv(metrics, file.path(data_dir,'metrics.csv'))
@@ -243,7 +244,7 @@ write.csv(site_info, file.path(data_dir,'usgs_sites.csv'))
 bw.div.tot$year<- as.integer(bw.div.tot$year)
 
 if (run_date == 'feb1'){
-  alldat<- feb1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
+  alldat<- feb1swe %>% full_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
 } else if (run_date == 'march1'){
   alldat<- mar1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
 } else if (run_date == 'april1'){

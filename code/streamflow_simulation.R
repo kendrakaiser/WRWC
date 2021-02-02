@@ -104,6 +104,20 @@ pi[,10:12]<-as.data.frame(pred.int(sc.flow.s))
 pi[,13:15]<-as.data.frame(pred.int(sc.div.s))
 pi[,16:18]<-as.data.frame(pred.int(cc.flow.s))
 
+
+
+### Average Annual streamflow with maximum and minimum daily flows
+q = read.csv(file.path(data_dir,'streamflow_data.csv'))
+q$Date <- as.Date(q$Date)
+q$doy <- yday(q$Date)
+q<- q %>% filter(abv != 'bwr')
+
+#Calculate day of water-year
+water_year_begin <- ymd('1987-10-01')-1
+#deal with leap years
+q$doWY<- ((q$doy - yday(water_year_begin)) %% ifelse(leap_year(year(q$Date)), 366, 365)) +1
+
+
 # Plot Simulation Results
 if (run_date == 'feb1'){
   mo_fig_dir = file.path(fig_dir, 'February')
@@ -113,6 +127,8 @@ if (run_date == 'feb1'){
   mo_fig_dir = file.path(fig_dir, 'April')
 }
 
+data <- q %>% filter(abv == 'bwb') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(bwb.nat.q, na.rm=TRUE))
+
 # Big Wood @ Hailey
 png(filename = file.path(mo_fig_dir, "BWB_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -121,24 +137,34 @@ plot(dates, pi[,3], type="n", xlab="Date", ylab ="Flow (cfs)",
      main = "Big Wood Natural Streamflow at Hailey", ylim=c(min(pi[,1]), max(pi[,2])))
 polygon(c(dates[1], dates, rev(dates)), c(pi[1,1], pi[,2], rev(pi[,1])), 
         col = "gray90", border = NA)
+lines(dates,data$meanQ[457:639],lwd=1.5,col="black")
 lines(dates,pi[,3],lwd=2.5,col="blue")
+legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
+       col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
 #flow= bwb.wy[bwb.wy$wy == pred.yr, "bwb.nat.q"]
 #lines(dates,flow[183:365], lwd=2, col="green")
 dev.off()
 
-
+# Summary stats
+data <- q %>% filter(abv == 'bws') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(bws.nat.q, na.rm=TRUE))
 # Big Wood @ Stanton
 png(filename = file.path(mo_fig_dir, "BWS_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 plot(dates, pi[,6], type="n", xlab="Date", ylab ="Flow (cfs)",
-     main = "Big Wood Streamflow at Stanton Crossing", ylim=c(min(pi[,4]), max(pi[,5])))
+     main = "Big Wood Streamflow at Stanton Crossing", ylim=c(min(pi[,1]), max(pi[,2])))
 polygon(c(dates[1], dates, rev(dates)), c(pi[1,4], pi[,5], rev(pi[,4])), 
         col = "gray90", border = NA)
+lines(dates,data$meanQ[196:378],lwd=1.5,col="black")
 lines(dates,pi[,6],lwd=2.5,col="blue")
+legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
+       col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
 #flow= bws.wy[bws.wy$wy == pred.yr, "bws.nat.q"]
 #lines(dates,flow[183:365], lwd=2, col="green")
 dev.off()
+
+# Summary stats
+data <- q %>% filter(abv == 'sc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(sc.nat, na.rm=TRUE))
 
 # Silver Creek
 png(filename = file.path(mo_fig_dir, "SC_Simulation.png"),
@@ -148,11 +174,16 @@ plot(dates, pi[,12], type="n", xlab="Date", ylab ="Flow (cfs)",
      main = "Silver Creek Natural Streamflow Simulation", ylim=c(min(pi[,10]), max(pi[,11])))
 polygon(c(dates[1], dates, rev(dates) ), c(pi[1,10], pi[,11], rev(pi[,10])), 
         col = "gray90", border = NA)
+lines(dates,data$meanQ[91:273],lwd=1.5,col="black")
 lines(dates,pi[,12],lwd=2.5,col="blue")
+legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
+       col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
 #flow= sc.wy[sc.wy$wy == pred.yr, "sc.nat"]
 #lines(dates,flow[183:365], lwd=2, col="green")
 dev.off()
 
+# Summary stats 
+data <- q %>% filter(abv == 'cc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(Flow))
 # Camas Creek
 png(filename = file.path(mo_fig_dir, "CC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -161,7 +192,10 @@ plot(dates,pi[,18], type="n", xlab="Date", ylab ="Flow (cfs)",
      main = "Camas Creek Streamflow Simulation", ylim=c(min(pi[,16]), max(pi[,17])))
 polygon(c(dates[1], dates, rev(dates) ), c(pi[1,16], pi[,17], rev(pi[,16])), 
         col = "gray90", border = NA)
+lines(dates,data$meanQ[91:273],lwd=1.5,col="black")
 lines(dates,pi[,18],lwd=2.5,col="blue")
+legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
+       col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
 #flow= cc.wy[cc.wy$wy == pred.yr, "Flow"]
 #lines(dates,flow[183:365], lwd=2, col="green")
 dev.off()

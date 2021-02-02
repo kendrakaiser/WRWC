@@ -14,14 +14,14 @@ git_dir <<- '~/github/WRWC'
 cd <<- '~/Desktop/WRWC'
 
 # set prediction year
-pred.yr <<- 2020
+pred.yr <<- 2021
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
 run_date <<- 'feb1'
 # set end date for AgriMet Data download
-end_date <<- '2021-01-26'
+end_date <<- '2021-02-01'
 # info for model run report
 author <<- "Kendra Kaiser"
-todays_date <<- "01/26/2021"
+todays_date <<- "02/02/2021"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
