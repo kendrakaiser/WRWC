@@ -3,7 +3,7 @@ title: "WRWC Model Run"
 params:
     fig_dir_mo: 'figures/February'
     set_author: "Kendra E Kaiser"
-    todays_date: "01/04/2021"
+    todays_date: "01/28/2021"
     data_dir:  '~/Desktop/WRWC/data'
     git_dir: '~/github/WRWC'
     input: 'all_dat_feb.csv'
@@ -55,18 +55,9 @@ mo<- month(as.Date(params$todays_date, format = "%m/%d/%Y"))
 
 ## Wood River Model Summary
 
-The WRWC Modeling Suite predicts spring air temperatures, total summer runoff volumes, "center of mass", total diversions and timing of delivery calls in the Big Wood River Basin, Camas Creek and Silver Creek. 
+The WRWC Modeling Suite predicts spring air temperatures, total summer runoff volumes, "center of mass", total diversions and timing of delivery calls in the Big Wood River Basin, Camas Creek and Silver Creek. Curtailment dates are currently only predicted in the April model run.
 
-### Data Inputs
-
-Data is automatically downloaded from the USGS, NRCS and AgriMet (Fairfield and Picabo).
-```{r data info, echo=FALSE, out.width="45%"}
-kable(usgs_sites[c(1,2,3,5),] %>% dplyr::select(station_nm, huc_cd, begin_date, end_date, abv) %>% `colnames<-`(c("Station", "HUC", "Start", "End", "Abv")), caption = "USGS Sites") 
-```
-
-```{r snotel data info, echo=FALSE, out.width="65%"}
-kable(snotel_sites %>% dplyr::select(start, end, site_name, huc8, abv), caption = "Snotel Sites")
-```
+The NRCS Water Supply Report can be found here: https://www.wcc.nrcs.usda.gov/ftpref/states/id/webftp/wsor/2021/borid121.pdf
 
 ## Data Summary
 
@@ -100,61 +91,6 @@ ggplot(data = dat, mapping = aes(x=as.Date(Date), y=Flow))+
 
 ```
 
-### Average Annual streamflow with maximum and minimum daily flows
-
-```{r Big Wood, echo=FALSE, fig.show='hold', out.width="50%"}
-#Calculate day of water-year
-water_year_begin <- ymd('1987-10-01')-1
-#deal with leap years
-q$doWY<- ((q$doy - yday(water_year_begin)) %% ifelse(leap_year(year(q$Date)), 366, 365)) +1
-
-# Summary stats
-data <- group_by(q, doWY) %>% filter(abv == 'bwb') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
-# Plot
-ggplot(data=data, mapping=aes(x=doWY))+
-  labs(title = "Big Wood River at Hailey")+
-  geom_line(mapping=aes(y=meanQ), color='red')+
-  geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
-  xlab('DOY')+
-  ylab('Flow (cfs)')+
-  theme_bw()
-
-# Summary stats
-data <- group_by(q, doWY) %>% filter(abv == 'bws') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
-# Plot
-ggplot(data=data, mapping=aes(x=doWY))+
-  labs(title = "Big Wood River at Stanton Crossing") +
-  geom_line(mapping=aes(y=meanQ), color='red')+
-  geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
-  xlab('DOY')+
-  ylab('Flow (cfs)')+
-  theme_bw()
-```
-
-``` {r Camas and Silver Creek, echo=FALSE, fig.show='hold', out.width="50%"}
-# Summary stats
-data <- group_by(q, doWY) %>% filter(abv == 'cc') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
-# Plot
-ggplot(data=data, mapping=aes(x=doWY))+
-  labs(title = "Camas Creek") +
-  geom_line(mapping=aes(y=meanQ), color='red')+
-  geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
-  xlab('DOY')+
-  ylab('Flow (cfs)')+
-  theme_bw()
-
-# Summary stats
-data <- group_by(q, doWY) %>% filter(abv == 'sc') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
-# Plot
-ggplot(data=data, mapping=aes(x=doWY))+
-  labs(title = "Silver Creek") +
-  geom_line(mapping=aes(y=meanQ), color='red')+
-  geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
-  xlab('DOY')+
-  ylab('Flow (cfs)')+
-  theme_bw()
-```
-
 ### Snotel Data Summary
 
 ``` {r Snotel Summary, echo=FALSE, out.width="75%", fig.align='center'}
@@ -183,26 +119,36 @@ rownames(ytd_swe) <- c("Chocolate Gulch", "Camas Creek Divide", "Soldier R.S.", 
 swe<- merge(round(swe_means,0), ytd_swe, by=0) %>% dplyr::select(-site_name)
 #update this to auto select the month to compare average to
 swe$per <- round(swe[,5]/swe$Feb1,2)*100
-da<-format(last_date, "%b %d")
+da<-format(last_date, "%b %d %Y")
 
-swe %>% mutate(per = cell_spec(per, color = ifelse(per > 75, "blue","red"))) %>% `colnames<-`(c("Site", "Feb1", "Mar1", "Apr1", da, "Per of Avg"))  %>% kable(align=rep('c', 6), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
- 
+swe %>% mutate(per = cell_spec(per, color = ifelse(per > 75, "blue","red"))) %>% `colnames<-`(c("Site", "Feb 1 Hist. Avg.", "Mar 1 Hist. Avg.", "Apr 1 Hist. Avg.", da, "Per of Avg"))  %>% kable(align=rep('c', 6), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
 ```
 
+Historic mean SWE at each Snotel site, year-to-date SWE, and percent of average.
+
+\newpage
 
 ## Model Output
 
 ### Streamflow Volume Model Output
 
-These box plots shows the range of volumes that were calculated for each basin. The boxes represent the 25th - 75th percentiles, with the median in the solid line in the middle, circles are outliers. 
+The streamflow models predict "natural" flow on the Big Wood and Camas Creek. This is the actual flow at the gage plus the predicted volume of diversions removed upstream of the gage. They are modeled this way so that curtailment date models can be based off of total surface water delivered to the system. 
+
+```{r, volume tables, echo=FALSE, out.width = '100%', fig.show="hold"}
+knitr::include_graphics(file.path(params$fig_dir_mo, "pred.volumes.png"))
+```
+
+These box plots show the historic range of volumes (grey) and the predicted range of volumes that were calculated for each basin (blue). The boxes represent the 25th - 75th percentiles, the median is the solid line in the middle, and circles are outliers. 
 
 ```{r, sampled volumes, echo=FALSE, out.width = '50%', fig.show="hold"}
 knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), file.path(params$fig_dir_mo, "sampled_sc_diversions.png")))
 ```
 
+\newpage
+
 ### Streamflow Simulations
 
-Mean simulated streamflow is shown in the solid blue line and the 95% confidence interval is shown in the shaded gray area.
+Mean simulated streamflow is shown in the solid blue line, mean daily streamflow is shown in black and the 95% confidence interval around the simulations is shown in the shaded gray area.
 
 ```{r, bw sim, echo=FALSE, out.width = '50%', fig.show="hold"}
 knitr::include_graphics(c(file.path(params$fig_dir_mo, "BWB_Simulation.png"), 
@@ -224,11 +170,24 @@ if (params$fig_dir_mo == 'figures/April'){
 }
 ```
 
-This box plot shows the range of volumes that were calculated from each basin. The boxes represent the 25th - 75th percentiles, with the median in the solid line in the middle, circles are outliers.
 
 ```{r, sampled curtailment dates, echo=FALSE, out.width = '80%', fig.align='center'}
 if (params$fig_dir_mo == 'figures/April'){
   knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_curtailments.png"))
 }
+```
+
+
+### Data Inputs
+
+Data is automatically downloaded from the USGS, NRCS and AgriMet (Fairfield and Picabo).
+```{r data info, echo=FALSE, out.width="45%"}
+kable(usgs_sites[c(1,2,3,5),] %>% dplyr::select(station_nm, huc_cd, begin_date, end_date, abv) %>% `colnames<-`(c("Station", "HUC", "Start", "End", "Abv")), booktabs = T) %>%
+  kable_styling(font_size = 9)
+```
+
+```{r snotel data info, echo=FALSE, out.width="65%"}
+kable(snotel_sites %>% dplyr::select(start, end, site_name, huc8, abv), booktabs = T) %>%
+kable_styling(latex_options = "striped")
 ```
 
