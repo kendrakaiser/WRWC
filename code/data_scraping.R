@@ -8,12 +8,14 @@
 # import and manage diversion data
 # ------------------------------------------------------------------------------
 bw.div <- read.csv(file.path(input_dir, 'bwr_diversion_data_1987_2019_111620.csv'))
+names(bw.div)[1]<- 'Date'
 bw.div$Date <- as.Date(bw.div$Date, format = "%m/%d/%y")
 bw.div$year<- format(bw.div$Date, "%Y")
 bw.div[is.na(bw.div)] <- 0
 bw.div$Osborn.24 <- as.numeric(bw.div$Osborn.24) #something is making this a character
 
 sc.div <- read.csv(file.path(input_dir, 'sc_diversiondata_1987_2019_121620.csv'))
+names(sc.div)[1]<- 'Date'
 sc.div$Date <- as.Date(sc.div$Date, format = "%m/%d/%y")
 sc.div$year<- format(sc.div$Date, "%Y")
 sc.div$sc.div<- rowSums(sc.div[,2:11], na.rm = TRUE)
@@ -74,6 +76,8 @@ streamflow_data <- streamflow_data %>% dplyr::select(-agency_cd) %>% inner_join(
 # add diversion data to streamflow dataframe
 streamflow_data <- full_join(streamflow_data, bw.div.gage, by = 'Date')
 streamflow_data <- full_join(streamflow_data, sc.div %>% dplyr::select(c(Date, sc.div)), by = 'Date')
+#make NAs equal to zero 
+streamflow_data[,17:19][is.na(streamflow_data[,17:19])] <- 0 
 
 streamflow_data$bwb.nat.q[streamflow_data$abv == 'bwb'] <- streamflow_data$Flow[streamflow_data$abv == 'bwb'] + streamflow_data$abv.h[streamflow_data$abv == 'bwb']
 streamflow_data$bws.nat.q[streamflow_data$abv == 'bws'] <- streamflow_data$Flow[streamflow_data$abv == 'bws'] + streamflow_data$abv.s[streamflow_data$abv == 'bws'] + streamflow_data$abv.h[streamflow_data$abv == 'bws']
@@ -216,11 +220,16 @@ colnames(feb1swe)<- c('year', snotel_abrv)
 feb1swe[,1]<- wy
 feb1swe<-as.data.frame(feb1swe)
 
+today_swe<- matrix(data=NA, nrow=1, ncol=length(snotel_sites))
+colnames(today_swe)<- c(snotel_abrv)
+
 for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 2 & snotel_data_out$day ==1,]
   feb1swe[which(feb1swe$year == min(sub$wy)) : which(feb1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
+  today_swe[i]<-snotel_data_out$snow_water_equivalent[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$date == max(snotel_data_out$date)]
 }
 
+feb1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
 # ------------------------------------------------------------------------------
 # Save Data
 # ------------------------------------------------------------------------------
