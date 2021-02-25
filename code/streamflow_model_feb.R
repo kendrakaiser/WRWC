@@ -19,7 +19,7 @@ rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir",
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 swe_q = read.csv(file.path(data_dir, input))
-swe_q[swe_q == 0] <- NA # cange zeros to a value so lm works
+swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
 temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
 var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
 var$div <- var$abv.h + var$abv.s
@@ -303,7 +303,7 @@ vol.big<- rbind(vol.hist, vol.pred)
 vol.sm<- rbind(vol.hist.sm, vol.pred.sm)
 
 # Plot boxplots of total annual flow from each model
-png(filename = file.path(fig_dir,"February/sampled_volumes.png"),
+png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -320,7 +320,7 @@ vol.big %>%
   ylab("Irrigation Season Volume (10,000 ac-ft)")
 dev.off()
 
-png(filename = file.path(fig_dir,"February/sampled_sc_diversions.png"),
+png(filename = file.path(fig_dir_mo,"sampled_sc_diversions.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
