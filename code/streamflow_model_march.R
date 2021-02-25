@@ -89,7 +89,7 @@ modOut<- function(mod, pred.dat, wq, vol, hist.swe, lastQ){
   #this years total volume at 80 % confidence
   predictions<-predict(mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.8)
   #bottom of 80% CI (statisticians) converted ac-ft
-  output.vol[1,4]<-round(exp(predictions$fit[2],0)) #(1.98*183)
+  output.vol[1,4]<-round(exp(predictions$fit[2]),0) #(1.98*183)
   # 90% exceedance flow as a percent of long-term mean
   output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=T),3) *100
   output.vol[1,6]<-round(lastQ,0) # last years volume in ac-ft
@@ -228,6 +228,7 @@ mod_sum[6,1] <- summary(sc.div_mod)$adj.r.squared
 params<- var[var$year == pred.yr,] %>% dplyr::select(sc.wq, g.swe, lwd.swe)
 pred.dat<- params %>% slice(rep(1:n(), 5000))
 pred.dat$temps<- temp.ran$aj.temps.cc
+
 # Model output
 preds.div<-predict(sc.div_mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
 
@@ -298,7 +299,7 @@ vol.big<- rbind(vol.hist, vol.pred)
 vol.sm<- rbind(vol.hist.sm, vol.pred.sm)
 
 # Plot boxplots of total annual flow from each model
-png(filename = file.path(fig_dir,"March/sampled_volumes.png"),
+png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -316,7 +317,7 @@ vol.big %>%
 dev.off()
 
 
-png(filename = file.path(fig_dir,"March/sampled_sc_diversions.png"),
+png(filename = file.path(fig_dir_mo,"sampled_sc_diversions.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
