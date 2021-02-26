@@ -20,6 +20,7 @@ sc.div$Date <- as.Date(sc.div$Date, format = "%m/%d/%y")
 sc.div$year<- format(sc.div$Date, "%Y")
 sc.div$sc.div<- rowSums(sc.div[,2:11], na.rm = TRUE)
 
+sc.div.daily<- sc.div %>% dplyr::select(c(Date, sc.div))
 sc.div.sum<- sc.div %>% dplyr::select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
 sc.div.tot <- data.frame(matrix(nrow=dim(sc.div.sum)[1], ncol =2))
 
@@ -75,7 +76,8 @@ streamflow_data <- streamflow_data %>% dplyr::select(-agency_cd) %>% inner_join(
 
 # add diversion data to streamflow dataframe
 streamflow_data <- full_join(streamflow_data, bw.div.gage, by = 'Date')
-streamflow_data <- full_join(streamflow_data, sc.div %>% dplyr::select(c(Date, sc.div)), by = 'Date')
+streamflow_data <- full_join(streamflow_data, sc.div.daily, by = 'Date')
+
 #make NAs equal to zero 
 streamflow_data[,17:19][is.na(streamflow_data[,17:19])] <- 0 
 
@@ -209,10 +211,18 @@ colnames(mar1swe)<- c('year', snotel_abrv)
 mar1swe[,1]<- wy
 mar1swe<-as.data.frame(mar1swe)
 
+today_swe<- matrix(data=NA, nrow=1, ncol=length(snotel_sites))
+colnames(today_swe)<- c(snotel_abrv)
+
 for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 3 & snotel_data_out$day ==1,]
   mar1swe[which(mar1swe$year == min(sub$wy)) : which(mar1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
-}
+  sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
+  today_swe[i]<- sub2$snow_water_equivalent[sub2$date == max(sub2$date)]
+  }
+
+# Update the March 1 SWE with the current swe
+mar1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
 
 # subset February 1 data for model 
 feb1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
@@ -228,7 +238,7 @@ for (i in 1:length(snotel_sites)) {
   feb1swe[which(feb1swe$year == min(sub$wy)) : which(feb1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
   today_swe[i]<-snotel_data_out$snow_water_equivalent[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$date == max(snotel_data_out$date)]
 }
-
+# Update the Feb 1 SWE with the current swe
 feb1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
 # ------------------------------------------------------------------------------
 # Save Data
@@ -255,9 +265,9 @@ bw.div.tot$year<- as.integer(bw.div.tot$year)
 if (run_date == 'feb1'){
   alldat<- feb1swe %>% full_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
 } else if (run_date == 'march1'){
-  alldat<- mar1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
+  alldat<- mar1swe %>% full_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
 } else if (run_date == 'april1'){
-  alldat<- april1swe %>% inner_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
+  alldat<- april1swe %>% full_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
 }
 
 # 'natural' flow is the volume at the gage plus the volume from upstream diversions
