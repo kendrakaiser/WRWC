@@ -40,9 +40,14 @@ Install RStudio on your computer https://rstudio.com/products/rstudio/download/
  There are two sets of file paths for the project. The first are the paths to where you saved the gitHub code files, and the second set is a local folder where final datasets and .csv files will be saved. The github file directories contain the code and a folder for output figures, these figures need to be in the same directory as the `.Rmd` file in order for the model run report to compile correctly. The local folder where output is saved will be overwritten every time the model is run, so if saving model outputs is of interest, create another subfolder with a naming convention like '2021-02-01_ModelRun_lastname' where you copy and paste model outputs.
  
 You will need to create the following set of subfolders in the local folder for data to be saved to: 
- 
-![alt text ><](https://github.com/kendrakaiser/WRWC/blob/master/figures/local_file_dir.png?raw=true)
+* April_output
+* data
+* February_output
+* March_output
 
+``` 
+#![alt text ><](https://github.com/kendrakaiser/WRWC/blob/master/figures/local_fil#e_dir.png?raw=true)
+```
 ## Run the Models
  
  The only script you need to open to run the models is `run_models.R`. In this script you will modify the file paths and run date as described below. The `packages` automatically installs and loads the libraries needed to run all the scripts. Once you have installed the packages once, you may comment out the installation lines with a `#`.
@@ -433,14 +438,17 @@ While many of the individual linear regression models have strong fits, the comp
 # 4. Recommendations
 
 * continue to update diversion data annually
+* Evaluate alternative methods for estimation of curtailment dates using all water right data
+
+* Evaluate use of available groundwater data (there may not be enough for this to be viable)
+* Incorporate additional model variables (e.g. last years streamflow volume)
 * Explore snow covered extent modeling
-* Incorporate prediction data from the National Operational Hydrologic Remote Sensing Center, and other regional forecasting centers (summer temperatures in particular)
-* Conduct a sensitivity analysis on prediction results to identify the most sensitive predictor variables, particularly on streamflow recession
 * Evaluate alternative combinations and prediction windows for temperatures (e.g. June-July temperatures specifically for diversions)
 * Evaluate alternative center of mass calculation methods (e.g. different timing windows such as April - July)
-* Evaluate alternative methods for estimation of curtailment dates using all water right data
+
+* Incorporate prediction data from the National Operational Hydrologic Remote Sensing Center, and other regional forecasting centers (summer temperatures in particular)
+* Conduct a sensitivity analysis on prediction results to identify the most sensitive predictor variables, particularly on streamflow recession
 * Incorporate downstream water rights for Silver Creek and GW diversions
-* Evaluate use of available groundwater data (there may not be enough for this to be viable)
 * Evaluate alternative methods to enable running models on alternative dates
 
 
