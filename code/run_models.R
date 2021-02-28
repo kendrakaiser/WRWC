@@ -31,6 +31,10 @@ data_dir <<- file.path(cd, 'data') # local
 # ---- Run Model code
 
 source(file.path(git_dir, 'code/packages.R'))
+
+run_info<- sessionInfo()
+writeLines(capture.output(sessionInfo()), file.path(cd, "sessionInfo.txt"))
+
 source(file.path(git_dir, 'code/data_scraping.R'))
 #source(file.path(git_dir, 'code/download_agrimet.R'))
 source(file.path(git_dir, 'code/temperature_models.R'))
@@ -67,7 +71,5 @@ params_list = list(fig_dir_mo = fig_dir_mo, set_author = author,
                    git_dir = git_dir, input = input)
 rmarkdown::render(file.path(git_dir, 'ModelOutput.Rmd'), params = params_list)
 
-run_info<- sessionInfo()
 
-writeLines(capture.output(sessionInfo()), file.path(cd, "sessionInfo.txt"))
 
