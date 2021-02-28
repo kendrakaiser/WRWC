@@ -77,7 +77,7 @@ streamflow_data <- streamflow_data %>% dplyr::select(-agency_cd) %>% inner_join(
 # add diversion data to streamflow dataframe
 streamflow_data <- full_join(streamflow_data, bw.div.gage, by = 'Date')
 streamflow_data <- full_join(streamflow_data, sc.div.daily, by = 'Date')
-streamflow_data <- streamflow_data[-c(58886:61156), ]
+#streamflow_data <- streamflow_data[-c(58886:61156), ]
 #make NAs equal to zero 
 streamflow_data[,17:19][is.na(streamflow_data[,17:19])] <- 0 
 
