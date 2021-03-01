@@ -59,10 +59,11 @@ rownames(mod_sum)<-c("bwb","bws","cc","sc", "bw.div", "sc.div")
 #
 # ------------------------------------------------------------------------------ # 
 
-modOut<- function(mod, pred.dat, wq, vol, hist.swe, lastQ){
+modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   '
   mod:     input model
   pred.dat: data.frame of prediction variables
+  wq.cur:   this years winter baseflow
   wq:       array of historic winter flows (e.g. hist$cc.wq)
   vol:      array of historic april-sept volumes  (hist$cc.vol)
   hist.swe: mean(arrays of historic SWE from ws snotel sites) #mean(hist$ccd+hist$sr, na.rm=T)
@@ -71,29 +72,29 @@ modOut<- function(mod, pred.dat, wq, vol, hist.swe, lastQ){
   pred.params.vol<-array(NA,c(1,2))
   output.vol<-array(NA,c(1,7))
   
-  meanSWE <- mean(hist.swe, trim=0, na.rm=T)
+  meanSWE <- mean(hist.swe, trim=0, na.rm=TRUE)
   sig<-summary(mod)$sigma
   pred.params.vol[1,2]<-sig
   #predict this years total volume at 95 % confidence
-  predictions<-predict(mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-  pred.params.vol[1,1]<-mean(predictions$fit, na.rm=T)
+  predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.95)
+  pred.params.vol[1,1]<-mean(predictions$fit, na.rm=TRUE)
   #This years percent of mean winter flow
-  output.vol[1,1]<-round(pred.dat[1,1]/mean(wq, na.rm=T),3) 
+  output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE),2)*100 
   #percent of mean SWE
   #output.vol[1,2]<-round(sum(swe, na.rm=TRUE)/meanSWE,3) *100
   # back-transformation of log-transformed data to expected value in original units, with lognormal residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
-  output.vol[1,2]<-round(exp(predictions$fit[1]+sig^2/2)/(1.98*183),0) 
+  output.vol[1,2]<-round(exp(predictions$fit[1]+sig^2/2),0) 
   #Division by long-term mean to generate % of average volume, with lognormal residuals
-  output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=T),3) *100
+  output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=TRUE),3) *100
   
   #this years total volume at 80 % confidence
-  predictions<-predict(mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.8)
+  predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.8)
   #bottom of 80% CI (statisticians) converted ac-ft
   output.vol[1,4]<-round(exp(predictions$fit[2]),0) #(1.98*183)
   # 90% exceedance flow as a percent of long-term mean
-  output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=T),3) *100
+  output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=TRUE),3) *100
   output.vol[1,6]<-round(lastQ,0) # last years volume in ac-ft
-  output.vol[1,7]<-round(lastQ/mean(vol, na.rm=T),3)*100 # Last years percent of average historic volume
+  output.vol[1,7]<-round(lastQ/mean(vol, na.rm=TRUE),3)*100 # Last years percent of average historic volume
   return(list(output.vol, pred.params.vol))
 }
 
@@ -108,7 +109,7 @@ mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(gs.swe) 
 
 # Big Wood at Hailey Model output
-mod_out<- modOut(bwb_mod, pred.dat, var$bwb.wq[var$year < pred.yr], hist$bwb.vol.nat, hist$gs.swe, var$bwb.vol.nat[var$year == pred.yr-1])
+mod_out<- modOut(bwb_mod, pred.dat, var$bwb.wq[var$year == pred.yr], var$bwb.wq[var$year < pred.yr], hist$bwb.vol.nat, hist$gs.swe, var$bwb.vol.nat[var$year == pred.yr-1])
 #these could be formatted differently to be saved to the global env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
@@ -133,7 +134,7 @@ mod_sum[2,1]<-summary(bws_mod)$adj.r.squared
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(bws.wq, gs.swe) 
 
 # Big Wood at Stanton Natural Flow Model output
-mod_out<- modOut(bws_mod, pred.dat, hist$bws.wq, hist$bws.vol.nat, hist$gs.swe, var$bws.vol.nat[var$year == pred.yr-1])
+mod_out<- modOut(bws_mod, pred.dat, var$bws.wq[var$year == pred.yr], hist$bws.wq, hist$bws.vol.nat, hist$gs.swe, var$bws.vol.nat[var$year == pred.yr-1])
 output.vol[2,] <- mod_out[[1]]
 pred.params.vol[2,] <- mod_out[[2]]
 
@@ -157,7 +158,7 @@ mod_sum[4,1]<-summary(sc_mod)$adj.r.squared
 # April 1 SC Prediction Data 
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(sc.wq, sp.swe, hc.swe) 
 # Silver Creek Model output
-mod_out<- modOut(sc_mod, pred.dat, var$sc.wq[var$year < pred.yr], hist$sc.vol.nat, c(hist$sp.swe,hist$hc.swe), var$sc.vol.nat[var$year == pred.yr-1])
+mod_out<- modOut(sc_mod, pred.dat, var$sc.wq[var$year == pred.yr], var$sc.wq[var$year < pred.yr], hist$sc.vol.nat, c(hist$sp.swe,hist$hc.swe), var$sc.vol.nat[var$year == pred.yr-1])
 output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
@@ -180,7 +181,7 @@ mod_sum[3,1]<-summary(cc_mod)$adj.r.squared
 # February 1 CC Prediction Data 
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(cc.wq, ccd.swe)
 # Camas Creek Model output
-mod_out<- modOut(cc_mod, pred.dat, hist$cc.wq, hist$cc.vol, hist$ccd.swe, var$cc.vol[var$year == pred.yr-1])
+mod_out<- modOut(cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], hist$cc.wq, hist$cc.vol, hist$ccd.swe, var$cc.vol[var$year == pred.yr-1])
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
@@ -298,8 +299,10 @@ vol.pred.sm <- as.data.frame(exp(vol.sample2[,4:6])/1000) %>% pivot_longer(every
 vol.big<- rbind(vol.hist, vol.pred)
 vol.sm<- rbind(vol.hist.sm, vol.pred.sm)
 
+mo_fig_dir = file.path(fig_dir, 'March')
+
 # Plot boxplots of total annual flow from each model
-png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
+png(filename = file.path(mo_fig_dir,"sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
@@ -316,8 +319,9 @@ vol.big %>%
   ylab("Irrigation Season Volume (10,000 ac-ft)")
 dev.off()
 
+print(file.path(mo_fig_dir,"sampled_volumes.png"))
 
-png(filename = file.path(fig_dir_mo,"sampled_sc_diversions.png"),
+png(filename = file.path(mo_fig_dir,"sampled_sc_diversions.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 

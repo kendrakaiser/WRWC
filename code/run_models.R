@@ -18,10 +18,10 @@ pred.yr <<- 2021
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
 run_date <<- 'march1'
 # set end date for AgriMet Data download
-end_date <<- '2021-02-24'
+end_date <<- '2021-03-01'
 # info for model run report
 author <<- "Kendra Kaiser"
-todays_date <<- "02/24/2021"
+todays_date <<- "03/01/2021"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -48,9 +48,9 @@ if (run_date == 'feb1'){
   
 } else if (run_date == 'march1'){
   input <<- 'all_dat_mar.csv'
-  fig_dir_mo <<- file.path(git_dir,'figures/March')
-  source(file.path(git_dir, 'code/streamflow_model_march.R'))
+  fig_dir_mo <<- 'figures/March'
   model_out <<-  file.path(cd, 'March_output')
+  source(file.path(git_dir, 'code/streamflow_model_march.R'))
   
 } else if (run_date == 'april1'){
   input <<- 'all_dat_apr.csv'
@@ -69,7 +69,7 @@ detach(package:plyr) #plyr interferes with a grouping function needed for plotti
 params_list = list(fig_dir_mo = fig_dir_mo, set_author = author, 
                    todays_date=todays_date, data_dir = data_dir, 
                    git_dir = git_dir, input = input)
-rmarkdown::render(file.path(git_dir, 'ModelOutput.Rmd'), params = params_list)
+rmarkdown::render(file.path(git_dir, 'ModelOutputv2.Rmd'), params = params_list)
 
 
 
