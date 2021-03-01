@@ -1,0 +1,199 @@
+---
+title: "WRWC Model Run"
+params:
+    fig_dir_mo: 'figures/March'
+    set_author: "Kendra E Kaiser"
+    todays_date: "01/28/2021"
+    data_dir:  '~/Desktop/WRWC/data'
+    git_dir: '~/github/WRWC'
+    input: 'all_dat_feb.csv'
+author: "`r params$set_author`"
+date: "`r params$todays_date`"
+output: 
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+  highlight: tango
+urlcolor: blue
+csl: AmJBot.csl
+header-includes:
+    \usepackage{float}
+
+    
+---
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
+
+```{r setup, include=FALSE}
+library(knitr)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(fasstr)
+library(kableExtra)
+
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(verbose = TRUE)  
+
+fig_dir <<- file.path(params$git_dir, 'figures')
+
+usgs_sites = read.csv(file.path(params$data_dir,'usgs_sites.csv'))
+snotel_sites = read.csv(file.path(params$data_dir,'snotel_sites.csv'))
+snotel_data = read.csv(file.path(params$data_dir,'snotel_data.csv'))
+q = read.csv(file.path(params$data_dir,'streamflow_data.csv'))
+q$Date <- as.Date(q$Date)
+q$doy <- yday(q$Date)
+q<- q %>% filter(abv != 'bwr')
+feb1swe = read.csv(file.path(params$data_dir, 'feb1swe.csv'))
+mar1swe = read.csv(file.path(params$data_dir, 'mar1swe.csv'))
+apr1swe = read.csv(file.path(params$data_dir, 'april1swe.csv'))
+
+swe_q = read.csv(file.path(params$data_dir, params$input))
+
+yr<- year(as.Date(params$todays_date, format = "%m/%d/%Y"))
+mo<- month(as.Date(params$todays_date, format = "%m/%d/%Y"))
+```
+
+## Wood River Model Summary
+
+The WRWC Modeling Suite predicts spring air temperatures, total summer runoff volumes, "center of mass", total diversions and timing of delivery calls in the Big Wood River Basin, Camas Creek and Silver Creek. Curtailment dates are currently only predicted in the April model run.
+
+The NRCS Water Supply Report can be found here: https://www.wcc.nrcs.usda.gov/ftpref/states/id/webftp/wsor/2021/borid221.pdf
+
+## Data Summary
+
+### Time series of historic data from each USGS site
+
+```{r HistoricStreamflowData, echo=FALSE, fig.show='hold', out.width="50%"}
+#png(filename = file.path(fig_dir,"historic_streamflow.png"),
+ #   width = 5.5, height = 5.5,units = "in", pointsize = 12,
+  #  bg = "white", res = 600, type ="quartz") 
+#dev.off()
+par(mar = c(4, 4, .1, .1))
+dat<-q %>% filter(abv != 'sc')
+ggplot(data = dat, mapping = aes(x=as.Date(Date), y=Flow))+
+  labs(title = "Historic Data: Big Wood River and Camas Creek") +
+  geom_line(aes(color= abv))+
+  labs(color = "Site")+
+  scale_colour_discrete(labels = c("Big Wood Hailey", "Big Wood Stanton Crossing", 
+                                   "Camas Creek")) +
+  xlab('Year')+
+  ylab('Flow (cfs)') +
+  theme_bw() +
+  theme(legend.position = c(.18, .84)) 
+
+dat<-q %>% filter(abv == 'sc') 
+ggplot(data = dat, mapping = aes(x=as.Date(Date), y=Flow))+
+  labs(title = "Historic Data: Silver Creek at Sportsman's Access ") +
+  geom_line(show.legend = FALSE)+
+  xlab('Year')+
+  ylab('Flow (cfs)')+
+  theme_bw()
+
+```
+
+### Snotel Data Summary
+
+``` {r SnotelSummary, echo=FALSE, out.width="75%", fig.align='center'}
+# Summary stats
+ggplot(data= (snotel_data %>% filter(wy == yr)), mapping= aes(x=as.Date(date), y=precipitation_cumulative))+
+  labs(title = "Year to Date Precipitation") +
+  geom_line(aes(color = site_name))+
+  labs(color = "Snotel Site")+
+  xlab('Date')+
+  ylab('Cumulative Precipitation (in)')+
+  theme_bw()
+
+#Calculate Historic Means
+feb_mean<- data.frame(colMeans(feb1swe[3:12], na.rm = TRUE))
+mar_mean<- data.frame(colMeans(mar1swe[3:12], na.rm = TRUE))
+apr_mean<- data.frame(colMeans(apr1swe[3:12], na.rm = TRUE))
+
+swe_means<- cbind(feb_mean, mar_mean, apr_mean)
+colnames(swe_means) <- c("Feb1", "Mar1", "Apr1")
+rownames(swe_means) <- c("Chocolate Gulch", "Galena", "Galena Summit", "Hyndman Creek", "Lost-Wood Divide", "Dollarhide Summit", "Camas Creek Divide", "Soldier R.S.", "Garfield R.S.", "Swede Peak")
+
+last_date<- as.Date(max(snotel_data$date))-1
+ytd_swe<- snotel_data[snotel_data$date == last_date,] %>% dplyr::select(c(site_name, snow_water_equivalent))
+rownames(ytd_swe) <- c("Chocolate Gulch", "Camas Creek Divide", "Soldier R.S.", "Dollarhide Summit", "Galena", "Garfield R.S.", "Hyndman Creek", "Lost-Wood Divide", "Galena Summit", "Swede Peak")
+
+swe<- merge(round(swe_means,0), ytd_swe, by=0) %>% dplyr::select(-site_name)
+#update this to auto select the month to compare average to
+swe$per <- round(swe[,5]/swe$Feb1,2)*100
+da<-format(last_date, "%b %d %Y")
+
+swe %>% mutate(per = cell_spec(per, color = ifelse(per > 75, "blue","red"))) %>% `colnames<-`(c("Site", "Feb 1 Hist. Avg.", "Mar 1 Hist. Avg.", "Apr 1 Hist. Avg.", da, "Per of Avg"))  %>% kable(align=rep('c', 6), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
+```
+
+Historic mean SWE at each Snotel site, year-to-date SWE, and percent of average.
+
+Graphs of individual Snotel Sites, SWE predictions and comparison to historic 
+records can be found here:
+https://www.nrcs.usda.gov/wps/portal/nrcs/detail/id/snow/products/?cid=nrcseprd1491214
+\newpage
+
+## Model Output
+
+### Streamflow Volume Model Output
+
+The streamflow models predict "natural" flow on the Big Wood and Camas Creek. This is the actual flow at the gage plus the predicted volume of diversions removed upstream of the gage. They are modeled this way so that curtailment date models can be based off of total surface water delivered to the system. 
+
+```{r, volumeTables, echo=FALSE, out.width = '100%'}
+knitr::include_graphics(file.path(params$fig_dir_mo, "pred.volumes.png"))
+```
+
+These box plots show the historic range of volumes (grey) and the predicted range of volumes that were calculated for each basin (blue). The boxes represent the 25th - 75th percentiles, the median is the solid line in the middle, and circles are outliers. 
+
+```{r, sampledVolumes, echo=FALSE, out.width = '50%', fig.show="hold"}
+knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), file.path(params$fig_dir_mo, "sampled_sc_diversions.png")))
+```
+
+\newpage
+
+### Streamflow Simulations
+
+Mean simulated 'natural' streamflow is shown in the solid blue line, the average historic daily 'natural' streamflow is shown in black and the 95% confidence interval around the simulations is shown in the shaded gray area.
+
+```{r, bwSim, echo=FALSE, out.width = '50%', fig.show="hold"}
+knitr::include_graphics(c(file.path(params$fig_dir_mo, "BWB_Simulation.png"), 
+                          file.path(params$fig_dir_mo, "BWS_Simulation.png")))
+```
+
+```{r, scSim, echo=FALSE, out.width = '50%', fig.show="hold"}
+knitr::include_graphics(c(file.path(params$fig_dir_mo,"SC_Simulation.png"), file.path(params$fig_dir_mo,"CC_Simulation.png")))
+```
+
+### Curtailment Date Model Output
+
+While the curtailment date models do fairly well at predicting curtailment dates with historic data (see the adjusted R2 in the table below), the combination of predicted streamflow volumes, diversions and summer temperatures limit their ability to accurately and concisely estimate curtailment dates. The 'sigma' value is the standard error, or the variance around the 'true' value. In many of the curtailment models, this standard error means that the prediction could be off by a week in either direction (early or late). Given the uncertainty in April predictions, there are no curtailment predictions for February or March.
+
+
+```{r curtailmentSummary, echo=FALSE, out.width = '110%', fig.align='center'}
+if (params$fig_dir_mo == 'figures/April'){  
+  knitr::include_graphics(file.path(params$fig_dir_mo, "curt_summary.png"))
+}
+```
+
+
+```{r, sampledCurtailmentDates, echo=FALSE, out.width = '80%', fig.align='center'}
+if (params$fig_dir_mo == 'figures/April'){
+  knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_curtailments.png"))
+}
+```
+
+
+### Data Inputs
+
+Data is automatically downloaded from the USGS, NRCS and AgriMet (Fairfield and Picabo).
+```{r dataInfo, echo=FALSE, out.width="45%"}
+kable(usgs_sites[c(1,2,3,5),] %>% dplyr::select(station_nm, huc_cd, begin_date, end_date, abv) %>% `colnames<-`(c("Station", "HUC", "Start", "End", "Abv")), booktabs = T) %>%
+  kable_styling(font_size = 9)
+```
+
+```{r snotelDataInfo, echo=FALSE, out.width="65%"}
+kable(snotel_sites %>% dplyr::select(start, end, site_name, huc8, abv), booktabs = T) %>%
+kable_styling(latex_options = "striped")
+```
+
