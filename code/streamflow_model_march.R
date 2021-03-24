@@ -22,6 +22,7 @@ temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
 var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
 var$div <- var$abv.h + var$abv.s
 curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
+var$bws.vol[var$year == 1996] <- NA #only a partial year of data
 
 write.csv(var, file.path(cd,'March_output/all_vars.csv'))
 
@@ -41,7 +42,7 @@ colnames(wy)<-c("Date","day")
 output.vol<-array(NA,c(length(stream.id),7))
 rownames(output.vol)<-stream.id
 output.vol<-output.vol[-4,]
-colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol \n(ac-ft)", "Pred. Vol \n% of mean", "90% exc. \n(ac-ft)", "90% exc. \n% of mean", "Prev Year \nVol (ac-ft)", "Prev Year \n% of mean Volume")
+colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol \nKAF", "Pred. Vol \n% of mean", "90% exc. \nKAF", "90% exc. \n% of mean", "Prev Year \nVol KAF", "Prev Year \n% of mean Volume")
 rownames(output.vol)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
 pred.params.vol<-array(NA,c(4,2))
@@ -83,14 +84,14 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   #percent of mean SWE
   #output.vol[1,2]<-round(sum(swe, na.rm=TRUE)/meanSWE,3) *100
   # back-transformation of log-transformed data to expected value in original units, with lognormal residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
-  output.vol[1,2]<-round(exp(predictions$fit[1]+sig^2/2),0) 
+  output.vol[1,2]<-round(exp(predictions$fit[1]+sig^2/2),0) /1000
   #Division by long-term mean to generate % of average volume, with lognormal residuals
   output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=TRUE),3) *100
   
   #this years total volume at 80 % confidence
-  predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.8)
-  #bottom of 80% CI (statisticians) converted ac-ft
-  output.vol[1,4]<-round(exp(predictions$fit[2]),0) #(1.98*183)
+  predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.9)
+  #bottom of 90% CI (statisticians) converted ac-ft
+  output.vol[1,4]<-round(exp(predictions$fit[2]),0)/1000 #(1.98*183)
   # 90% exceedance flow as a percent of long-term mean
   output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=TRUE),3) *100
   output.vol[1,6]<-round(lastQ,0) # last years volume in ac-ft
@@ -347,10 +348,7 @@ CMyear.sample<-sample(cm.data$year,5000,replace=TRUE)
 #save the probabilities for use in the simulation
 write.csv(CMyear.sample, file.path(cd,"March_output/CMyear.sample.csv"),row.names=F)
 
-
-
-# --------------------
-# Curtailment predictions
-#
+# Create distribution of most similar analog years (by volume) for reference
+# TODO: add cm and total WY flow probabilities - this will require individual cm models
 
 
