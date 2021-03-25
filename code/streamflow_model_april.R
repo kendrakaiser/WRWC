@@ -73,40 +73,43 @@ rownames(mod_sum)<-c("bwb","bws","cc","sc", "bw.div", "sc.div")
 #
 # ------------------------------------------------------------------------------ # 
 
-modOut<- function(mod, pred.dat, wq, vol, meanSWE, lastQ){
+modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   '
   mod:     input model
   pred.dat: data.frame of prediction variables
+  wq.cur:   this years winter baseflow
   wq:       array of historic winter flows (e.g. hist$cc.wq)
   vol:      array of historic april-sept volumes  (hist$cc.vol)
-  meanSWE:  mean(arrays of historic SWE from ws snotel sites) #mean(hist$ccd+hist$sr, na.rm=T)
+  hist.swe: mean(arrays of historic SWE from ws snotel sites) #mean(hist$ccd+hist$sr, na.rm=T)
   lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$year == pred.yr-1] 
   '
   pred.params.vol<-array(NA,c(1,2))
   output.vol<-array(NA,c(1,8))
   
+  meanSWE <- mean(hist.swe, trim=0, na.rm=TRUE)
   sig<-summary(mod)$sigma
   pred.params.vol[1,2]<-sig
   #predict this years total volume at 95 % confidence
-  predictions<-predict(mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
-  pred.params.vol[1,1]<-mean(predictions$fit, na.rm=T)
+  predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.95)
+  pred.params.vol[1,1]<-mean(predictions$fit, na.rm=TRUE)
   #This years percent of mean winter flow
-  output.vol[1,1]<-round(pred.dat[1,1]/mean(wq, na.rm=T),3) 
-  #percent of mean SWE
-  output.vol[1,2]<-round(sum(pred.dat[1,2:3], na.rm=TRUE)/meanSWE,3) 
+  output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE),2)*100 
+  
   # back-transformation of log-transformed data to expected value in original units, with lognormal residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
-  output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/(1.98*183),0) 
+  output.vol[1,2]<-round(exp(predictions$fit[1]+sig^2/2),0) /1000
   #Division by long-term mean to generate % of average volume, with lognormal residuals
-  output.vol[1,4]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=T),3) 
+  output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=TRUE),3) *100
   
   #this years total volume at 80 % confidence
-  predictions<-predict(mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.8)
-  #bottom of 80% CI (statisticians) converted to cfs
-  output.vol[1,5]<-round(exp(predictions$fit[2])/(1.98*183),0) 
+  predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.9)
+  #bottom of 90% CI (statisticians) converted ac-ft
+  output.vol[1,4]<-round(exp(predictions$fit[2])/1000,0) #(1.98*183)
   # 90% exceedance flow as a percent of long-term mean
-  output.vol[1,6]<-round(exp(predictions$fit[2])/mean(vol, na.rm=T),3) 
-  output.vol[1,7]<-round(lastQ/(1.98*183),0) # last years volume in cfs
-  output.vol[1,8]<-round(lastQ/mean(vol, na.rm=T),3) # Last years percent of average historic volume
+  output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=TRUE),3) *100
+  output.vol[1,7]<-round(lastQ,0) # last years volume in ac-ft
+  output.vol[1,8]<-round(lastQ/mean(vol, na.rm=TRUE),3)*100 # Last years percent of average historic volume
+  predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.5)
+  output.vol[1,6]<-round(exp(predictions$fit[2])/1000,0) #(1.98*183)
   return(list(output.vol, pred.params.vol))
 }
 
@@ -121,7 +124,7 @@ mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(g.swe, gs.swe, hc.swe) 
 
 # Big Wood at Hailey Model output
-mod_out<- modOut(bwb_mod, pred.dat, var$bwb.wq[var$year < pred.yr], hist$bwb.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol.nat[var$year == pred.yr-1])
+mod_out<- modOut(bwb_mod, pred.dat, var$bwb.wq[var$year == pred.yr], var$bwb.wq[var$year < pred.yr], hist$bwb.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol.nat[var$year == pred.yr-1])
 #these could be formatted differently to be saved to the gloabl env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
@@ -147,7 +150,7 @@ mod_sum[2,1]<-summary(bws_mod)$adj.r.squared
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(bws.wq, g.swe, gs.swe, hc.swe) 
 
 # Big Wood at Stanton Natural Flow Model output
-mod_out<- modOut(bws_mod, pred.dat, hist$bws.wq, hist$bws.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bws.vol.nat[var$year == pred.yr-1])
+mod_out<- modOut(bws_mod, pred.dat, var$bws.wq[var$year == pred.yr], hist$bws.wq, hist$bws.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bws.vol.nat[var$year == pred.yr-1])
 output.vol[2,] <- mod_out[[1]]
 pred.params.vol[2,] <- mod_out[[2]]
 
@@ -171,7 +174,7 @@ mod_sum[4,1]<-summary(sc_mod)$adj.r.squared
 # April 1 SC Prediction Data 
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(sc.wq, ga.swe, sp.swe, cg.swe, hc.swe) 
 # Silver Creek Model output
-mod_out<- modOut(sc_mod, pred.dat, hist$sc.wq, hist$sc.vol.nat, mean(hist$ga.swe,  hist$g.swe,  hist$hc.swe, trim=0, na.rm=T), var$sc.vol.nat[var$year == pred.yr-1])
+mod_out<- modOut(sc_mod, pred.dat, var$sc.wq[var$year == pred.yr], hist$sc.wq, hist$sc.vol.nat, mean(hist$ga.swe,  hist$g.swe,  hist$hc.swe, trim=0, na.rm=T), var$sc.vol.nat[var$year == pred.yr-1])
 output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
@@ -196,7 +199,7 @@ mod_sum[3,1]<-summary(cc_mod)$adj.r.squared
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(cc.wq, ccd.swe, sr.swe)
 
 # Camas Creek Model output
-mod_out<- modOut(cc_mod, pred.dat, hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
+mod_out<- modOut(cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
@@ -210,6 +213,12 @@ plot(var$cc.vol[complete.cases(hist)]/1000,c(fits)/1000, lwd=2, xlab="Observed",
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
+png(file.path(fig_dir,"April/pred.volumes.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
+grid.table(output.vol[,1:5])
+dev.off()
+
+write.csv(output.vol, file.path(cd,"April_output/pred.output.vol.csv"),row.names=T)
+write.csv(pred.params.vol, file.path(cd,"April_output/pred.params.vol.csv"),row.names=T)
 
 # ------------------------------------------------------------------------------  
 #
