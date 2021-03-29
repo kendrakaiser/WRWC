@@ -431,7 +431,7 @@ plot(var$year[var$year<2020], var$bws.loss[var$year<2020], xlab="Year", ylab="An
 dev.off()
 #plot(var$year[var$year >=2000], var$bws.loss[var$year >=2000])
 
-hist <- var[var$year >=2000 & var$year < pred.yr,] %>% dplyr::select(bws.loss, g.swe, hc.swe, t.g, t.cg, t.gs) 
+hist <- var[var$year >=2000 & var$year < 2020,] %>% dplyr::select(bws.loss, g.swe, hc.swe, t.g, t.cg, t.gs) 
 # linear model 
 bws.loss_mod<-lm(bws.loss~ g.swe+hc.swe+t.cg+ t.gs+t.gs, data=hist) 
 mod_sum[6,1]<-summary(bws.loss_mod)$adj.r.squared 
@@ -444,7 +444,7 @@ png(filename = file.path(fig_dir,"April/Losses_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 fits<-fitted(bws.loss_mod)
-plot(var$bws.loss[var$year >=2000 & var$year < pred.yr],c(fits), xlab="Observed", 
+plot(var$bws.loss[var$year >=2000 & var$year < 2020],c(fits), xlab="Observed", 
      ylab="Predicted", xlim=c(-73000, -39900), ylim=c(-73000, -39900))
 abline(0,1,col="gray50",lty=1)
 dev.off()
@@ -456,9 +456,9 @@ png(filename = file.path(fig_dir,"April/Div.bw.png"),
 plot(var$year[var$year<2020], var$div[var$year<2020], xlab="Year", ylab="Big Wood Diversions (ac-ft)")
 dev.off()
 
-hist <- var[var$year >=1997 & var$year < pred.yr,] %>% dplyr::select(div, bws.wq, cg.swe, hc.swe) 
+hist <- var[var$year >=1997 & var$year < 2020,] %>% dplyr::select(div, bws.wq, cg.swe, hc.swe) 
 # linear model 
-div_mod<-lm(log(var$div[var$year >=1997 & var$year < pred.yr]) ~ log(cg.swe)+log(hc.swe)+log(bws.wq), data=hist) 
+div_mod<-lm(log(var$div[var$year >=1997 & var$year < 2020]) ~ log(cg.swe)+log(hc.swe)+log(bws.wq), data=hist) 
 mod_sum[5,1] <- summary(div_mod)$adj.r.squared 
 # April 1 Prediction Data 
 pred.dat<- var[var$year == pred.yr,] %>% dplyr::select(bws.wq, cg.swe, hc.swe) 
@@ -472,7 +472,7 @@ png(filename = file.path(fig_dir,"April/Diversions_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 fits<-fitted(div_mod)
-plot(var$div[var$year >=1997 & var$year < pred.yr],exp(c(fits)), xlab="Observed", 
+plot(var$div[var$year >=1997 & var$year < 2020],exp(c(fits)), xlab="Observed", 
      ylab="Predicted", xlim=c(32500, 58800), ylim=c(32500, 58800))
 abline(0,1,col="gray50",lty=1)
 dev.off()
@@ -557,12 +557,14 @@ vol.hist$value<-vol.hist$value/10000
 vol.hist.sm<-as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(sc.vol.nat, sc.div, div)) %>% `colnames<-`(c("Silver Creek Hist", "Silver Creek Div Hist", "Big Wood Div Hist")) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") )
 vol.hist.sm$value<-vol.hist.sm$value/1000
 
-vol.pred <-as.data.frame(exp(vol.sample[,1:3])/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+vol.pred <-as.data.frame(exp(vol.sample[,1:3])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
 vol.pred.sm <- as.data.frame(exp(vol.sample[,4:6])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
 
 vol.big<- rbind(vol.hist, vol.pred)
 vol.sm<- rbind(vol.hist.sm, vol.pred.sm)
 
+vol.big$site<-factor(vol.big$site,levels = c("Big Wood Hailey Hist","Big Wood Hailey", "Big Wood Stanton Hist", "Big Wood Stanton", "Camas Creek Hist", "Camas Creek" ), ordered = TRUE)
+vol.sm$site<-factor(vol.sm$site,levels = c("Silver Creek Hist","Silver Creek", "Big Wood Div Hist", "Big Wood Div", "Silver Creek Div Hist", "Silver Creek Div"), ordered = TRUE)
 
 # Plot boxplots of total annual flow from each model
 png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
@@ -579,10 +581,8 @@ vol.big %>%
   theme(legend.position="none") +
   ggtitle("Sampled Irrigation Season Volumes") +
   xlab("")+
-  ylab("Irrigation Season Volume (10,000 ac-ft)")
+  ylab("Irrigation Season Volume (KAF)")
 dev.off()
-
-print(file.path(mo_fig_dir,"sampled_volumes.png"))
 
 png(filename = file.path(fig_dir_mo,"sampled_sc_diversions.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -598,7 +598,7 @@ vol.sm %>%
   theme(legend.position="none") +
   ggtitle("") +
   xlab("")+
-  ylab("Irrigation Volume (1,000 ac-ft)")
+  ylab("Irrigation Volume (KAF)")
 dev.off()
 
 # CENTER of MASS Sample
