@@ -46,7 +46,8 @@ colnames(wy)<-c("Date","day")
 output.vol<-array(NA,c(length(stream.id),8))
 rownames(output.vol)<-stream.id
 output.vol<-output.vol[-4,]
-colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol \nKAF", "Pred. Vol \n% of mean", "90% exc. \nKAF", "90% exc. \n% of mean", "Prev Year \nVol KAF", "Prev Year \n% of mean Volume")
+colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol \nKAF", "Pred. Vol \n% of mean", "90% exc. \nKAF", 
+                        "90% exc. \n% of mean", "50% exc. \nKAF", "Prev Year \nVol KAF", "Prev Year \n% of mean Volume")
 rownames(output.vol)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
 pred.params.vol<-array(NA,c(4,2))
@@ -94,19 +95,19 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.95)
   pred.params.vol[1,1]<-mean(predictions$fit, na.rm=TRUE)
   #This years percent of mean winter flow
-  output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE),2)*100 
+  output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,2)
   
   # back-transformation of log-transformed data to expected value in original units, with lognormal residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
   output.vol[1,2]<-round(exp(predictions$fit[1]+sig^2/2)/1000,0)
   #Division by long-term mean to generate % of average volume, with lognormal residuals
-  output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=TRUE),3) *100
+  output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=TRUE) *100,3)
   
   #this years total volume at 80 % confidence
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.9)
   #bottom of 90% CI (statisticians) converted ac-ft
   output.vol[1,4]<-round(exp(predictions$fit[2])/1000,0) #(1.98*183)
   # 90% exceedance flow as a percent of long-term mean
-  output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=TRUE),3) *100
+  output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=TRUE) *100,3)
   output.vol[1,7]<-round(lastQ,0) # last years volume in ac-ft
   output.vol[1,8]<-round(lastQ/mean(vol, na.rm=TRUE),3)*100 # Last years percent of average historic volume
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.5)
@@ -372,7 +373,7 @@ dev.off()
 ### Save model outputs 
 
 png(file.path(fig_dir,"April/pred.volumes.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
-grid.table(output.vol)
+grid.table(output.vol[,1:6])
 dev.off()
 
 write.csv(output.vol, file.path(cd,"April_output/pred.output.vol.csv"),row.names=T)
@@ -553,7 +554,7 @@ write.csv(pred.pars, file.path(cd,"April_output/pred.pars.csv"),row.names=T)
 # Plot boxplots of total annual flow from each model
 # Subset for plotting
 vol.hist<- as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(bwb.vol.nat, bws.vol.nat, cc.vol)) %>% `colnames<-`(c("Big Wood Hailey Hist", "Big Wood Stanton Hist","Camas Creek Hist")) %>%pivot_longer(everything(),  names_to = "site", values_to = "value") )
-vol.hist$value<-vol.hist$value/10000
+vol.hist$value<-vol.hist$value/1000
 vol.hist.sm<-as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(sc.vol.nat, sc.div, div)) %>% `colnames<-`(c("Silver Creek Hist", "Silver Creek Div Hist", "Big Wood Div Hist")) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") )
 vol.hist.sm$value<-vol.hist.sm$value/1000
 
@@ -576,7 +577,7 @@ vol.big %>%
   geom_boxplot(alpha=0.7) +
   scale_fill_manual(values=c("grey90","blue", "grey90","blue", "grey90","blue")) +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
-  scale_y_continuous(breaks = round(seq(0, max(vol.big$value, na.rm=TRUE), by = 10),1))+
+  scale_y_continuous(breaks = round(seq(0, max(vol.big$value, na.rm=TRUE), by = 50),1))+
   theme_bw()+
   theme(legend.position="none") +
   ggtitle("Sampled Irrigation Season Volumes") +
@@ -850,6 +851,7 @@ curt.sample %>% pivot_longer(everything(),  names_to = "site", values_to = "valu
   theme_bw()+
   geom_boxplot() +
   scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  scale_y_date(date_breaks = "1 week", date_labels = "%b %d")+
   theme(legend.position="none") +
   ggtitle("Sampled Curtailment Dates") +
   xlab("")+
@@ -860,7 +862,7 @@ dev.off()
 # Change julian to actual date for readibility
 pred.params.curt<- as.data.frame(pred.params.curt) %>% round(2)
 pred.params.curt$pred.date<-as.Date(pred.params.curt$pred.date, origin=as.Date(paste(pred.yr,"-01-01",sep="")), format='%m/%d')
-
+write.csv(pred.params.curt, file.path(cd,"April_output/pred.curtailments.csv"))
 #pred.params.curt$act.date[1]<- curtailments$shut_off_date[curtailments$water_right_cat == "A" & curtailments$subbasin == 'bw_ab_magic' & curtailments$year == pred.yr]
 #pred.params.curt$act.date[2]<- curtailments$shut_off_date[curtailments$water_right_cat == "B" & curtailments$subbasin == 'bw_ab_magic' & curtailments$year == pred.yr]
 #pred.params.curt$act.date[3]<- curtailments$shut_off_date[curtailments$water_right_cat == "C" & curtailments$subbasin == 'bw_ab_magic' & curtailments$year == pred.yr]
@@ -870,6 +872,7 @@ pred.params.curt$pred.date<-as.Date(pred.params.curt$pred.date, origin=as.Date(p
 #pred.params.curt$act.date[7]<- curtailments$shut_off_date[curtailments$water_right_cat == "A" & curtailments$subbasin == 'sc_lw' & curtailments$year == pred.yr]
 #pred.params.curt$act.date[8]<- curtailments$shut_off_date[curtailments$water_right_cat == "B" & curtailments$subbasin == 'sc_lw' & curtailments$year == pred.yr]
 #pred.params.curt$act.date[9]<- curtailments$shut_off_date[curtailments$water_right_cat == "C" & curtailments$subbasin == 'sc_lw' & curtailments$year == pred.yr]
+
 
 png(file.path(fig_dir,"April/curt_summary.png"), height = 50*nrow(pred.params.curt), width = 200*ncol(pred.params.curt))
 grid.table(pred.params.curt)
