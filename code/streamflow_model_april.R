@@ -22,7 +22,7 @@ rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir",
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 swe_q = read.csv(file.path(data_dir,input))
-swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
+swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
 temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
 var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
 var$div <- var$abv.h + var$abv.s
@@ -46,7 +46,8 @@ colnames(wy)<-c("Date","day")
 output.vol<-array(NA,c(length(stream.id),8))
 rownames(output.vol)<-stream.id
 output.vol<-output.vol[-4,]
-colnames(output.vol)<-c("Predictors Vol\n% of mean","Predictors swe \n% of mean", "Pred. Vol \n(cfs)", "Pred. Vol \n% of mean", "90% exc. \ncfs", "90% exc. \n% of mean", "Prev Year \nVol (cfs)", "Prev Year \n% of mean Volume")
+colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol \nKAF", "Pred. Vol \n% of mean", "90% exc. \nKAF", "90% exc. \n% of mean", "Prev Year \nVol KAF", "Prev Year \n% of mean Volume")
+rownames(output.vol)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
 pred.params.vol<-array(NA,c(4,2))
 rownames(pred.params.vol)<-c("bwb.vol","bws.vol","cc.vol","sc.vol")
@@ -96,7 +97,7 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE),2)*100 
   
   # back-transformation of log-transformed data to expected value in original units, with lognormal residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
-  output.vol[1,2]<-round(exp(predictions$fit[1]+sig^2/2),0) /1000
+  output.vol[1,2]<-round(exp(predictions$fit[1]+sig^2/2)/1000,0)
   #Division by long-term mean to generate % of average volume, with lognormal residuals
   output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=TRUE),3) *100
   
@@ -246,7 +247,7 @@ modOutcm<- function(mod.cm, pred.dat, pred.dat.temps, hist.temps, hist.cm, pred.
   output.cm[1,2]<-round(sum(pred.swe, na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =T),3) 
   output.cm[1,3]<-round(mean(predictions),0) 
   output.cm[1,4]<-round(mean(predictions)-mean(hist.cm,na.rm=T),0) 
-  output.cm[1,5]<-format(wy$Date[wy$day==round(mean(predictions),0)],"%b-%d")
+  output.cm[1,5]<-format(wy$Date[wy$day==round(mean(predictions, na.rm=TRUE),0)],"%b-%d")
   
   return(list(output.cm, pred.params.cm))
 }
@@ -426,7 +427,7 @@ rownames(pred.params.div)<-c("bw.div", "sc.div")
 png(filename = file.path(fig_dir,"April/Losses.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
-plot(var$year, var$bws.loss, xlab="Year", ylab="Annual Losses (ac-ft)")
+plot(var$year[var$year<2020], var$bws.loss[var$year<2020], xlab="Year", ylab="Annual Losses (ac-ft)")
 dev.off()
 #plot(var$year[var$year >=2000], var$bws.loss[var$year >=2000])
 
@@ -452,7 +453,7 @@ dev.off()
 png(filename = file.path(fig_dir,"April/Div.bw.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
-plot(var$year, var$div, xlab="Year", ylab="Big Wood Diversions (ac-ft)")
+plot(var$year[var$year<2020], var$div[var$year<2020], xlab="Year", ylab="Big Wood Diversions (ac-ft)")
 dev.off()
 
 hist <- var[var$year >=1997 & var$year < pred.yr,] %>% dplyr::select(div, bws.wq, cg.swe, hc.swe) 
@@ -481,14 +482,14 @@ dev.off()
 png(filename = file.path(fig_dir,"April/Div.sc.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
-plot(var$year, var$sc.div, xlab="Year", ylab="Silver Creek Diversions (ac-ft)")
+plot(var$year[var$year<2020], var$sc.div[var$year<2020], xlab="Year", ylab="Silver Creek Diversions (ac-ft)")
 dev.off()
 
 # g.swe, t.cg, t.gs,t.hc, log.cg, log.lwd
-hist <- var[var$year>1993 & var$year < pred.yr,] %>% dplyr::select(sc.div, g.swe, cg.swe, lwd.swe, t.cg, t.gs, t.hc) 
+hist <- var[var$year>1993 & var$year < 2020,] %>% dplyr::select(sc.div, g.swe, cg.swe, lwd.swe, t.cg, t.gs, t.hc) 
 hist$temps<- rowMeans(cbind(hist$t.cg, hist$t.gs, hist$t.hc), na.rm=TRUE)
 # linear model 
-sc.div_mod<-lm(log(var$sc.div[var$year>1993 & var$year < pred.yr]) ~ g.swe+ temps+log(cg.swe)+log(lwd.swe), data=hist) 
+sc.div_mod<-lm(log(var$sc.div[var$year>1993 & var$year < 2020]) ~ g.swe+ temps+log(cg.swe)+log(lwd.swe), data=hist) 
 mod_sum[6,1] <- summary(sc.div_mod)$adj.r.squared #not gonna work 
 # April 1 Prediction Data 
 params<- var[var$year == pred.yr,] %>% dplyr::select(g.swe, cg.swe, lwd.swe)
@@ -505,7 +506,7 @@ png(filename = file.path(fig_dir,"April/SC_Diversions_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 fits<-fitted(sc.div_mod)
-plot(var$sc.div[var$year>1993 & var$year < pred.yr],exp(c(fits)), xlab="Observed", 
+plot(var$sc.div[var$year>1993 & var$year < 2020],exp(c(fits)), xlab="Observed", 
      ylab="Predicted", xlim=c(3300, 8200), ylim=c(3300, 8200))
 abline(0,1,col="gray50",lty=1)
 dev.off()
@@ -550,14 +551,31 @@ write.csv(cov.mat, file.path(cd,"April_output/cov.mat.csv"),row.names=T)
 write.csv(pred.pars, file.path(cd,"April_output/pred.pars.csv"),row.names=T)
 
 # Plot boxplots of total annual flow from each model
-png(filename = file.path(fig_dir,"April/sampled_volumes.png"),
+# Subset for plotting
+vol.hist<- as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(bwb.vol.nat, bws.vol.nat, cc.vol)) %>% `colnames<-`(c("Big Wood Hailey Hist", "Big Wood Stanton Hist","Camas Creek Hist")) %>%pivot_longer(everything(),  names_to = "site", values_to = "value") )
+vol.hist$value<-vol.hist$value/10000
+vol.hist.sm<-as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(sc.vol.nat, sc.div, div)) %>% `colnames<-`(c("Silver Creek Hist", "Silver Creek Div Hist", "Big Wood Div Hist")) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") )
+vol.hist.sm$value<-vol.hist.sm$value/1000
+colnames(vol.sample2)<-c("Big Wood Hailey Pred", "Big Wood Stanton Pred","Camas Creek Pred", "Silver Creek Pred", "Silver Creek Div Pred", "Big Wood Div Pred")
+
+vol.pred <-as.data.frame(exp(vol.sample2[,1:3])/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+vol.pred.sm <- as.data.frame(exp(vol.sample2[,4:6])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+
+vol.big<- rbind(vol.hist, vol.pred)
+vol.sm<- rbind(vol.hist.sm, vol.pred.sm)
+
+
+# Plot boxplots of total annual flow from each model
+png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
-as.data.frame(exp(vol.sample[,1:3])/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
+vol.big %>%
   ggplot(aes(x=site, y=value, fill=site)) +
-  geom_boxplot() +
-  scale_fill_viridis(discrete = TRUE, alpha=0.7) +
+  geom_boxplot(alpha=0.7) +
+  scale_fill_manual(values=c("grey90","blue", "grey90","blue", "grey90","blue")) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  scale_y_continuous(breaks = round(seq(0, max(vol.big$value, na.rm=TRUE), by = 10),1))+
   theme_bw()+
   theme(legend.position="none") +
   ggtitle("Sampled Irrigation Season Volumes") +
@@ -565,14 +583,18 @@ as.data.frame(exp(vol.sample[,1:3])/10000) %>% pivot_longer(everything(),  names
   ylab("Irrigation Season Volume (10,000 ac-ft)")
 dev.off()
 
-png(filename = file.path(fig_dir,"April/sampled_sc_diversions.png"),
+print(file.path(mo_fig_dir,"sampled_volumes.png"))
+
+png(filename = file.path(fig_dir_mo,"sampled_sc_diversions.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
 
-as.data.frame(exp(vol.sample[,4:6])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
+vol.sm %>%
   ggplot(aes(x=site, y=value, fill=site)) +
-  geom_boxplot() +
-  scale_fill_viridis(discrete = TRUE, alpha=0.7) +
+  geom_boxplot(alpha=0.7) +
+  scale_fill_manual(values=c("grey90","blue", "grey90","blue", "grey90","blue")) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  scale_y_continuous(breaks = round(seq(0, max(vol.sm$value, na.rm=TRUE), by = 10),1))+
   theme_bw()+
   theme(legend.position="none") +
   ggtitle("") +
@@ -580,8 +602,10 @@ as.data.frame(exp(vol.sample[,4:6])/1000) %>% pivot_longer(everything(),  names_
   ylab("Irrigation Volume (1,000 ac-ft)")
 dev.off()
 
+# CENTER of MASS Sample
+
 # Draw sample of years with similar center of mass (timing)
-cm.data = var[var$year >= 1997 & var$year < pred.yr,]
+cm.data = var[var$year >= 1997 & var$year < 2020,]
 cm.data = cm.data %>% dplyr::select(year, bwb.cm.nat, bws.cm.nat,cc.cm, sc.cm) 
 cm.data$prob<-NA
 
@@ -610,7 +634,7 @@ write.csv(CMyear.sample, file.path(cd,"April_output/CMyear.sample.csv"),row.name
 CMyear.sample.prob<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob) 
 cm_prob<-as.data.frame(summary(as.factor(CMyear.sample.prob))/5000)
 colnames(cm_prob)<- c("% of sample")
-cm_prob- cm_prob*100
+cm_prob<- cm_prob*100
 png(file.path(fig_dir,"April/CM_summary_prob.png"), height = 50*nrow(cm_prob), width = 200*ncol(cm_prob))
 grid.table(cm_prob)
 dev.off()
