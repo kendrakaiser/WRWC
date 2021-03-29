@@ -556,10 +556,9 @@ vol.hist<- as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(bwb.vol.nat, 
 vol.hist$value<-vol.hist$value/10000
 vol.hist.sm<-as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(sc.vol.nat, sc.div, div)) %>% `colnames<-`(c("Silver Creek Hist", "Silver Creek Div Hist", "Big Wood Div Hist")) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") )
 vol.hist.sm$value<-vol.hist.sm$value/1000
-colnames(vol.sample2)<-c("Big Wood Hailey Pred", "Big Wood Stanton Pred","Camas Creek Pred", "Silver Creek Pred", "Silver Creek Div Pred", "Big Wood Div Pred")
 
-vol.pred <-as.data.frame(exp(vol.sample2[,1:3])/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
-vol.pred.sm <- as.data.frame(exp(vol.sample2[,4:6])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+vol.pred <-as.data.frame(exp(vol.sample[,1:3])/10000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+vol.pred.sm <- as.data.frame(exp(vol.sample[,4:6])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
 
 vol.big<- rbind(vol.hist, vol.pred)
 vol.sm<- rbind(vol.hist.sm, vol.pred.sm)
