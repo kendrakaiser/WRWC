@@ -163,6 +163,8 @@ ccd = 382 #  Camas Creek Divide (Sheep/Camas Creek 0101)
 sr = 769 #  Soldier R.S (Upper Soldier Creek 0303)
 ga = 492 #  Garfield R.S. (Upper Muldoon Creek 0301)
 sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
+sm = 792 # Stickney Mill
+bc = 320 # Bear Canyon
 snotel_sites = c(cg, g, gs, hc, lwd, ds, ccd, sr, ga, sp)
 snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "ccd.swe", "sr.swe", "ga.swe", "sp.swe")
 
@@ -200,10 +202,17 @@ colnames(april1swe)<- c('year', snotel_abrv)
 april1swe[,1]<- wy
 april1swe<-as.data.frame(april1swe)
 
+today_swe<- matrix(data=NA, nrow=1, ncol=length(snotel_sites))
+colnames(today_swe)<- c(snotel_abrv)
+
 for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 4 & snotel_data_out$day ==1,]
   april1swe[which(april1swe$year == min(sub$wy)) : which(april1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
+  sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
+  today_swe[i]<- sub2$snow_water_equivalent[sub2$date == max(sub2$date)-1]
 }
+
+april1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
 
 # subset March 1 data for model 
 mar1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
@@ -218,7 +227,7 @@ for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 3 & snotel_data_out$day ==1,]
   mar1swe[which(mar1swe$year == min(sub$wy)) : which(mar1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
   sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
-  today_swe[i]<- sub2$snow_water_equivalent[sub2$date == max(sub2$date)]
+  today_swe[i]<- sub2$snow_water_equivalent[sub2$date == max(sub2$date)-1]
   }
 
 # Update the March 1 SWE with the current swe
@@ -236,10 +245,11 @@ colnames(today_swe)<- c(snotel_abrv)
 for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 2 & snotel_data_out$day ==1,]
   feb1swe[which(feb1swe$year == min(sub$wy)) : which(feb1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
-  today_swe[i]<-snotel_data_out$snow_water_equivalent[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$date == max(snotel_data_out$date)]
+  today_swe[i]<-snotel_data_out$snow_water_equivalent[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$date == max(snotel_data_out$date)-1]
 }
 # Update the Feb 1 SWE with the current swe
 feb1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
+
 # ------------------------------------------------------------------------------
 # Save Data
 # ------------------------------------------------------------------------------
