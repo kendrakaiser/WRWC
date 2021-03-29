@@ -177,7 +177,7 @@ While the curtailment date models do fairly well at predicting curtailment dates
 #if (params$fig_dir_mo == 'figures/April'){  }
   #knitr::include_graphics(file.path(params$fig_dir_mo, "curt_summary.png"))
 
-pred.curt %>% mutate(adjR2 = cell_spec(adjR2, color = ifelse(adjR2 > 0.70, "green","red")))  %>% kable(align=rep('c', 9), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
+pred.curt %>% mutate(adjR2 = cell_spec(adjR2, color = ifelse(adjR2 < 0.70, "green","red")))  %>% kable(align=rep('c', 9), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
 ```
 
 
