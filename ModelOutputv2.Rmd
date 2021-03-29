@@ -54,6 +54,9 @@ swe_q = read.csv(file.path(params$data_dir, params$input))
 
 yr<- year(as.Date(params$todays_date, format = "%m/%d/%Y"))
 mo<- month(as.Date(params$todays_date, format = "%m/%d/%Y"))
+
+pred.curt = read.csv(file.path('~/Desktop/WRWC/April_output/pred.curtailments.csv'))
+colnames(pred.curt)<- c("Water Right", "adjR2", "Predicted Curtailment", "Days +/-")
 ```
 
 ## Wood River Model Summary
@@ -171,16 +174,17 @@ While the curtailment date models do fairly well at predicting curtailment dates
 
 
 ```{r curtailmentSummary, echo=FALSE, out.width = '110%', fig.align='center'}
-if (params$fig_dir_mo == 'figures/April'){  
-  knitr::include_graphics(file.path(params$fig_dir_mo, "curt_summary.png"))
-}
+#if (params$fig_dir_mo == 'figures/April'){  }
+  #knitr::include_graphics(file.path(params$fig_dir_mo, "curt_summary.png"))
+
+pred.curt %>% mutate(adjR2 = cell_spec(adjR2, color = ifelse(adjR2 > 0.70, "green","red")))  %>% kable(align=rep('c', 9), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
 ```
 
 
 ```{r, sampledCurtailmentDates, echo=FALSE, out.width = '80%', fig.align='center'}
-if (params$fig_dir_mo == 'figures/April'){
-  knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_curtailments.png"))
-}
+#if (params$fig_dir_mo == 'figures/April'){}
+knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_curtailments.png"))
+
 ```
 
 
