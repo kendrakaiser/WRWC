@@ -103,7 +103,7 @@ ggplot(data= (snotel_data %>% filter(wy == yr)), mapping= aes(x=as.Date(date), y
   geom_line(aes(color = site_name))+
   labs(color = "Snotel Site")+
   xlab('Date')+
-  ylab('Cumulative Precipitation (in)')+
+  ylab('Cumulative Precipitation (mm)')+
   theme_bw()
 
 #Calculate Historic Means
@@ -120,8 +120,8 @@ ytd_swe<- snotel_data[snotel_data$date == last_date,] %>% dplyr::select(c(site_n
 rownames(ytd_swe) <- c("Chocolate Gulch", "Camas Creek Divide", "Soldier R.S.", "Dollarhide Summit", "Galena", "Garfield R.S.", "Hyndman Creek", "Lost-Wood Divide", "Galena Summit", "Swede Peak")
 
 swe<- merge(round(swe_means,0), ytd_swe, by=0) %>% dplyr::select(-site_name)
-#update this to auto select the month to compare average to
-swe$per <- round(swe[,5]/swe$Feb1,2)*100
+#TODO: update this to auto select the month to compare average to
+swe$per <- round(swe[,5]/swe$Apr1,2)*100
 da<-format(last_date, "%b %d %Y")
 
 swe %>% mutate(per = cell_spec(per, color = ifelse(per > 75, "blue","red"))) %>% `colnames<-`(c("Site", "Feb 1 Hist. Avg.", "Mar 1 Hist. Avg.", "Apr 1 Hist. Avg.", da, "Per of Avg"))  %>% kable(align=rep('c', 6), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
