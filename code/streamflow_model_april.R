@@ -95,19 +95,19 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.95)
   pred.params.vol[1,1]<-mean(predictions$fit, na.rm=TRUE)
   #This years percent of mean winter flow
-  output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,2)
+  output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,0)
   
   # back-transformation of log-transformed data to expected value in original units, with lognormal residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
   output.vol[1,2]<-round(exp(predictions$fit[1]+sig^2/2)/1000,0)
   #Division by long-term mean to generate % of average volume, with lognormal residuals
-  output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=TRUE) *100,3)
+  output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=TRUE) *100,0)
   
   #this years total volume at 80 % confidence
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.9)
   #bottom of 90% CI (statisticians) converted ac-ft
   output.vol[1,4]<-round(exp(predictions$fit[2])/1000,0) #(1.98*183)
   # 90% exceedance flow as a percent of long-term mean
-  output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=TRUE) *100,3)
+  output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=TRUE) *100,0)
   output.vol[1,7]<-round(lastQ,0) # last years volume in ac-ft
   output.vol[1,8]<-round(lastQ/mean(vol, na.rm=TRUE),3)*100 # Last years percent of average historic volume
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.5)
@@ -612,8 +612,8 @@ cm.data$prob<-NA
 # pmvnorm calculates the distribution function of the multivariate normal distribution
 for(i in 1:dim(cm.data)[1]){
   vec<-cm.data[i,2:5]
-  cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-0.75,
-                          upper=as.numeric(vec)+0.75,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1]
+  cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-1,
+                          upper=as.numeric(vec)+1,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1]
 }
 cm.data$prob<-cm.data$prob/sum(cm.data$prob)
 # create normal distribution of years 
@@ -648,15 +648,15 @@ vol.data$prob<-NA
 # pmvnorm calculates the distribution function of the multivariate normal distribution
 for(i in 1:dim(vol.data)[1]){
   vec<-vol.data[i,2:5]
-  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-.75,
-                           upper=as.numeric(vec)+.75,mean=pred.params.vol[,1],sigma=cov.mat[1:4,1:4])[1]
+  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-32000,
+                           upper=as.numeric(vec)+32000,mean=exp(pred.params.vol[,1]),corr=cor.mat[1:4,1:4])[1]
 }
 
-vol.sample.prob<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob) 
+vol.sample.prob<-sample(vol.data$year,5000,replace=TRUE, prob=vol.data$prob) 
 vol_prob<-as.data.frame(summary(as.factor(vol.sample.prob))/5000)*100
 colnames(vol_prob)<- c("% of sample")
 
-png(file.path(fig_dir,"April/vol_prob.png"), height = 50*nrow(cm_prob), width = 200*ncol(cm_prob))
+png(file.path(fig_dir,"April/vol_prob.png"), height = 50*nrow(vol_prob), width = 200*ncol(vol_prob))
 grid.table(vol_prob)
 dev.off()
 
