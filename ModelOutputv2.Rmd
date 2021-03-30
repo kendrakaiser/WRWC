@@ -1,12 +1,12 @@
 ---
 title: "WRWC Model Run"
 params:
-    fig_dir_mo: 'figures/March'
+    fig_dir_mo: 'figures/April'
     set_author: "Kendra E Kaiser"
-    todays_date: "01/28/2021"
+    todays_date: "03/30/2021"
     data_dir:  '~/Desktop/WRWC/data'
     git_dir: '~/github/WRWC'
-    input: 'all_dat_feb.csv'
+    input: 'all_dat_apr.csv'
 author: "`r params$set_author`"
 date: "`r params$todays_date`"
 output: 
@@ -18,11 +18,10 @@ urlcolor: blue
 csl: AmJBot.csl
 header-includes:
     \usepackage{float}
-
-    
 ---
 ```{r, include=FALSE}
 options(tinytex.verbose = TRUE)
+knitr::opts_chunk$set(fig.pos = "!H", out.extra = "")
 ```
 
 ```{r setup, include=FALSE}
@@ -149,7 +148,7 @@ knitr::include_graphics(file.path(params$fig_dir_mo, "pred.volumes.png"))
 
 These box plots show the historic range of volumes (grey) and the predicted range of volumes that were calculated for each basin (blue). The boxes represent the 25th - 75th percentiles, the median is the solid line in the middle, and circles are outliers. 
 
-```{r, sampledVolumes, echo=FALSE, out.width = '50%', fig.show="hold"}
+```{r,sampledVolumes, echo=FALSE, out.width = '50%', fig.show="hold"}
 knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), file.path(params$fig_dir_mo, "sampled_sc_diversions.png")))
 ```
 
@@ -168,26 +167,36 @@ knitr::include_graphics(c(file.path(params$fig_dir_mo, "BWB_Simulation.png"),
 knitr::include_graphics(c(file.path(params$fig_dir_mo,"SC_Simulation.png"), file.path(params$fig_dir_mo,"CC_Simulation.png")))
 ```
 
+\newpage
+
+The following tables are estimates of the most similar years (since 1996) based on total irrigation season volume (left) and based on the timing of snowmelt (right).
+
+```{r, yearComparison, echo=FALSE, out.width = '100%', fig.show="hold"}
+knitr::include_graphics(c(file.path(params$fig_dir_mo,"vol_prob.png"), file.path(params$fig_dir_mo,"CM_summary_prob.png")))
+```
+
+\newpage
+
 ### Curtailment Date Model Output
 
-While the curtailment date models do fairly well at predicting curtailment dates with historic data (see the adjusted R2 in the table below), the combination of predicted streamflow volumes, diversions and summer temperatures limit their ability to accurately and concisely estimate curtailment dates. The 'sigma' value is the standard error, or the variance around the 'true' value. In many of the curtailment models, this standard error means that the prediction could be off by a week in either direction (early or late). Given the uncertainty in April predictions, there are no curtailment predictions for February or March.
+While the curtailment date models do fairly well at predicting curtailment dates with historic data the combination of predicted streamflow volumes, diversions and summer temperatures limit their ability to accurately and concisely estimate curtailment dates. The "Days +/-" is the variance around the 'true' value. In many of the curtailment models, this means that the prediction could be off by a week in either direction (early or late). 
 
 
-```{r curtailmentSummary, echo=FALSE, out.width = '110%', fig.align='center'}
+
+```{r curtailmentSummary, echo=FALSE, out.width = '100%', fig.align='center'}
 #if (params$fig_dir_mo == 'figures/April'){  }
   #knitr::include_graphics(file.path(params$fig_dir_mo, "curt_summary.png"))
 
-pred.curt %>% mutate(adjR2 = cell_spec(adjR2, color = ifelse(adjR2 < 0.70, "green","red")))  %>% kable(align=rep('c', 9), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
+pred.curt %>% mutate(adjR2 = cell_spec(adjR2, color = ifelse(adjR2 > 0.70, "OliveGreen","red")))  %>% kable(align=rep('c', 9), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
 ```
 
 
-```{r, sampledCurtailmentDates, echo=FALSE, out.width = '80%', fig.align='center'}
+```{r, sampledCurtailmentDates, echo=FALSE, out.width = '60%', fig.align='center'}
 #if (params$fig_dir_mo == 'figures/April'){}
 knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_curtailments.png"))
-
 ```
 
-
+\newpage
 ### Data Inputs
 
 Data is automatically downloaded from the USGS, NRCS and AgriMet (Fairfield and Picabo).
