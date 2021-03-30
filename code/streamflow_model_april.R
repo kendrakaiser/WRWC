@@ -602,7 +602,7 @@ vol.sm %>%
   ylab("Irrigation Volume (KAF)")
 dev.off()
 
-# CENTER of MASS Sample
+# CENTER of MASS & Volume Samples
 
 # Draw sample of years with similar center of mass (timing)
 cm.data = var[var$year >= 1997 & var$year < 2020,]
@@ -637,6 +637,27 @@ colnames(cm_prob)<- c("% of sample")
 cm_prob<- cm_prob*100
 png(file.path(fig_dir,"April/CM_summary_prob.png"), height = 50*nrow(cm_prob), width = 200*ncol(cm_prob))
 grid.table(cm_prob)
+dev.off()
+
+
+# Draw sample of years with similar volume for comparison
+vol.data = var[var$year >= 1997 & var$year < 2020,]
+vol.data = vol.data %>% dplyr::select(year, bwb.vol.nat, bws.vol.nat, cc.vol, sc.vol.nat) 
+vol.data$prob<-NA
+
+# pmvnorm calculates the distribution function of the multivariate normal distribution
+for(i in 1:dim(vol.data)[1]){
+  vec<-vol.data[i,2:5]
+  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-.75,
+                           upper=as.numeric(vec)+.75,mean=pred.params.vol[,1],sigma=cov.mat[1:4,1:4])[1]
+}
+
+vol.sample.prob<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob) 
+vol_prob<-as.data.frame(summary(as.factor(vol.sample.prob))/5000)*100
+colnames(vol_prob)<- c("% of sample")
+
+png(file.path(fig_dir,"April/vol_prob.png"), height = 50*nrow(cm_prob), width = 200*ncol(cm_prob))
+grid.table(vol_prob)
 dev.off()
 
 
