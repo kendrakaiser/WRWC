@@ -29,7 +29,7 @@ tdata$site<-rep(site.key, each=nyrs)
 tdata$elev<-rep(elev, each=nyrs)
 
 #calculate average Snotel april/jun temperature for every year
-for(i in 1:10){ #hard coded this in after adding agrimet sites to site.key list
+for(i in 1:12){ #hard coded this in after adding agrimet sites to site.key list
   for (y in first.yr:last.yr){
     sub<- snotel[snotel$site_name == site.key[i] & snotel$wy==y, ] #subset to indv. site and year
     #average april - june temps
@@ -45,7 +45,7 @@ for(i in 1:10){ #hard coded this in after adding agrimet sites to site.key list
   }
 }
 #calculate Agrimet average april/jun temperature for every year
-for(i in 11:12){# these values could be ∆ to not be hard coded
+for(i in 13:14){# these values could be ∆ to not be hard coded
   for (y in first.yr:last.yr){
     sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$y==y, ]) #subset to indv. site and year
     #average april - june temps
@@ -65,9 +65,9 @@ for(i in 11:12){# these values could be ∆ to not be hard coded
 spring.tdata <-pivot_wider(tdata[,1:3], names_from = site, values_from = spring.tempF)
 sum.tdata<-pivot_wider(tdata[,c(1,2,4)], names_from = site, values_from = sum.tempF)
 wint.tdata<-pivot_wider(tdata[,c(1,2,5)], names_from = site, values_from = wint.tempF)
-colnames(spring.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.ds","t.g","t.ga", "t.hc", "t.lw", "t.gs", "t.sp","t.p", "t.f")
-colnames(sum.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.ds","t.g","t.ga", "t.hc", "t.lw", "t.gs", "t.sp","t.p", "t.f")
-colnames(wint.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.ds","t.g","t.ga", "t.hc", "t.lw", "t.gs", "t.sp","t.p", "t.f")
+colnames(spring.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
+colnames(sum.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
+colnames(wint.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 
 
 write.csv(spring.tdata, file.path(data_out, 'sprTemps.csv'))
@@ -108,7 +108,7 @@ nboot<-5000
 # All sites winter --------------------------------------------------------------------------
 tdata.sno<- tdata[tdata$site != "fairfield" & tdata$site != "picabo",]
 #not so sure about this .. come back to decide how it would be used (e.g. summer temp goes into irrigation est)
-trend.reml<-lme(fixed=sum.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.sno, method="REML",na.action=na.omit)
+trend.reml2<-lme(fixed=sum.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.sno, method="REML",na.action=na.omit)
 summary(trend.reml)
 
 # predict this years temperature
