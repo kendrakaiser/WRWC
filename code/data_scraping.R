@@ -165,8 +165,8 @@ ga = 492 #  Garfield R.S. (Upper Muldoon Creek 0301)
 sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
 sm = 792 # Stickney Mill
 bc = 320 # Bear Canyon
-snotel_sites = c(cg, g, gs, hc, lwd, ds, ccd, sr, ga, sp)
-snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "ccd.swe", "sr.swe", "ga.swe", "sp.swe")
+snotel_sites = c(cg, g, gs, hc, lwd, ds, ccd, sr, ga, sp, sm, bc)
+snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "ccd.swe", "sr.swe", "ga.swe", "sp.swe", "sm.swe", "bc.swe")
 
 # Download Snotel data ----
 snotel_data = snotel_download(snotel_sites, path = data_dir, internal = TRUE )
@@ -184,9 +184,9 @@ for (i in 1:length(snotel_sites)){
   snotel_site_info[i,'elev'] <- snotel_data$elev[snotel_data$site_id == snotel_sites[i]][1]
   snotel_site_info[i,'description'] <- snotel_data$description[snotel_data$site_id == snotel_sites[i]][1]
 }
-snotel_site_info$site_name <- c('chocolate gulch', 'galena', 'galena summit', 'hyndman', 'lost-wood divide', 'dollarhide summit', 'camas creek divide', 'soldier r.s.', 'garfield r.s.', 'swede peak')
+snotel_site_info$site_name <- c('chocolate gulch', 'galena', 'galena summit', 'hyndman', 'lost-wood divide', 'dollarhide summit', 'camas creek divide', 'soldier r.s.', 'garfield r.s.', 'swede peak', "stickney mill", "bear canyon")
 snotel_site_info$abv<- snotel_abrv
-snotel_site_info$huc8 <- c(219,219,219,219,219,219,220,220,221,221)
+snotel_site_info$huc8 <- c(219,219,219,219,219,219,220,220,221,221,303,101)
 # remove unnecessary columns from Snotel data frame
 snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, latitude, longitude, elev, county, description))
 snotel_data_out$site_name<-trimws(snotel_data_out$site_name)
