@@ -21,8 +21,9 @@ nyrs<-last.yr-first.yr+1
 site.key <- c(as.character(unique(snotel$site_name)), as.character(unique(agrimet$site_name)))
 
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
-tdata<-data.frame(array(NA,c(length(site.key)*nyrs,3)))
-colnames(tdata)<-c("year","site","Apr.Jun.tempF")
+tdata<-data.frame(array(NA,c(length(site.key)*nyrs,5)))
+#summer temp july-sept, winter temp NDJFM
+colnames(tdata)<-c("year","site","spring.tempF", "sum.tempF", "wint.tempF")
 tdata$year<-rep(first.yr:last.yr,length(site.key))
 tdata$site<-rep(site.key,each=nyrs)
 
@@ -32,8 +33,14 @@ for(i in 1:10){ #hard coded this in after adding agrimet sites to site.key list
     sub<- snotel[snotel$site_name == site.key[i] & snotel$wy==y, ] #subset to indv. site and year
     #average april - june temps
     mean.temp <- mean(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"], na.rm=T)
+    #average summer temps July Aug Sept
+    sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "temperature_mean"], na.rm=T)
+    #average april - june temps
+    wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3 , "temperature_mean"], na.rm=T)
     #save to tdata table
-    tdata$Apr.Jun.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp
+    tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp
+    tdata$sum.tempF[tdata$year == y & tdata$site == site.key[i]] <- sum.mean.temp
+    tdata$wint.tempF[tdata$year == y & tdata$site == site.key[i]] <- wint.mean.temp
   }
 }
 #calculate Agrimet average april/jun temperature for every year
@@ -42,28 +49,41 @@ for(i in 11:12){# these values could be ∆ to not be hard coded
     sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$y==y, ]) #subset to indv. site and year
     #average april - june temps
     mean.temp <- mean(sub[sub$month == 4 | sub$month ==5 | sub$month ==6 , "t"], na.rm=T)
+    #average summer temps July Aug Sept
+    sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "t"], na.rm=T)
+    #average april - june temps
+    wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3 , "t"], na.rm=T)
     #save to tdata table
-    tdata$Apr.Jun.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp
+    tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp
+    tdata$sum.tempF[tdata$year == y & tdata$site == site.key[i]] <- sum.mean.temp
+    tdata$wint.tempF[tdata$year == y & tdata$site == site.key[i]] <- wint.mean.temp
   }
 }
 
 #transform temperature dataframe for main model
-tdata.wide <-pivot_wider(tdata, names_from = site, values_from = Apr.Jun.tempF)
-colnames(tdata.wide)<-c("year", "t.cg","t.ccd", "t.sr", "t.ds","t.g","t.ga", "t.hc", "t.lw", "t.gs", "t.sp","t.p", "t.f")
+spring.tdata <-pivot_wider(tdata[,1:3], names_from = site, values_from = spring.tempF)
+sum.tdata<-pivot_wider(tdata[,c(1,2,4)], names_from = site, values_from = sum.tempF)
+wint.tdata<-pivot_wider(tdata[,c(1,2,5)], names_from = site, values_from = wint.tempF)
+colnames(spring.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.ds","t.g","t.ga", "t.hc", "t.lw", "t.gs", "t.sp","t.p", "t.f")
+colnames(sum.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.ds","t.g","t.ga", "t.hc", "t.lw", "t.gs", "t.sp","t.p", "t.f")
+colnames(wint.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.ds","t.g","t.ga", "t.hc", "t.lw", "t.gs", "t.sp","t.p", "t.f")
+
+
+write.csv(spring.tdata, file.path(data_out, 'sprTemps.csv'))
+write.csv(sum.tdata, file.path(data_out, 'sumTemps.csv'))
+write.csv(wint.tdata, file.path(data_out, 'wintTemps.csv'))
 
 snotel_abrv <- c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
-write.csv(tdata.wide, file.path(data_out, 'ajTemps.csv'))
-
 #plot all data
 png(filename = file.path(fig_dir,"Temperatures.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
-ggplot(tdata, aes(x=year, y=Apr.Jun.tempF, color=site)) +geom_point()
+ggplot(tdata, aes(x=year, y=spring.tempF, color=site)) +geom_point()
 dev.off()
 
 # generate data for prediction
 new.data<-data.frame(array(NA,c(length(site.key),3)))
-colnames(new.data)<-c("year","site","Apr.Jun.tempF")
+colnames(new.data)<-c("year","site","spring.tempF")
 new.data$year<-rep(last.yr+1,length(site.key))
 new.data$site<-(site.key)
 
@@ -74,7 +94,7 @@ nboot<-5000
 # BWH --------------------------------------------------------------------------
 # t.g +t.gs +t.lw
 tdata.bwb<- tdata[tdata$site %in% c("galena","galena summit", "lost-wood divide"),]
-trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.bwb, method="REML",na.action=na.omit)
+trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.bwb, method="REML",na.action=na.omit)
 summary(trend.reml)
 
 # predict this years temperature
@@ -94,7 +114,7 @@ aj.temps.bwh<-rnorm(nboot,mean=pred,sd=se.pred)
 # BWS --------------------------------------------------------------------------
 # t.cg+ t.g + t.hc+ t.lw
 tdata.bws<- tdata[tdata$site %in% c("chocolate gulch","galena", "hyndman", "lost-wood divide"),]
-trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.bws, method="REML",na.action=na.omit)
+trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.bws, method="REML",na.action=na.omit)
 # predict this years temperature
 pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
 fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
@@ -110,7 +130,7 @@ aj.temps.bws<-rnorm(nboot,mean=pred,sd=se.pred)
 # SC --------------------------------------------------------------------------
 # t.cg+t.gs
 tdata.sc<- tdata[tdata$site %in% c("chocolate gulch","galena summit"),]
-trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.sc, method="REML",na.action=na.omit)
+trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.sc, method="REML",na.action=na.omit)
 # predict this years temperature
 pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
 fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
@@ -126,7 +146,7 @@ aj.temps.sc<-rnorm(nboot,mean=pred,sd=se.pred)
 # CC --------------------------------------------------------------------------
 # t.f
 tdata.cc<- tdata[tdata$site %in% c("fairfield", "picabo"),]
-trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.cc, method="REML",na.action=na.omit)
+trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.cc, method="REML",na.action=na.omit)
 # predict this years temperature
 pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
 fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
@@ -142,7 +162,7 @@ aj.temps.cc<-rnorm(nboot,mean=pred,sd=se.pred)
 # SC Diversions ----------------------------------------------------------------
 # t.cg, t.gs, t.hc
 tdata.scd<- tdata[tdata$site %in% c("chocolate gulch","galena summit", "hyndman"),]
-trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.scd, method="REML",na.action=na.omit)
+trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.scd, method="REML",na.action=na.omit)
 # predict this years temperature
 pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
 fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
@@ -157,7 +177,7 @@ aj.temps.scd<-rnorm(nboot,mean=pred,sd=se.pred)
 
 
 tdata.curt<- tdata[tdata$site %in% c("lost-wood divide" ,"galena summit", "galena", "swede peak"),]
-trend.reml<-lme(fixed=Apr.Jun.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.curt, method="REML",na.action=na.omit)
+trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.curt, method="REML",na.action=na.omit)
 
 # predict this years temperature
 pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
