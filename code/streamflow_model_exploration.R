@@ -24,6 +24,7 @@ usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
 swe_q = read.csv(file.path(cd,'all_dat_apr.csv'))
 swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
 temps = read.csv(file.path(cd, 'ajTemps.csv'))
+wint.temps = read.csv(file.path(cd, 'wintTemps.csv'))
 var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
 stream.id<-unique(as.character(usgs_sites$abv))
 
