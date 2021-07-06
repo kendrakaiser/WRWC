@@ -19,13 +19,14 @@ first.yr<-1988
 last.yr<-pred.yr
 nyrs<-last.yr-first.yr+1
 site.key <- c(as.character(unique(snotel$site_name)), as.character(unique(agrimet$site_name)))
-
+huc8<- c(219,220,220,101,219,219,221,219,219,303,219,221,2192,2192)
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,5)))
 #summer temp july-sept, winter temp NDJFM
 colnames(tdata)<-c("year","site","spring.tempF", "sum.tempF", "wint.tempF")
 tdata$year<-rep(first.yr:last.yr,length(site.key))
-tdata$site<-rep(site.key,each=nyrs)
+tdata$site<-rep(site.key, each=nyrs)
+tdata$huc8<-rep(huc8, each=nyrs)
 
 #calculate average Snotel april/jun temperature for every year
 for(i in 1:10){ #hard coded this in after adding agrimet sites to site.key list
@@ -75,20 +76,55 @@ write.csv(wint.tdata, file.path(data_out, 'wintTemps.csv'))
 
 snotel_abrv <- c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
 #plot all data
-png(filename = file.path(fig_dir,"Temperatures.png"),
+png(filename = file.path(fig_dir,"SpringTemps.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600, type ="quartz") 
-ggplot(tdata, aes(x=year, y=spring.tempF, color=site)) +geom_point()
+ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=spring.tempF, color=site)) +geom_point()
+dev.off()
+
+#plot all data
+png(filename = file.path(fig_dir,"SummerTemps.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=sum.tempF, color=site)) +geom_point()
+dev.off()
+
+png(filename = file.path(fig_dir,"WinterTemps.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600, type ="quartz") 
+ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=wint.tempF, color=site)) +geom_point()
 dev.off()
 
 # generate data for prediction
-new.data<-data.frame(array(NA,c(length(site.key),3)))
-colnames(new.data)<-c("year","site","spring.tempF")
+new.data<-data.frame(array(NA,c(length(site.key),5)))
+colnames(new.data)<-c("year","site", "wint.tempF", "spr.tempF","sum.tempF")
 new.data$year<-rep(last.yr+1,length(site.key))
 new.data$site<-(site.key)
-
+new.data$huc8<-huc8
+  
 nboots<-2000
 nboot<-5000
+
+# All sites winter --------------------------------------------------------------------------
+tdata.sno<- tdata[tdata$site != "fairfield" & tdata$site != "picabo",]
+#not so sure about this .. come back to decide how it would be used (e.g. summer temp goes into irrigation est)
+trend.reml<-lme(fixed=sum.tempF ~ year, random=~1+year|huc8/site, correlation = corAR1(), data=tdata.sno, method="REML",na.action=na.omit)
+summary(trend.reml)
+
+# predict this years temperature
+pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
+fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
+
+# Bootstrap to estimate variance on new prediction, based on
+# fixed-effects covariance matrix
+mu<-trend.reml$coef$fixed
+sig<-trend.reml$var
+rand.coefs<-mvrnorm(nboots,mu,sig)
+var.est<-var(rand.coefs%*%c(1,last.yr+1))
+var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key)
+se.pred<-sqrt(var.est+var.site)
+sum.temps.all<-rnorm(nboot,mean=pred,sd=se.pred)
+
 # site combinations needed for multivariate models
 
 # BWH --------------------------------------------------------------------------
