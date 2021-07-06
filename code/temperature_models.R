@@ -19,14 +19,14 @@ first.yr<-1988
 last.yr<-pred.yr
 nyrs<-last.yr-first.yr+1
 site.key <- c(as.character(unique(snotel$site_name)), as.character(unique(agrimet$site_name)))
-huc8<- c(219,220,220,101,219,219,221,219,219,303,219,221,2192,2192)
+elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,5)))
 #summer temp july-sept, winter temp NDJFM
 colnames(tdata)<-c("year","site","spring.tempF", "sum.tempF", "wint.tempF")
 tdata$year<-rep(first.yr:last.yr,length(site.key))
 tdata$site<-rep(site.key, each=nyrs)
-tdata$huc8<-rep(huc8, each=nyrs)
+tdata$elev<-rep(elev, each=nyrs)
 
 #calculate average Snotel april/jun temperature for every year
 for(i in 1:10){ #hard coded this in after adding agrimet sites to site.key list
@@ -100,7 +100,7 @@ new.data<-data.frame(array(NA,c(length(site.key),5)))
 colnames(new.data)<-c("year","site", "wint.tempF", "spr.tempF","sum.tempF")
 new.data$year<-rep(last.yr+1,length(site.key))
 new.data$site<-(site.key)
-new.data$huc8<-huc8
+new.data$elev<-elev
   
 nboots<-2000
 nboot<-5000
@@ -108,7 +108,7 @@ nboot<-5000
 # All sites winter --------------------------------------------------------------------------
 tdata.sno<- tdata[tdata$site != "fairfield" & tdata$site != "picabo",]
 #not so sure about this .. come back to decide how it would be used (e.g. summer temp goes into irrigation est)
-trend.reml<-lme(fixed=sum.tempF ~ year, random=~1+year|huc8/site, correlation = corAR1(), data=tdata.sno, method="REML",na.action=na.omit)
+trend.reml<-lme(fixed=sum.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata.sno, method="REML",na.action=na.omit)
 summary(trend.reml)
 
 # predict this years temperature
