@@ -79,10 +79,10 @@ colnames(wint.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.g
 colnames(nj.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 
 
-write.csv(spring.tdata, file.path(data_out, 'sprTemps.csv'))
-write.csv(sum.tdata, file.path(data_out, 'sumTemps.csv'))
-write.csv(wint.tdata, file.path(data_out, 'wintTemps.csv'))
-write.csv(nj.tdata, file.path(data_out, 'njTemps.csv'))
+write.csv(spring.tdata, file.path(data_out, 'sprTemps.csv'), row.names=FALSE)
+write.csv(sum.tdata, file.path(data_out, 'sumTemps.csv'), row.names=FALSE)
+write.csv(wint.tdata, file.path(data_out, 'wintTemps.csv'), row.names=FALSE)
+write.csv(nj.tdata, file.path(data_out, 'njTemps.csv'), row.names=FALSE)
 
 snotel_abrv <- c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
 #plot all data
