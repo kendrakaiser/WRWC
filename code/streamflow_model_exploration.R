@@ -35,14 +35,14 @@ stream.id<-unique(as.character(usgs_sites$abv))
 # Evaluate alternative model combinations for April-Sept Volume Predictions
 # ------------------------------------------------------------------------------ # 
 
-#Big Wood at hailey, 'natural' flow
+#Big Wood at hailey actual flow, preforms better with linear swe data
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
-hist$log.wq <- log(hist$bwb.wq)
-hist$log.cg<- log(hist$cg.swe)
-hist$log.g <- log(hist$g.swe)
-hist$log.gs<- log(hist$gs.swe)
-hist$log.hc <- log(hist$hc.swe)
-hist$log.lwd <- log(hist$lwd.swe)
+#hist$log.wq <- log(hist$bwb.wq)
+#hist$log.cg<- log(hist$cg.swe)
+#hist$log.g <- log(hist$g.swe)
+#hist$log.gs<- log(hist$gs.swe)
+#hist$log.hc <- log(hist$hc.swe)
+#hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year")[,-1]
 
 #use regsubsets to assess the results
@@ -50,27 +50,26 @@ regsubsets.out<-regsubsets(log(var$bwb.vol.nat[var$year < pred.yr])~., data=hist
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
-bwh_sum1<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)])
-
-
-#Apr 1 g.swe, hc.swe, log.gs lowest bic and 0.84
-#wint temps 0.92, BIC -15
+bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+print(bwh_sum)
+# Apr 1 1st iteration: g.swe, hc.swe, log.gs lowest bic and 0.84
+# n-j temps 0.92, BIC -54
 # Feb 1 log.gs
 # Mar 1 log.gs
 
 # -------------------------------------------------------------
-# Big Wood at Stanton, 'natural' flow
+# Big Wood at Stanton, actual flow, preforms better with linear swe data
 hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
-hist$log.wq <- log(hist$bws.wq)
+#hist$log.wq <- log(hist$bws.wq)
 hist$log.cg<- log(hist$cg.swe)
-hist$log.g <- log(hist$g.swe)
+#hist$log.g <- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
-hist$log.hc <- log(hist$hc.swe)
-hist$log.lwd <- log(hist$lwd.swe)
-hist<- merge(hist, nj.temps, by = "year")[,-1]
+#hist$log.hc <- log(hist$hc.swe)
+#hist$log.lwd <- log(hist$lwd.swe)
+hist<- merge(hist, nj.temps, by = "year")[,-c(1, 5)] #remove year and linear version of gs
 
 #use regsubsets to explore models
-regsubsets.out<-regsubsets(log(var$bws.vol.nat[var$year < pred.yr & var$year > 1996])~., data=hist, nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(log(var$bws.vol[var$year < pred.yr & var$year > 1996])~., data=hist, nbest=1, nvmax=8)
 # April 1 lowest BIC is bws.wq + log.hc
 # April 1 highest r2 with the next lowest bic is bws.wq + log(g, gs, hc)
 # Feb 1 log.wq, log.cg
@@ -78,8 +77,8 @@ regsubsets.out<-regsubsets(log(var$bws.vol.nat[var$year < pred.yr & var$year > 1
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
-bws_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)])
-
+bws_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+print(bws_sum)
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
