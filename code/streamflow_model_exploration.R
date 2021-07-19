@@ -66,7 +66,7 @@ hist$log.cg<- log(hist$cg.swe)
 hist$log.gs<- log(hist$gs.swe)
 #hist$log.hc <- log(hist$hc.swe)
 #hist$log.lwd <- log(hist$lwd.swe)
-hist<- merge(hist, nj.temps, by = "year")[,-c(1, 5)] #remove year and linear version of gs
+hist<- merge(hist, nj.temps, by = "year")[,-c(1,3, 5)] #remove year and linear version of gs, n-j temps preform better than full winter temps
 
 #use regsubsets to explore models
 regsubsets.out<-regsubsets(log(var$bws.vol[var$year < pred.yr & var$year > 1996])~., data=hist, nbest=1, nvmax=8)
