@@ -48,9 +48,9 @@ hist<- merge(hist, nj.temps, by = "year")[,-1]
 #use regsubsets to assess the results
 regsubsets.out<-regsubsets(log(var$bwb.vol.nat[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
 reg_sum<- summary(regsubsets.out)
-var<-reg_sum$which[which.min(reg_sum$bic),]
+vars<-reg_sum$which[which.min(reg_sum$bic),]
 
-bwh_sum1<- list(vars = names(var)[var==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)])
+bwh_sum1<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)])
 
 
 #Apr 1 g.swe, hc.swe, log.gs lowest bic and 0.84
@@ -60,13 +60,15 @@ bwh_sum1<- list(vars = names(var)[var==TRUE][-1], adjr2 = reg_sum$adjr2[which.mi
 
 # -------------------------------------------------------------
 # Big Wood at Stanton, 'natural' flow
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
 hist$log.wq <- log(hist$bws.wq)
 hist$log.cg<- log(hist$cg.swe)
 hist$log.g <- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
+hist<- merge(hist, nj.temps, by = "year")[,-1]
+
 #use regsubsets to explore models
 regsubsets.out<-regsubsets(log(var$bws.vol.nat[var$year < pred.yr & var$year > 1996])~., data=hist, nbest=1, nvmax=8)
 # April 1 lowest BIC is bws.wq + log.hc
@@ -74,9 +76,9 @@ regsubsets.out<-regsubsets(log(var$bws.vol.nat[var$year < pred.yr & var$year > 1
 # Feb 1 log.wq, log.cg
 # Mar 1 bws.wq gs.swe
 reg_sum<- summary(regsubsets.out)
-var<-reg_sum$which[which.min(reg_sum$bic),]
+vars<-reg_sum$which[which.min(reg_sum$bic),]
 
-bws_sum<- list(vars = names(var)[var==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)])
+bws_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)])
 
 
 # -------------------------------------------------------------
@@ -93,9 +95,9 @@ regsubsets.out<-regsubsets(log(sc.vol.nat[var$year < pred.yr])~., data=hist, nbe
 # Feb 1 ga.swe, sp.swe, bwb.wq, hc.swe
 # Mar 1 sc.wq sp.swe, hc.swe
 reg_sum<- summary(regsubsets.out)
-var<-reg_sum$which[which.min(reg_sum$bic),]
+vars<-reg_sum$which[which.min(reg_sum$bic),]
 
-sc_sum<- list(vars = names(var)[var==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)])
+sc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)])
 
 
 # -------------------------------------------------------------
@@ -108,9 +110,9 @@ hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
 
 regsubsets.out<-regsubsets(log(var$cc.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=4)
 reg_sum<- summary(regsubsets.out)
-var<-reg_sum$which[which.min(reg_sum$bic),]
+vars<-reg_sum$which[which.min(reg_sum$bic),]
 
-cc_sum<- list(vars = names(var)[var==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)])
+cc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)])
 
 mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
 # Feb 1 ccd.swe, log.wq
