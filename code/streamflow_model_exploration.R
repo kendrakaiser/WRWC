@@ -20,11 +20,14 @@ pred.yr <- 2020
 # Import Data ------------------------------------------------------------------ # 
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 #q = read.csv(file.path(cd,'streamflow_data.csv'))
-usgs_sites = read.csv(file.path(cd,'usgs_sites.csv'))
-swe_q = read.csv(file.path(cd,'all_dat_apr.csv'))
-swe_q[swe_q == 0] <- 0.00001 # change zeros to a value so lm works
-temps = read.csv(file.path(cd, 'ajTemps.csv'))
-wint.temps = read.csv(file.path(cd, 'wintTemps.csv'))
+usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
+swe_q = read.csv(file.path(data_dir,'all_dat_apr.csv'))
+swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
+
+temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
+wint.temps = read.csv(file.path(data_dir, 'wintTemps.csv'))
+nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
+
 var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
 stream.id<-unique(as.character(usgs_sites$abv))
 
@@ -33,16 +36,25 @@ stream.id<-unique(as.character(usgs_sites$abv))
 # ------------------------------------------------------------------------------ # 
 
 #Big Wood at hailey, 'natural' flow
-hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
 hist$log.wq <- log(hist$bwb.wq)
 hist$log.cg<- log(hist$cg.swe)
 hist$log.g <- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
-#use regsubsets to plot the results
+hist<- merge(hist, nj.temps, by = "year")[,-1]
+
+#use regsubsets to assess the results
 regsubsets.out<-regsubsets(log(var$bwb.vol.nat[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
+reg_sum<- summary(regsubsets.out)
+var<-reg_sum$which[which.min(reg_sum$bic),]
+
+bwh_sum1<- list(vars = names(var)[var==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)])
+
+
 #Apr 1 g.swe, hc.swe, log.gs lowest bic and 0.84
+#wint temps 0.92, BIC -15
 # Feb 1 log.gs
 # Mar 1 log.gs
 
@@ -59,9 +71,13 @@ hist$log.lwd <- log(hist$lwd.swe)
 regsubsets.out<-regsubsets(log(var$bws.vol.nat[var$year < pred.yr & var$year > 1996])~., data=hist, nbest=1, nvmax=8)
 # April 1 lowest BIC is bws.wq + log.hc
 # April 1 highest r2 with the next lowest bic is bws.wq + log(g, gs, hc)
-
 # Feb 1 log.wq, log.cg
 # Mar 1 bws.wq gs.swe
+reg_sum<- summary(regsubsets.out)
+var<-reg_sum$which[which.min(reg_sum$bic),]
+
+bws_sum<- list(vars = names(var)[var==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)])
+
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
@@ -76,6 +92,11 @@ hist$log.bbwq<- log(hist$bwb.wq)
 regsubsets.out<-regsubsets(log(sc.vol.nat[var$year < pred.yr])~., data=hist, nbest=3, nvmax=5)
 # Feb 1 ga.swe, sp.swe, bwb.wq, hc.swe
 # Mar 1 sc.wq sp.swe, hc.swe
+reg_sum<- summary(regsubsets.out)
+var<-reg_sum$which[which.min(reg_sum$bic),]
+
+sc_sum<- list(vars = names(var)[var==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)])
+
 
 # -------------------------------------------------------------
 # camas creek
@@ -86,7 +107,12 @@ hist$log.sr <- log(hist$sr.swe)
 hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
 
 regsubsets.out<-regsubsets(log(var$cc.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=4)
+reg_sum<- summary(regsubsets.out)
+var<-reg_sum$which[which.min(reg_sum$bic),]
 
+cc_sum<- list(vars = names(var)[var==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)])
+
+mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
 # Feb 1 ccd.swe, log.wq
 # Mar 1 ccd.swe, log.wq
 
