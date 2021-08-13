@@ -55,8 +55,10 @@ for(i in 13:14){# these values could be ∆ to not be hard coded
     mean.temp <- mean(sub[sub$month == 4 | sub$month ==5 | sub$month ==6 , "t"], na.rm=T)
     #average summer temps July Aug Sept
     sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "t"], na.rm=T)
-    #average winter temps
+    #average winter temps (nov- march)
     wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3 , "t"], na.rm=T)
+    #average winter temps (nov- feb)
+    nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=T)
     #average nov-jan temps
     nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "t"], na.rm=T)
     
@@ -65,6 +67,7 @@ for(i in 13:14){# these values could be ∆ to not be hard coded
     tdata$sum.tempF[tdata$year == y & tdata$site == site.key[i]] <- sum.mean.temp
     tdata$wint.tempF[tdata$year == y & tdata$site == site.key[i]] <- wint.mean.temp
     tdata$nj.tempF[tdata$year == y & tdata$site == site.key[i]] <- nj.mean.temp
+    tdata$nf.tempF[tdata$year == y & tdata$site == site.key[i]] <- nf.mean.temp
   }
 }
 
