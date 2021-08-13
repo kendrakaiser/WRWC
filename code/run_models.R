@@ -14,14 +14,14 @@ git_dir <<- '~/github/WRWC'
 cd <<- '~/Desktop/WRWC'
 
 # set prediction year
-pred.yr <<- 2021
+pred.yr <<- 2020
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
-run_date <<- 'march1'
+run_date <<- 'april1'
 # set end date for AgriMet Data download
-end_date <<- '2021-03-01'
+end_date <<- '2021-08-16'
 # info for model run report
 author <<- "Kendra Kaiser"
-todays_date <<- "03/01/2021"
+todays_date <<- "03/30/2021"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -55,8 +55,8 @@ if (run_date == 'feb1'){
 } else if (run_date == 'april1'){
   input <<- 'all_dat_apr.csv'
   fig_dir_mo <<- file.path(git_dir,'figures/April')
-  source(file.path(git_dir, 'code/streamflow_model_april.R'))
   model_out <<-  file.path(cd, 'April_output')
+  source(file.path(git_dir, 'code/streamflow_model_april.R'))
 }
 
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
