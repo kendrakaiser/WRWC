@@ -118,10 +118,9 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
 
 # --------------------------------------------------
 # Subset Big Wood Winter flows, Snotel from  Galena & Galena Summit, Hyndman
-hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bwb.vol, params$bwh$vars)) 
-hist<-hist[complete.cases(hist),]
+hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bwb.vol, params$bwh$vars)) %>% filter(complete.cases(.))
 # Big Wood at Hailey linear model
-bwb_mod<-lm(log(bwb.vol)~ hc.swe+ t.cg + t.ccd + t.ga, +t.p, data=hist) 
+bwb_mod<-lm(log(bwb.vol)~ hc.swe+ t.cg + t.ccd + t.ga + t.p, data=hist) 
 mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 
 #April 1 bwb Prediction Data
@@ -139,7 +138,7 @@ png(filename = file.path(fig_dir,"April/BWB_modelFit.png"),
     bg = "white", res = 600, type ="quartz") 
 
 fits<-exp(fitted(bwb_mod))
-plot(var$bwb.vol[var$year < 2020 & var$year > 1994]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(var$bwb.vol[var$year < 2020 & var$year > 1993]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
