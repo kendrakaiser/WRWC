@@ -23,10 +23,11 @@ rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir",
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 swe_q = read.csv(file.path(data_dir,input))
 swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
-temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
-var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
+temps = read.csv(file.path(data_dir, 'njTemps.csv'))
+var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year")# %>% dplyr::select(-X)
 var$div <- var$abv.h + var$abv.s
 curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
+params <- list.load(file.path(data_dir, 'mod_april_vars.rdata'))
 
 write.csv(var, file.path(cd,'April_output/all_vars.csv'))
 
@@ -117,16 +118,17 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
 
 # --------------------------------------------------
 # Subset Big Wood Winter flows, Snotel from  Galena & Galena Summit, Hyndman
-hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.vol.nat, g.swe, gs.swe, hc.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bwb.vol, params$bwh$vars)) 
+hist<-hist[complete.cases(hist),]
 # Big Wood at Hailey linear model
-bwb_mod<-lm(log(bwb.vol.nat)~ g.swe+ log(gs.swe)+ hc.swe, data=hist) 
+bwb_mod<-lm(log(bwb.vol)~ hc.swe+ t.cg + t.ccd + t.ga, +t.p, data=hist) 
 mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 
 #April 1 bwb Prediction Data
-pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(g.swe, gs.swe, hc.swe) 
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(params$bwh$vars) 
 
 # Big Wood at Hailey Model output
-mod_out<- modOut(bwb_mod, pred.dat, var$bwb.wq[var$year == pred.yr], var$bwb.wq[var$year < pred.yr], hist$bwb.vol.nat, mean(hist$g.swe,  hist$gs.swe,  hist$hc.swe, trim=0, na.rm=T), var$bwb.vol.nat[var$year == pred.yr-1])
+mod_out<- modOut(bwb_mod, pred.dat, var$bwb.wq[var$year == pred.yr], var$bwb.wq[var$year < pred.yr], hist$bwb.vol, mean(hist$hc.swe, trim=0, na.rm=T), var$bwb.vol[var$year == pred.yr-1])
 #these could be formatted differently to be saved to the gloabl env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
@@ -137,7 +139,7 @@ png(filename = file.path(fig_dir,"April/BWB_modelFit.png"),
     bg = "white", res = 600, type ="quartz") 
 
 fits<-exp(fitted(bwb_mod))
-plot(var$bwb.vol.nat[var$year < 2020]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(var$bwb.vol[var$year < 2020 & var$year > 1994]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
