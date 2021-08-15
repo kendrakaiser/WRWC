@@ -21,9 +21,9 @@ nyrs<-last.yr-first.yr+1
 site.key <- c(as.character(unique(snotel$site_name)), as.character(unique(agrimet$site_name)))
 elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
-tdata<-data.frame(array(NA,c(length(site.key)*nyrs,6)))
+tdata<-data.frame(array(NA,c(length(site.key)*nyrs,7)))
 #summer temp july-sept, winter temp NDJFM
-colnames(tdata)<-c("year","site","spring.tempF", "sum.tempF", "wint.tempF", "nj.tempF")
+colnames(tdata)<-c("year","site","spring.tempF", "sum.tempF", "wint.tempF", "nj.tempF", "nf.tempF")
 tdata$year<-rep(first.yr:last.yr,length(site.key))
 tdata$site<-rep(site.key, each=nyrs)
 tdata$elev<-rep(elev, each=nyrs)
@@ -40,11 +40,16 @@ for(i in 1:12){ #hard coded this in after adding agrimet sites to site.key list
     wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3 , "temperature_mean"], na.rm=T)
     #average nov-jan temps
     nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"], na.rm=T)
+    #average nov-feb temps
+    nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "temperature_mean"], na.rm=T)
+    
+    
     #save to tdata table
     tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp
     tdata$sum.tempF[tdata$year == y & tdata$site == site.key[i]] <- sum.mean.temp
     tdata$wint.tempF[tdata$year == y & tdata$site == site.key[i]] <- wint.mean.temp
     tdata$nj.tempF[tdata$year == y & tdata$site == site.key[i]] <- nj.mean.temp
+    tdata$nf.tempF[tdata$year == y & tdata$site == site.key[i]] <- nf.mean.temp
   }
 }
 #calculate Agrimet average seasonal temperatures for every year
@@ -57,10 +62,10 @@ for(i in 13:14){# these values could be ∆ to not be hard coded
     sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "t"], na.rm=T)
     #average winter temps (nov- march)
     wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3 , "t"], na.rm=T)
-    #average winter temps (nov- feb)
-    nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=T)
     #average nov-jan temps
     nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "t"], na.rm=T)
+    #average winter temps (nov- feb)
+    nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=T)
     
     #save to tdata table
     tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp
@@ -76,7 +81,7 @@ spring.tdata <-pivot_wider(tdata[,1:3], names_from = site, values_from = spring.
 sum.tdata<-pivot_wider(tdata[,c(1,2,4)], names_from = site, values_from = sum.tempF)
 wint.tdata<-pivot_wider(tdata[,c(1,2,5)], names_from = site, values_from = wint.tempF)
 nj.tdata<-pivot_wider(tdata[,c(1,2,6)], names_from = site, values_from = nj.tempF)
-nf.tdata<-pivot_wider(tdata[,c(1,2,6)], names_from = site, values_from = nf.tempF)
+nf.tdata<-pivot_wider(tdata[,c(1,2,7)], names_from = site, values_from = nf.tempF)
 #figure out a cleaner way to assign these
 colnames(spring.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 colnames(sum.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
