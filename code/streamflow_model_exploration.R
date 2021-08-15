@@ -11,6 +11,7 @@ library(plotrix)
 library(mvtnorm)
 library(tidyverse)
 library(leaps)
+library(erer) #write.list
 
 rm(list=ls())
 cd = '~/Desktop/WRWC/data'
@@ -25,8 +26,9 @@ swe_q = read.csv(file.path(data_dir,'all_dat_apr.csv'))
 swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
 
 temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
-wint.temps = read.csv(file.path(data_dir, 'wintTemps.csv'))
+wint.temps = read.csv(file.path(data_dir, 'wintTemps.csv')) #average temps, november - march
 nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
+nf.temps = read.csv(file.path(data_dir, 'nfTemps.csv'))
 
 var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
 stream.id<-unique(as.character(usgs_sites$abv))
@@ -46,7 +48,7 @@ hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.wq, cg.swe, g.swe, 
 hist<- merge(hist, nj.temps, by = "year")[,-1]
 
 #use regsubsets to assess the results
-regsubsets.out<-regsubsets(log(var$bwb.vol.nat[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(log(var$bwb.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
@@ -82,12 +84,13 @@ print(bws_sum)
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
-hist <- var[var$year < pred.yr,] %>% dplyr::select(sc.vol.nat, sc.wq, ga.swe, sp.swe, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol.nat, sc.wq, ga.swe, sp.swe, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
 hist$log.sp <- log(hist$sp.swe)
 hist$log.wq <- log(hist$sc.wq)
 hist$log.cg<- log(hist$cg.swe)
 hist$log.hc<- log(hist$hc.swe)
 hist$log.bbwq<- log(hist$bwb.wq)
+hist<- merge(hist, nj.temps, by = "year")
 
 # Silver Creek regsubsets 
 regsubsets.out<-regsubsets(log(sc.vol.nat[var$year < pred.yr])~., data=hist, nbest=3, nvmax=5)
@@ -101,21 +104,26 @@ sc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(
 
 # -------------------------------------------------------------
 # camas creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(cc.wq, ccd.swe, sr.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.wq, ccd.swe, sr.swe) 
 hist$log.wq <- log(hist$cc.wq)
 hist$log.ccd <- log(hist$ccd.swe)
 hist$log.sr <- log(hist$sr.swe)
 hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
+hist<- merge(hist, nj.temps, by = "year")
 
 regsubsets.out<-regsubsets(log(var$cc.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=4)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
 cc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)])
-
-mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
 # Feb 1 ccd.swe, log.wq
 # Mar 1 ccd.swe, log.wq
+
+
+#compile all model details into one list to export
+mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
+write.list(mod_sum, file.path(data_dir, 'mod_apr_vars.csv'))
+list.save(mod_sum, file.path(data_dir, 'mod_april_vars.rdata'))
 
 # use regsubsets to plot the results
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
