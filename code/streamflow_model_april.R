@@ -135,7 +135,7 @@ pred.params.vol[1,] <- mod_out[[2]]
 #Plot Big Wood at Hailey modeled data for visual evaluation 
 png(filename = file.path(fig_dir,"April/BWB_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 
 fits<-exp(fitted(bwb_mod))
 plot(var$bwb.vol[var$year < 2020 & var$year > 1993]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
@@ -160,7 +160,7 @@ pred.params.vol[2,] <- mod_out[[2]]
 #Plot modeled bws data for visual evaluation 
 png(filename = file.path(fig_dir,"April/BWS_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 
 fits<-exp(fitted(bws_mod))
 plot(var$bws.vol.nat[var$year < 2020 & var$year > 1996]/1000,c(fits)/1000, lwd=2, xlim=c(0,730), ylim=c(0,730), xlab="Observed", ylab="Predicted",main="Big Wood at Stanton \nApril-Sept Streamflow Vol (1000 ac-ft)")
@@ -184,7 +184,7 @@ pred.params.vol[4,] <- mod_out[[2]]
 # Plot sc modeled data for visual evaluation 
 png(filename = file.path(fig_dir,"April/SC_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 
 fits<-exp(fitted(sc_mod))
 plot(hist$sc.vol.nat[complete.cases(hist)]/100,c(fits)/100, lwd=2, xlim=c(310,720), ylim=c(310,720), xlab="Observed", ylab="Predicted", main="Silver Creek \nApril-Sept Streamflow Vol (100 ac-ft)")
@@ -209,7 +209,7 @@ pred.params.vol[3,] <- mod_out[[2]]
 #Plot CC modeled data for visual evaluation 
 png(filename = file.path(fig_dir,"April/CC_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 
 fits<-exp(fitted(cc_mod))
 plot(var$cc.vol[complete.cases(hist)]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
@@ -275,7 +275,7 @@ pred.params.cm[1,] <- mod_out[[2]]
 #Plot modeled data for visual evaluation 
 png(filename = file.path(fig_dir,"April/BWB_CMmodelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 
 fits<-fitted(bwb_mod.cm)
 plot(var$bwb.cm.nat[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Big Wood at Hailey \n Center of Mass", xlim=c(144, 165), ylim=c(144,165))
@@ -304,7 +304,7 @@ pred.params.cm[2,] <- mod_out[[2]]
 #Plot modeled data for visual evaluation 
 png(filename = file.path(fig_dir,"April/BWS_CMmodelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 
 fits<-fitted(bws_mod.cm)
 plot(var$bws.cm.nat[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Big Wood at Stanton \n Center of Mass", xlim=c(140, 165), ylim=c(140,165))
@@ -335,7 +335,7 @@ pred.params.cm[4,] <- mod_out[[2]]
 #Plot modeled data for visual evaluation 
 png(filename = file.path(fig_dir,"April/SC_CMmodelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 
 fits<-fitted(sc_mod.cm)
 plot(var$sc.cm[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Silver Creek Center of Mass", xlim=c(143,153), ylim=c(143,153))
@@ -363,7 +363,7 @@ pred.params.cm[3,] <- mod_out[[2]]
 #Plot modeled data for visual evaluation 
 png(filename = file.path(fig_dir,"April/CC_CMmodelFit.png"),
 width = 5.5, height = 5.5,units = "in", pointsize = 12,
-bg = "white", res = 600, type ="quartz") 
+bg = "white", res = 600, type ="cairo-png") 
 
 fits<-fitted(cc_mod.cm)
 plot(var$cc.cm[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", 
@@ -409,7 +409,7 @@ rownames(pred.params.div)<-c("bw.div", "sc.div")
 # 
 # png(filename = file.path(fig_dir,"April/Div.abv.Hailey_modelFit.png"),
 #     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-#     bg = "white", res = 600, type ="quartz") 
+#     bg = "white", res = 600, type ="cairo-png") 
 # 
 # fits<-fitted(div_mod.h)
 # plot(var$abv.h[var$year >=2000 & var$year < pred.yr],c(fits), xlab="Observed", 
@@ -420,7 +420,7 @@ rownames(pred.params.div)<-c("bw.div", "sc.div")
 # # Above Stanton Crossing the lm does really poorly (0.36) - draw randomly or use a lm that includes natural flow estimate
 # png(filename = file.path(fig_dir,"April/Div.abv.Stanton.png"),
 #     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-#     bg = "white", res = 600, type ="quartz") 
+#     bg = "white", res = 600, type ="cairo-png") 
 # plot(var$year, var$abv.s, xlab="Year", ylab="Diversions (ac-ft)")
 # dev.off()
 # 
@@ -428,7 +428,7 @@ rownames(pred.params.div)<-c("bw.div", "sc.div")
 # losses between Hailey and Stanton
 png(filename = file.path(fig_dir,"April/Losses.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 plot(var$year[var$year<2020], var$bws.loss[var$year<2020], xlab="Year", ylab="Annual Losses (ac-ft)")
 dev.off()
 #plot(var$year[var$year >=2000], var$bws.loss[var$year >=2000])
@@ -444,7 +444,7 @@ preds.div<-predict(bws.loss_mod,newdata=pred.dat,se.fit=T,interval="prediction",
 
 png(filename = file.path(fig_dir,"April/Losses_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 fits<-fitted(bws.loss_mod)
 plot(var$bws.loss[var$year >=2000 & var$year < 2020],c(fits), xlab="Observed", 
      ylab="Predicted", xlim=c(-73000, -39900), ylim=c(-73000, -39900))
@@ -454,7 +454,7 @@ dev.off()
 # Total Big Wood Diversions ----
 png(filename = file.path(fig_dir,"April/Div.bw.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 plot(var$year[var$year<2020], var$div[var$year<2020], xlab="Year", ylab="Big Wood Diversions (ac-ft)")
 dev.off()
 
@@ -472,7 +472,7 @@ pred.params.div[1,2]<-preds.div$se.fit
 
 png(filename = file.path(fig_dir,"April/Diversions_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 fits<-fitted(div_mod)
 plot(var$div[var$year >=1997 & var$year < 2020],exp(c(fits)), xlab="Observed", 
      ylab="Predicted", xlim=c(32500, 58800), ylim=c(32500, 58800))
@@ -483,7 +483,7 @@ dev.off()
 
 png(filename = file.path(fig_dir,"April/Div.sc.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 plot(var$year[var$year<2020], var$sc.div[var$year<2020], xlab="Year", ylab="Silver Creek Diversions (ac-ft)")
 dev.off()
 
@@ -506,7 +506,7 @@ pred.params.div[2,2]<-mean(preds.div$se.fit)
 
 png(filename = file.path(fig_dir,"April/SC_Diversions_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 fits<-fitted(sc.div_mod)
 plot(var$sc.div[var$year>1993 & var$year < 2020],exp(c(fits)), xlab="Observed", 
      ylab="Predicted", xlim=c(3300, 8200), ylim=c(3300, 8200))
@@ -571,7 +571,7 @@ vol.sm$site<-factor(vol.sm$site,levels = c("Silver Creek Hist","Silver Creek", "
 # Plot boxplots of total annual flow from each model
 png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 
 vol.big %>%
   ggplot(aes(x=site, y=value, fill=site)) +
@@ -588,7 +588,7 @@ dev.off()
 
 png(filename = file.path(fig_dir_mo,"sampled_sc_diversions.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 
 vol.sm %>%
   ggplot(aes(x=site, y=value, fill=site)) +
@@ -710,7 +710,7 @@ pred.params.curt[2,1]<-summary(bw.b_mod)$adj.r.squared
 
 png(filename = file.path(fig_dir,"April/BigWoodB_curtailment.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 fits<-fitted(bw.b_mod)
 plot(curt$shut_off_julian[curt$year < pred.yr],c(fits), xlab="Observed", 
      ylab="Predicted")
@@ -866,7 +866,7 @@ write.csv(curt.sample, file.path(cd,"April_output/curt.sample.csv"),row.names=F)
 # Plot boxplots of predicted curtailment dates from each model -> modelOutput.Rmd
 png(filename = file.path(fig_dir,"April/sampled_curtailments.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 
 curt.sample %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
   ggplot(aes(x=site, y=as.Date(value, origin=as.Date(paste(pred.yr,"-01-01",sep=""))), fill=site)) +
