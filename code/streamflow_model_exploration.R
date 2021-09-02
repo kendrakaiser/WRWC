@@ -11,7 +11,7 @@ library(plotrix)
 library(mvtnorm)
 library(tidyverse)
 library(leaps)
-library(erer) #write.list
+library(rlist) #list.save
 
 rm(list=ls())
 cd = '~/Desktop/WRWC/data'
@@ -38,7 +38,7 @@ stream.id<-unique(as.character(usgs_sites$abv))
 # ------------------------------------------------------------------------------ # 
 
 #Big Wood at hailey actual flow, preforms better with linear swe data
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) %>% filter(complete.cases(.))
 #hist$log.wq <- log(hist$bwb.wq)
 #hist$log.cg<- log(hist$cg.swe)
 #hist$log.g <- log(hist$g.swe)
@@ -122,8 +122,8 @@ cc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min
 
 #compile all model details into one list to export
 mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
-write.list(mod_sum, file.path(data_dir, 'mod_apr_vars.csv'))
-list.save(mod_sum, file.path(data_dir, 'mod_april_vars.rdata'))
+write.list(mod_sum, file.path(data_dir, 'mod_mar_vars.csv'))
+list.save(mod_sum, file.path(data_dir, 'mod_mar_vars.rdata'))
 
 # use regsubsets to plot the results
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
