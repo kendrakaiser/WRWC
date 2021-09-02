@@ -38,7 +38,8 @@ stream.id<-unique(as.character(usgs_sites$abv))
 # ------------------------------------------------------------------------------ # 
 
 #Big Wood at hailey actual flow, preforms better with linear swe data
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) %>% filter(complete.cases(.))
+#vol<- var$bwb.vol[var$year < pred.yr & var$year >= min(hist$year)]
 #hist$log.wq <- log(hist$bwb.wq)
 #hist$log.cg<- log(hist$cg.swe)
 #hist$log.g <- log(hist$g.swe)
@@ -48,7 +49,7 @@ hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.wq, cg.swe, g.swe, 
 hist<- merge(hist, nj.temps, by = "year")[,-1]
 
 #use regsubsets to assess the results
-regsubsets.out<-regsubsets(log(var$bwb.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-1], nbest=1, nvmax=8)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
@@ -58,6 +59,16 @@ print(bwh_sum)
 # n-j temps 0.92, BIC -54
 # Feb 1 log.gs
 # Mar 1 log.gs
+
+library(caret)
+
+#specify the cross-validation method
+ctrl <- trainControl(method = "LOOCV")
+#fit a regression model and use LOOCV to evaluate performance
+form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
+model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+#view summary of LOOCV               
+print(model)
 
 # -------------------------------------------------------------
 # Big Wood at Stanton, actual flow, preforms better with linear swe data
