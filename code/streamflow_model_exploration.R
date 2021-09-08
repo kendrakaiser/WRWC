@@ -70,6 +70,10 @@ model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bwh_sum$loocv<- model$results
 plot(exp(model$pred$obs), exp(model$pred$pred), pch=19)
 
+#check residuals
+mod.red<- resid(model)
+plot(model)
+
 # -------------------------------------------------------------
 # Big Wood at Stanton, actual flow, preforms better with linear swe data
 hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.vol, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
