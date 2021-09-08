@@ -12,6 +12,7 @@ library(mvtnorm)
 library(tidyverse)
 library(leaps)
 library(rlist) #list.save
+library(caret) #loocv
 
 rm(list=ls())
 cd = '~/Desktop/WRWC/data'
@@ -60,29 +61,28 @@ print(bwh_sum)
 # Feb 1 log.gs
 # Mar 1 log.gs
 
-library(caret)
-
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
-#fit a regression model and use LOOCV to evaluate performance
+#fit the regression model and use LOOCV to evaluate performance
 form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-#view summary of LOOCV               
-print(model)
+#view summary of LOOCV
+bwh_sum$loocv<- model$results
+plot(exp(model$pred$obs), exp(model$pred$pred), pch=19)
 
 # -------------------------------------------------------------
 # Big Wood at Stanton, actual flow, preforms better with linear swe data
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.vol, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
 #hist$log.wq <- log(hist$bws.wq)
 hist$log.cg<- log(hist$cg.swe)
 #hist$log.g <- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
 #hist$log.hc <- log(hist$hc.swe)
 #hist$log.lwd <- log(hist$lwd.swe)
-hist<- merge(hist, nj.temps, by = "year")[,-c(1,3, 5)] #remove year and linear version of gs, n-j temps preform better than full winter temps
+hist<- merge(hist, nj.temps, by = "year")[,-c(1,4,6)] #remove year and linear version of gs, n-j temps preform better than full winter temps
 
 #use regsubsets to explore models
-regsubsets.out<-regsubsets(log(var$bws.vol[var$year < pred.yr & var$year > 1996])~., data=hist, nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(log(bws.vol)~., data=hist[,-1], nbest=1, nvmax=8)
 # April 1 lowest BIC is bws.wq + log.hc
 # April 1 highest r2 with the next lowest bic is bws.wq + log(g, gs, hc)
 # Feb 1 log.wq, log.cg
@@ -92,6 +92,13 @@ vars<-reg_sum$which[which.min(reg_sum$bic),]
 
 bws_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 print(bws_sum)
+
+#fit a regression model and use LOOCV to evaluate performance
+form<- paste("log(bws.vol)~ ", paste(bws_sum$vars, collapse=" + "), sep = "")
+model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+#view summary of LOOCV
+bws_sum$loocv<- model$results
+plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19)
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
