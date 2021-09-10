@@ -10,7 +10,7 @@ library(MASS)
 library(plotrix)
 library(mvtnorm)
 library(tidyverse)
-library(leaps)
+library(leaps) #regsubsets
 library(rlist) #list.save
 library(caret) #loocv
 
@@ -69,31 +69,29 @@ model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 #view summary of LOOCV
 bwh_sum$loocv<- model$results
 plot(exp(model$pred$obs), exp(model$pred$pred), pch=19)
-
 #check residuals
 mod.red<- resid(model)
-plot(model)
+
 
 # -------------------------------------------------------------
 # Big Wood at Stanton, actual flow, preforms better with linear swe data
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.vol, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.vol, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe) 
 #hist$log.wq <- log(hist$bws.wq)
-hist$log.cg<- log(hist$cg.swe)
+#hist$log.cg<- log(hist$cg.swe)
 #hist$log.g <- log(hist$g.swe)
-hist$log.gs<- log(hist$gs.swe)
+#hist$log.gs<- log(hist$gs.swe)
 #hist$log.hc <- log(hist$hc.swe)
 #hist$log.lwd <- log(hist$lwd.swe)
-hist<- merge(hist, nj.temps, by = "year")[,-c(1,4,6)] #remove year and linear version of gs, n-j temps preform better than full winter temps
+hist<- merge(hist, nj.temps, by = "year")[,-c(1)] #remove year, n-j temps preform better than full winter temps
 
 #use regsubsets to explore models
-regsubsets.out<-regsubsets(log(bws.vol)~., data=hist[,-1], nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(log(hist$bws.vol)~., data=hist[,-1], nbest=1, nvmax=8) #remove bws.vol
 # April 1 lowest BIC is bws.wq + log.hc
 # April 1 highest r2 with the next lowest bic is bws.wq + log(g, gs, hc)
 # Feb 1 log.wq, log.cg
 # Mar 1 bws.wq gs.swe
-reg_sum<- summary(regsubsets.out)
-vars<-reg_sum$which[which.min(reg_sum$bic),]
-
+reg_sum<- summary(regsubsets.out) #summary of regsubsets to pull info from
+vars<-reg_sum$which[which.min(reg_sum$bic),] #sT/F of variables
 bws_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 print(bws_sum)
 
@@ -106,24 +104,30 @@ plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19)
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol.nat, sc.wq, ga.swe, sp.swe, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, ga.swe, sp.swe, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
 hist$log.sp <- log(hist$sp.swe)
 hist$log.wq <- log(hist$sc.wq)
 hist$log.cg<- log(hist$cg.swe)
 hist$log.hc<- log(hist$hc.swe)
 hist$log.bbwq<- log(hist$bwb.wq)
-hist<- merge(hist, nj.temps, by = "year")
+hist<- merge(hist, nj.temps, by = "year")[,-c(1)] #remove year,
 
 # Silver Creek regsubsets 
-regsubsets.out<-regsubsets(log(sc.vol.nat[var$year < pred.yr])~., data=hist, nbest=3, nvmax=5)
+regsubsets.out<-regsubsets(log(sc.vol)~., data=hist, nbest=3, nvmax=5)
 # Feb 1 ga.swe, sp.swe, bwb.wq, hc.swe
 # Mar 1 sc.wq sp.swe, hc.swe
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
-sc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)])
+sc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+print(sc_sum)
 
-
+#fit a regression model and use LOOCV to evaluate performance
+form<- paste("log(sc.vol)~ ", paste(sc_sum$vars, collapse=" + "), sep = "")
+model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+#view summary of LOOCV
+bws_sum$loocv<- model$results
+plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19)
 # -------------------------------------------------------------
 # camas creek
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.wq, ccd.swe, sr.swe) 
