@@ -39,15 +39,15 @@ stream.id<-unique(as.character(usgs_sites$abv))
 # ------------------------------------------------------------------------------ # 
 
 #Big Wood at hailey actual flow, preforms better with linear swe data
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe)
 #vol<- var$bwb.vol[var$year < pred.yr & var$year >= min(hist$year)]
-#hist$log.wq <- log(hist$bwb.wq)
-#hist$log.cg<- log(hist$cg.swe)
-#hist$log.g <- log(hist$g.swe)
-#hist$log.gs<- log(hist$gs.swe)
+hist$log.wq <- log(hist$bwb.wq)
+hist$log.cg<- log(hist$cg.swe)
+hist$log.g <- log(hist$g.swe)
+hist$log.gs<- log(hist$gs.swe)
 #hist$log.hc <- log(hist$hc.swe)
-#hist$log.lwd <- log(hist$lwd.swe)
-hist<- merge(hist, nj.temps, by = "year")[,-1]
+hist$log.lwd <- log(hist$lwd.swe)
+hist<- merge(hist, nj.temps, by = "year")[,-c(1)] %>% filter(complete.cases(.))
 
 #use regsubsets to assess the results
 regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-1], nbest=1, nvmax=8)
@@ -65,6 +65,7 @@ print(bwh_sum)
 ctrl <- trainControl(method = "LOOCV")
 #fit the regression model and use LOOCV to evaluate performance
 form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
+bwh_sum$lm<-summary(lm(form, data=hist))$adj.r.squared
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 #view summary of LOOCV
 bwh_sum$loocv<- model$results
@@ -76,16 +77,16 @@ mod.red<- resid(model)
 # -------------------------------------------------------------
 # Big Wood at Stanton, actual flow, preforms better with linear swe data
 hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.vol, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe) 
-#hist$log.wq <- log(hist$bws.wq)
-#hist$log.cg<- log(hist$cg.swe)
-#hist$log.g <- log(hist$g.swe)
-#hist$log.gs<- log(hist$gs.swe)
-#hist$log.hc <- log(hist$hc.swe)
-#hist$log.lwd <- log(hist$lwd.swe)
-hist<- merge(hist, nj.temps, by = "year")[,-c(1)] #remove year, n-j temps preform better than full winter temps
+hist$log.wq <- log(hist$bws.wq)
+hist$log.cg<- log(hist$cg.swe)
+hist$log.g <- log(hist$g.swe)
+hist$log.gs<- log(hist$gs.swe)
+hist$log.hc <- log(hist$hc.swe)
+hist$log.lwd <- log(hist$lwd.swe)
+hist<- merge(hist, nj.temps, by = "year")[,-1] %>% filter(complete.cases(.)) #remove year, n-j temps preform better than full winter temps
 
 #use regsubsets to explore models
-regsubsets.out<-regsubsets(log(hist$bws.vol)~., data=hist[,-1], nbest=1, nvmax=8) #remove bws.vol
+regsubsets.out<-regsubsets(log(hist$bws.vol)~., data=hist[,-c(1)], nbest=1, nvmax=8) #remove bws.vol
 # April 1 lowest BIC is bws.wq + log.hc
 # April 1 highest r2 with the next lowest bic is bws.wq + log(g, gs, hc)
 # Feb 1 log.wq, log.cg
@@ -98,9 +99,13 @@ print(bws_sum)
 #fit a regression model and use LOOCV to evaluate performance
 form<- paste("log(bws.vol)~ ", paste(bws_sum$vars, collapse=" + "), sep = "")
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+
+bwb_mod<-lm(form, data=hist) 
+bws_sum$lm<-summary(bwb_mod)$adj.r.squared
 #view summary of LOOCV
 bws_sum$loocv<- model$results
 plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19)
+abline(0,1,col="gray50",lty=1)
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
@@ -113,7 +118,7 @@ hist$log.bbwq<- log(hist$bwb.wq)
 hist<- merge(hist, nj.temps, by = "year")[,-c(1)] #remove year,
 
 # Silver Creek regsubsets 
-regsubsets.out<-regsubsets(log(sc.vol)~., data=hist, nbest=3, nvmax=5)
+regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=5)
 # Feb 1 ga.swe, sp.swe, bwb.wq, hc.swe
 # Mar 1 sc.wq sp.swe, hc.swe
 reg_sum<- summary(regsubsets.out)
