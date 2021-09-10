@@ -34,12 +34,14 @@ nf.temps = read.csv(file.path(data_dir, 'nfTemps.csv'))
 var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
 stream.id<-unique(as.character(usgs_sites$abv))
 
+#specify the cross-validation method
+ctrl <- trainControl(method = "LOOCV")
 # ------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for April-Sept Volume Predictions
 # ------------------------------------------------------------------------------ # 
 
 #Big Wood at hailey actual flow, preforms better with linear swe data
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe)
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe)
 #vol<- var$bwb.vol[var$year < pred.yr & var$year >= min(hist$year)]
 hist$log.wq <- log(hist$bwb.wq)
 hist$log.cg<- log(hist$cg.swe)
@@ -55,20 +57,15 @@ reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
 bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
-print(bwh_sum)
-# Apr 1 1st iteration: g.swe, hc.swe, log.gs lowest bic and 0.84
-# n-j temps 0.92, BIC -54
-# Feb 1 log.gs
-# Mar 1 log.gs
 
-#specify the cross-validation method
-ctrl <- trainControl(method = "LOOCV")
 #fit the regression model and use LOOCV to evaluate performance
 form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
 bwh_sum$lm<-summary(lm(form, data=hist))$adj.r.squared
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 #view summary of LOOCV
 bwh_sum$loocv<- model$results
+print(bwh_sum)
+
 plot(exp(model$pred$obs), exp(model$pred$pred), pch=19)
 #check residuals
 mod.red<- resid(model)
@@ -99,9 +96,7 @@ print(bws_sum)
 #fit a regression model and use LOOCV to evaluate performance
 form<- paste("log(bws.vol)~ ", paste(bws_sum$vars, collapse=" + "), sep = "")
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-
-bwb_mod<-lm(form, data=hist) 
-bws_sum$lm<-summary(bwb_mod)$adj.r.squared
+bws_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
 #view summary of LOOCV
 bws_sum$loocv<- model$results
 plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19)
@@ -115,7 +110,7 @@ hist$log.wq <- log(hist$sc.wq)
 hist$log.cg<- log(hist$cg.swe)
 hist$log.hc<- log(hist$hc.swe)
 hist$log.bbwq<- log(hist$bwb.wq)
-hist<- merge(hist, nj.temps, by = "year")[,-c(1)] #remove year,
+hist<- merge(hist, nj.temps, by = "year")[,-c(1)] %>% filter(complete.cases(.)) #remove year,
 
 # Silver Creek regsubsets 
 regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=5)
@@ -123,33 +118,47 @@ regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=5)
 # Mar 1 sc.wq sp.swe, hc.swe
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
-
 sc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
-print(sc_sum)
 
 #fit a regression model and use LOOCV to evaluate performance
 form<- paste("log(sc.vol)~ ", paste(sc_sum$vars, collapse=" + "), sep = "")
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+sc_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
 #view summary of LOOCV
-bws_sum$loocv<- model$results
+sc_sum$loocv<- model$results
+#add in error catch if model doesnt work ...
+print(sc_sum)
+
 plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19)
+abline(0,1,col="gray50",lty=1)
 # -------------------------------------------------------------
 # camas creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.wq, ccd.swe, sr.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe) 
 hist$log.wq <- log(hist$cc.wq)
 hist$log.ccd <- log(hist$ccd.swe)
 hist$log.sr <- log(hist$sr.swe)
-hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
-hist<- merge(hist, nj.temps, by = "year")
+hist$log.sp <- log(hist$sp.swe)
+hist$log.cg<- log(hist$cg.swe)
+hist$log.hc<- log(hist$hc.swe)
+hist$log.bbwq<- log(hist$bwb.wq)
+hist<- merge(hist, nj.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #remove year,
 
-regsubsets.out<-regsubsets(log(var$cc.vol[var$year < pred.yr])~., data=hist, nbest=1, nvmax=4)
+regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=4)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
 cc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)])
-# Feb 1 ccd.swe, log.wq
-# Mar 1 ccd.swe, log.wq
 
+#fit a regression model and use LOOCV to evaluate performance
+form<- paste("log(cc.vol)~ ", paste(cc_sum$vars, collapse=" + "), sep = "")
+model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+cc_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
+#view summary of LOOCV
+cc_sum$loocv<- model$results
+#add in error catch if model doesnt work ...
+print(cc_sum)
+plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19)
+abline(0,1,col="gray50",lty=1)
 
 #compile all model details into one list to export
 mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
