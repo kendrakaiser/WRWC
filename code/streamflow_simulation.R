@@ -85,6 +85,7 @@ for(k in 1:ns){
 numpreds<- 24 # nat+reg + div *4
 pi<-data.frame(array(NA,c(183,numpreds)))
 meanQ<-data.frame(array(NA,c(183,4)))
+medQ<-data.frame(array(NA,c(183,4)))
 
 pred.int<-function(location){
   lo<-apply(location,1,quantile,0.05, na.rm=TRUE)
@@ -152,12 +153,12 @@ data <- q %>% filter(abv == 'bws') %>% group_by(doWY) %>% dplyr::mutate(meanQ=me
 png(filename = file.path(mo_fig_dir, "BWS_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-plot(dates, pi[,6], type="n", xlab="Date", ylab ="Flow (cfs)",
+plot(dates, pi[,7], type="n", xlab="Date", ylab ="Flow (cfs)",
      main = "Big Wood Streamflow at Stanton Crossing", ylim=c(min(pi[,1]), max(pi[,2])))
-polygon(c(dates[1], dates, rev(dates)), c(pi[1,4], pi[,5], rev(pi[,4])), 
+polygon(c(dates[1], dates, rev(dates)), c(pi[1,5], pi[,6], rev(pi[,5])), 
         col = "gray90", border = NA)
 lines(dates,data$meanQ[196:378],lwd=1.5,col="black")
-lines(dates,pi[,6],lwd=2.5,col="blue")
+lines(dates,pi[,7],lwd=2.5,col="blue")
 legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
 #flow= bws.wy[bws.wy$wy == pred.yr, "bws.nat.q"]
@@ -171,12 +172,12 @@ data <- q %>% filter(abv == 'sc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mea
 png(filename = file.path(mo_fig_dir, "SC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-plot(dates, pi[,12], type="n", xlab="Date", ylab ="Flow (cfs)",
-     main = "Silver Creek Natural Streamflow Simulation", ylim=c(min(pi[,10]), max(pi[,11])))
-polygon(c(dates[1], dates, rev(dates) ), c(pi[1,10], pi[,11], rev(pi[,10])), 
+plot(dates, pi[,15], type="n", xlab="Date", ylab ="Flow (cfs)",
+     main = "Silver Creek Natural Streamflow Simulation", ylim=c(min(pi[,13]), max(pi[,14])))
+polygon(c(dates[1], dates, rev(dates) ), c(pi[1,13], pi[,14], rev(pi[,13])), 
         col = "gray90", border = NA)
 lines(dates,data$meanQ[91:273],lwd=1.5,col="black")
-lines(dates,pi[,12],lwd=2.5,col="blue")
+lines(dates,pi[,15],lwd=2.5,col="blue")
 legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
 #flow= sc.wy[sc.wy$wy == pred.yr, "sc.nat"]
@@ -189,12 +190,12 @@ data <- q %>% filter(abv == 'cc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mea
 png(filename = file.path(mo_fig_dir, "CC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-plot(dates,pi[,18], type="n", xlab="Date", ylab ="Flow (cfs)",
-     main = "Camas Creek Streamflow Simulation", ylim=c(min(pi[,16]), max(pi[,17])))
-polygon(c(dates[1], dates, rev(dates) ), c(pi[1,16], pi[,17], rev(pi[,16])), 
+plot(dates,pi[,23], type="n", xlab="Date", ylab ="Flow (cfs)",
+     main = "Camas Creek Streamflow Simulation", ylim=c(min(pi[,21]), max(pi[,22])))
+polygon(c(dates[1], dates, rev(dates) ), c(pi[1,21], pi[,22], rev(pi[,21])), 
         col = "gray90", border = NA)
 lines(dates,data$meanQ[91:273],lwd=1.5,col="black")
-lines(dates,pi[,18],lwd=2.5,col="blue")
+lines(dates,pi[,23],lwd=2.5,col="blue")
 legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
 #flow= cc.wy[cc.wy$wy == pred.yr, "Flow"]
