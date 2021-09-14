@@ -82,7 +82,7 @@ for(k in 1:ns){
 
 # ------------------------------------------------------------------------------
 # Calculate prediction Intervals
-numpreds<- 18 # nat+reg + div *3
+numpreds<- 24 # nat+reg + div *4
 pi<-data.frame(array(NA,c(183,numpreds)))
 meanQ<-data.frame(array(NA,c(183,4)))
 
@@ -90,19 +90,20 @@ pred.int<-function(location){
   lo<-apply(location,1,quantile,0.05, na.rm=TRUE)
   hi<-apply(location,1,quantile,0.95, na.rm=TRUE)
   meanQ<-apply(location,1,mean, na.rm=TRUE)
+  medQ<-apply(location,1,median, na.rm=TRUE)
   
-  return(cbind(lo, hi, meanQ))
+  return(cbind(lo, hi, meanQ, medQ))
 }
 
-colnames(pi)<- c("bwb.low", "bwb.hi", "bwb.mean", "bws.low", "bws.hi", "bws.mean", 
-                 "div.low", "div.hi", "div.mean", "sc.low", "sc.hi", "sc.mean",
-                 "sc.div.low", "sc.div.hi", "sc.div.mean","cc.low", "cc.hi", "cc.mean")
-pi[,1:3] <-as.data.frame(pred.int(bwb.flow.s))
-pi[,4:6] <-as.data.frame(pred.int(bws.flow.s))
-pi[,7:9]<-as.data.frame(pred.int(bw.div.s))
-pi[,10:12]<-as.data.frame(pred.int(sc.flow.s))
-pi[,13:15]<-as.data.frame(pred.int(sc.div.s))
-pi[,16:18]<-as.data.frame(pred.int(cc.flow.s))
+colnames(pi)<- c("bwb.low", "bwb.hi", "bwb.mean", "bwb.med","bws.low", "bws.hi", "bws.mean", "bws.med", 
+                 "div.low", "div.hi", "div.mean", "div.med", "sc.low", "sc.hi", "sc.mean", "sc.med",
+                 "sc.div.low", "sc.div.hi", "sc.div.mean", "sc.div.med","cc.low", "cc.hi", "cc.mean", "cc.med")
+pi[,1:4] <-as.data.frame(pred.int(bwb.flow.s))
+pi[,5:8] <-as.data.frame(pred.int(bws.flow.s))
+pi[,9:12]<-as.data.frame(pred.int(bw.div.s))
+pi[,13:16]<-as.data.frame(pred.int(sc.flow.s))
+pi[,17:20]<-as.data.frame(pred.int(sc.div.s))
+pi[,21:24]<-as.data.frame(pred.int(cc.flow.s))
 
 
 
