@@ -13,17 +13,25 @@ library(tidyverse)
 library(leaps) #regsubsets
 library(rlist) #list.save
 library(caret) #loocv
+library(erer) #write.list to csv
 
 rm(list=ls())
-cd = '~/Desktop/WRWC/data'
+data_dir = '~/Desktop/WRWC/data' #local
+git_dir <<- '~/github/WRWC'
 fig_dir = '~/github/WRWC/figures' 
+fig_dir_mo <<- file.path(git_dir,'figures/April')
+
+
+mo_data = 'all_dat_apr.csv'
+mo_vars ='mod_apr_vars.csv'
+mo_Rvars ='mod_apr_vars.rdata'
 pred.yr <- 2020
 
 # Import Data ------------------------------------------------------------------ # 
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 #q = read.csv(file.path(cd,'streamflow_data.csv'))
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
-swe_q = read.csv(file.path(data_dir,'all_dat_apr.csv'))
+swe_q = read.csv(file.path(data_dir,mo_data))
 swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
 
 temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
@@ -66,7 +74,14 @@ model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bwh_sum$loocv<- model$results
 print(bwh_sum)
 
-plot(exp(model$pred$obs), exp(model$pred$pred), pch=19)
+#Plot Big Wood at Hailey modeled data for visual evaluation 
+png(filename = file.path(fig_dir_mo, "BWH_modelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+
+plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
+abline(0,1,col="gray50",lty=1)
+dev.off()
 #check residuals
 mod.red<- resid(model)
 
@@ -99,8 +114,14 @@ model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bws_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
 #view summary of LOOCV
 bws_sum$loocv<- model$results
-plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19)
-abline(0,1,col="gray50",lty=1)
+
+png(filename = file.path(fig_dir_mo, "BWS_modelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+
+    plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood at Stanton Crossing \nApril-Sept Streamflow Vol (1000 ac-ft)")
+    abline(0,1,col="gray50",lty=1)
+dev.off()
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
@@ -129,8 +150,13 @@ sc_sum$loocv<- model$results
 #add in error catch if model doesnt work ...
 print(sc_sum)
 
-plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19)
-abline(0,1,col="gray50",lty=1)
+png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+
+    plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Silver Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+    abline(0,1,col="gray50",lty=1)
+dev.off()
 # -------------------------------------------------------------
 # camas creek
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe) 
@@ -147,7 +173,7 @@ regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=4)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
-cc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)])
+cc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit a regression model and use LOOCV to evaluate performance
 form<- paste("log(cc.vol)~ ", paste(cc_sum$vars, collapse=" + "), sep = "")
@@ -157,13 +183,18 @@ cc_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
 cc_sum$loocv<- model$results
 #add in error catch if model doesnt work ...
 print(cc_sum)
-plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19)
-abline(0,1,col="gray50",lty=1)
+
+png(filename = file.path(fig_dir_mo, "CC_modelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+    plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+    abline(0,1,col="gray50",lty=1)
+dev.off()
 
 #compile all model details into one list to export
 mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
-write.list(mod_sum, file.path(data_dir, 'mod_mar_vars.csv'))
-list.save(mod_sum, file.path(data_dir, 'mod_mar_vars.rdata'))
+write.list(mod_sum, file.path(data_dir, mo_vars))
+list.save(mod_sum, file.path(data_dir, mo_Rvars))
 
 # use regsubsets to plot the results
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
