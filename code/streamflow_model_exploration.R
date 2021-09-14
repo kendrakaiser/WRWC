@@ -14,17 +14,17 @@ library(leaps) #regsubsets
 library(rlist) #list.save
 library(caret) #loocv
 library(erer) #write.list to csv
+library(ggcorrplot) 
 
 rm(list=ls())
 data_dir = '~/Desktop/WRWC/data' #local
 git_dir <<- '~/github/WRWC'
 fig_dir = '~/github/WRWC/figures' 
-fig_dir_mo <<- file.path(git_dir,'figures/April')
 
-
-mo_data = 'all_dat_apr.csv'
-mo_vars ='mod_apr_vars.csv'
-mo_Rvars ='mod_apr_vars.rdata'
+fig_dir_mo <<- file.path(git_dir,'figures/February')
+mo_data = 'all_dat_feb.csv'
+mo_vars ='mod_feb_vars.csv'
+mo_Rvars ='mod_feb_vars.rdata'
 pred.yr <- 2020
 
 # Import Data ------------------------------------------------------------------ # 
@@ -51,11 +51,11 @@ ctrl <- trainControl(method = "LOOCV")
 #Big Wood at hailey actual flow, preforms better with linear swe data
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe)
 #vol<- var$bwb.vol[var$year < pred.yr & var$year >= min(hist$year)]
-hist$log.wq <- log(hist$bwb.wq)
+#hist$log.wq <- log(hist$bwb.wq)
 hist$log.cg<- log(hist$cg.swe)
 hist$log.g <- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
-#hist$log.hc <- log(hist$hc.swe)
+hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year")[,-c(1)] %>% filter(complete.cases(.))
 
@@ -73,6 +73,7 @@ model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 #view summary of LOOCV
 bwh_sum$loocv<- model$results
 print(bwh_sum)
+print(summary(lm(form, data=hist)))
 
 #Plot Big Wood at Hailey modeled data for visual evaluation 
 png(filename = file.path(fig_dir_mo, "BWH_modelFit.png"),
@@ -85,7 +86,10 @@ dev.off()
 #check residuals
 mod.red<- resid(model)
 
-
+# calculate the correlations
+r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
+print(r)
+ggcorrplot(r)
 # -------------------------------------------------------------
 # Big Wood at Stanton, actual flow, preforms better with linear swe data
 hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.vol, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe) 
@@ -265,58 +269,150 @@ regsubsets.out<-regsubsets(log(var$sc.div[var$year < 2020])~., data=hist, nbest=
 
 # Feb 1 t.f, log.sc.wq, log.g, log.lwd
 # Mar 1 g.swe, t.cg, t.f, log.sc.wq, log bwb.wq, log.hc.swe
+
+
 # ------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for Center of Mass Predictions
 # ------------------------------------------------------------------------------ # 
 
 # Big wood at Hailey
-hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.cm, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe)
 hist$log.wq <- log(hist$bwb.wq)
 hist$log.cg<- log(hist$cg.swe)
 hist$log.g <- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
-#use regsubsets to plot the results
-regsubsets.out<-regsubsets(log(var$bwb.cm.nat[var$year < pred.yr])~., data=hist, nbest=3, nvmax=8)
-#g.swe+t.cg+ t.g+t.gs+t.hc+t.lw +log(cg.swe)+log(hc.swe) natural cm
-# g.swe, hc.swe, t.cg, t.lw
+hist<- merge(hist, nj.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #remove year,
+
+regsubsets.out<-regsubsets(log(hist$bwb.cm)~., data=hist[,-1], nbest=1, nvmax=4)
+reg_sum<- summary(regsubsets.out)
+vars<-reg_sum$which[which.min(reg_sum$bic),]
+
+bwb.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+
+#fit a regression model and use LOOCV to evaluate performance
+form<- paste("log(bwb.cm)~ ", paste(bwb.cm_sum$vars, collapse=" + "), sep = "")
+model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+bwb.cm_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
+#view summary of LOOCV
+bwb.cm_sum$loocv<- model$results
+#add in error catch if model doesnt work ...
+print(bwb.cm_sum)
+
+png(filename = file.path(fig_dir_mo, "bwb.cm_modelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+abline(0,1,col="gray50",lty=1)
+dev.off()
 
 # -------------------------------------------------------------
 # Big Wood at Stanton
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw) 
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.cm, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe)
 hist$log.cg<- log(hist$cg.swe)
 hist$log.g<- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
-#use regsubsets to explore models
-regsubsets.out<-regsubsets(log(var$bws.cm.nat[var$year < pred.yr & var$year > 1996])~., data=hist, nbest=2, nvmax=8)
-#bws.cm ~ g.swe + t.cg+ t.g +t.lw +log(cg.swe)+log(gs.swe)+log(hc.swe) w. 2020 
-#'natural' center of mass: lwd.swe, t.cg, t.g, t.hc, t.lw, log.cg log.hc 
+hist<- merge(hist, nj.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #remove year,
+
+regsubsets.out<-regsubsets(log(hist$bws.cm)~., data=hist[,-1], nbest=1, nvmax=4)
+reg_sum<- summary(regsubsets.out)
+vars<-reg_sum$which[which.min(reg_sum$bic),]
+
+bws.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+
+#fit a regression model and use LOOCV to evaluate performance
+form<- paste("log(bws.cm)~ ", paste(bws.cm_sum$vars, collapse=" + "), sep = "")
+model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+bws.cm_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
+#view summary of LOOCV
+bws.cm_sum$loocv<- model$results
+#add in error catch if model doesnt work ...
+print(bws.cm_sum)
+
+png(filename = file.path(fig_dir_mo, "bws.cm_modelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+abline(0,1,col="gray50",lty=1)
+dev.off()
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
-hist <- var[var$year < pred.yr,] %>% dplyr::select(sc.cm, sc.wq, ga.swe, sp.swe, t.ga, t.sp, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw, t.p) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe)
+hist$log.cg<- log(hist$cg.swe)
+hist$log.g <- log(hist$g.swe)
+hist$log.gs<- log(hist$gs.swe)
+hist$log.hc <- log(hist$hc.swe)
+hist$log.lwd <- log(hist$lwd.swe)
 hist$log.sp <- log(hist$sp.swe)
 hist$log.wq <- log(hist$sc.wq)
 hist$log.ga<- log(hist$ga.swe)
-hist$log.sum<- log(hist$ga.swe+hist$sp.swe)
+hist<- merge(hist, nj.temps, by = "year") [,-c(1,4,5,6,7,8)] %>% filter(complete.cases(.)) #remove year,
 
-# Silver Creek regsubsets 
-regsubsets.out<-regsubsets(log(sc.cm[var$year < pred.yr])~., data=hist, nbest=3, nvmax=8)
-#BIC is much lower for: cg.swe, hc.swe, lwd.swe, t.cg, t.gs, log(sp.swe), log(sc.wq) (r2=0.72!)
+regsubsets.out<-regsubsets(log(hist$sc.cm)~., data=hist[,-1], nbest=1, nvmax=4)
+reg_sum<- summary(regsubsets.out)
+vars<-reg_sum$which[which.min(reg_sum$bic),]
 
+sc.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+
+#fit a regression model and use LOOCV to evaluate performance
+form<- paste("log(sc.cm)~ ", paste(sc.cm_sum$vars, collapse=" + "), sep = "")
+model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+sc.cm_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
+#view summary of LOOCV
+sc.cm_sum$loocv<- model$results
+#add in error catch if model doesnt work ...
+print(sc.cm_sum)
+
+png(filename = file.path(fig_dir_mo, "sc.cm_modelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+abline(0,1,col="gray50",lty=1)
+dev.off()
 # -------------------------------------------------------------
 # Camas Creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(cc.wq, ccd.swe, sr.swe, t.ccd, t.sr, t.f) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.cm, cc.wq, ccg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe) 
 hist$log.wq <- log(hist$cc.wq)
 hist$log.ccd <- log(hist$ccd.swe)
 hist$log.sr <- log(hist$sr.swe)
-hist$log.sum <- log(hist$ccd.swe+hist$sr.swe)
-#use regsubsets to plot the results
-regsubsets.out<-regsubsets(var$cc.cm[var$year < pred.yr]~., data=hist, nbest=3, nvmax=5)
-#between two best r2 (0.51) the lower BIC includes ccd.swe, sr.swe, t.f
+hist$log.cg<- log(hist$cg.swe)
+hist$log.g <- log(hist$g.swe)
+hist$log.gs<- log(hist$gs.swe)
+hist$log.hc <- log(hist$hc.swe)
+hist$log.lwd <- log(hist$lwd.swe)
+hist$log.sp <- log(hist$sp.swe)
+hist$log.wq <- log(hist$sc.wq)
+hist$log.ga<- log(hist$ga.swe)
+hist<- merge(hist, nj.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #remove year,
+
+regsubsets.out<-regsubsets(log(hist$cc.cm)~., data=hist[,-1], nbest=1, nvmax=4)
+reg_sum<- summary(regsubsets.out)
+vars<-reg_sum$which[which.min(reg_sum$bic),]
+
+cc.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+
+#fit a regression model and use LOOCV to evaluate performance
+form<- paste("log(cc.cm)~ ", paste(cc.cm_sum$vars, collapse=" + "), sep = "")
+model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+cc.cm_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
+#view summary of LOOCV
+cc.cm_sum$loocv<- model$results
+#add in error catch if model doesnt work ...
+print(cc.cm_sum)
+
+png(filename = file.path(fig_dir_mo, "cc.cm_modelFit.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+abline(0,1,col="gray50",lty=1)
+dev.off()
+
+
+
 
 
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
