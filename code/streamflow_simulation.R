@@ -132,7 +132,7 @@ data <- q %>% filter(abv == 'bwb') %>% group_by(doWY) %>% dplyr::mutate(meanQ=me
 # Big Wood @ Hailey
 png(filename = file.path(mo_fig_dir, "BWB_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600) 
 plot(dates, pi[,3], type="n", xlab="Date", ylab ="Flow (cfs)",
      main = "Big Wood Natural Streamflow at Hailey", ylim=c(min(pi[,1]), max(pi[,2])))
 polygon(c(dates[1], dates, rev(dates)), c(pi[1,1], pi[,2], rev(pi[,1])), 
@@ -150,7 +150,7 @@ data <- q %>% filter(abv == 'bws') %>% group_by(doWY) %>% dplyr::mutate(meanQ=me
 # Big Wood @ Stanton
 png(filename = file.path(mo_fig_dir, "BWS_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600) 
 plot(dates, pi[,6], type="n", xlab="Date", ylab ="Flow (cfs)",
      main = "Big Wood Streamflow at Stanton Crossing", ylim=c(min(pi[,1]), max(pi[,2])))
 polygon(c(dates[1], dates, rev(dates)), c(pi[1,4], pi[,5], rev(pi[,4])), 
@@ -169,7 +169,7 @@ data <- q %>% filter(abv == 'sc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mea
 # Silver Creek
 png(filename = file.path(mo_fig_dir, "SC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600) 
 plot(dates, pi[,12], type="n", xlab="Date", ylab ="Flow (cfs)",
      main = "Silver Creek Natural Streamflow Simulation", ylim=c(min(pi[,10]), max(pi[,11])))
 polygon(c(dates[1], dates, rev(dates) ), c(pi[1,10], pi[,11], rev(pi[,10])), 
@@ -187,7 +187,7 @@ data <- q %>% filter(abv == 'cc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mea
 # Camas Creek
 png(filename = file.path(mo_fig_dir, "CC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600) 
 plot(dates,pi[,18], type="n", xlab="Date", ylab ="Flow (cfs)",
      main = "Camas Creek Streamflow Simulation", ylim=c(min(pi[,16]), max(pi[,17])))
 polygon(c(dates[1], dates, rev(dates) ), c(pi[1,16], pi[,17], rev(pi[,16])), 
