@@ -21,11 +21,14 @@ data_dir = '~/Desktop/WRWC/data' #local
 git_dir <<- '~/github/WRWC'
 fig_dir = '~/github/WRWC/figures' 
 
-fig_dir_mo <<- file.path(git_dir,'figures/February')
-mo_data = 'all_dat_feb.csv'
-mo_vars ='mod_feb_vars.csv'
-mo_Rvars ='mod_feb_vars.rdata'
+fig_dir_mo <<- file.path(git_dir,'figures/April')
+mo_data = 'all_dat_apr.csv'
+mo_vars ='mod_apr_vars.csv'
+mo_Rvars ='mod_apr_vars.rdata'
 pred.yr <- 2020
+
+mo_cm.vars ='mod_apr_cm_vars.csv'
+mo_cm.Rvars ='mod_apr_cm_vars.rdata'
 
 # Import Data ------------------------------------------------------------------ # 
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
@@ -289,16 +292,16 @@ regsubsets.out<-regsubsets(log(hist$bwb.cm)~., data=hist[,-1], nbest=1, nvmax=4)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
-bwb.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+bwh.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit a regression model and use LOOCV to evaluate performance
 form<- paste("log(bwb.cm)~ ", paste(bwb.cm_sum$vars, collapse=" + "), sep = "")
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-bwb.cm_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
+bwh.cm_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
 #view summary of LOOCV
-bwb.cm_sum$loocv<- model$results
+bwh.cm_sum$loocv<- model$results
 #add in error catch if model doesnt work ...
-print(bwb.cm_sum)
+print(bwh.cm_sum)
 
 png(filename = file.path(fig_dir_mo, "bwb.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -375,7 +378,7 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 # -------------------------------------------------------------
 # Camas Creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.cm, cc.wq, ccg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.cm, cc.wq, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe) 
 hist$log.wq <- log(hist$cc.wq)
 hist$log.ccd <- log(hist$ccd.swe)
 hist$log.sr <- log(hist$sr.swe)
@@ -411,7 +414,10 @@ plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
-
+#compile all model details into one list to export
+mod_cm.sum<- list(bwh = bwh.cm_sum, bws = bws.cm_sum, sc = sc.cm_sum, cc = cc.cm_sum)
+write.list(mod_cm.sum, file.path(data_dir, mo_cm.vars))
+list.save(mod_cm.sum, file.path(data_dir, mo_cm.Rvars))
 
 
 
