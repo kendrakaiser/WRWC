@@ -42,6 +42,10 @@ bw.div.gage<- bw.div %>% dplyr::select(c(Date, abv.h, abv.s))
 bw.div.sum<- bw.div %>% dplyr::select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
 bw.div.tot<- bw.div.sum %>% dplyr::select(c(year, abv.h, abv.s))
 
+#
+priorities <- read.csv(file.path(input_dir, 'ABV_PRIORITY_2020.csv'))
+wr <- read.csv(file.path(input_dir, 'WD37_Irrigation rights Big Wood Above Magic.csv'))
+total_af<-  sum(wr$Overall.Max.Diversion.Volume.af., na.rm = TRUE)
 # ------------------------------------------------------------------------------
 # USGS Gages
 # ------------------------------------------------------------------------------

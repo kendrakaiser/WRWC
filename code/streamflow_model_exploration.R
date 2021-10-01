@@ -44,6 +44,8 @@ nf.temps = read.csv(file.path(data_dir, 'nfTemps.csv'))
 
 var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
 stream.id<-unique(as.character(usgs_sites$abv))
+swe_cols<-c(2:12)
+t_cols<-c(35:46)
 
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
@@ -52,7 +54,7 @@ ctrl <- trainControl(method = "LOOCV")
 # ------------------------------------------------------------------------------ # 
 
 #Big Wood at hailey actual flow, preforms better with linear swe data
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe)
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, all_of(swe_cols))
 #vol<- var$bwb.vol[var$year < pred.yr & var$year >= min(hist$year)]
 #hist$log.wq <- log(hist$bwb.wq)
 hist$log.cg<- log(hist$cg.swe)
@@ -95,7 +97,7 @@ print(r)
 ggcorrplot(r)
 # -------------------------------------------------------------
 # Big Wood at Stanton, actual flow, preforms better with linear swe data
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.vol, bws.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe) 
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.vol, bws.wq, all_of(swe_cols)) 
 hist$log.wq <- log(hist$bws.wq)
 hist$log.cg<- log(hist$cg.swe)
 hist$log.g <- log(hist$g.swe)
@@ -131,8 +133,8 @@ png(filename = file.path(fig_dir_mo, "BWS_modelFit.png"),
 dev.off()
 
 # -------------------------------------------------------------
-# Subset Silver Creek Winter flows, Snotel from Garfield Ranger Station and Swede Peak
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, ga.swe, sp.swe, bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe) 
+# Subset Silver Creek Winter flows
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, all_of(swe_cols)) 
 hist$log.sp <- log(hist$sp.swe)
 hist$log.wq <- log(hist$sc.wq)
 hist$log.cg<- log(hist$cg.swe)
@@ -166,7 +168,7 @@ png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
 dev.off()
 # -------------------------------------------------------------
 # camas creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, ds.swe, ccd.swe, sr.swe, ga.swe, sp.swe, sm.swe, bc.swe) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, all_of(swe_cols)) 
 hist$log.wq <- log(hist$cc.wq)
 hist$log.ccd <- log(hist$ccd.swe)
 hist$log.sr <- log(hist$sr.swe)
