@@ -21,14 +21,14 @@ data_dir = '~/Desktop/WRWC/data' #local
 git_dir <<- '~/github/WRWC'
 fig_dir = '~/github/WRWC/figures' 
 
-fig_dir_mo <<- file.path(git_dir,'figures/April')
-mo_data = 'all_dat_apr.csv'
-mo_vars ='mod_apr_vars.csv'
-mo_Rvars ='mod_apr_vars.rdata'
+fig_dir_mo <<- file.path(git_dir,'figures/February')
+mo_data = 'all_dat_feb.csv'
+mo_vars ='mod_feb_vars.csv'
+mo_Rvars ='mod_feb_vars.rdata'
 pred.yr <- 2020
 
-mo_cm.vars ='mod_apr_cm_vars.csv'
-mo_cm.Rvars ='mod_apr_cm_vars.rdata'
+mo_cm.vars ='mod_feb_cm_vars.csv'
+mo_cm.Rvars ='mod_feb_cm_vars.rdata'
 
 # Import Data ------------------------------------------------------------------ # 
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
@@ -43,7 +43,7 @@ nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
 nf.temps = read.csv(file.path(data_dir, 'nfTemps.csv'))
 fm.temps = read.csv(file.path(data_dir, 'fmTemps.csv'))
 
-var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% dplyr::select(-X)
+var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") 
 stream.id<-unique(as.character(usgs_sites$abv))
 swe_cols<-c(2:12)
 t_cols<-c(35:46)
@@ -367,6 +367,8 @@ write.list(mod_cm.sum, file.path(data_dir, mo_cm.vars))
 list.save(mod_cm.sum, file.path(data_dir, mo_cm.Rvars))
 
 
+
+# -------------------------------------------------------------
 # -------------------------------------------------------------
 # Diversions above Hailey
 hist <- var[var$year >= 1997 & var$year < pred.yr,] %>% dplyr::select(bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw, year) 
