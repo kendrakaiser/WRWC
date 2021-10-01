@@ -50,10 +50,10 @@ t_cols<-c(35:46)
 
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
-# ------------------------------------------------------------------------------ # 
+#------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for April-Sept Volume Predictions
-# ------------------------------------------------------------------------------ # 
-
+#------------------------------------------------------------------------------ # 
+ 
 #Big Wood at hailey actual flow, preforms better with linear swe data
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, all_of(swe_cols))
 #vol<- var$bwb.vol[var$year < pred.yr & var$year >= min(hist$year)]
@@ -216,7 +216,7 @@ rs<-summary(regsubsets.out)
 quartz(title="R2 v BIC",10,10)
 plot(rs$bic, rs$adjr2, xlab="BIC", ylab="adj R2")
 
-
+# -----
 # ------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for Center of Mass Predictions
 # ------------------------------------------------------------------------------ # 
@@ -230,27 +230,28 @@ hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year") 
-hist<- merge(hist,fm.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #remove year,
+hist<- merge(hist,temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #remove year,
 
-regsubsets.out<-regsubsets(log(hist$bwb.cm)~., data=hist[,-1], nbest=1, nvmax=4)
+regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=4)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
 bwh.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit a regression model and use LOOCV to evaluate performance
-form<- paste("log(bwb.cm)~ ", paste(bwh.cm_sum$vars, collapse=" + "), sep = "")
+form<- paste("bwb.cm~ ", paste(bwh.cm_sum$vars, collapse=" + "), sep = "")
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bwh.cm_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
 #view summary of LOOCV
 bwh.cm_sum$loocv<- model$results
 #add in error catch if model doesnt work ...
 print(bwh.cm_sum)
+print(summary(lm(form, data=hist)))
 
-png(filename = file.path(fig_dir_mo, "bwb.cm_modelFit.png"),
+png(filename = file.path(fig_dir_mo, "bwh.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood Hailey Center of Mass")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
