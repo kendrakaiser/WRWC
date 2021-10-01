@@ -42,14 +42,16 @@ for(i in 1:12){ #hard coded this in after adding agrimet sites to site.key list
     nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"], na.rm=T)
     #average nov-feb temps
     nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "temperature_mean"], na.rm=T)
-    
+    #average feb-march temps
+    fm.mean.temp <- mean(sub[sub$mo == 2 | sub$mo ==3, "temperature_mean"], na.rm=T)
     
     #save to tdata table
-    tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp
+    tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp #april-june
     tdata$sum.tempF[tdata$year == y & tdata$site == site.key[i]] <- sum.mean.temp
     tdata$wint.tempF[tdata$year == y & tdata$site == site.key[i]] <- wint.mean.temp
     tdata$nj.tempF[tdata$year == y & tdata$site == site.key[i]] <- nj.mean.temp
     tdata$nf.tempF[tdata$year == y & tdata$site == site.key[i]] <- nf.mean.temp
+    tdata$fm.tempF[tdata$year == y & tdata$site == site.key[i]] <- fm.mean.temp
   }
 }
 #calculate Agrimet average seasonal temperatures for every year
@@ -66,6 +68,8 @@ for(i in 13:14){# these values could be ∆ to not be hard coded
     nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "t"], na.rm=T)
     #average winter temps (nov- feb)
     nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=T)
+    #average feb-mar
+    fm.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=T)
     
     #save to tdata table
     tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp
@@ -73,6 +77,7 @@ for(i in 13:14){# these values could be ∆ to not be hard coded
     tdata$wint.tempF[tdata$year == y & tdata$site == site.key[i]] <- wint.mean.temp
     tdata$nj.tempF[tdata$year == y & tdata$site == site.key[i]] <- nj.mean.temp
     tdata$nf.tempF[tdata$year == y & tdata$site == site.key[i]] <- nf.mean.temp
+    tdata$fm.tempF[tdata$year == y & tdata$site == site.key[i]] <- fm.mean.temp
   }
 }
 
@@ -82,12 +87,15 @@ sum.tdata<-pivot_wider(tdata[,c(1,2,4)], names_from = site, values_from = sum.te
 wint.tdata<-pivot_wider(tdata[,c(1,2,5)], names_from = site, values_from = wint.tempF)
 nj.tdata<-pivot_wider(tdata[,c(1,2,6)], names_from = site, values_from = nj.tempF)
 nf.tdata<-pivot_wider(tdata[,c(1,2,7)], names_from = site, values_from = nf.tempF)
+fm.tdata<-pivot_wider(tdata[,c(1,2,9)], names_from = site, values_from = fm.tempF)
+
 #figure out a cleaner way to assign these
 colnames(spring.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 colnames(sum.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 colnames(wint.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 colnames(nj.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 colnames(nf.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
+colnames(fm.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 
 
 write.csv(spring.tdata, file.path(data_out, 'sprTemps.csv'), row.names=FALSE)
@@ -95,6 +103,7 @@ write.csv(sum.tdata, file.path(data_out, 'sumTemps.csv'), row.names=FALSE)
 write.csv(wint.tdata, file.path(data_out, 'wintTemps.csv'), row.names=FALSE)
 write.csv(nj.tdata, file.path(data_out, 'njTemps.csv'), row.names=FALSE)
 write.csv(nf.tdata, file.path(data_out, 'nfTemps.csv'), row.names=FALSE)
+write.csv(fm.tdata, file.path(data_out, 'fmTemps.csv'), row.names=FALSE)
 
 snotel_abrv <- c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
 #plot all data
