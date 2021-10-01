@@ -369,6 +369,20 @@ list.save(mod_cm.sum, file.path(data_dir, mo_cm.Rvars))
 
 
 # -------------------------------------------------------------
+# Evaluation of residuals 
+#https://drsimonj.svbtle.com/visualising-residuals
+bwb.m<- bwb_mod %>% augment()
+
+ggplot(bwb.m, aes(x = "hc.swe", y = "log(bwb.vol)")) +
+    geom_smooth(method = "lm", se = FALSE, color = "lightgrey") +
+    geom_segment(aes(xend = hc.swe, yend = .fitted), alpha = .2) +  # Note `.fitted`
+    geom_point(aes(alpha = abs(.std.resid))) +  # Note `.resid`
+    guides(alpha = FALSE) +
+    geom_point(aes(y = .fitted), shape = 1) +  # Note `.fitted`
+    theme_bw()
+
+
+
 # -------------------------------------------------------------
 # Diversions above Hailey
 hist <- var[var$year >= 1997 & var$year < pred.yr,] %>% dplyr::select(bwb.wq, cg.swe, g.swe, gs.swe, hc.swe, lwd.swe, t.cg, t.g, t.gs, t.hc, t.lw, year) 
