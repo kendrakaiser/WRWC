@@ -230,7 +230,7 @@ hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year") 
-hist<- merge(hist,temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #remove year,
+hist<- merge(hist,temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
 
 regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=4)
 reg_sum<- summary(regsubsets.out)
@@ -263,16 +263,17 @@ hist$log.g<- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
-hist<- merge(hist, nj.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #remove year,
+hist<- merge(hist, nj.temps, by = "year")
+hist<- merge(hist,temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
 
-regsubsets.out<-regsubsets(log(hist$bws.cm)~., data=hist[,-1], nbest=1, nvmax=4)
+regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=4)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
 bws.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit a regression model and use LOOCV to evaluate performance
-form<- paste("log(bws.cm)~ ", paste(bws.cm_sum$vars, collapse=" + "), sep = "")
+form<- paste("bws.cm~ ", paste(bws.cm_sum$vars, collapse=" + "), sep = "")
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bws.cm_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
 #view summary of LOOCV
@@ -283,7 +284,7 @@ print(bws.cm_sum)
 png(filename = file.path(fig_dir_mo, "bws.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood Stanton Center of Mass")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
