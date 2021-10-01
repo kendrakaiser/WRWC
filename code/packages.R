@@ -12,16 +12,16 @@ library(MASS)
 library(plotrix)
 library(mvtnorm)
 library(tidyverse)
-library(dataRetrieval)
-library(snotelr)
+library(dataRetrieval) #USGS data
+library(snotelr) #NRCS data
 library(XML)
 library(httr)
 library(plyr)
 library(dplyr)
 library(devtools)
 library(readr)
-library(lubridate)
-library(lfstat)
+library(lubridate) #date transformation
+library(lfstat) #water year
 library(gridExtra)
 #library(RNRCS)
 library(varhandle)
@@ -32,3 +32,5 @@ library(tidyr)
 library(knitr)
 library(fasstr)
 library(stringr)
+library(rlist) #list.save
+library(caret) #loocv
