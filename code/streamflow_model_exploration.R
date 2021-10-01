@@ -37,7 +37,7 @@ usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 swe_q = read.csv(file.path(data_dir,mo_data))
 swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
 
-temps = read.csv(file.path(data_dir, 'ajTemps.csv'))
+temps = read.csv(file.path(data_dir, 'ajTemps.csv'))[,-c(1)]
 wint.temps = read.csv(file.path(data_dir, 'wintTemps.csv')) #average temps, november - march
 nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
 nf.temps = read.csv(file.path(data_dir, 'nfTemps.csv'))
@@ -232,7 +232,7 @@ hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year") 
 hist<- merge(hist,temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
 
-regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=4)
+regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=8)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
@@ -266,7 +266,7 @@ hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year")
 hist<- merge(hist,temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
 
-regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=4)
+regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=8)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
@@ -290,7 +290,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, all_of(swe_cols))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwb.wq, bws.wq, all_of(swe_cols)) #,
 hist$log.cg<- log(hist$cg.swe)
 hist$log.g <- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
@@ -299,18 +299,19 @@ hist$log.lwd <- log(hist$lwd.swe)
 hist$log.sp <- log(hist$sp.swe)
 hist$log.wq <- log(hist$sc.wq)
 hist$log.ga<- log(hist$ga.swe)
-hist<- merge(hist, nj.temps, by = "year") [,-c(1,4,5,6,7,8)] %>% filter(complete.cases(.)) #remove year,
+hist<- merge(hist, nj.temps, by = "year")
+hist<- merge(hist, temps, by = "year") [,-c(1)]%>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
 
-regsubsets.out<-regsubsets(log(hist$sc.cm)~., data=hist[,-1], nbest=1, nvmax=4)
+regsubsets.out<-regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=8)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
 sc.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit a regression model and use LOOCV to evaluate performance
-form<- paste("log(sc.cm)~ ", paste(sc.cm_sum$vars, collapse=" + "), sep = "")
+form<- paste("sc.cm~ ", paste(sc.cm_sum$vars, collapse=" + "), sep = "")
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-sc.cm_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
+sc.cm_sum$lm<-summary(lm(form, data=hist))$adj.r.squared
 #view summary of LOOCV
 sc.cm_sum$loocv<- model$results
 #add in error catch if model doesnt work ...
@@ -319,7 +320,7 @@ print(sc.cm_sum)
 png(filename = file.path(fig_dir_mo, "sc.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted",main="Silver Creek Center of Mass (doy)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 # -------------------------------------------------------------
@@ -334,11 +335,11 @@ hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 hist$log.sp <- log(hist$sp.swe)
-hist$log.wq <- log(hist$sc.wq)
 hist$log.ga<- log(hist$ga.swe)
-hist<- merge(hist, nj.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #remove year,
+hist<- merge(hist, nj.temps, by = "year")
+hist<- merge(hist,temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
 
-regsubsets.out<-regsubsets(log(hist$cc.cm)~., data=hist[,-1], nbest=1, nvmax=4)
+regsubsets.out<-regsubsets(log(hist$cc.cm)~., data=hist[,-1], nbest=1, nvmax=8)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
@@ -356,7 +357,7 @@ print(cc.cm_sum)
 png(filename = file.path(fig_dir_mo, "cc.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek Center of Mass (doy)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
