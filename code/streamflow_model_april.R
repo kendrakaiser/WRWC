@@ -156,6 +156,8 @@ plot(var$bwb.vol[var$year < 2020 & var$year > 1993]/1000,c(fits)/1000, lwd=2, xl
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
+#think through whether the LOOCV should go here ... and if there is a way to turn it into a function
+
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
 hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(bws.vol.nat, bws.wq, g.swe, gs.swe, hc.swe) 
