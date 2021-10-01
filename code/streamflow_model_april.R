@@ -126,17 +126,6 @@ form<- paste("log(bwb.vol)~", paste(params$bwh$vars, collapse="+"), sep = "")
 bwb_mod<-lm(form, data=hist) 
 mod_sum[1,1]<-summary(bwb_mod)$adj.r.squared
 
-#https://drsimonj.svbtle.com/visualising-residuals
-bwb.m<- bwb_mod %>% augment()
-
-ggplot(bwb.m, aes(x = "hc.swe", y = "log(bwb.vol)")) +
-  geom_smooth(method = "lm", se = FALSE, color = "lightgrey") +
-  geom_segment(aes(xend = hc.swe, yend = .fitted), alpha = .2) +  # Note `.fitted`
-  geom_point(aes(alpha = abs(.std.resid))) +  # Note `.resid`
-  guides(alpha = FALSE) +
-  geom_point(aes(y = .fitted), shape = 1) +  # Note `.fitted`
-  theme_bw()
-
 #April 1 bwb Prediction Data
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(params$bwh$vars) 
 
