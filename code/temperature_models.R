@@ -100,20 +100,20 @@ snotel_abrv <- c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
 #plot all data
 png(filename = file.path(fig_dir,"SpringTemps.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=spring.tempF, color=site)) +geom_point()
 dev.off()
 
 #plot all data
 png(filename = file.path(fig_dir,"SummerTemps.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=sum.tempF, color=site)) +geom_point()
 dev.off()
 
 png(filename = file.path(fig_dir,"WinterTemps.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="quartz") 
+    bg = "white", res = 600, type ="cairo-png") 
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=wint.tempF, color=site)) +geom_point()
 dev.off()
 
