@@ -33,7 +33,7 @@ for(i in 1:12){ #hard coded this in after adding agrimet sites to site.key list
   for (y in first.yr:last.yr){
     sub<- snotel[snotel$site_name == site.key[i] & snotel$wy==y, ] #subset to indv. site and year
     #average april - june temps
-    mean.temp <- mean(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"], na.rm=T)
+    aj.mean.temp <- mean(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"], na.rm=T)
     #average summer temps July Aug Sept
     sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "temperature_mean"], na.rm=T)
     #average winter temps
@@ -46,7 +46,7 @@ for(i in 1:12){ #hard coded this in after adding agrimet sites to site.key list
     fm.mean.temp <- mean(sub[sub$mo == 2 | sub$mo ==3, "temperature_mean"], na.rm=T)
     
     #save to tdata table
-    tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp #april-june
+    tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- aj.mean.temp #april-june
     tdata$sum.tempF[tdata$year == y & tdata$site == site.key[i]] <- sum.mean.temp
     tdata$wint.tempF[tdata$year == y & tdata$site == site.key[i]] <- wint.mean.temp
     tdata$nj.tempF[tdata$year == y & tdata$site == site.key[i]] <- nj.mean.temp
@@ -59,7 +59,7 @@ for(i in 13:14){# these values could be ∆ to not be hard coded
   for (y in first.yr:last.yr){
     sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$y==y, ]) #subset to indv. site and year
     #average april - june temps
-    mean.temp <- mean(sub[sub$month == 4 | sub$month ==5 | sub$month ==6 , "t"], na.rm=T)
+    aj.mean.temp <- mean(sub[sub$month == 4 | sub$month ==5 | sub$month ==6 , "t"], na.rm=T)
     #average summer temps July Aug Sept
     sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "t"], na.rm=T)
     #average winter temps (nov- march)
@@ -72,7 +72,7 @@ for(i in 13:14){# these values could be ∆ to not be hard coded
     fm.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=T)
     
     #save to tdata table
-    tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- mean.temp
+    tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- aj.mean.temp
     tdata$sum.tempF[tdata$year == y & tdata$site == site.key[i]] <- sum.mean.temp
     tdata$wint.tempF[tdata$year == y & tdata$site == site.key[i]] <- wint.mean.temp
     tdata$nj.tempF[tdata$year == y & tdata$site == site.key[i]] <- nj.mean.temp
@@ -90,10 +90,10 @@ nf.tdata<-pivot_wider(tdata[,c(1,2,7)], names_from = site, values_from = nf.temp
 fm.tdata<-pivot_wider(tdata[,c(1,2,9)], names_from = site, values_from = fm.tempF)
 
 #figure out a cleaner way to assign these
-colnames(spring.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
+colnames(spring.tdata)<-c("year", "aj.t.cg","aj.t.ccd", "aj.t.sr", "aj.t.bc","aj.t.ds","aj.t.g","aj.t.ga", "aj.t.hc", "aj.t.lw", "aj.t.sm", "aj.t.gs", "aj.t.sp","aj.t.p", "aj.t.f")
 colnames(sum.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 colnames(wint.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
-colnames(nj.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
+colnames(nj.tdata)<-c("year", "nj.t.cg","nj.t.ccd", "nj.t.sr", "nj.t.bc","nj.t.ds","nj.t.g","nj.t.ga", "nj.t.hc", "nj.t.lw", "nj.t.sm", "nj.t.gs", "nj.t.sp","nj.t.p", "nj.t.f")
 colnames(nf.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 colnames(fm.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 
@@ -126,6 +126,7 @@ png(filename = file.path(fig_dir,"WinterTemps.png"),
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=wint.tempF, color=site)) +geom_point()
 dev.off()
 
+
 # generate data for prediction
 new.data<-data.frame(array(NA,c(length(site.key),5)))
 colnames(new.data)<-c("year","site", "wint.tempF", "spr.tempF","sum.tempF")
@@ -135,6 +136,31 @@ new.data$elev<-elev
   
 nboots<-2000
 nboot<-5000
+
+# All sites april-june temperature predictions
+
+fit2<-lmer(spring.tempF ~ year + (1+year|site), data=tdata, REML=TRUE, na.action=na.omit)
+
+
+trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata, method="REML",na.action=na.omit)
+pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
+fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
+
+# Bootstrap 
+mu<-trend.reml$coef$fixed
+sig<-trend.reml$var
+rand.coefs<-mvrnorm(nboots,mu,sig)
+var.est<-var(rand.coefs%*%c(1,last.yr+1))
+var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key)
+se.pred<-sqrt(var.est+var.site)
+aj.pred.temps<-rnorm(nboot,mean=pred,sd=se.pred)
+
+write.csv(aj.pred.temps, file.path(data_out, 'aj_pred.temps.csv'))
+
+#
+# The prolem with these predictions is that they are a grouping of sites rather
+# thank having a predicted temperature at each site ...
+#
 
 # All sites winter --------------------------------------------------------------------------
 tdata.sno<- tdata[tdata$site != "fairfield" & tdata$site != "picabo",]
