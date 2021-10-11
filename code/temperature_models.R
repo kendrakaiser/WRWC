@@ -144,7 +144,10 @@ nboot<-5000
 # boundary (singular) fit: see ?isSingular
 
 trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata, method="REML",na.action=na.omit)
-pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
+# the current problem is that we come up with a singular temperature prediction, 
+# rather than a prediction at each location which is what we need for the cm
+
+pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1] 
 fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
 
 # Bootstrap 
