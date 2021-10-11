@@ -129,30 +129,40 @@ dev.off()
 
 # generate data for prediction
 library(lme4)
-new.data<-data.frame(array(NA,c(length(site.key),5)))
-colnames(new.data)<-c("year","site", "wint.tempF", "spr.tempF","sum.tempF")
+new.data<-data.frame(array(NA,c(length(site.key),3)))
+colnames(new.data)<-c("year","site", "spr.tempF")
 new.data$year<-rep(last.yr+1,length(site.key))
 new.data$site<-(site.key)
-new.data$elev<-elev
+
   
 nboots<-2000
 nboot<-5000
 
 # All sites april-june temperature predictions
 
-# fit2<-lmer(spring.tempF ~ year + (1+year|site), data=tdata, REML=TRUE, na.action=na.omit)
+fit2<-lmer(spring.tempF ~ year + (1+year|site), data=tdata, REML=TRUE, na.action=na.omit)
 # boundary (singular) fit: see ?isSingular
+new.data$spr.tempF<-predict(fit2,new.data)
+int_coeff<- ranef(fit2)$site #random effects -- can we use this as the variance for each site for bootstrapping? 
+mu2 <- fixed.effects(fit2) 
+#where is the variance on the fixed effects?
 
-trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata, method="REML",na.action=na.omit)
+# Bootstrap - for each site 
+
+
 # the current problem is that we come up with a singular temperature prediction, 
 # rather than a prediction at each location which is what we need for the cm
-
+trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata, method="REML",na.action=na.omit)
 pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1] 
 fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
 
 # Bootstrap 
-mu<-trend.reml$coef$fixed
-sig<-trend.reml$var
+mu<-trend.reml$coef$fixed #vector containing the estimated fixed effects and the 
+
+#$random$site : second is a list of matrices with the estimated random effects for each level of grouping. 
+#For each matrix in the random list, the columns refer to the random effects and the rows to the groups
+
+sig<-trend.reml$var  #an approximate covariance matrix of the fixed effects estimates
 rand.coefs<-mvrnorm(nboots,mu,sig)
 var.est<-var(rand.coefs%*%c(1,last.yr+1))
 var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key)
