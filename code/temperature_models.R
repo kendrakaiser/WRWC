@@ -128,6 +128,7 @@ dev.off()
 
 
 # generate data for prediction
+library(lme4)
 new.data<-data.frame(array(NA,c(length(site.key),5)))
 colnames(new.data)<-c("year","site", "wint.tempF", "spr.tempF","sum.tempF")
 new.data$year<-rep(last.yr+1,length(site.key))
@@ -139,8 +140,8 @@ nboot<-5000
 
 # All sites april-june temperature predictions
 
-fit2<-lmer(spring.tempF ~ year + (1+year|site), data=tdata, REML=TRUE, na.action=na.omit)
-
+# fit2<-lmer(spring.tempF ~ year + (1+year|site), data=tdata, REML=TRUE, na.action=na.omit)
+# boundary (singular) fit: see ?isSingular
 
 trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata, method="REML",na.action=na.omit)
 pred<-predict(trend.reml,new.data,0:1)$predict.fixed[1]
