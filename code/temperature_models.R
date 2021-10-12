@@ -11,6 +11,7 @@ data_out = file.path(cd, 'data')
 
 snotel = read.csv(file.path(data_out,'snotel_data.csv'))
 agrimet = read.csv(file.path(input_dir,'agri_metT.csv'))
+#NEED TO REMOVE THE FIRST YEAR OF DATA from each site if not complete
 
 # Analyze and Predict temperature trend ----
 # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993
@@ -22,28 +23,29 @@ site.key <- c(as.character(unique(snotel$site_name)), as.character(unique(agrime
 elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,7)))
+
 #summer temp july-sept, winter temp NDJFM
 colnames(tdata)<-c("year","site","spring.tempF", "sum.tempF", "wint.tempF", "nj.tempF", "nf.tempF")
 tdata$year<-rep(first.yr:last.yr,length(site.key))
 tdata$site<-rep(site.key, each=nyrs)
 tdata$elev<-rep(elev, each=nyrs)
 
-#calculate average Snotel april/jun temperature for every year
+#calculate average Snotel seasonal temperatures for every year
 for(i in 1:12){ #hard coded this in after adding agrimet sites to site.key list
   for (y in first.yr:last.yr){
     sub<- snotel[snotel$site_name == site.key[i] & snotel$wy==y, ] #subset to indv. site and year
     #average april - june temps
-    aj.mean.temp <- mean(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"], na.rm=T)
+    aj.mean.temp <- mean(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"], na.rm=F)
     #average summer temps July Aug Sept
-    sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "temperature_mean"], na.rm=T)
+    sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "temperature_mean"], na.rm=F)
     #average winter temps
-    wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3 , "temperature_mean"], na.rm=T)
+    wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3 , "temperature_mean"], na.rm=F)
     #average nov-jan temps
-    nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"], na.rm=T)
+    nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"], na.rm=F)
     #average nov-feb temps
-    nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "temperature_mean"], na.rm=T)
+    nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "temperature_mean"], na.rm=F)
     #average feb-march temps
-    fm.mean.temp <- mean(sub[sub$mo == 2 | sub$mo ==3, "temperature_mean"], na.rm=T)
+    fm.mean.temp <- mean(sub[sub$mo == 2 | sub$mo ==3, "temperature_mean"], na.rm=F)
     
     #save to tdata table
     tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- aj.mean.temp #april-june
@@ -59,17 +61,17 @@ for(i in 13:14){# these values could be ∆ to not be hard coded
   for (y in first.yr:last.yr){
     sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$y==y, ]) #subset to indv. site and year
     #average april - june temps
-    aj.mean.temp <- mean(sub[sub$month == 4 | sub$month ==5 | sub$month ==6 , "t"], na.rm=T)
+    aj.mean.temp <- mean(sub[sub$month == 4 | sub$month ==5 | sub$month ==6 , "t"], na.rm=FALSE)
     #average summer temps July Aug Sept
-    sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "t"], na.rm=T)
+    sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "t"], na.rm=FALSE)
     #average winter temps (nov- march)
-    wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3 , "t"], na.rm=T)
+    wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3 , "t"], na.rm=FALSE)
     #average nov-jan temps
-    nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "t"], na.rm=T)
+    nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "t"], na.rm=FALSE)
     #average winter temps (nov- feb)
-    nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=T)
+    nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=FALSE)
     #average feb-mar
-    fm.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=T)
+    fm.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=FALSE)
     
     #save to tdata table
     tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- aj.mean.temp
@@ -113,6 +115,9 @@ png(filename = file.path(fig_dir,"SpringTemps.png"),
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=spring.tempF, color=site)) +geom_point()
 dev.off()
 
+ggplot(tdata[tdata$site == "fairfield" | tdata$site == "picabo",], aes(x=year, y=spring.tempF, color=site)) +geom_point()
+ggplot(tdata[tdata$site == "camas creek divide" | tdata$site == "chocolate gulch",], aes(x=year, y=spring.tempF, color=site)) +geom_point()
+
 #plot all data
 png(filename = file.path(fig_dir,"SummerTemps.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -125,6 +130,16 @@ png(filename = file.path(fig_dir,"WinterTemps.png"),
     bg = "white", res = 600, type ="cairo-png") 
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=wint.tempF, color=site)) +geom_point()
 dev.off()
+
+#5:45 - 6:45; 800am
+# linear regression using elevation alone
+lr.elev<- lm(spring.tempF~  elev+year, data=tdata[tdata$site != "fairfield" & tdata$site != "picabo",])
+summary(lr.elev)
+plot(na.omit(tdata$spring.tempF[tdata$site != "fairfield" & tdata$site != "picabo"]), predict(lr.elev))
+
+low.elev<- lm(spring.tempF~  elev+year, data=tdata[tdata$site == "fairfield" | tdata$site == "picabo",])
+summary(low.elev)
+
 
 
 # generate data for prediction
