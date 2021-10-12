@@ -14,7 +14,10 @@ agrimet = read.csv(file.path(input_dir,'agri_metT.csv'))
 #NEED TO PUT Agrimet in Wy as well..
 #renaming agrimet columns to match snotel for calculations
 colnames(agrimet)<- c("X","date_time","temperature_mean", "site_name", "mo", "y")
-
+agrimet$date_time<- as.Date(agrimet$date_time)
+#remove values that are erroneous
+agrimet$temperature_mean[agrimet$temperature_mean < -90] <- NA
+agrimet$temperature_mean[agrimet$temperature_mean > 150] <- NA
 
 # Analyze and Predict temperature trend ----
 # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993
@@ -125,36 +128,40 @@ png(filename = file.path(fig_dir,"WinterTemps.png"),
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=wint.tempF, color=site)) +geom_point()
 dev.off()
 
-#5:45 - 6:45; 800am
+#5:45 - 6:45; 800am 9:10; 4:10-
 # linear regression using elevation alone
-lr.elev<- lm(spring.tempF~  elev+year, data=tdata[tdata$site != "fairfield" & tdata$site != "picabo",])
+input <- tdata[tdata$site != "fairfield" & tdata$site != "picabo",] %>% filter(complete.cases(.))
+lr.elev<- lm(spring.tempF~  elev+year, data=input)
+input$fitted<- predict(lr.elev)
+
 summary(lr.elev)
-plot(na.omit(tdata$spring.tempF[tdata$site != "fairfield" & tdata$site != "picabo"]), predict(lr.elev))
+#plot the observed versus fitted 
+ggplot(input, aes(x=spring.tempF, y=fitted, color=site)) +geom_point()
+plot(input$spring.tempF, predict(lr.elev))
+abline(0,1,col="gray50",lty=1)
 
-low.elev<- lm(spring.tempF~  elev+year, data=tdata[tdata$site == "fairfield" | tdata$site == "picabo",])
-summary(low.elev)
+#adding in fairfield and picabo throws off the regression - it effectively does poorly everywhere
+
+# calculate the correlations
+r <- round(cor(spring.tdata[-1], use="complete.obs"),2)
 
 
 
-# generate data for prediction
-library(lme4)
-new.data<-data.frame(array(NA,c(length(site.key),3)))
-colnames(new.data)<-c("year","site", "spr.tempF")
+# data for prediction
+new.data<-data.frame(array(NA,c(length(site.key),4)))
+colnames(new.data)<-c("year","site", "elev", "spr.tempF")
 new.data$year<-rep(last.yr+1,length(site.key))
 new.data$site<-(site.key)
+new.data$elev<-elev
+#predict the mean april-june temperature at each site
+new.data$spr.tempF[1:12]<-predict(lr.elev, new.data[1:12,])
 
-  
+
 nboots<-2000
 nboot<-5000
 
 # All sites april-june temperature predictions
 
-fit2<-lmer(spring.tempF ~ year + (1+year|site), data=tdata, REML=TRUE, na.action=na.omit)
-# boundary (singular) fit: see ?isSingular
-new.data$spr.tempF<-predict(fit2,new.data)
-int_coeff<- ranef(fit2)$site #random effects -- can we use this as the variance for each site for bootstrapping? 
-mu2 <- fixed.effects(fit2) 
-#where is the variance on the fixed effects?
 
 # Bootstrap - for each site 
 
@@ -167,23 +174,33 @@ fits<-fitted(trend.reml,0:1)[(1:nyrs),1]
 
 # Bootstrap 
 mu<-trend.reml$coef$fixed #vector containing the estimated fixed effects and the 
+# summary(trend.reml)$coeff$random$site[,1] -- intercept for each site 
 
-#$random$site : second is a list of matrices with the estimated random effects for each level of grouping. 
-#For each matrix in the random list, the columns refer to the random effects and the rows to the groups
-
+#this is all used to estimate the sd of the predictions (across sites)
 sig<-trend.reml$var  #an approximate covariance matrix of the fixed effects estimates
-rand.coefs<-mvrnorm(nboots,mu,sig)
-var.est<-var(rand.coefs%*%c(1,last.yr+1))
-var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key)
+rand.coefs<-mvrnorm(nboots,mu,sig) #use the coefficients & var-cov matrix to sample coef from
+var.est<-var(rand.coefs%*%c(1,last.yr+1)) #estimated variance of coefficients for upcoming year
+var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key) #variance of the intercept across sites (random effect)
 se.pred<-sqrt(var.est+var.site)
-aj.pred.temps<-rnorm(nboot,mean=pred,sd=se.pred)
+
+aj.pred.temps<-rnorm(nboot,mean=pred,sd=se.pred) #create a distribution of temps from mean and sd from MEM
 
 write.csv(aj.pred.temps, file.path(data_out, 'aj_pred.temps.csv'))
 
 #
-# The prolem with these predictions is that they are a grouping of sites rather
+# The problem with these predictions is that they are a grouping of sites rather
 # thank having a predicted temperature at each site ...
 #
+
+#alt version of the same thing ..
+library(lme4)
+fit2<-lmer(spring.tempF ~ year + (1+year|site), data=tdata[tdata$site != "fairfield" & tdata$site != "picabo",], REML=TRUE, na.action=na.omit)
+# boundary (singular) fit: see ?isSingular
+new.data$spr.tempF<-predict(fit2,new.data)
+int_coeff<- ranef(fit2)$site #random effects -- can we use this as the variance for each site for bootstrapping? 
+mu2 <- fixed.effects(fit2) 
+#where is the variance on the fixed effects?
+
 
 # All sites winter --------------------------------------------------------------------------
 tdata.sno<- tdata[tdata$site != "fairfield" & tdata$site != "picabo",]
