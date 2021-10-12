@@ -11,7 +11,10 @@ data_out = file.path(cd, 'data')
 
 snotel = read.csv(file.path(data_out,'snotel_data.csv'))
 agrimet = read.csv(file.path(input_dir,'agri_metT.csv'))
-#NEED TO REMOVE THE FIRST YEAR OF DATA from each site if not complete
+#NEED TO PUT Agrimet in Wy as well..
+#renaming agrimet columns to match snotel for calculations
+colnames(agrimet)<- c("X","date_time","temperature_mean", "site_name", "mo", "y")
+
 
 # Analyze and Predict temperature trend ----
 # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993
@@ -31,50 +34,41 @@ tdata$site<-rep(site.key, each=nyrs)
 tdata$elev<-rep(elev, each=nyrs)
 
 #calculate average Snotel seasonal temperatures for every year
-for(i in 1:12){ #hard coded this in after adding agrimet sites to site.key list
+for(i in 1:14){ #hard coded this in after adding agrimet sites to site.key list
   for (y in first.yr:last.yr){
-    sub<- snotel[snotel$site_name == site.key[i] & snotel$wy==y, ] #subset to indv. site and year
+    #subset to indv. site and year
+    if (i<13){
+      sub<- snotel[snotel$site_name == site.key[i] & snotel$wy==y, ]
+    } else if (i>=13){
+      sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$y==y, ])}
     #average april - june temps
-    aj.mean.temp <- mean(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"], na.rm=F)
+    #if length is greater than 95% of the desired period calculate the mean
+    if (length(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"]) > 88) {
+        aj.mean.temp <- mean(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"], na.rm=TRUE)
+        } else (aj.mean.temp <- NA)
     #average summer temps July Aug Sept
-    sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "temperature_mean"], na.rm=F)
+    if (length(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "temperature_mean"]) > 88) {
+      sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "temperature_mean"], na.rm=TRUE)
+      } else (sum.mean.temp <- NA)
     #average winter temps
-    wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3 , "temperature_mean"], na.rm=F)
+    if (length(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo == 3, "temperature_mean"]) > 149) {
+      wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3, "temperature_mean"], na.rm=TRUE)
+      } else (wint.mean.temp <- NA)
     #average nov-jan temps
-    nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"], na.rm=F)
+    if (length(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"]) > 88) {
+       nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"], na.rm=TRUE)
+        } else (nj.mean.temp <- NA)
     #average nov-feb temps
-    nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "temperature_mean"], na.rm=F)
+    if (length(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "temperature_mean"]) > 119) {
+      nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "temperature_mean"], na.rm=TRUE)
+      } else (nf.mean.temp <- NA)
     #average feb-march temps
-    fm.mean.temp <- mean(sub[sub$mo == 2 | sub$mo ==3, "temperature_mean"], na.rm=F)
+    if (length(sub[sub$mo == 2 | sub$mo ==3, "temperature_mean"]) > 58) {
+      fm.mean.temp <- mean(sub[sub$mo == 2 | sub$mo ==3, "temperature_mean"], na.rm=TRUE)
+      } else (fm.mean.temp <- NA)
     
     #save to tdata table
     tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- aj.mean.temp #april-june
-    tdata$sum.tempF[tdata$year == y & tdata$site == site.key[i]] <- sum.mean.temp
-    tdata$wint.tempF[tdata$year == y & tdata$site == site.key[i]] <- wint.mean.temp
-    tdata$nj.tempF[tdata$year == y & tdata$site == site.key[i]] <- nj.mean.temp
-    tdata$nf.tempF[tdata$year == y & tdata$site == site.key[i]] <- nf.mean.temp
-    tdata$fm.tempF[tdata$year == y & tdata$site == site.key[i]] <- fm.mean.temp
-  }
-}
-#calculate Agrimet average seasonal temperatures for every year
-for(i in 13:14){# these values could be ∆ to not be hard coded
-  for (y in first.yr:last.yr){
-    sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$y==y, ]) #subset to indv. site and year
-    #average april - june temps
-    aj.mean.temp <- mean(sub[sub$month == 4 | sub$month ==5 | sub$month ==6 , "t"], na.rm=FALSE)
-    #average summer temps July Aug Sept
-    sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "t"], na.rm=FALSE)
-    #average winter temps (nov- march)
-    wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3 , "t"], na.rm=FALSE)
-    #average nov-jan temps
-    nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "t"], na.rm=FALSE)
-    #average winter temps (nov- feb)
-    nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=FALSE)
-    #average feb-mar
-    fm.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "t"], na.rm=FALSE)
-    
-    #save to tdata table
-    tdata$spring.tempF[tdata$year == y & tdata$site == site.key[i]] <- aj.mean.temp
     tdata$sum.tempF[tdata$year == y & tdata$site == site.key[i]] <- sum.mean.temp
     tdata$wint.tempF[tdata$year == y & tdata$site == site.key[i]] <- wint.mean.temp
     tdata$nj.tempF[tdata$year == y & tdata$site == site.key[i]] <- nj.mean.temp
@@ -164,7 +158,7 @@ mu2 <- fixed.effects(fit2)
 
 # Bootstrap - for each site 
 
-
+#varience component models; how to incorperate a covariance matrix between locations; 
 # the current problem is that we come up with a singular temperature prediction, 
 # rather than a prediction at each location which is what we need for the cm
 trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata, method="REML",na.action=na.omit)
