@@ -156,8 +156,11 @@ colnames(new.data)<-c("year","site", "elev", "spr.tempF")
 new.data$year<-rep(last.yr+1,length(site.key))
 new.data$site<-(site.key)
 new.data$elev<-elev
+
 #predict the mean april-june temperature at each site
 new.data$spr.tempF[1:12]<-predict(lr.elev, new.data[1:12,])
+new.data$spr.tempF[13]<- mean(tdata$spring.tempF[tdata$site == "fairfield"])
+new.data$spr.tempF[14]<- mean(tdata$spring.tempF[tdata$site == "picabo"])
 
 # Draw stream temperatures using multivariate normal distribution
 nboot<-5000
