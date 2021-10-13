@@ -37,7 +37,7 @@ usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 swe_q = read.csv(file.path(data_dir,mo_data))
 swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
 
-spring.temps = read.csv(file.path(data_dir, 'sprTemps.csv'))[,-c(1)]
+spring.temps = read.csv(file.path(data_dir, 'sprTemps.csv'))
 wint.temps = read.csv(file.path(data_dir, 'wintTemps.csv')) #average temps, november - march
 nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
 nf.temps = read.csv(file.path(data_dir, 'nfTemps.csv'))
@@ -232,7 +232,7 @@ hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year") 
 hist<- merge(hist,spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
 
-regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=6)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
@@ -266,7 +266,7 @@ hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year")
 hist<- merge(hist,spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
 
-regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=6)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
@@ -302,7 +302,7 @@ hist$log.ga<- log(hist$ga.swe)
 hist<- merge(hist, nj.temps, by = "year")
 hist<- merge(hist, spring.temps, by = "year") [,-c(1)]%>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
 
-regsubsets.out<-regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=6)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
@@ -339,7 +339,7 @@ hist$log.ga<- log(hist$ga.swe)
 hist<- merge(hist, nj.temps, by = "year")
 hist<- merge(hist,spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
 
-regsubsets.out<-regsubsets(log(hist$cc.cm)~., data=hist[,-1], nbest=1, nvmax=8)
+regsubsets.out<-regsubsets(log(hist$cc.cm)~., data=hist[,-1], nbest=1, nvmax=6)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 
