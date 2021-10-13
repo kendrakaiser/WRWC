@@ -96,6 +96,7 @@ colnames(nj.tdata)<-c("year", "nj.t.cg","nj.t.ccd", "nj.t.sr", "nj.t.bc","nj.t.d
 colnames(nf.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 colnames(fm.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 
+spring.tdata[spring.tdata == "NaN"]<- NA
 
 write.csv(spring.tdata, file.path(data_out, 'sprTemps.csv'), row.names=FALSE)
 write.csv(sum.tdata, file.path(data_out, 'sumTemps.csv'), row.names=FALSE)
@@ -128,7 +129,8 @@ png(filename = file.path(fig_dir,"WinterTemps.png"),
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=wint.tempF, color=site)) +geom_point()
 dev.off()
 
-#5:45 - 6:45; 800am 9:10; 4:10-
+#5:45 - 6:45; 800am 9:10; 4:10-7
+# have 500 predictions of the upcoming years temperature for each site -- make sure that the notation (aj.site) is consitent with the model selection
 # linear regression using elevation alone
 input <- tdata[tdata$site != "fairfield" & tdata$site != "picabo",] %>% filter(complete.cases(.))
 lr.elev<- lm(spring.tempF~  elev+year, data=input)
@@ -142,10 +144,10 @@ abline(0,1,col="gray50",lty=1)
 
 #adding in fairfield and picabo throws off the regression - it effectively does poorly everywhere
 
+# covarience matrix (var-cov matrix) - diagonal the variance of temp at each site, the rest are the correlations
+site.cov<- cov(spring.tdata[-1], use="complete.obs")
 # calculate the correlations
-r <- round(cor(spring.tdata[-1], use="complete.obs"),2)
-
-
+r <- as.data.frame(round(cor(spring.tdata[-1], use="complete.obs"),2))
 
 # data for prediction
 new.data<-data.frame(array(NA,c(length(site.key),4)))
@@ -156,7 +158,12 @@ new.data$elev<-elev
 #predict the mean april-june temperature at each site
 new.data$spr.tempF[1:12]<-predict(lr.elev, new.data[1:12,])
 
+# Draw stream temperatures using multivariate normal distribution
+temps.boot<- mvrnorm(nboot, new.data$spr.tempF, site.cov)
 
+
+
+# 'Sigma' is not positive definite
 nboots<-2000
 nboot<-5000
 
@@ -165,7 +172,7 @@ nboot<-5000
 
 # Bootstrap - for each site 
 
-#varience component models; how to incorperate a covariance matrix between locations; 
+#varience component models; how to incorporate a covariance matrix between locations; 
 # the current problem is that we come up with a singular temperature prediction, 
 # rather than a prediction at each location which is what we need for the cm
 trend.reml<-lme(fixed=spring.tempF ~ year, random=~1+year|site, correlation = corAR1(), data=tdata, method="REML",na.action=na.omit)
@@ -178,7 +185,7 @@ mu<-trend.reml$coef$fixed #vector containing the estimated fixed effects and the
 
 #this is all used to estimate the sd of the predictions (across sites)
 sig<-trend.reml$var  #an approximate covariance matrix of the fixed effects estimates
-rand.coefs<-mvrnorm(nboots,mu,sig) #use the coefficients & var-cov matrix to sample coef from
+rand.coefs<-mvrnorm(nboots,mu,sig) #use the coefficients & var-cov matrix to create a distribution of coef 
 var.est<-var(rand.coefs%*%c(1,last.yr+1)) #estimated variance of coefficients for upcoming year
 var.site<-var(summary(trend.reml)$coeff$random$site[,1])/length(site.key) #variance of the intercept across sites (random effect)
 se.pred<-sqrt(var.est+var.site)
