@@ -37,13 +37,13 @@ usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 swe_q = read.csv(file.path(data_dir,mo_data))
 swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
 
-temps = read.csv(file.path(data_dir, 'ajTemps.csv'))[,-c(1)]
+spring.temps = read.csv(file.path(data_dir, 'sprTemps.csv'))[,-c(1)]
 wint.temps = read.csv(file.path(data_dir, 'wintTemps.csv')) #average temps, november - march
 nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
 nf.temps = read.csv(file.path(data_dir, 'nfTemps.csv'))
 fm.temps = read.csv(file.path(data_dir, 'fmTemps.csv'))
 
-var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") 
+var = swe_q %>% dplyr::select(-X) %>% inner_join(spring.temps, by ="year") 
 stream.id<-unique(as.character(usgs_sites$abv))
 swe_cols<-c(2:12)
 t_cols<-c(35:46)
@@ -230,7 +230,7 @@ hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year") 
-hist<- merge(hist,temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
+hist<- merge(hist,spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
 
 regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=8)
 reg_sum<- summary(regsubsets.out)
@@ -264,7 +264,7 @@ hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year")
-hist<- merge(hist,temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
+hist<- merge(hist,spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
 
 regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=8)
 reg_sum<- summary(regsubsets.out)
@@ -300,7 +300,7 @@ hist$log.sp <- log(hist$sp.swe)
 hist$log.wq <- log(hist$sc.wq)
 hist$log.ga<- log(hist$ga.swe)
 hist<- merge(hist, nj.temps, by = "year")
-hist<- merge(hist, temps, by = "year") [,-c(1)]%>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
+hist<- merge(hist, spring.temps, by = "year") [,-c(1)]%>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
 
 regsubsets.out<-regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=8)
 reg_sum<- summary(regsubsets.out)
@@ -337,7 +337,7 @@ hist$log.lwd <- log(hist$lwd.swe)
 hist$log.sp <- log(hist$sp.swe)
 hist$log.ga<- log(hist$ga.swe)
 hist<- merge(hist, nj.temps, by = "year")
-hist<- merge(hist,temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
+hist<- merge(hist,spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
 
 regsubsets.out<-regsubsets(log(hist$cc.cm)~., data=hist[,-1], nbest=1, nvmax=8)
 reg_sum<- summary(regsubsets.out)
