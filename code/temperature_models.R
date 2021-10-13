@@ -97,6 +97,7 @@ colnames(nf.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga"
 colnames(fm.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 
 spring.tdata[spring.tdata == "NaN"]<- NA
+nj.tdata[nj.tdata== "NaN"]<- NA
 
 write.csv(spring.tdata, file.path(data_out, 'sprTemps.csv'), row.names=FALSE)
 write.csv(sum.tdata, file.path(data_out, 'sumTemps.csv'), row.names=FALSE)
@@ -129,7 +130,7 @@ png(filename = file.path(fig_dir,"WinterTemps.png"),
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=wint.tempF, color=site)) +geom_point()
 dev.off()
 
-#5:45 - 6:45; 800am 9:10; 4:10-7
+#5:45 - 6:45; 800am - 9:10; 4:10-7:15
 # have 500 predictions of the upcoming years temperature for each site -- make sure that the notation (aj.site) is consitent with the model selection
 # linear regression using elevation alone
 input <- tdata[tdata$site != "fairfield" & tdata$site != "picabo",] %>% filter(complete.cases(.))
@@ -159,17 +160,16 @@ new.data$elev<-elev
 new.data$spr.tempF[1:12]<-predict(lr.elev, new.data[1:12,])
 
 # Draw stream temperatures using multivariate normal distribution
-temps.boot<- mvrnorm(nboot, new.data$spr.tempF, site.cov)
-
-
-
-# 'Sigma' is not positive definite
-nboots<-2000
 nboot<-5000
+aj.pred.temps<- mvrnorm(nboot, new.data$spr.tempF, site.cov)
+write.csv(aj.pred.temps, file.path(data_out, 'aj_pred.temps.csv'))
 
+
+
+
+
+### ----------------------------------------------
 # All sites april-june temperature predictions
-
-
 # Bootstrap - for each site 
 
 #varience component models; how to incorporate a covariance matrix between locations; 
@@ -192,7 +192,7 @@ se.pred<-sqrt(var.est+var.site)
 
 aj.pred.temps<-rnorm(nboot,mean=pred,sd=se.pred) #create a distribution of temps from mean and sd from MEM
 
-write.csv(aj.pred.temps, file.path(data_out, 'aj_pred.temps.csv'))
+#write.csv(aj.pred.temps, file.path(data_out, 'aj_pred.temps.csv'))
 
 #
 # The problem with these predictions is that they are a grouping of sites rather
