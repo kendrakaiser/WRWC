@@ -10,10 +10,10 @@
 data_out = file.path(cd, 'data')
 
 snotel = read.csv(file.path(data_out,'snotel_data.csv'))
-agrimet = read.csv(file.path(input_dir,'agri_metT.csv'))
-#NEED TO PUT Agrimet in Wy as well..
+agrimet = read.csv(file.path(input_dir,'agri_metT.csv')) %>% select(-"X")
+
 #renaming agrimet columns to match snotel for calculations
-colnames(agrimet)<- c("X","date_time","temperature_mean", "site_name", "mo", "y")
+colnames(agrimet)<- c("date_time","temperature_mean", "site_name", "mo", "y", "wy")
 agrimet$date_time<- as.Date(agrimet$date_time)
 #remove values that are erroneous
 agrimet$temperature_mean[agrimet$temperature_mean < -90] <- NA
@@ -137,12 +137,23 @@ lr.elev<- lm(spring.tempF~  elev+year, data=input)
 input$fitted<- predict(lr.elev)
 
 summary(lr.elev)
-#plot the observed versus fitted 
-ggplot(input, aes(x=spring.tempF, y=fitted, color=site)) +geom_point()
-plot(input$spring.tempF, predict(lr.elev))
-abline(0,1,col="gray50",lty=1)
 
+# TODO: make a plot that represents the model better
+#plot the observed versus fitted 
+ggplot(input, aes(x=spring.tempF, y=fitted, color=site)) + geom_point()
+  
+ggplot(input, aes(x=spring.tempF, y=fitted)) + geom_point()+
+  geom_smooth(method = "lm", se = FALSE)+
+  xlim(2, 11.5)+
+  ylim(2,11.5)
+
+# polynomial fit - come back to later
+#lr.elev<-lm(spring.tempF~  poly(elev,2) +year, data=input) #polynomial helps 
+#ix <- sort(input$spring.tempF,index.return=T)$ix
+#geom_smooth(method="lm", formula=y~x+(x^2))
+#stat_smooth(method = lm,  data = input, formula = y ~ poly(x, 2) + z)
 #adding in fairfield and picabo throws off the regression - it effectively does poorly everywhere
+
 
 # covarience matrix (var-cov matrix) - diagonal the variance of temp at each site, the rest are the correlations
 site.cov<- cov(spring.tdata[-1], use="complete.obs")
