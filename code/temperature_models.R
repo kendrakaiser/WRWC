@@ -7,10 +7,8 @@
 # ----------------------------------------------------------------------------- # 
 
 # import data ----
-data_out = file.path(cd, 'data')
-
-snotel = read.csv(file.path(data_out,'snotel_data.csv'))
-agrimet = read.csv(file.path(input_dir,'agri_metT.csv')) %>% select(-"X")
+snotel = read.csv(file.path(data_dir,'snotel_data.csv'))
+agrimet = read.csv(file.path(input_dir,'agri_metT.csv'))
 
 #renaming agrimet columns to match snotel for calculations
 colnames(agrimet)<- c("date_time","temperature_mean", "site_name", "mo", "y", "wy")
@@ -99,18 +97,18 @@ colnames(fm.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga"
 spring.tdata[spring.tdata == "NaN"]<- NA
 nj.tdata[nj.tdata== "NaN"]<- NA
 
-write.csv(spring.tdata, file.path(data_out, 'sprTemps.csv'), row.names=FALSE)
-write.csv(sum.tdata, file.path(data_out, 'sumTemps.csv'), row.names=FALSE)
-write.csv(wint.tdata, file.path(data_out, 'wintTemps.csv'), row.names=FALSE)
-write.csv(nj.tdata, file.path(data_out, 'njTemps.csv'), row.names=FALSE)
-write.csv(nf.tdata, file.path(data_out, 'nfTemps.csv'), row.names=FALSE)
-write.csv(fm.tdata, file.path(data_out, 'fmTemps.csv'), row.names=FALSE)
+write.csv(spring.tdata, file.path(data_dir, 'sprTemps.csv'), row.names=FALSE)
+write.csv(sum.tdata, file.path(data_dir, 'sumTemps.csv'), row.names=FALSE)
+write.csv(wint.tdata, file.path(data_dir, 'wintTemps.csv'), row.names=FALSE)
+write.csv(nj.tdata, file.path(data_dir, 'njTemps.csv'), row.names=FALSE)
+write.csv(nf.tdata, file.path(data_dir, 'nfTemps.csv'), row.names=FALSE)
+write.csv(fm.tdata, file.path(data_dir, 'fmTemps.csv'), row.names=FALSE)
 
 snotel_abrv <- c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
 #plot all data
 png(filename = file.path(fig_dir,"SpringTemps.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="cairo-png") 
+    bg = "white", res = 600) 
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=spring.tempF, color=site)) +geom_point()
 dev.off()
 
@@ -120,13 +118,13 @@ ggplot(tdata[tdata$site == "camas creek divide" | tdata$site == "chocolate gulch
 #plot all data
 png(filename = file.path(fig_dir,"SummerTemps.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="cairo-png") 
+    bg = "white", res = 600) 
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=sum.tempF, color=site)) +geom_point()
 dev.off()
 
 png(filename = file.path(fig_dir,"WinterTemps.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="cairo-png") 
+    bg = "white", res = 600) 
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=wint.tempF, color=site)) +geom_point()
 dev.off()
 
@@ -140,12 +138,27 @@ summary(lr.elev)
 
 # TODO: make a plot that represents the model better
 #plot the observed versus fitted 
-ggplot(input, aes(x=spring.tempF, y=fitted, color=site)) + geom_point()
+png(filename = file.path(fig_dir,"ModeledTemps.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+
+ggplot(input, aes(x=spring.tempF, y=fitted, color=site)) + 
+  geom_abline(intercept=0,lty=1)+
+  geom_point()+
+  xlim(2, 11.5)+
+  ylim(2,11.5) +
+  xlab('Observed Mean April - June Temperature (F)') +
+  ylab('Predicted Mean April - June Temperature (F)') +
+  theme_bw()
+dev.off()
   
 ggplot(input, aes(x=spring.tempF, y=fitted)) + geom_point()+
   geom_smooth(method = "lm", se = FALSE)+
   xlim(2, 11.5)+
-  ylim(2,11.5)
+  ylim(2,11.5) +
+  xlab('Observed Mean April - June Temperature (F)') +
+  ylab('Predicted Mean April - June Temperature (F)')+
+  theme_bw()
 
 # polynomial fit - come back to later
 #lr.elev<-lm(spring.tempF~  poly(elev,2) +year, data=input) #polynomial helps 
@@ -176,4 +189,4 @@ new.data$spr.tempF[14]<- mean(tdata$spring.tempF[tdata$site == "picabo"])
 # Draw stream temperatures using multivariate normal distribution
 nboot<-5000
 aj.pred.temps<- mvrnorm(nboot, new.data$spr.tempF, site.cov)
-write.csv(aj.pred.temps, file.path(data_out, 'aj_pred.temps.csv'))
+write.csv(aj.pred.temps, file.path(data_dir, 'aj_pred.temps.csv'))
