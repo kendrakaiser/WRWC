@@ -27,7 +27,7 @@ temps = read.csv(file.path(data_dir, 'njTemps.csv'))
 var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year")# %>% dplyr::select(-X)
 var$div <- var$abv.h + var$abv.s
 curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
-params <- list.load(file.path(data_dir, 'mod_april_vars.rdata'))
+params <- list.load(file.path(data_dir, 'mod_apr_vars.rdata'))
 
 write.csv(var, file.path(cd,'April_output/all_vars.csv'))
 
@@ -141,7 +141,7 @@ png(filename = file.path(fig_dir,"April/BWB_modelFit.png"),
     bg = "white", res = 600, type ="cairo-png") 
 
 fits<-exp(fitted(bwb_mod))
-plot(var$bwb.vol[var$year < 2020 & var$year > 1993]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
+plot(var$bwb.vol[var$year < 2021 & var$year > 1993]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
@@ -617,9 +617,9 @@ cm.data$prob<-NA
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
 for(i in 1:dim(cm.data)[1]){
-  vec<-cm.data[i,2:5]
+  vec<-cm.data[i,2:5] # center of mass at each site for a given year
   cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-1,
-                          upper=as.numeric(vec)+1,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1]
+                          upper=as.numeric(vec)+1,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1] #need to adjust this to have the upper and lower limits be wider? e.g right now the upper and lowers are only one day off of the original??
 }
 cm.data$prob<-cm.data$prob/sum(cm.data$prob)
 # create normal distribution of years 
