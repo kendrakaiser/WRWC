@@ -24,22 +24,14 @@ data_dir = '~/Desktop/WRWC/data' #local
 git_dir <<- '~/github/WRWC'
 fig_dir = '~/github/WRWC/figures' 
 
-fig_dir_mo <<- file.path(git_dir,'figures/April')
-mo_data = 'all_dat_apr.csv'
-mo_vars ='mod_apr_vars.csv'
-mo_Rvars ='mod_apr_vars.rdata'
-models = 'vol_apr_mods.rdata'
-pred.yr <- 2020
 
-mo_cm.vars ='mod_apr_cm_vars.csv'
-mo_cm.Rvars ='mod_apr_cm_vars.rdata'
 
 
 # Import Data ------------------------------------------------------------------ # 
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 #q = read.csv(file.path(cd,'streamflow_data.csv'))
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
-swe_q = read.csv(file.path(data_dir,mo_data))
+swe_q = read.csv(file.path(data_dir,input))
 swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
 
 spring.temps = read.csv(file.path(data_dir, 'sprTemps.csv'))
@@ -81,11 +73,9 @@ bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.m
 form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
 bwh_mod<-lm(form, data=hist)
 bwh_sum$lm<-summary(bwh_mod)$adj.r.squared
+#save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-#view summary of LOOCV
 bwh_sum$loocv<- model$results
-print(bwh_sum)
-print(summary(lm(form, data=hist)))
 
 #Plot Big Wood at Hailey modeled data for visual evaluation 
 png(filename = file.path(fig_dir_mo, "BWH_modelFit.png"),
@@ -100,8 +90,7 @@ mod.red<- resid(model)
 
 # calculate the correlations
 r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
-print(r)
-ggcorrplot(r)
+#ggcorrplot(r)
 # -------------------------------------------------------------
 # Big Wood at Stanton, actual flow, preforms better with linear swe data
 hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.vol, bws.wq, all_of(swe_cols)) 
@@ -217,8 +206,8 @@ mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
 vol_mods<- list(bwh_mod = bwh_mod, bws_mod = bws_mod, sc_mod = sc_mod, cc_mod = cc_mod)
 
 write.list(mod_sum, file.path(data_dir, mo_vars))
-list.save(mod_sum, file.path(data_dir, mo_Rvars))
-list.save(vol_mods, file.path(data_dir, models))
+list.save(mod_sum, file.path(data_dir, params))
+list.save(vol_mods, file.path(data_dir, vol_mods))
 
 
 # ----------------------
@@ -388,8 +377,8 @@ mod_cm.sum<- list(bwh = bwh.cm_sum, bws = bws.cm_sum, sc = sc.cm_sum, cc = cc.cm
 cm_models<- list(bwh_cm.mod = bwh_cm.mod, bws_cm.mod = bws_cm.mod, sc_cm.mod = sc_cm.mod, cc_cm.mod = cc_cm.mod)
 
 write.list(mod_cm.sum, file.path(data_dir, mo_cm.vars))
-list.save(mod_cm.sum, file.path(data_dir, mo_cm.Rvars))
-list.save(cm_mods, file.path(data_dir, cm_models))
+list.save(mod_cm.sum, file.path(data_dir, cm.params))
+list.save(cm_models, file.path(data_dir, cm_mods))
 
 
 # -------------------------------------------------------------
