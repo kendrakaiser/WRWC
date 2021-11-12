@@ -24,7 +24,7 @@ todays_date <<- "03/30/2021"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
-input_dir <<- file.path(git_dir, 'input') # github
+input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 data_dir <<- file.path(cd, 'data') # local
 
 # set end date for AgriMet Data download
