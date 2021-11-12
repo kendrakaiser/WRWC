@@ -17,8 +17,7 @@ cd <<- '~/Desktop/WRWC'
 pred.yr <<- 2020
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
 run_date <<- 'april1'
-# set end date for AgriMet Data download
-end_date <<- '2021-08-16'
+
 # info for model run report
 author <<- "Kendra Kaiser"
 todays_date <<- "03/30/2021"
@@ -28,6 +27,9 @@ fig_dir <<- file.path(git_dir, 'figures') # github
 input_dir <<- file.path(git_dir, 'input') # github
 data_dir <<- file.path(cd, 'data') # local
 
+# set end date for AgriMet Data download
+end_date <<- Sys.Date()
+
 # ---- Run Model code
 
 source(file.path(git_dir, 'code/packages.R'))
@@ -36,28 +38,33 @@ run_info<- sessionInfo()
 writeLines(capture.output(sessionInfo()), file.path(cd, "sessionInfo.txt"))
 
 source(file.path(git_dir, 'code/data_scraping.R'))
-#source(file.path(git_dir, 'code/download_agrimet.R'))
+source(file.path(git_dir, 'code/download_agrimet.R'))
 source(file.path(git_dir, 'code/temperature_models.R'))
 
 # sets input file name and runs model code depending on model run date 
 if (run_date == 'feb1'){
   input <<- 'all_dat_feb.csv'
   fig_dir_mo <<- file.path(git_dir,'figures/February')
-  source(file.path(git_dir, 'code/streamflow_model_feb.R'))
   model_out <<-  file.path(cd, 'February_output')
+  params <<- list.load(file.path(data_dir, 'mod_feb_vars.rdata'))
+  vol_mods <<- list.load(file.path(data_dir, 'vol_feb_mods.rdata'))
   
 } else if (run_date == 'march1'){
   input <<- 'all_dat_mar.csv'
   fig_dir_mo <<- 'figures/March'
   model_out <<-  file.path(cd, 'March_output')
-  source(file.path(git_dir, 'code/streamflow_model_march.R'))
+  params <<- list.load(file.path(data_dir, 'mod_mar_vars.rdata'))
+  vol_mods <<- list.load(file.path(data_dir, 'vol_mar_mods.rdata'))
   
 } else if (run_date == 'april1'){
   input <<- 'all_dat_apr.csv'
   fig_dir_mo <<- file.path(git_dir,'figures/April')
   model_out <<-  file.path(cd, 'April_output')
-  source(file.path(git_dir, 'code/streamflow_model_april.R'))
+  params <<- list.load(file.path(data_dir, 'mod_apr_vars.rdata'))
+  vol_mods <<- list.load(file.path(data_dir, 'vol_apr_mods.rdata'))
 }
+
+source(file.path(git_dir, 'code/streamflow_models.R'))
 
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
              "data_dir", "input", "fig_dir_mo", "author", "todays_date", "model_out"))
