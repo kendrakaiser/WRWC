@@ -41,28 +41,51 @@ source(file.path(git_dir, 'code/data_scraping.R'))
 source(file.path(git_dir, 'code/download_agrimet.R'))
 source(file.path(git_dir, 'code/temperature_models.R'))
 
-# sets input file name and runs model code depending on model run date 
+# sets input/output file directories and selects model params and models depending on model run date 
 if (run_date == 'feb1'){
   input <<- 'all_dat_feb.csv'
   fig_dir_mo <<- file.path(git_dir,'figures/February')
   model_out <<-  file.path(cd, 'February_output')
+  
+  mo_vars <<-'mod_feb_vars.csv'
   params <<- list.load(file.path(data_dir, 'mod_feb_vars.rdata'))
   vol_mods <<- list.load(file.path(data_dir, 'vol_feb_mods.rdata'))
+  
+  mo_cm.vars <<- 'mod_feb_cm_vars.csv'
+  cm.params <<- 'mod_feb_cm_vars.rdata'
+  cm_mods <<- list.load(file.path(data_dir, 'cm_feb_mods.rdata'))
   
 } else if (run_date == 'march1'){
   input <<- 'all_dat_mar.csv'
   fig_dir_mo <<- 'figures/March'
   model_out <<-  file.path(cd, 'March_output')
+  
+  mo_vars <<-'mod_mar_vars.csv'
   params <<- list.load(file.path(data_dir, 'mod_mar_vars.rdata'))
   vol_mods <<- list.load(file.path(data_dir, 'vol_mar_mods.rdata'))
+  
+  mo_cm.vars <<- 'mod_mar_cm_vars.csv'
+  cm.params <<- 'mod_mar_cm_vars.rdata'
+  cm_mods <<- list.load(file.path(data_dir, 'cm_mar_mods.rdata'))
   
 } else if (run_date == 'april1'){
   input <<- 'all_dat_apr.csv'
   fig_dir_mo <<- file.path(git_dir,'figures/April')
   model_out <<-  file.path(cd, 'April_output')
+  
+  mo_vars <<-'mod_apr_vars.csv'
   params <<- list.load(file.path(data_dir, 'mod_apr_vars.rdata'))
   vol_mods <<- list.load(file.path(data_dir, 'vol_apr_mods.rdata'))
+  
+  mo_cm.vars <<- 'mod_apr_cm_vars.csv'
+  cm.params <<- 'mod_apr_cm_vars.rdata'
+  cm_mods <<- list.load(file.path(data_dir, 'cm_apr_mods.rdata'))
 }
+
+
+
+
+
 
 source(file.path(git_dir, 'code/streamflow_models.R'))
 
