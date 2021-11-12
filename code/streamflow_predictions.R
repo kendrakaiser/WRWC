@@ -16,7 +16,8 @@
 # -----------------------------------------------------------------------------  
 
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
-             "data_dir", "input", "fig_dir_mo", "author", "todays_date"))
+             "data_dir", "input", "fig_dir_mo", "author", "todays_date", 
+             "vol.params", "vol.mods", "cm.params", "cm.mods"))
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, SWE, historic and Modeled Temperature Data
@@ -26,6 +27,10 @@ swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
 temps = read.csv(file.path(data_dir, 'njTemps.csv'))
 var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year")# %>% dplyr::select(-X)
 var$div <- var$abv.h + var$abv.s
+var$log.cg <-log(var$cg.swe)
+var$log.gs <-log(var$gs.swe)
+var$log.sr <-log(var$sr.swe)
+var$log.g <-log(var$g.swe)
 curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
@@ -71,7 +76,7 @@ rownames(mod_sum)<-c("bwb","bws","cc","sc", "bw.div", "sc.div")
 # ------------------------------------------------------------------------------  
 #
 # April-Sept Volume Predictions
-#
+# an additional function can be made to clean these up now that they are all automated
 # ------------------------------------------------------------------------------ # 
 
 modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
@@ -116,11 +121,11 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
 
 # --------------------------------------------------
 # Subset Big Wood Variables
-hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bwb.vol, params$bwh$vars)) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bwb.vol, vol.params$bwh$vars)) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #Prediction Data
-pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(params$bwh$vars) 
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$bwh$vars) 
 
 # Big Wood at Hailey Model output --- check this output**
 mod_sum[1,1]<-summary(vol_mods$bwh_mod)$adj.r.squared
@@ -129,30 +134,27 @@ mod_out<- modOut(vol_mods$bwh_mod, pred.dat, var$bwb.wq[var$year == pred.yr], va
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
 
-#think through whether the LOOCV should go here ... and if there is a way to turn it into a function
-
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(c(bws.vol, params$bws$vars)) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(c(bws.vol, vol.params$bws$vars)) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #April 1 bws Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(params$bws$vars) 
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$bws$vars) 
 
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol_mods$bws_mod)$adj.r.squared
-mod_out<- modOut(vol_mods$bwh_mod, pred.dat, var$bws.wq[var$year == pred.yr], var$bws.wq[var$year < pred.yr], hist$bws.vol, mean(colMeans(swe_cols, na.rm=T)), var$bws.vol[var$year == pred.yr-1])
+mod_out<- modOut(vol_mods$bws_mod, pred.dat, var$bws.wq[var$year == pred.yr], var$bws.wq[var$year < pred.yr], hist$bws.vol, mean(colMeans(swe_cols, na.rm=T)), var$bws.vol[var$year == pred.yr-1])
 output.vol[2,] <- mod_out[[1]]
 pred.params.vol[2,] <- mod_out[[2]]
 
-
 # --------------------------------------------------
 # Subset Silver Creek 
-hist <- var[var$year < pred.yr,] %>% dplyr::select(c(sc.vol, params$sc$vars)) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(c(sc.vol, vol.params$sc$vars)) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 # April 1 SC Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(params$sc$vars) 
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$sc$vars) 
 
 # Silver Creek Model output
 mod_sum[4,1]<-summary(vol_mods$sc_mod)$adj.r.squared
@@ -162,35 +164,24 @@ pred.params.vol[4,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection 
-hist <- var[var$year < pred.yr,] %>% dplyr::select(cc.vol, cc.wq, ccd.swe, sr.swe) #vol is in ac-ft
-# Camas Creek linear model
-cc_mod<-lm(log(cc.vol)~log(cc.wq)+sr.swe+ccd.swe, data=hist) 
-mod_sum[3,1]<-summary(cc_mod)$adj.r.squared
+hist <- var[var$year < pred.yr,] %>% dplyr::select(cc.vol, vol.params$cc$vars) %>% filter(complete.cases(.))
+swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #April 1 CC Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(cc.wq, ccd.swe, sr.swe)
+pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$cc$vars)
 
 # Camas Creek Model output
-mod_out<- modOut(cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
+mod_sum[3,1]<-summary(vol_mods$cc_mod)$adj.r.squared
+mod_out<- modOut(vol_mods$cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
-#Plot CC modeled data for visual evaluation 
-png(filename = file.path(fig_dir,"April/CC_modelFit.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="cairo-png") 
-
-fits<-exp(fitted(cc_mod))
-plot(var$cc.vol[complete.cases(hist)]/1000,c(fits)/1000, lwd=2, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
-abline(0,1,col="gray50",lty=1)
-dev.off()
-
-png(file.path(fig_dir,"April/pred.volumes.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
+png(file.path(fig_dir_mo,"pred.volumes.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
 grid.table(output.vol[,1:5])
 dev.off()
 
-write.csv(output.vol, file.path(cd,"April_output/pred.output.vol.csv"),row.names=T)
-write.csv(pred.params.vol, file.path(cd,"April_output/pred.params.vol.csv"),row.names=T)
+write.csv(output.vol, file.path(model_out,"pred.output.vol.csv"),row.names=T)
+write.csv(pred.params.vol, file.path(model_out,"pred.params.vol.csv"),row.names=T)
 
 # ------------------------------------------------------------------------------  
 #
@@ -223,20 +214,20 @@ modOutcm<- function(mod.cm, pred.dat, pred.dat.temps, hist.temps, hist.cm, pred.
   return(list(output.cm, pred.params.cm))
 }
 
-# Big Wood at hailey center of mass
-hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.cm.nat, bwb.wq, g.swe, hc.swe, t.g, t.gs, t.lw, cg.swe, gs.swe) 
+# Big Wood at Hailey center of mass
+# TODO change to select everything other than spring temperatures!!! and then continue
+hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.cm, cm.params$cc$vars) %>% filter(complete.cases(.))
+
 hist$temps <-rowMeans(cbind(hist$t.g, hist$t.gs, hist$t.lw), na.rm=TRUE)
-# BW Hailey center of mass linear model
-bwb_mod.cm <-lm(bwb.cm.nat ~ log(bwb.wq) + g.swe+ hc.swe+ temps+ log(cg.swe)+log(gs.swe), data=hist)
-mod_sum[1,2]<-summary(bwb_mod.cm)$adj.r.squared 
+
 
 # April 1 Prediction Data with modeled temperature data
-params<-var[var$year == pred.yr,] %>% dplyr::select(bwb.wq, g.swe, hc.swe, cg.swe, gs.swe)
-pred.dat<- params %>% slice(rep(1:n(), 5000))
-pred.dat$temps<- temp.ran$aj.temps.bwh
+pred.data<-var[var$year == pred.yr,] %>% dplyr::select(cm.params$cc$vars) %>% slice(rep(1:n(), 5000))
+pred.dat$temps<- 
 
 # Big Wood Hailey Model output
-mod_out<- modOutcm(bwb_mod.cm, pred.dat, pred.dat$temps, c(hist$t.g,hist$t.gs,hist$t.lw), 
+mod_sum[1,2]<-summary(vol_mods$bwb_mod.cm)$adj.r.squared 
+mod_out<- modOutcm(vol_mods$bwb_mod.cm, pred.dat, pred.dat$temps, c(hist$t.g,hist$t.gs,hist$t.lw), 
                    hist$bwb.cm.nat, params[2:5], cbind(hist[,3:4], hist[,8:9]))
 output.cm[1,] <- mod_out[[1]]
 pred.params.cm[1,] <- mod_out[[2]]
