@@ -122,7 +122,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, all_of(swe_cols)) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, all_of(swe_cols), bwb.wq) 
 hist$log.sp <- log(hist$sp.swe)
 hist$log.wq <- log(hist$sc.wq)
 hist$log.cg<- log(hist$cg.swe)
@@ -158,7 +158,7 @@ png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
 dev.off()
 # -------------------------------------------------------------
 # camas creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, all_of(swe_cols)) 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, all_of(swe_cols), bwb.wq) 
 hist$log.wq <- log(hist$cc.wq)
 hist$log.ccd <- log(hist$ccd.swe)
 hist$log.sr <- log(hist$sr.swe)
@@ -195,7 +195,7 @@ dev.off()
 # ----------------------
 # compile all model details into one list to export
 mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
-vol_modelss<- list(bwh_mod = bwh_mod, bws_mod = bws_mod, sc_mod = sc_mod, cc_mod = cc_mod)
+vol_models<- list(bwh_mod = bwh_mod, bws_mod = bws_mod, sc_mod = sc_mod, cc_mod = cc_mod)
 
 write.list(mod_sum, file.path(data_dir, vol.vars))
 
