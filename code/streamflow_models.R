@@ -203,11 +203,12 @@ dev.off()
 # ----------------------
 # compile all model details into one list to export
 mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
-vol_mods<- list(bwh_mod = bwh_mod, bws_mod = bws_mod, sc_mod = sc_mod, cc_mod = cc_mod)
+vol_modelss<- list(bwh_mod = bwh_mod, bws_mod = bws_mod, sc_mod = sc_mod, cc_mod = cc_mod)
 
-write.list(mod_sum, file.path(data_dir, mo_vars))
-list.save(mod_sum, file.path(data_dir, params))
-list.save(vol_mods, file.path(data_dir, vol_mods))
+write.list(mod_sum, file.path(data_dir, vol.vars))
+
+list.save(mod_sum, file.path(data_dir, vol_params))
+list.save(vol_models, file.path(data_dir, vol_mods))
 
 
 # ----------------------
@@ -376,8 +377,9 @@ dev.off()
 mod_cm.sum<- list(bwh = bwh.cm_sum, bws = bws.cm_sum, sc = sc.cm_sum, cc = cc.cm_sum)
 cm_models<- list(bwh_cm.mod = bwh_cm.mod, bws_cm.mod = bws_cm.mod, sc_cm.mod = sc_cm.mod, cc_cm.mod = cc_cm.mod)
 
-write.list(mod_cm.sum, file.path(data_dir, mo_cm.vars))
-list.save(mod_cm.sum, file.path(data_dir, cm.params))
+write.list(mod_cm.sum, file.path(data_dir, cm.vars))
+
+list.save(mod_cm.sum, file.path(data_dir, cm_params))
 list.save(cm_models, file.path(data_dir, cm_mods))
 
 
