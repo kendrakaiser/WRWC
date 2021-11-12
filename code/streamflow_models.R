@@ -19,14 +19,6 @@ library(caret) #loocv
 library(erer) #write.list to csv
 library(ggcorrplot) 
 
-rm(list=ls())
-data_dir = '~/Desktop/WRWC/data' #local
-git_dir <<- '~/github/WRWC'
-fig_dir = '~/github/WRWC/figures' 
-
-
-
-
 # Import Data ------------------------------------------------------------------ # 
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 #q = read.csv(file.path(cd,'streamflow_data.csv'))
