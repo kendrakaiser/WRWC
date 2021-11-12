@@ -24,14 +24,16 @@ data_dir = '~/Desktop/WRWC/data' #local
 git_dir <<- '~/github/WRWC'
 fig_dir = '~/github/WRWC/figures' 
 
-fig_dir_mo <<- file.path(git_dir,'figures/February')
-mo_data = 'all_dat_feb.csv'
-mo_vars ='mod_feb_vars.csv'
-mo_Rvars ='mod_feb_vars.rdata'
+fig_dir_mo <<- file.path(git_dir,'figures/April')
+mo_data = 'all_dat_apr.csv'
+mo_vars ='mod_apr_vars.csv'
+mo_Rvars ='mod_apr_vars.rdata'
+models = 'vol_apr_mods.rdata'
 pred.yr <- 2020
 
-mo_cm.vars ='mod_feb_cm_vars.csv'
-mo_cm.Rvars ='mod_feb_cm_vars.rdata'
+mo_cm.vars ='mod_apr_cm_vars.csv'
+mo_cm.Rvars ='mod_apr_cm_vars.rdata'
+
 
 # Import Data ------------------------------------------------------------------ # 
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
@@ -77,6 +79,7 @@ bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.m
 
 #fit the regression model and use LOOCV to evaluate performance
 form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
+bwh_mod<-lm(form, data=hist)
 bwh_sum$lm<-summary(lm(form, data=hist))$adj.r.squared
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 #view summary of LOOCV
@@ -123,6 +126,7 @@ print(bws_sum)
 
 #fit a regression model and use LOOCV to evaluate performance
 form<- paste("log(bws.vol)~ ", paste(bws_sum$vars, collapse=" + "), sep = "")
+bws_mod<-lm(form, data=hist)
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bws_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
 #view summary of LOOCV
@@ -156,6 +160,7 @@ sc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(
 
 #fit a regression model and use LOOCV to evaluate performance
 form<- paste("log(sc.vol)~ ", paste(sc_sum$vars, collapse=" + "), sep = "")
+sc_mod<-lm(form, data=hist)
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 sc_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
 #view summary of LOOCV
@@ -190,6 +195,7 @@ cc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min
 
 #fit a regression model and use LOOCV to evaluate performance
 form<- paste("log(cc.vol)~ ", paste(cc_sum$vars, collapse=" + "), sep = "")
+cc_mod<-lm(form, data=hist)
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 cc_sum$lm<-summary(lm(form, data=hist) )$adj.r.squared
 #view summary of LOOCV
@@ -206,8 +212,13 @@ dev.off()
 
 #compile all model details into one list to export
 mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
+vol_mods<- list(bwh_mod = bwh_mod, bws_mod = bws_mod, sc_mod = sc_mod, cc_mod = cc_mod)
+
 write.list(mod_sum, file.path(data_dir, mo_vars))
 list.save(mod_sum, file.path(data_dir, mo_Rvars))
+list.save(vol_mods, file.path(data_dir, models))
+
+
 
 # use regsubsets to plot the results
 regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
