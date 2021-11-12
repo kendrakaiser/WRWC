@@ -47,47 +47,50 @@ if (run_date == 'feb1'){
   fig_dir_mo <<- file.path(git_dir,'figures/February')
   model_out <<-  file.path(cd, 'February_output')
   
-  mo_vars <<-'mod_feb_vars.csv'
-  params <<- list.load(file.path(data_dir, 'mod_feb_vars.rdata'))
-  vol_mods <<- list.load(file.path(data_dir, 'vol_feb_mods.rdata'))
+  vol.vars <<-'feb_vol_vars.csv'
+  cm.vars <<- 'feb_cm_vars.csv'
   
-  mo_cm.vars <<- 'mod_feb_cm_vars.csv'
-  cm.params <<- 'mod_feb_cm_vars.rdata'
-  cm_mods <<- list.load(file.path(data_dir, 'cm_feb_mods.rdata'))
+  vol_params <<- 'feb_vol_vars.rdata'
+  vol_mods <<- 'feb_vol_mods.rdata'
+  cm_params <<- 'feb_cm_vars.rdata'
+  cm_mods <<- 'feb_cm_mods.rdata'
   
 } else if (run_date == 'march1'){
   input <<- 'all_dat_mar.csv'
   fig_dir_mo <<- 'figures/March'
   model_out <<-  file.path(cd, 'March_output')
   
-  mo_vars <<-'mod_mar_vars.csv'
-  params <<- list.load(file.path(data_dir, 'mod_mar_vars.rdata'))
-  vol_mods <<- list.load(file.path(data_dir, 'vol_mar_mods.rdata'))
+  vol.vars <<-'mar_vol_vars.csv'
+  cm.vars <<- 'mar_cm_vars.csv'
   
-  mo_cm.vars <<- 'mod_mar_cm_vars.csv'
-  cm.params <<- 'mod_mar_cm_vars.rdata'
-  cm_mods <<- list.load(file.path(data_dir, 'cm_mar_mods.rdata'))
+  vol_params <<- 'mar_vol_vars.rdata'
+  vol_mods <<- 'mar_vol_mods.rdata'
+  cm_params <<- 'mar_cm_vars.rdata'
+  cm_mods <<- 'mar_cm_mods.rdata'
   
 } else if (run_date == 'april1'){
   input <<- 'all_dat_apr.csv'
   fig_dir_mo <<- file.path(git_dir,'figures/April')
   model_out <<-  file.path(cd, 'April_output')
   
-  mo_vars <<-'mod_apr_vars.csv'
-  params <<- list.load(file.path(data_dir, 'mod_apr_vars.rdata'))
-  vol_mods <<- list.load(file.path(data_dir, 'vol_apr_mods.rdata'))
+  vol.vars <<-'apr_vol_vars.csv'
+  cm.vars <<- 'apr_cm_vars.csv'
   
-  mo_cm.vars <<- 'mod_apr_cm_vars.csv'
-  cm.params <<- 'mod_apr_cm_vars.rdata'
-  cm_mods <<- list.load(file.path(data_dir, 'cm_apr_mods.rdata'))
+  vol_params <<- 'apr_vol_vars.rdata'
+  vol_mods <<- 'apr_vol_mods.rdata'
+  cm_params <<- 'apr_cm_vars.rdata'
+  cm_mods <<- 'apr_cm_mods.rdata'
 }
 
-
-
-
-
-
 source(file.path(git_dir, 'code/streamflow_models.R'))
+
+vol.params <<- list.load(file.path(data_dir, vol_params))
+vol.mods <<- list.load(file.path(data_dir, vol_mods))
+cm.params <<- list.load(file.path(data_dir,cm_params))
+cm.mods <<- list.load(file.path(data_dir, cm_mods))
+
+source(file.path(git_dir, 'code/streamflow_predictions.R'))
+
 
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
              "data_dir", "input", "fig_dir_mo", "author", "todays_date", "model_out"))
