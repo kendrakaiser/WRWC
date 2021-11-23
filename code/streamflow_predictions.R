@@ -61,10 +61,10 @@ rownames(pred.params.vol)<-c("bwb.vol","bws.vol","cc.vol","sc.vol")
 colnames(pred.params.vol)<-c("log.vol","sigma")
 
 # center of mass
-output.cm<-data.frame(array(NA,c(5,5)))
+output.cm<-data.frame(array(NA,c(5,4)))
 rownames(output.cm)<-stream.id
 output.cm<-output.cm[-4,]
-colnames(output.cm)<-c("temp-mean","% of mean","cm","cm-mean","cm.date")
+colnames(output.cm)<-c("SWE % of mean","cm","cm-mean","cm.date") #"Hist Nov-Jan Temp","Nov-Jan Temps",
 
 pred.params.cm<-array(NA,c(4,2))
 rownames(pred.params.cm)<-c("bwb.cm","bws.cm","cc.cm","sc.cm")
@@ -130,8 +130,8 @@ swe_cols <- hist %>% dplyr::select(contains('swe'))
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$bwh$vars) 
 
 # Big Wood at Hailey Model output --- check this output**
-mod_sum[1,1]<-summary(vol_mods$bwh_mod)$adj.r.squared
-mod_out<- modOut(vol_mods$bwh_mod, pred.dat, var$bwb.wq[var$year == pred.yr], var$bwb.wq[var$year < pred.yr], hist$bwb.vol, mean(colMeans(swe_cols, na.rm=T)), var$bwb.vol[var$year == pred.yr-1])
+mod_sum[1,1]<-summary(vol.mods$bwh_mod)$adj.r.squared
+mod_out<- modOut(vol.mods$bwh_mod, pred.dat, var$bwb.wq[var$year == pred.yr], var$bwb.wq[var$year < pred.yr], hist$bwb.vol, mean(colMeans(swe_cols, na.rm=T)), var$bwb.vol[var$year == pred.yr-1])
 #these could be formatted differently to be saved to the gloabl env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
@@ -145,8 +145,8 @@ swe_cols <- hist %>% dplyr::select(contains('swe'))
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$bws$vars) 
 
 # Big Wood at Stanton Flow Model output 
-mod_sum[2,1]<-summary(vol_mods$bws_mod)$adj.r.squared
-mod_out<- modOut(vol_mods$bws_mod, pred.dat, var$bws.wq[var$year == pred.yr], var$bws.wq[var$year < pred.yr], hist$bws.vol, mean(colMeans(swe_cols, na.rm=T)), var$bws.vol[var$year == pred.yr-1])
+mod_sum[2,1]<-summary(vol.mods$bws_mod)$adj.r.squared
+mod_out<- modOut(vol.mods$bws_mod, pred.dat, var$bws.wq[var$year == pred.yr], var$bws.wq[var$year < pred.yr], hist$bws.vol, mean(colMeans(swe_cols, na.rm=T)), var$bws.vol[var$year == pred.yr-1])
 output.vol[2,] <- mod_out[[1]]
 pred.params.vol[2,] <- mod_out[[2]]
 
@@ -159,8 +159,8 @@ swe_cols <- hist %>% dplyr::select(contains('swe'))
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$sc$vars) 
 
 # Silver Creek Model output
-mod_sum[4,1]<-summary(vol_mods$sc_mod)$adj.r.squared
-mod_out<- modOut(vol_mods$sc_mod, pred.dat, var$sc.wq[var$year == pred.yr], var$sc.wq[var$year < pred.yr], hist$sc.vol, mean(colMeans(swe_cols, na.rm=T)), var$sc.vol[var$year == pred.yr-1])
+mod_sum[4,1]<-summary(vol.mods$sc_mod)$adj.r.squared
+mod_out<- modOut(vol.mods$sc_mod, pred.dat, var$sc.wq[var$year == pred.yr], var$sc.wq[var$year < pred.yr], hist$sc.vol, mean(colMeans(swe_cols, na.rm=T)), var$sc.vol[var$year == pred.yr-1])
 output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
@@ -173,8 +173,8 @@ swe_cols <- hist %>% dplyr::select(contains('swe'))
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$cc$vars)
 
 # Camas Creek Model output
-mod_sum[3,1]<-summary(vol_mods$cc_mod)$adj.r.squared
-mod_out<- modOut(vol_mods$cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
+mod_sum[3,1]<-summary(vol.mods$cc_mod)$adj.r.squared
+mod_out<- modOut(vol.mods$cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
@@ -190,16 +190,18 @@ write.csv(pred.params.vol, file.path(model_out,"pred.params.vol.csv"),row.names=
 # Center of Mass Predictions
 #
 # ------------------------------------------------------------------------------ # 
-modOutcm<- function(mod.cm, pred.dat, pred.dat.temps, hist.temps, hist.cm, pred.swe, hist.swe){
+modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, hist.swe){
   '
   mod.cm:           input model
   pred.dat:         data.frame of prediction variables
-  pred.data.temps:  vector of modeled temperature data 
-  hist.temps:       concatenated vectors of historic temperature data
+  cur.temps:        numeric of winter temperatures
+  hist.temps:       historic temperature data
   hist.cm:          historic cm
+  pred.swe:         current swe used for prediction
+  hist.swe:         historic swe
   '
   pred.params.cm<-array(NA,c(1,2))
-  output.cm<-array(NA,c(1,5))
+  output.cm<-data.frame(percSWE=integer(), predCM=integer(), diffCM=integer(), dateCM=character())
   sig<-summary(mod.cm)$sigma
   
   predictions<-predict(mod.cm,newdata=pred.dat)
@@ -207,43 +209,34 @@ modOutcm<- function(mod.cm, pred.dat, pred.dat.temps, hist.temps, hist.cm, pred.
   pred.params.cm[1,1]<-mean(predictions)
   pred.params.cm[1,2]<-sqrt(sig^2+var(predictions)) 
   
-  output.cm[1,1]<-round(mean(pred.dat.temps)-mean(hist.temps,na.rm=T),3)
-  output.cm[1,2]<-round(sum(pred.swe, na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =T),3) 
-  output.cm[1,3]<-round(mean(predictions),0) 
-  output.cm[1,4]<-round(mean(predictions)-mean(hist.cm,na.rm=T),0) 
-  output.cm[1,5]<-format(wy$Date[wy$day==round(mean(predictions, na.rm=TRUE),0)],"%b-%d")
+  #output.cm[1,1]<-mean(apply(hist.temps, MARGIN=2, mean)) 
+  #output.cm[1,2]<-as.list(round(cur.temps,3))
+  output.cm[1,1]<-round(sum(pred.swe, na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =T),3) 
+  output.cm[1,2]<-round(mean(predictions),0) 
+  output.cm[1,3]<-round(mean(predictions)-mean(hist.cm,na.rm=T),0) 
+  output.cm[1,4]<-format(wy$Date[wy$day==round(mean(predictions, na.rm=TRUE),0)],"%b-%d")
   
   return(list(output.cm, pred.params.cm))
 }
 
 # Big Wood at Hailey center of mass
-# TODO change to select everything other than spring temperatures!!! and then continue
 sub_params<- cm.params$bwh$vars[-grep('aj', cm.params$bwh$vars)]
 aj_params<-cm.params$bwh$vars[grep('aj', cm.params$bwh$vars)]
-
 hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.cm, cm.params$bwh$vars) %>% filter(complete.cases(.))
-
 
 # April 1 Prediction Data with modeled temperature data
 pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
 pred.data[aj_params] <- temp.ran[aj_params]
 
 # Big Wood Hailey Model output
-mod_sum[1,2]<-summary(vol_mods$bwb_mod.cm)$adj.r.squared 
-mod_out<- modOutcm(vol_mods$bwb_mod.cm, pred.dat, pred.dat$temps, c(hist$t.g,hist$t.gs,hist$t.lw), 
-                   hist$bwb.cm.nat, params[2:5], cbind(hist[,3:4], hist[,8:9]))
+mod_sum[1,2]<-summary(cm.mods$bwh_cm.mod)$adj.r.squared
+mod_out<- modOutcm(cm.mods$bwh_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
+                   (var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
+                   hist$bwb.cm, var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
+                   hist%>% dplyr::select(contains('swe')))
 output.cm[1,] <- mod_out[[1]]
 pred.params.cm[1,] <- mod_out[[2]]
 
-#Plot modeled data for visual evaluation 
-png(filename = file.path(fig_dir,"April/BWB_CMmodelFit.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600, type ="cairo-png") 
-
-fits<-fitted(bwb_mod.cm)
-plot(var$bwb.cm.nat[complete.cases(hist)],c(fits), lwd=2, xlab="Observed", ylab="Predicted", main="Big Wood at Hailey \n Center of Mass", xlim=c(144, 165), ylim=c(144,165))
-abline(0,1,col="gray50",lty=1)
-dev.off()
 # --------------------
 # Big Wood at Stanton
 # 
