@@ -296,7 +296,7 @@ hist$log.g <- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
-hist$log.sp <- log(hist$sp.swe)
+#hist$log.sp <- log(hist$sp.swe)
 hist$log.wq <- log(hist$sc.wq)
 hist$log.ga<- log(hist$ga.swe)
 hist<- merge(hist, nj.temps, by = "year")
@@ -315,6 +315,7 @@ sc.cm_sum$lm<-summary(sc_cm.mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 sc.cm_sum$loocv<- model$results
+sc.cm_sum
 #add in error catch if model doesnt work ...
 
 # Save figure of model results
@@ -336,32 +337,33 @@ hist$log.g <- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
-hist$log.sp <- log(hist$sp.swe)
+#hist$log.sp <- log(hist$sp.swe)
 hist$log.ga<- log(hist$ga.swe)
 hist<- merge(hist, nj.temps, by = "year")
-hist<- merge(hist,spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
+hist<- merge(hist, spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
 
 # Select and Save model parameters
-regsubsets.out<-regsubsets(log(hist$cc.cm)~., data=hist[,-1], nbest=1, nvmax=6)
+regsubsets.out<-regsubsets(hist$cc.cm~., data=hist[,-1], nbest=1, nvmax=6)
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 cc.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit a regression model and use LOOCV to evaluate performance
-form<- paste("log(cc.cm)~ ", paste(cc.cm_sum$vars, collapse=" + "), sep = "")
+form<- paste("cc.cm~ ", paste(cc.cm_sum$vars, collapse=" + "), sep = "")
 cc_cm.mod<-lm(form, data=hist) 
 cc.cm_sum$lm<-summary(cc_cm.mod)$adj.r.squared
 
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 cc.cm_sum$loocv<- model$results
+cc.cm_sum
 #add in error catch if model doesnt work ...
 
 # Save figure of model results
 png(filename = file.path(fig_dir_mo, "cc.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek Center of Mass (doy)")
+plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek Center of Mass (doy)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
