@@ -25,7 +25,9 @@ usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 swe_q = read.csv(file.path(data_dir,input))
 swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
 temps = read.csv(file.path(data_dir, 'njTemps.csv'))
-var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year")# %>% dplyr::select(-X)
+temps_aj = read.csv(file.path(data_dir, 'sprTemps.csv'))
+var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% inner_join(temps_aj, by="year") # %>% dplyr::select(-X)
+
 var$div <- var$abv.h + var$abv.s
 var$log.cg <-log(var$cg.swe)
 var$log.gs <-log(var$gs.swe)
@@ -216,14 +218,15 @@ modOutcm<- function(mod.cm, pred.dat, pred.dat.temps, hist.temps, hist.cm, pred.
 
 # Big Wood at Hailey center of mass
 # TODO change to select everything other than spring temperatures!!! and then continue
-hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.cm, cm.params$cc$vars) %>% filter(complete.cases(.))
+sub_params<- cm.params$bwh$vars[-grep('aj', cm.params$bwh$vars)]
+aj_params<-cm.params$bwh$vars[grep('aj', cm.params$bwh$vars)]
 
-hist$temps <-rowMeans(cbind(hist$t.g, hist$t.gs, hist$t.lw), na.rm=TRUE)
+hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.cm, cm.params$bwh$vars) %>% filter(complete.cases(.))
 
 
 # April 1 Prediction Data with modeled temperature data
-pred.data<-var[var$year == pred.yr,] %>% dplyr::select(cm.params$cc$vars) %>% slice(rep(1:n(), 5000))
-pred.dat$temps<- 
+pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+pred.data[aj_params] <- temp.ran[aj_params]
 
 # Big Wood Hailey Model output
 mod_sum[1,2]<-summary(vol_mods$bwb_mod.cm)$adj.r.squared 
