@@ -17,7 +17,7 @@
 
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
              "data_dir", "input", "fig_dir_mo", "author", "todays_date", 
-             "vol.params", "vol.mods", "cm.params", "cm.mods"))
+             "model_out", "vol.params", "vol.mods", "cm.params", "cm.mods"))
 
 # Import Data ------------------------------------------------------------------  
 # Streamflow, SWE, historic and Modeled Temperature Data
