@@ -57,7 +57,7 @@ if (run_date == 'feb1'){
   
 } else if (run_date == 'march1'){
   input <<- 'all_dat_mar.csv'
-  fig_dir_mo <<- 'figures/March'
+  fig_dir_mo <<- file.path(git_dir,'figures/March')
   model_out <<-  file.path(cd, 'March_output')
   
   vol.vars <<-'mar_vol_vars.csv'
