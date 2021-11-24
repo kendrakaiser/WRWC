@@ -2,22 +2,9 @@
 # Predictive Streamflow Model Exploration for the Wood River Water Collaborative
 # Kendra Kaiser
 # October 1, 2020
-# Exploration of linear models to predict total streamflow volume and center of mass based on 
-# calculated baseflow, current SWE and predicted temperature 
+# Linear models to predict total streamflow volume and center of mass based on 
+# calculated baseflow, current SWE and, winter and predicted spring temperature 
 # ----------------------------------------------------------------------------- # 
-
-# evaluate nvmax for each model and associated change in adj r2 - 
-# particularly for the cm -- at what point is it overfitted?
-
-library(MASS)
-library(plotrix)
-library(mvtnorm)
-library(tidyverse)
-library(leaps) #regsubsets
-library(rlist) #list.save
-library(caret) #loocv
-library(erer) #write.list to csv
-library(ggcorrplot) 
 
 defaultW <- getOption("warn") 
 options(warn = -1) 
@@ -219,9 +206,9 @@ list.save(vol_models, file.path(data_dir, vol_mods))
 #plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
 #quartz(title="BIC",10,10)
 #plot(regsubsets.out, scale = "bic", main="BIC For the best model of a given size")
-#rs<-summary(regsubsets.out)
+
 #quartz(title="R2 v BIC",10,10)
-#plot(rs$bic, rs$adjr2, xlab="BIC", ylab="adj R2")
+#plot(reg_sum$bic, reg_sum$adjr2, xlab="BIC", ylab="adj R2")
 
 # -----
 # ------------------------------------------------------------------------------ # 
