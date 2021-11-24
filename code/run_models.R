@@ -16,7 +16,7 @@ cd <<- '~/Desktop/WRWC'
 # set prediction year
 pred.yr <<- 2020
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
-run_date <<- 'april1'
+run_date <<- 'feb1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
