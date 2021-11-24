@@ -214,6 +214,7 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, 
   
   pred.params.cm[1,1]<-mean(predictions)
   pred.params.cm[1,2]<-sqrt(sig^2+var(predictions)) 
+  if (is.na(pred.params.cm[1,2])){pred.params.cm[1,2]<-sig}
   
   #output.cm[1,1]<-mean(apply(hist.temps, MARGIN=2, mean)) 
   #output.cm[1,2]<-as.list(round(cur.temps,3))
@@ -341,17 +342,16 @@ flow.data = var[var$year >= 1997 & var$year < 2020,] %>% dplyr::select(bwb.vol,
       bwb.cm, bws.vol, bws.cm, cc.vol, cc.cm, sc.vol, sc.cm, div, sc.div) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
-cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9,10)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
+cor.mat<-cor(cbind(flow.data[c(1,3,5,7)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
 
 # create covariance matrix by multiplying by each models standard error
-pred.pars<-rbind(pred.params.vol, pred.params.div, pred.params.cm)
+pred.pars<-rbind(pred.params.vol, pred.params.cm)
 outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2]))
 cov.mat<-cor.mat*outer.prod
 
 # Draw flow volumes using multivariate normal distribution (ac-ft)
-vol.pars<-rbind(pred.params.vol, pred.params.div)
-vol.sample<-data.frame(mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat[1:6,1:6]))
-colnames(vol.sample)<-c("Big Wood Hailey", "Big Wood Stanton","Camas Creek","Silver Creek", "Big Wood Div", "Silver Creek Div")
+vol.sample<-data.frame(mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4]))
+colnames(vol.sample)<-c("Big Wood Hailey", "Big Wood Stanton","Camas Creek","Silver Creek")
 write.csv(exp(vol.sample), file.path(model_out,"vol.sample.csv"),row.names=F)
 
 # save correlation matrix for model details report
@@ -370,7 +370,7 @@ write.csv(pred.pars, file.path(model_out,"pred.pars.csv"),row.names=T)
 # Subset for plotting
 vol.hist<- as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(bwb.vol, bws.vol, cc.vol)) %>% `colnames<-`(c("Big Wood Hailey Hist", "Big Wood Stanton Hist","Camas Creek Hist")) %>%pivot_longer(everything(),  names_to = "site", values_to = "value") )
 vol.hist$value<-vol.hist$value/1000
-vol.hist.sm<-as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(sc.vo)) %>% `colnames<-`(c("Silver Creek Hist")) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") )
+vol.hist.sm<-as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(sc.vol)) %>% `colnames<-`(c("Silver Creek Hist")) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") )
 vol.hist.sm$value<-vol.hist.sm$value/1000
 
 vol.pred <-as.data.frame(exp(vol.sample[,1:3])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
@@ -429,7 +429,7 @@ cm.data$prob<-NA
 for(i in 1:dim(cm.data)[1]){
   vec<-cm.data[i,2:5] # center of mass at each site for a given year
   cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-1,
-                           upper=as.numeric(vec)+1,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1] #need to adjust this to have the upper and lower limits be wider? e.g right now the upper and lowers are only one day off of the original??
+                           upper=as.numeric(vec)+1,mean=pred.params.cm[,1],sigma=cov.mat[5:8,5:8])[1] #need to adjust this to have the upper and lower limits be wider? e.g right now the upper and lowers are only one day off of the original??
 }
 cm.data$prob<-cm.data$prob/sum(cm.data$prob)
 # create normal distribution of years 
