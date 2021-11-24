@@ -213,7 +213,9 @@ for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 4 & snotel_data_out$day ==1,]
   april1swe[which(april1swe$year == min(sub$wy)) : which(april1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
   sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
+  if (month(end_date) < 5){
   today_swe[i]<- sub2$snow_water_equivalent[sub2$date == max(sub2$date)-1]
+  } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 4 & sub2$day ==30 & sub2$wy == (pred.yr-1)]}
 }
 
 april1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
@@ -231,7 +233,9 @@ for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 3 & snotel_data_out$day ==1,]
   mar1swe[which(mar1swe$year == min(sub$wy)) : which(mar1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
   sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
-  today_swe[i]<- sub2$snow_water_equivalent[sub2$date == max(sub2$date)-1]
+  if (month(end_date) < 4){
+    today_swe[i]<- sub2$snow_water_equivalent[sub2$date == max(sub2$date)-1]
+  } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 3 & sub2$day ==31 & sub2$wy == (pred.yr-1)]}
   }
 
 # Update the March 1 SWE with the current swe
@@ -249,7 +253,11 @@ colnames(today_swe)<- c(snotel_abrv)
 for (i in 1:length(snotel_sites)) {
   sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 2 & snotel_data_out$day ==1,]
   feb1swe[which(feb1swe$year == min(sub$wy)) : which(feb1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
-  today_swe[i]<-snotel_data_out$snow_water_equivalent[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$date == max(snotel_data_out$date)-1]
+  sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
+  if (month(end_date) < 3){
+    today_swe[i]<- sub2$snow_water_equivalent[sub2$date == max(sub2$date)-1]
+  } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 2 & sub2$day ==28 & sub2$wy == (pred.yr-1)]}
+  #today_swe[i]<-snotel_data_out$snow_water_equivalent[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$date == max(snotel_data_out$date)-1]
 }
 # Update the Feb 1 SWE with the current swe
 feb1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
