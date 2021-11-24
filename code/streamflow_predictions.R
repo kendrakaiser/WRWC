@@ -37,6 +37,7 @@ var$log.ccd <-log(var$ccd.swe)
 var$log.sp <-log(var$sp.swe)
 var$log.bbwq <-log(var$bwb.wq)
 var$log.hc <-log(var$hc.swe)
+var$log.scwq<- log(var$sc.wq)
 
 curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
@@ -270,13 +271,19 @@ pred.params.cm[2,] <- mod_out[[2]]
 # --------------------
 # Silver Creek Center of Mass
 #
-sub_params<- cm.params$sc$vars[-grep('aj', cm.params$sc$vars)]
-aj_params<-cm.params$sc$vars[grep('aj', cm.params$sc$vars)]
-hist <- var[var$year < pred.yr,] %>% dplyr::select(sc.cm, cm.params$sc$vars) %>% filter(complete.cases(.))
+# added 'if' statement here because March SC CM doesn't use aj temperatures
+if (is.array(grep('aj', cm.params$sc$vars))){ 
+  sub_params<- cm.params$sc$vars[-grep('aj', cm.params$sc$vars)]
+  aj_params<-cm.params$sc$vars[grep('aj', cm.params$sc$vars)]
+  # Prediction Data with modeled temperature data
+  pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+  pred.data[aj_params] <- temp.ran[aj_params]
+} else {
+  sub_params<- cm.params$sc$vars
+  pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params))
+}
 
-# Prediction Data with modeled temperature data
-pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
-pred.data[aj_params] <- temp.ran[aj_params]
+hist <- var[var$year < pred.yr,] %>% dplyr::select(sc.cm, cm.params$sc$vars) %>% filter(complete.cases(.))
 
 # Silver Creek  Model output
 mod_sum[1,2]<-summary(cm.mods$sc_cm.mod)$adj.r.squared
@@ -322,3 +329,149 @@ write.csv(pred.params.vol, file.path(model_out,"pred.params.vol.csv"),row.names=
 write.csv(output.cm, file.path(model_out,"pred.output.cm.csv"),row.names=T)
 write.csv(pred.params.cm, file.path(model_out,"pred.params.cm.csv"),row.names=T)
 
+# ------------------------------------------------------------------------------
+# Draw a sample of volumes and water years with similar timing
+# ------------------------------------------------------------------------------
+# These samples are drawn from multivariate normal distributions which are 
+# created from the correlation between total volume and center of mass (timing)
+# between each gage
+
+# calculate correlations between flow conditions across the basins
+flow.data = var[var$year >= 1997 & var$year < 2020,] %>% dplyr::select(bwb.vol, 
+      bwb.cm, bws.vol, bws.cm, cc.vol, cc.cm, sc.vol, sc.cm, div, sc.div) 
+
+# calculate correlations between gages' total volume, diversions and center of mass
+cor.mat<-cor(cbind(flow.data[c(1,3,5,7,9,10)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
+
+# create covariance matrix by multiplying by each models standard error
+pred.pars<-rbind(pred.params.vol, pred.params.div, pred.params.cm)
+outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2]))
+cov.mat<-cor.mat*outer.prod
+
+# Draw flow volumes using multivariate normal distribution (ac-ft)
+vol.pars<-rbind(pred.params.vol, pred.params.div)
+vol.sample<-data.frame(mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat[1:6,1:6]))
+colnames(vol.sample)<-c("Big Wood Hailey", "Big Wood Stanton","Camas Creek","Silver Creek", "Big Wood Div", "Silver Creek Div")
+write.csv(exp(vol.sample), file.path(model_out,"vol.sample.csv"),row.names=F)
+
+# save correlation matrix for model details report
+cor.mat.out<-as.data.frame(round(cor.mat,2))
+png(file.path(fig_dir_mo,"correlation_matrix.png"), height = 25*nrow(cor.mat.out), width = 80*ncol(cor.mat.out))
+grid.table(cor.mat.out)
+dev.off()
+
+# save output from correlations
+write.csv(cov.mat, file.path(model_out,"cov.mat.csv"),row.names=T)
+write.csv(pred.pars, file.path(model_out,"pred.pars.csv"),row.names=T)
+
+# ------------------------------------------------------------------------------
+# Plot boxplots of total annual flow from each model
+# ------------------------------------------------------------------------------
+# Subset for plotting
+vol.hist<- as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(bwb.vol, bws.vol, cc.vol)) %>% `colnames<-`(c("Big Wood Hailey Hist", "Big Wood Stanton Hist","Camas Creek Hist")) %>%pivot_longer(everything(),  names_to = "site", values_to = "value") )
+vol.hist$value<-vol.hist$value/1000
+vol.hist.sm<-as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(sc.vo)) %>% `colnames<-`(c("Silver Creek Hist")) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") )
+vol.hist.sm$value<-vol.hist.sm$value/1000
+
+vol.pred <-as.data.frame(exp(vol.sample[,1:3])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+vol.pred.sm <- as.data.frame(exp(vol.sample[,4])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+
+vol.big<- rbind(vol.hist, vol.pred)
+vol.sm<- rbind(vol.hist.sm, vol.pred.sm)
+
+vol.big$site<-factor(vol.big$site,levels = c("Big Wood Hailey Hist","Big Wood Hailey", "Big Wood Stanton Hist", "Big Wood Stanton", "Camas Creek Hist", "Camas Creek" ), ordered = TRUE)
+vol.sm$site<-factor(vol.sm$site,levels = c("Silver Creek Hist","Silver Creek"), ordered = TRUE)
+
+# Plot boxplots of total annual flow from each model
+png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+
+vol.big %>%
+  ggplot(aes(x=site, y=value, fill=site)) +
+  geom_boxplot(alpha=0.7) +
+  scale_fill_manual(values=c("grey90","blue", "grey90","blue", "grey90","blue")) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  scale_y_continuous(breaks = round(seq(0, max(vol.big$value, na.rm=TRUE), by = 50),1))+
+  theme_bw()+
+  theme(legend.position="none") +
+  ggtitle("Sampled Irrigation Season Volumes") +
+  xlab("")+
+  ylab("Irrigation Season Volume (KAF)")
+dev.off()
+
+png(filename = file.path(fig_dir_mo,"sampled_sc_vol.png"),
+    width = 2.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+
+vol.sm %>%
+  ggplot(aes(x=site, y=value, fill=site)) +
+  geom_boxplot(alpha=0.7) +
+  scale_fill_manual(values=c("grey90","blue")) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  scale_y_continuous(breaks = round(seq(0, max(vol.sm$value, na.rm=TRUE), by = 10),1))+
+  theme_bw()+
+  theme(legend.position="none") +
+  ggtitle("") +
+  xlab("")+
+  ylab("Irrigation Volume (KAF)")
+dev.off()
+
+# ------------------------------------------------------------------------------
+# Create distribution and draw samples pf CENTER of MASS & Volume
+# ------------------------------------------------------------------------------
+# Draw sample of years with similar center of mass (timing)
+cm.data = var[var$year >= 1997 & var$year < pred.yr,]
+cm.data = cm.data %>% dplyr::select(year, bwb.cm, bws.cm,cc.cm, sc.cm) 
+cm.data$prob<-NA
+
+# pmvnorm calculates the distribution function of the multivariate normal distribution
+for(i in 1:dim(cm.data)[1]){
+  vec<-cm.data[i,2:5] # center of mass at each site for a given year
+  cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-1,
+                           upper=as.numeric(vec)+1,mean=pred.params.cm[,1],sigma=cov.mat[6:9,6:9])[1] #need to adjust this to have the upper and lower limits be wider? e.g right now the upper and lowers are only one day off of the original??
+}
+cm.data$prob<-cm.data$prob/sum(cm.data$prob)
+# create normal distribution of years 
+CMyear.sample<-sample(cm.data$year,5000,replace=TRUE) 
+# Of the 5000 replicates show the percentage that each year represents
+cm_sum<-as.data.frame(summary(as.factor(CMyear.sample))/5000)
+colnames(cm_sum)<- c("% of sample")
+cm_sum<- cm_sum*100
+png(file.path(fig_dir_mo,"CM_summary.png"), height = 50*nrow(cm_sum), width = 200*ncol(cm_sum))
+grid.table(cm_sum)
+dev.off()
+
+#save the probabilities for use in the simulation
+write.csv(CMyear.sample, file.path(model_out,"CMyear.sample.csv"),row.names=F)
+
+# this version makes the probabilities based on pvnorm distribution, 
+# this is not used in the simulations, but is useful for reference
+CMyear.sample.prob<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob) 
+cm_prob<-as.data.frame(summary(as.factor(CMyear.sample.prob))/5000)
+colnames(cm_prob)<- c("% of sample")
+cm_prob<- cm_prob*100
+png(file.path(fig_dir_mo,"CM_summary_prob.png"), height = 50*nrow(cm_prob), width = 200*ncol(cm_prob))
+grid.table(cm_prob)
+dev.off()
+
+
+# Draw sample of years with similar volume for comparison
+vol.data = var[var$year >= 1997 & var$year < pred.yr,]
+vol.data = vol.data %>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
+vol.data$prob<-NA
+
+# pmvnorm calculates the distribution function of the multivariate normal distribution
+for(i in 1:dim(vol.data)[1]){
+  vec<-vol.data[i,2:5]
+  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-32000,
+                            upper=as.numeric(vec)+32000,mean=exp(pred.params.vol[,1]),corr=cor.mat[1:4,1:4])[1]
+}
+
+vol.sample.prob<-sample(vol.data$year,5000,replace=TRUE, prob=vol.data$prob) 
+vol_prob<-as.data.frame(summary(as.factor(vol.sample.prob))/5000)*100
+colnames(vol_prob)<- c("% of sample")
+
+png(file.path(fig_dir_mo,"vol_prob.png"), height = 50*nrow(vol_prob), width = 200*ncol(vol_prob))
+grid.table(vol_prob)
+dev.off()
