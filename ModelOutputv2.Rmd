@@ -109,17 +109,17 @@ ggplot(data= (snotel_data %>% filter(wy == yr)), mapping= aes(x=as.Date(date), y
   theme_bw()
 
 #Calculate Historic Means
-feb_mean<- data.frame(colMeans(feb1swe[3:12], na.rm = TRUE))
-mar_mean<- data.frame(colMeans(mar1swe[3:12], na.rm = TRUE))
-apr_mean<- data.frame(colMeans(apr1swe[3:12], na.rm = TRUE))
+feb_mean<- data.frame(colMeans(feb1swe[3:14], na.rm = TRUE))
+mar_mean<- data.frame(colMeans(mar1swe[3:14], na.rm = TRUE))
+apr_mean<- data.frame(colMeans(apr1swe[3:14], na.rm = TRUE))
 
 swe_means<- cbind(feb_mean, mar_mean, apr_mean)
 colnames(swe_means) <- c("Feb1", "Mar1", "Apr1")
-rownames(swe_means) <- c("Chocolate Gulch", "Galena", "Galena Summit", "Hyndman Creek", "Lost-Wood Divide", "Dollarhide Summit", "Camas Creek Divide", "Soldier R.S.", "Garfield R.S.", "Swede Peak")
+rownames(swe_means) <- c("Chocolate Gulch", "Galena", "Galena Summit", "Hyndman Creek", "Lost-Wood Divide", "Dollarhide Summit", "Camas Creek Divide", "Soldier R.S.", "Garfield R.S.", "Swede Peak", "Stickney Mill", "Bear Canyon")
 
 last_date<- as.Date(max(snotel_data$date))-1
 ytd_swe<- snotel_data[snotel_data$date == last_date,] %>% dplyr::select(c(site_name, snow_water_equivalent))
-rownames(ytd_swe) <- c("Chocolate Gulch", "Camas Creek Divide", "Soldier R.S.", "Dollarhide Summit", "Galena", "Garfield R.S.", "Hyndman Creek", "Lost-Wood Divide", "Galena Summit", "Swede Peak")
+rownames(ytd_swe) <- c("Chocolate Gulch", "Camas Creek Divide", "Soldier R.S.", "Dollarhide Summit", "Galena", "Garfield R.S.", "Hyndman Creek", "Lost-Wood Divide", "Galena Summit", "Swede Peak", "Stickney Mill", "Bear Canyon")
 
 swe<- merge(round(swe_means,0), ytd_swe, by=0) %>% dplyr::select(-site_name)
 #TODO: update this to auto select the month to compare average to
