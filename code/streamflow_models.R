@@ -371,9 +371,9 @@ cc.cm_sum$lm<-summary(cc_cm.mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 cc.cm_sum$loocv<- model$results
-cc.cm_sum
 
-# Save figure of model results
+#TODO March figure wont save
+# Save figure of model results 
 png(filename = file.path(fig_dir_mo, "cc.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
