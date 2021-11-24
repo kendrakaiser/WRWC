@@ -82,7 +82,7 @@ if (run_date == 'feb1'){
   cm_mods <<- 'apr_cm_mods.rdata'
 }
 
-source(file.path(git_dir, 'code/streamflow_models.R'))
+suppressWarnings(source(file.path(git_dir, 'code/streamflow_models.R')))# warning messages are expected and okay
 
 vol.params <<- list.load(file.path(data_dir, vol_params))
 vol.mods <<- list.load(file.path(data_dir, vol_mods))
