@@ -19,6 +19,9 @@ library(caret) #loocv
 library(erer) #write.list to csv
 library(ggcorrplot) 
 
+defaultW <- getOption("warn") 
+options(warn = -1) 
+
 # Import Data ------------------------------------------------------------------ # 
 # Streamflow, April 1 SWE, historic and Modeled Temperature Data
 #q = read.csv(file.path(cd,'streamflow_data.csv'))
@@ -55,10 +58,12 @@ hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year")[,-c(1)] %>% filter(complete.cases(.))
 
 #use regsubsets to assess the results
-regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-1], nbest=1, nvmax=8)
+tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-1], nbest=1, nvmax=8)}, 
+         error= function(e) {print("Big Wood Hailey Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
-vars<-reg_sum$which[which.min(reg_sum$bic),]
+rm(regsubsets.out)
 
+vars<-reg_sum$which[which.min(reg_sum$bic),]
 bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit the regression model and use LOOCV to evaluate performance
@@ -95,12 +100,13 @@ hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year")[,-1] %>% filter(complete.cases(.)) #remove year, n-j temps preform better than full winter temps
 
 #use regsubsets to explore models
-regsubsets.out<-regsubsets(log(hist$bws.vol)~., data=hist[,-c(1)], nbest=1, nvmax=8) #remove bws.vol
-
+tryCatch({regsubsets.out<-regsubsets(log(hist$bws.vol)~., data=hist[,-c(1)], nbest=1, nvmax=8)}, 
+         error= function(e) {print("Big Wood Stanton Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out) #summary of regsubsets to pull info from
+rm(regsubsets.out)
+
 vars<-reg_sum$which[which.min(reg_sum$bic),] #T/F of variables
 bws_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
-
 
 #fit a regression model and use LOOCV to evaluate performance
 form<- paste("log(bws.vol)~ ", paste(bws_sum$vars, collapse=" + "), sep = "")
@@ -131,10 +137,11 @@ hist$log.bbwq<- log(hist$bwb.wq)
 hist<- merge(hist, nj.temps, by = "year")[,-c(1)] %>% filter(complete.cases(.)) #remove year,
 
 # Silver Creek regsubsets 
-regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=5)
-# Feb 1 ga.swe, sp.swe, bwb.wq, hc.swe
-# Mar 1 sc.wq sp.swe, hc.swe
+tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=5)}, 
+         error= function(e) {print("Silver Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
+rm(regsubsets.out)
+
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 sc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
@@ -146,7 +153,6 @@ sc_sum$lm<-summary(sc_mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 sc_sum$loocv<- model$results
-#add in error catch if model doesnt work ...
 
 #Save Model fit figure
 png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
@@ -169,8 +175,11 @@ hist$log.bbwq<- log(hist$bwb.wq)
 hist<- merge(hist, nj.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #remove year,
 
 #selec parameters
-regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=4)
+tryCatch({regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=4)}, 
+         error= function(e) {print("Camas Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
+rm(regsubsets.out)
+
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 cc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
@@ -182,7 +191,6 @@ cc_sum$lm<-summary(cc_mod)$adj.r.squared
 #save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 cc_sum$loocv<- model$results
-#add in error catch if model doesnt work ...
 
 #Save figure of model results
 png(filename = file.path(fig_dir_mo, "CC_modelFit.png"),
@@ -192,6 +200,7 @@ png(filename = file.path(fig_dir_mo, "CC_modelFit.png"),
     abline(0,1,col="gray50",lty=1)
 dev.off()
 
+# EXPORT VOL MODEL DETAILS
 # ----------------------
 # compile all model details into one list to export
 mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
@@ -205,14 +214,14 @@ list.save(vol_models, file.path(data_dir, vol_mods))
 
 # ----------------------
 # use regsubsets to plot the results
-regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
-quartz(title="Adjusted R^2",10,10)
-plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
-quartz(title="BIC",10,10)
-plot(regsubsets.out, scale = "bic", main="BIC For the best model of a given size")
-rs<-summary(regsubsets.out)
-quartz(title="R2 v BIC",10,10)
-plot(rs$bic, rs$adjr2, xlab="BIC", ylab="adj R2")
+#regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
+#quartz(title="Adjusted R^2",10,10)
+#plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
+#quartz(title="BIC",10,10)
+#plot(regsubsets.out, scale = "bic", main="BIC For the best model of a given size")
+#rs<-summary(regsubsets.out)
+#quartz(title="R2 v BIC",10,10)
+#plot(rs$bic, rs$adjr2, xlab="BIC", ylab="adj R2")
 
 # -----
 # ------------------------------------------------------------------------------ # 
@@ -230,10 +239,12 @@ hist$log.lwd <- log(hist$lwd.swe)
 hist<- merge(hist, nj.temps, by = "year") 
 hist<- merge(hist,spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
 
-regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=6)
+tryCatch({regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=6)}, 
+         error= function(e) {print("Big Wood Hailey CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
-vars<-reg_sum$which[which.min(reg_sum$bic),]
+rm(regsubsets.out)
 
+vars<-reg_sum$which[which.min(reg_sum$bic),]
 bwh.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit a regression model and use LOOCV to evaluate performance
@@ -243,7 +254,6 @@ bwh.cm_sum$lm<-summary(bwh_cm.mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bwh.cm_sum$loocv<- model$results
-#add in error catch if model doesnt work ...
 
 #Save model results
 png(filename = file.path(fig_dir_mo, "bwh.cm_modelFit.png"),
@@ -265,8 +275,11 @@ hist<- merge(hist, nj.temps, by = "year")
 hist<- merge(hist,spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
 
 #select Parameters
-regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=6)
+tryCatch({regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=6)}, 
+         error= function(e) {print("Big Wood Stanton CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
+rm(regsubsets.out)
+
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 bws.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
@@ -278,7 +291,6 @@ bws.cm_sum$lm<-summary(bws_cm.mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bws.cm_sum$loocv<- model$results
-#add in error catch if model doesnt work ...
 
 # Save figure of model results
 png(filename = file.path(fig_dir_mo, "bws.cm_modelFit.png"),
@@ -290,7 +302,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwb.wq, bws.wq, all_of(swe_cols)) #,
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwb.wq, bws.wq, all_of(swe_cols))
 hist$log.cg<- log(hist$cg.swe)
 hist$log.g <- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
@@ -303,7 +315,8 @@ hist<- merge(hist, nj.temps, by = "year")
 hist<- merge(hist, spring.temps, by = "year") [,-c(1)]%>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
 
 # Select and Save Parameters
-regsubsets.out<-regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=6)
+tryCatch({regsubsets.out<- regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=6)}, 
+         error= function(e) {print("Silver Creek CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 sc.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
@@ -316,7 +329,6 @@ sc.cm_sum$lm<-summary(sc_cm.mod)$adj.r.squared
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 sc.cm_sum$loocv<- model$results
 sc.cm_sum
-#add in error catch if model doesnt work ...
 
 # Save figure of model results
 png(filename = file.path(fig_dir_mo, "sc.cm_modelFit.png"),
@@ -335,16 +347,19 @@ hist$log.sr <- log(hist$sr.swe)
 hist$log.cg<- log(hist$cg.swe)
 hist$log.g <- log(hist$g.swe)
 hist$log.gs<- log(hist$gs.swe)
-hist$log.hc <- log(hist$hc.swe)
+#hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
-#hist$log.sp <- log(hist$sp.swe)
+hist$log.sp <- log(hist$sp.swe)
 hist$log.ga<- log(hist$ga.swe)
 hist<- merge(hist, nj.temps, by = "year")
 hist<- merge(hist, spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
 
 # Select and Save model parameters
-regsubsets.out<-regsubsets(hist$cc.cm~., data=hist[,-1], nbest=1, nvmax=6)
+tryCatch({regsubsets.out<-regsubsets(hist$cc.cm~., data=hist[,-1], nbest=1, nvmax=6)}, 
+         error= function(e) {print("Camas Creek CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
+rm(regsubsets.out)
+
 vars<-reg_sum$which[which.min(reg_sum$bic),]
 cc.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
@@ -357,7 +372,6 @@ cc.cm_sum$lm<-summary(cc_cm.mod)$adj.r.squared
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 cc.cm_sum$loocv<- model$results
 cc.cm_sum
-#add in error catch if model doesnt work ...
 
 # Save figure of model results
 png(filename = file.path(fig_dir_mo, "cc.cm_modelFit.png"),
@@ -366,6 +380,10 @@ png(filename = file.path(fig_dir_mo, "cc.cm_modelFit.png"),
 plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek Center of Mass (doy)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
+
+
+### EXPORT MODEL DETAILS
+# -----------------------------------------------------------------------------
 
 #compile all model details into one list to export
 mod_cm.sum<- list(bwh = bwh.cm_sum, bws = bws.cm_sum, sc = sc.cm_sum, cc = cc.cm_sum)
@@ -376,6 +394,7 @@ write.list(mod_cm.sum, file.path(data_dir, cm.vars))
 list.save(mod_cm.sum, file.path(data_dir, cm_params))
 list.save(cm_models, file.path(data_dir, cm_mods))
 
+options(warn = defaultW)
 
 # -------------------------------------------------------------
 # Evaluation of residuals 
