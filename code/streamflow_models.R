@@ -233,17 +233,10 @@ plot(reg_sum$bic, reg_sum$adjr2, xlab="BIC", ylab="adj R2")
 # ------------------------------------------------------------------------------ # 
 
 # Big wood at Hailey
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.cm, bwb.wq, all_of(swe_cols))
-hist$log.wq <- log(hist$bwb.wq)
-hist$log.cg<- log(hist$cg.swe)
-hist$log.g <- log(hist$g.swe)
-hist$log.gs<- log(hist$gs.swe)
-hist$log.hc <- log(hist$hc.swe)
-hist$log.lwd <- log(hist$lwd.swe)
-hist<- merge(hist, nj.temps, by = "year") 
-hist<- merge(hist,spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.cm, bwb.wq, 
+                  all_of(swe_cols), all_of(t_cols)) %>% filter(complete.cases(.)) 
 
-tryCatch({regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=6)}, 
+tryCatch({regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=10)}, 
          error= function(e) {print("Big Wood Hailey CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -258,6 +251,7 @@ bwh.cm_sum$lm<-summary(bwh_cm.mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bwh.cm_sum$loocv<- model$results
+bwh.cm_sum
 
 #Save model results
 png(filename = file.path(fig_dir_mo, "bwh.cm_modelFit.png"),
@@ -269,14 +263,8 @@ dev.off()
 
 # -------------------------------------------------------------
 # Big Wood at Stanton
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.cm, bws.wq, all_of(swe_cols))
-hist$log.cg<- log(hist$cg.swe)
-hist$log.g<- log(hist$g.swe)
-hist$log.gs<- log(hist$gs.swe)
-hist$log.hc <- log(hist$hc.swe)
-hist$log.lwd <- log(hist$lwd.swe)
-hist<- merge(hist, nj.temps, by = "year")
-hist<- merge(hist,spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year, 
+hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.cm, bws.wq,
+                  all_of(swe_cols), all_of(t_cols)) %>% filter(complete.cases(.)) 
 
 #select Parameters
 tryCatch({regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=6)}, 
@@ -306,20 +294,11 @@ dev.off()
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwb.wq, bws.wq, all_of(swe_cols))
-hist$log.cg<- log(hist$cg.swe)
-hist$log.g <- log(hist$g.swe)
-hist$log.gs<- log(hist$gs.swe)
-hist$log.hc <- log(hist$hc.swe)
-hist$log.lwd <- log(hist$lwd.swe)
-#hist$log.sp <- log(hist$sp.swe)
-hist$log.scwq <- log(hist$sc.wq)
-hist$log.ga<- log(hist$ga.swe)
-hist<- merge(hist, nj.temps, by = "year")
-hist<- merge(hist, spring.temps, by = "year") [,-c(1)]%>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwb.wq, bws.wq, 
+         all_of(swe_cols), all_of(t_cols)) %>% filter(complete.cases(.)) 
 
 # Select and Save Parameters
-tryCatch({regsubsets.out<- regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=6)}, 
+tryCatch({regsubsets.out<- regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=10)}, 
          error= function(e) {print("Silver Creek CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
@@ -344,22 +323,11 @@ dev.off()
 
 # -------------------------------------------------------------
 # Camas Creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.cm, cc.wq, all_of(swe_cols)) 
-hist$log.ccwq <- log(hist$cc.wq)
-hist$log.ccd <- log(hist$ccd.swe)
-hist$log.sr <- log(hist$sr.swe)
-hist$log.cg<- log(hist$cg.swe)
-hist$log.g <- log(hist$g.swe)
-hist$log.gs<- log(hist$gs.swe)
-#hist$log.hc <- log(hist$hc.swe)
-hist$log.lwd <- log(hist$lwd.swe)
-hist$log.sp <- log(hist$sp.swe)
-hist$log.ga<- log(hist$ga.swe)
-hist<- merge(hist, nj.temps, by = "year")
-hist<- merge(hist, spring.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.cm, cc.wq, all_of(swe_cols), 
+                                  all_of(t_cols)) %>% filter(complete.cases(.)) 
 
 # Select and Save model parameters
-tryCatch({regsubsets.out<-regsubsets(hist$cc.cm~., data=hist[,-1], nbest=1, nvmax=6)}, 
+tryCatch({regsubsets.out<-regsubsets(hist$cc.cm~., data=hist[,-1], nbest=1, nvmax=10)}, 
          error= function(e) {print("Camas Creek CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -375,8 +343,7 @@ cc.cm_sum$lm<-summary(cc_cm.mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 cc.cm_sum$loocv<- model$results
-
-#TODO March figure wont save
+cc.cm_sum
 # Save figure of model results 
 png(filename = file.path(fig_dir_mo, "cc.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
