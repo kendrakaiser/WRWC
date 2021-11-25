@@ -10,11 +10,12 @@ defaultW <- getOption("warn")
 options(warn = -1) 
 
 # Import Data ------------------------------------------------------------------ # 
-# Streamflow, April 1 SWE, historic and Modeled Temperature Data
+# Streamflow, Current SWE, historic and Modeled Temperature Data
 #q = read.csv(file.path(cd,'streamflow_data.csv'))
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 swe_q = read.csv(file.path(data_dir,input))
 swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
+swe_q<-swe_q[!(names(swe_q) %in% c("bwb.cm.nat","bws.cm.nat","abv.h","abv.s","sc.div","bwb.vol.nat","bws.vol.nat","bws.loss","sc.vol.nat"))]
 
 spring.temps = read.csv(file.path(data_dir, 'sprTemps.csv'))
 wint.temps = read.csv(file.path(data_dir, 'wintTemps.csv')) #average temps, november - march
@@ -22,10 +23,30 @@ nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
 nf.temps = read.csv(file.path(data_dir, 'nfTemps.csv'))
 fm.temps = read.csv(file.path(data_dir, 'fmTemps.csv'))
 
-var = swe_q %>% dplyr::select(-X) %>% inner_join(spring.temps, by ="year") 
+var = swe_q %>% dplyr::select(-X) %>% inner_join(spring.temps, by ="year") %>% inner_join(nj.temps, by ="year")
+# sp.test<-apply(var, MARGIN=2, shapiro.test) 
+#TODO : automate this step (e.g. if p < 0.05 log it and remove the og)
+# normailze parameters that have a shapiro.test() < 0.05
+var$log.cg.swe <- log(var$cg.swe)
+var$log.g.swe <- log(var$g.swe)
+var$log.gs.swe <- log(var$gs.swe)
+var$log.hc.swe <- log(var$hc.swe)
+var$log.lwd.swe <- log(var$lwd.swe)
+var$log.ga.swe <- log(var$ga.swe)
+var$log.bc.swe <- log(var$bc.swe)
+var<-var[,!(names(var) %in% c('cg.swe', 'g.swe','gs.swe','hc.swe', 'lwd.swe','ga.swe','bc.swe', 'nj.t.sr', 'aj.t.sr'))]
+
+swe_cols<-grep('swe', colnames(var))
+t_cols<-grep('.t.', colnames(var))
+wint_t_cols<-grep('nj.t', colnames(var))
+vol_cols<- grep('vol', colnames(var))
+
+#par(mar=c(1, 1, 1, 1))
+#pairs(c(var[vol_cols], var[wint_t_cols]))
+#var[wint_t_cols]<- var[wint_t_cols]*var[wint_t_cols]
+
 stream.id<-unique(as.character(usgs_sites$abv))
-swe_cols<-c(2:12)
-t_cols<-c(35:46)
+
 
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
@@ -34,23 +55,17 @@ ctrl <- trainControl(method = "LOOCV")
 #------------------------------------------------------------------------------ # 
  
 #Big Wood at hailey actual flow, preforms better with linear swe data
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, all_of(swe_cols))
-#vol<- var$bwb.vol[var$year < pred.yr & var$year >= min(hist$year)]
-#hist$log.wq <- log(hist$bwb.wq)
-hist$log.cg<- log(hist$cg.swe)
-hist$log.g <- log(hist$g.swe)
-hist$log.gs<- log(hist$gs.swe)
-hist$log.hc <- log(hist$hc.swe)
-hist$log.lwd <- log(hist$lwd.swe)
-hist<- merge(hist, nj.temps, by = "year")[,-c(1)] %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, 
+              all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to assess the results
-tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-1], nbest=1, nvmax=8)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=12)}, 
          error= function(e) {print("Big Wood Hailey Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
 
 vars<-reg_sum$which[which.min(reg_sum$bic),]
+#vars<-reg_sum$which[which.max(reg_sum$adjr2),]
 bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit the regression model and use LOOCV to evaluate performance
@@ -60,6 +75,11 @@ bwh_sum$lm<-summary(bwh_mod)$adj.r.squared
 #save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bwh_sum$loocv<- model$results
+bwh_sum
+#check residuals
+mod.red<- resid(model)
+hist(mod.red)
+shapiro.test(mod.red)
 
 #Plot Big Wood at Hailey modeled data for visual evaluation 
 png(filename = file.path(fig_dir_mo, "BWH_modelFit.png"),
@@ -69,25 +89,18 @@ png(filename = file.path(fig_dir_mo, "BWH_modelFit.png"),
 plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
-#check residuals
-mod.red<- resid(model)
+
 
 # calculate the correlations
 r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
 #ggcorrplot(r)
 # -------------------------------------------------------------
 # Big Wood at Stanton, actual flow, preforms better with linear swe data
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.vol, bws.wq, all_of(swe_cols)) 
-hist$log.wq <- log(hist$bws.wq)
-hist$log.cg<- log(hist$cg.swe)
-hist$log.g <- log(hist$g.swe)
-hist$log.gs<- log(hist$gs.swe)
-hist$log.hc <- log(hist$hc.swe)
-hist$log.lwd <- log(hist$lwd.swe)
-hist<- merge(hist, nj.temps, by = "year")[,-1] %>% filter(complete.cases(.)) #remove year, n-j temps preform better than full winter temps
+hist <- var[var$year < pred.yr] %>% dplyr::select(year, bws.vol, bws.wq, 
+                  all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to explore models
-tryCatch({regsubsets.out<-regsubsets(log(hist$bws.vol)~., data=hist[,-c(1)], nbest=1, nvmax=8)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$bws.vol)~., data=hist[,-c(1)], nbest=1, nvmax=12)}, 
          error= function(e) {print("Big Wood Stanton Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out) #summary of regsubsets to pull info from
 rm(regsubsets.out)
@@ -103,6 +116,12 @@ bws_sum$lm<-summary(bws_mod)$adj.r.squared
 #save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bws_sum$loocv<- model$results
+bws_sum
+
+#check residuals
+mod.red<- resid(model)
+hist(mod.red)
+shapiro.test(mod.red)
 
 #Save Model fit figure
 png(filename = file.path(fig_dir_mo, "BWS_modelFit.png"),
@@ -115,16 +134,11 @@ dev.off()
 
 # -------------------------------------------------------------
 # Subset Silver Creek Winter flows
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, all_of(swe_cols), bwb.wq) 
-hist$log.sp <- log(hist$sp.swe)
-hist$log.wq <- log(hist$sc.wq)
-hist$log.cg<- log(hist$cg.swe)
-hist$log.hc<- log(hist$hc.swe)
-hist$log.bbwq<- log(hist$bwb.wq)
-hist<- merge(hist, nj.temps, by = "year")[,-c(1)] %>% filter(complete.cases(.)) #remove year,
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, bwb.wq, 
+             all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.)) 
 
 # Silver Creek regsubsets 
-tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=5)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=14)}, 
          error= function(e) {print("Silver Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -140,6 +154,11 @@ sc_sum$lm<-summary(sc_mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 sc_sum$loocv<- model$results
+sc_sum
+#check residuals
+mod.red<- resid(model)
+hist(mod.red)
+shapiro.test(mod.red)
 
 #Save Model fit figure
 png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
@@ -151,18 +170,11 @@ png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
 dev.off()
 # -------------------------------------------------------------
 # camas creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, all_of(swe_cols), bwb.wq) 
-hist$log.wq <- log(hist$cc.wq)
-hist$log.ccd <- log(hist$ccd.swe)
-hist$log.sr <- log(hist$sr.swe)
-hist$log.sp <- log(hist$sp.swe)
-hist$log.cg<- log(hist$cg.swe)
-hist$log.hc<- log(hist$hc.swe)
-hist$log.bbwq<- log(hist$bwb.wq)
-hist<- merge(hist, nj.temps, by = "year") [,-c(1)] %>% filter(complete.cases(.)) #remove year,
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, bwb.wq,
+            all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.)) 
 
 #selec parameters
-tryCatch({regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=4)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=12)}, 
          error= function(e) {print("Camas Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -178,6 +190,11 @@ cc_sum$lm<-summary(cc_mod)$adj.r.squared
 #save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 cc_sum$loocv<- model$results
+cc_sum
+#check residuals
+mod.red<- resid(model)
+hist(mod.red)
+shapiro.test(mod.red)
 
 #Save figure of model results
 png(filename = file.path(fig_dir_mo, "CC_modelFit.png"),
@@ -201,14 +218,14 @@ list.save(vol_models, file.path(data_dir, vol_mods))
 
 # ----------------------
 # use regsubsets to plot the results
-#regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
-#quartz(title="Adjusted R^2",10,10)
-#plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
-#quartz(title="BIC",10,10)
-#plot(regsubsets.out, scale = "bic", main="BIC For the best model of a given size")
+regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
+quartz(title="Adjusted R^2",10,10)
+plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
+quartz(title="BIC",10,10)
+plot(regsubsets.out, scale = "bic", main="BIC For the best model of a given size")
 
-#quartz(title="R2 v BIC",10,10)
-#plot(reg_sum$bic, reg_sum$adjr2, xlab="BIC", ylab="adj R2")
+quartz(title="R2 v BIC",10,10)
+plot(reg_sum$bic, reg_sum$adjr2, xlab="BIC", ylab="adj R2")
 
 # -----
 # ------------------------------------------------------------------------------ # 
@@ -296,7 +313,7 @@ hist$log.gs<- log(hist$gs.swe)
 hist$log.hc <- log(hist$hc.swe)
 hist$log.lwd <- log(hist$lwd.swe)
 #hist$log.sp <- log(hist$sp.swe)
-hist$log.wq <- log(hist$sc.wq)
+hist$log.scwq <- log(hist$sc.wq)
 hist$log.ga<- log(hist$ga.swe)
 hist<- merge(hist, nj.temps, by = "year")
 hist<- merge(hist, spring.temps, by = "year") [,-c(1)]%>% filter(complete.cases(.)) #add in predicted april-june temps and remove year
@@ -328,7 +345,7 @@ dev.off()
 # -------------------------------------------------------------
 # Camas Creek
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.cm, cc.wq, all_of(swe_cols)) 
-hist$log.wq <- log(hist$cc.wq)
+hist$log.ccwq <- log(hist$cc.wq)
 hist$log.ccd <- log(hist$ccd.swe)
 hist$log.sr <- log(hist$sr.swe)
 hist$log.cg<- log(hist$cg.swe)
