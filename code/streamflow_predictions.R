@@ -38,6 +38,9 @@ var$log.sp <-log(var$sp.swe)
 var$log.bbwq <-log(var$bwb.wq)
 var$log.hc <-log(var$hc.swe)
 var$log.scwq<- log(var$sc.wq)
+var$log.ccwq<- log(var$cc.wq)
+var$log.lwd <-log(var$lwd.swe)
+var$log.ga<- log(var$ga.swe)
 
 curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
@@ -219,12 +222,12 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, 
   #output.cm[1,1]<-mean(apply(hist.temps, MARGIN=2, mean)) 
   #output.cm[1,2]<-as.list(round(cur.temps,3))
 
-  output.cm[1,1]<-  if (is.array(grep('swe',names(mod.cm$coefficients)))) {
-    round(sum(pred.swe, na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =T),3)
+  output.cm[1,1]<-  if (grep('swe',names(mod.cm$coefficients))>0) {
+    round(mean(as.matrix(pred.swe), na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =TRUE),3)*100
     } else {'No SWE Param'}
     #round(sum(pred.swe, na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =T),3) 
   output.cm[1,2]<-round(mean(predictions),0) 
-  output.cm[1,3]<-round(mean(predictions)-mean(hist.cm,na.rm=T),0) 
+  output.cm[1,3]<-round(mean(predictions)-mean(hist.cm,na.rm=TRUE),0) 
   output.cm[1,4]<-format(wy$Date[wy$day==round(mean(predictions, na.rm=TRUE),0)],"%b-%d")
   
   return(list(output.cm, pred.params.cm))
@@ -464,8 +467,8 @@ vol.data$prob<-NA
 # pmvnorm calculates the distribution function of the multivariate normal distribution
 for(i in 1:dim(vol.data)[1]){
   vec<-vol.data[i,2:5]
-  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-32000,
-                            upper=as.numeric(vec)+32000,mean=exp(pred.params.vol[,1]),corr=cor.mat[1:4,1:4])[1]
+  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-3000,
+                            upper=as.numeric(vec)+3000,mean=exp(pred.params.vol[,1]),corr=cor.mat[1:4,1:4])[1]
 }
 
 vol.sample.prob<-sample(vol.data$year,5000,replace=TRUE, prob=vol.data$prob) 
