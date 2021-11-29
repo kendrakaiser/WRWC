@@ -54,7 +54,7 @@ ctrl <- trainControl(method = "LOOCV")
 # Evaluate alternative model combinations for April-Sept Volume Predictions
 #------------------------------------------------------------------------------ # 
  
-#Big Wood at hailey actual flow, preforms better with linear swe data
+# Big Wood at Hailey
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, 
               all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
 
@@ -75,11 +75,12 @@ bwh_sum$lm<-summary(bwh_mod)$adj.r.squared
 #save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bwh_sum$loocv<- model$results
-bwh_sum
+#bwh_sum
+
 #check residuals
 mod.red<- resid(model)
-hist(mod.red)
-shapiro.test(mod.red)
+#hist(mod.red)
+#shapiro.test(mod.red)
 
 #Plot Big Wood at Hailey modeled data for visual evaluation 
 png(filename = file.path(fig_dir_mo, "BWH_modelFit.png"),
@@ -94,8 +95,9 @@ dev.off()
 # calculate the correlations
 r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
 #ggcorrplot(r)
+
 # -------------------------------------------------------------
-# Big Wood at Stanton, actual flow, preforms better with linear swe data
+# Big Wood at Stanton
 hist <- var[var$year < pred.yr] %>% dplyr::select(year, bws.vol, bws.wq, 
                   all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
 
@@ -116,12 +118,12 @@ bws_sum$lm<-summary(bws_mod)$adj.r.squared
 #save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bws_sum$loocv<- model$results
-bws_sum
+#bws_sum
 
 #check residuals
 mod.red<- resid(model)
-hist(mod.red)
-shapiro.test(mod.red)
+#hist(mod.red)
+#shapiro.test(mod.red)
 
 #Save Model fit figure
 png(filename = file.path(fig_dir_mo, "BWS_modelFit.png"),
@@ -133,7 +135,7 @@ png(filename = file.path(fig_dir_mo, "BWS_modelFit.png"),
 dev.off()
 
 # -------------------------------------------------------------
-# Subset Silver Creek Winter flows
+# Silver Creek
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, bwb.wq, 
              all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.)) 
 
@@ -154,11 +156,11 @@ sc_sum$lm<-summary(sc_mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 sc_sum$loocv<- model$results
-sc_sum
+#sc_sum
 #check residuals
 mod.red<- resid(model)
-hist(mod.red)
-shapiro.test(mod.red)
+#hist(mod.red)
+#shapiro.test(mod.red)
 
 #Save Model fit figure
 png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
@@ -168,12 +170,13 @@ png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
     plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Silver Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
     abline(0,1,col="gray50",lty=1)
 dev.off()
+
 # -------------------------------------------------------------
-# camas creek
+# Camas creek
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, bwb.wq,
             all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.)) 
 
-#selec parameters
+#select parameters
 tryCatch({regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=12)}, 
          error= function(e) {print("Camas Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
@@ -190,11 +193,11 @@ cc_sum$lm<-summary(cc_mod)$adj.r.squared
 #save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 cc_sum$loocv<- model$results
-cc_sum
+
 #check residuals
 mod.red<- resid(model)
-hist(mod.red)
-shapiro.test(mod.red)
+#hist(mod.red)
+#shapiro.test(mod.red)
 
 #Save figure of model results
 png(filename = file.path(fig_dir_mo, "CC_modelFit.png"),
@@ -203,6 +206,7 @@ png(filename = file.path(fig_dir_mo, "CC_modelFit.png"),
     plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
     abline(0,1,col="gray50",lty=1)
 dev.off()
+
 
 # EXPORT VOL MODEL DETAILS
 # ----------------------
@@ -218,21 +222,19 @@ list.save(vol_models, file.path(data_dir, vol_mods))
 
 # ----------------------
 # use regsubsets to plot the results
-regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
-quartz(title="Adjusted R^2",10,10)
-plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
-quartz(title="BIC",10,10)
-plot(regsubsets.out, scale = "bic", main="BIC For the best model of a given size")
+#regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
+#quartz(title="Adjusted R^2",10,10)
+#plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
+#quartz(title="BIC",10,10)
+#plot(regsubsets.out, scale = "bic", main="BIC For the best model of a given size")
+#quartz(title="R2 v BIC",10,10)
+#plot(reg_sum$bic, reg_sum$adjr2, xlab="BIC", ylab="adj R2")
 
-quartz(title="R2 v BIC",10,10)
-plot(reg_sum$bic, reg_sum$adjr2, xlab="BIC", ylab="adj R2")
-
-# -----
 # ------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for Center of Mass Predictions
 # ------------------------------------------------------------------------------ # 
 
-# Big wood at Hailey
+# Big Wood at Hailey
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.cm, bwb.wq, 
                   all_of(swe_cols), all_of(t_cols)) %>% filter(complete.cases(.)) 
 
@@ -251,7 +253,7 @@ bwh.cm_sum$lm<-summary(bwh_cm.mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bwh.cm_sum$loocv<- model$results
-bwh.cm_sum
+#bwh.cm_sum
 
 #Save model results
 png(filename = file.path(fig_dir_mo, "bwh.cm_modelFit.png"),
@@ -293,7 +295,7 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 
 # -------------------------------------------------------------
-# Subset Silver Creek Winter flows
+# Silver Creek Center of Mass
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwb.wq, bws.wq, 
          all_of(swe_cols), all_of(t_cols)) %>% filter(complete.cases(.)) 
 
@@ -311,7 +313,7 @@ sc.cm_sum$lm<-summary(sc_cm.mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 sc.cm_sum$loocv<- model$results
-sc.cm_sum
+#sc.cm_sum
 
 # Save figure of model results
 png(filename = file.path(fig_dir_mo, "sc.cm_modelFit.png"),
@@ -322,7 +324,7 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 
 # -------------------------------------------------------------
-# Camas Creek
+# Camas Creek Center of Mass
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.cm, cc.wq, all_of(swe_cols), 
                                   all_of(t_cols)) %>% filter(complete.cases(.)) 
 
@@ -343,7 +345,7 @@ cc.cm_sum$lm<-summary(cc_cm.mod)$adj.r.squared
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 cc.cm_sum$loocv<- model$results
-cc.cm_sum
+#cc.cm_sum
 # Save figure of model results 
 png(filename = file.path(fig_dir_mo, "cc.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -353,7 +355,7 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 
 
-### EXPORT MODEL DETAILS
+### EXPORT Center of Mass MODEL DETAILS
 # -----------------------------------------------------------------------------
 
 #compile all model details into one list to export
