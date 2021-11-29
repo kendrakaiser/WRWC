@@ -98,7 +98,7 @@ r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
 
 # -------------------------------------------------------------
 # Big Wood at Stanton
-hist <- var[var$year < pred.yr] %>% dplyr::select(year, bws.vol, bws.wq, 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.vol, bws.wq, 
                   all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to explore models
@@ -265,7 +265,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Big Wood at Stanton
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(year, bws.cm, bws.wq,
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.cm, bws.wq,
                   all_of(swe_cols), all_of(t_cols)) %>% filter(complete.cases(.)) 
 
 #select Parameters
