@@ -460,10 +460,6 @@ dev.off()
 
 # Draw sample of years with similar volume for comparison -- 
 # these are too dependent on how the pmvnorm bounds are defined, need to come up with something else
-vol.ranks<- apply(vol.data, 2, rank)
-vol.exed<- 100 *(vol.ranks/(dim(vol.ranks)[1]+1))
-exed.95<- apply(var[grep('vol', colnames(var))][1:4],2,quantile,0.05, na.rm=TRUE)
-
 
 vol.data = var%>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
 vol.data$prob<-NA
