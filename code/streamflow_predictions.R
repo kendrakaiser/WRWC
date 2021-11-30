@@ -420,7 +420,7 @@ vol.sm %>%
 dev.off()
 
 # ------------------------------------------------------------------------------
-# Create distribution and draw samples pf CENTER of MASS & Volume
+# Create distribution and draw samples of CENTER of MASS & Volume
 # ------------------------------------------------------------------------------
 # Draw sample of years with similar center of mass (timing)
 cm.data = var[var$year >= 1997 & var$year < pred.yr,]
@@ -484,14 +484,6 @@ vol.data = var[var$year >1996 & var$year < pred.yr,]%>% dplyr::select(year, bwb.
 vol.data$prob<-NA
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
-# using the linear data with logged uppers and lowers to match pred results in 0/1s
-#for(i in 1:dim(vol.data)[1]){
-  vec<-vol.data[i,2:5]
-  vol.data$prob[i]<-pmvnorm(lower=as.numeric(exp(log(vec)-1)),  
-                            upper=as.numeric(exp(log(vec)+1)), 
-                            mean=exp(pred.params.vol[,1]),corr=cor.mat[1:4,1:4])[1]
-}
-
 for(i in 1:dim(vol.data)[1]){
   vec<-log(vol.data[i,2:5])
   vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec-1),  
