@@ -154,12 +154,12 @@ data <- q %>% filter(abv == 'sc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mea
 png(filename = file.path(fig_dir_mo, "SC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-plot(dates, pi[,15], type="n", xlab="Date", ylab ="Flow (cfs)",
-     main = "Silver Creek Natural Streamflow Simulation", ylim=c(min(pi[,13]), max(pi[,14])))
-polygon(c(dates[1], dates, rev(dates) ), c(pi[1,13], pi[,14], rev(pi[,13])), 
+plot(dates, pi[,11], type="n", xlab="Date", ylab ="Flow (cfs)",
+     main = "Silver Creek Natural Streamflow Simulation", ylim=c(min(pi[,9]), max(pi[,10])))
+polygon(c(dates[1], dates, rev(dates) ), c(pi[1,9], pi[,10], rev(pi[,9])), 
         col = "gray90", border = NA)
 lines(dates,data$meanQ[91:273],lwd=1.5,col="black")
-lines(dates,pi[,15],lwd=2.5,col="blue")
+lines(dates,pi[,11],lwd=2.5,col="blue")
 legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
 #flow= sc.wy[sc.wy$wy == pred.yr, "sc.nat"]
@@ -172,12 +172,12 @@ data <- q %>% filter(abv == 'cc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mea
 png(filename = file.path(fig_dir_mo, "CC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-plot(dates,pi[,23], type="n", xlab="Date", ylab ="Flow (cfs)",
-     main = "Camas Creek Streamflow Simulation", ylim=c(min(pi[,21]), max(pi[,22])))
-polygon(c(dates[1], dates, rev(dates) ), c(pi[1,21], pi[,22], rev(pi[,21])), 
+plot(dates,pi[,15], type="n", xlab="Date", ylab ="Flow (cfs)",
+     main = "Camas Creek Streamflow Simulation", ylim=c(min(pi[,13]), max(pi[,13])))
+polygon(c(dates[1], dates, rev(dates) ), c(pi[1,13], pi[,14], rev(pi[,13])), 
         col = "gray90", border = NA)
 lines(dates,data$meanQ[91:273],lwd=1.5,col="black")
-lines(dates,pi[,23],lwd=2.5,col="blue")
+lines(dates,pi[,15],lwd=2.5,col="blue")
 legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
 #flow= cc.wy[cc.wy$wy == pred.yr, "Flow"]
