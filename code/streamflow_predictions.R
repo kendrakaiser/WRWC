@@ -29,18 +29,18 @@ temps_aj = read.csv(file.path(data_dir, 'sprTemps.csv'))
 var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% inner_join(temps_aj, by="year") # %>% dplyr::select(-X)
 
 var$div <- var$abv.h + var$abv.s
-var$log.cg <-log(var$cg.swe)
-var$log.gs <-log(var$gs.swe)
-var$log.sr <-log(var$sr.swe)
-var$log.g <-log(var$g.swe)
-var$log.ccd <-log(var$ccd.swe)
-var$log.sp <-log(var$sp.swe)
-var$log.bbwq <-log(var$bwb.wq)
-var$log.hc <-log(var$hc.swe)
+
+var$log.bbwq.swe <-log(var$bwb.wq)
 var$log.scwq<- log(var$sc.wq)
 var$log.ccwq<- log(var$cc.wq)
-var$log.lwd <-log(var$lwd.swe)
-var$log.ga<- log(var$ga.swe)
+
+var$log.cg.swe <- log(var$cg.swe)
+var$log.g.swe <- log(var$g.swe)
+var$log.gs.swe <- log(var$gs.swe)
+var$log.hc.swe <- log(var$hc.swe)
+var$log.lwd.swe <- log(var$lwd.swe)
+var$log.ga.swe <- log(var$ga.swe)
+var$log.bc.swe <- log(var$bc.swe)
 
 curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
@@ -65,9 +65,9 @@ colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol \nKAF", "Pred. Vol \
                         "90% exc. \n% of mean", "50% exc. \nKAF", "Prev Year \nVol KAF", "Prev Year \n% of mean Volume")
 rownames(output.vol)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
-pred.params.vol<-array(NA,c(4,2))
+pred.params.vol<-array(NA,c(4,4))
 rownames(pred.params.vol)<-c("bwb.vol","bws.vol","cc.vol","sc.vol")
-colnames(pred.params.vol)<-c("log.vol","sigma")
+colnames(pred.params.vol)<-c("log.vol","sigma", "low.log.vol", "upp.log.vol")
 
 # center of mass
 output.cm<-data.frame(array(NA,c(5,4)))
@@ -100,7 +100,7 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   hist.swe: mean(arrays of historic SWE from ws snotel sites) #mean(hist$ccd+hist$sr, na.rm=T)
   lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$year == pred.yr-1] 
   '
-  pred.params.vol<-array(NA,c(1,2))
+  pred.params.vol<-array(NA,c(1,4))
   output.vol<-array(NA,c(1,8))
   
   meanSWE <- mean(hist.swe, trim=0, na.rm=TRUE)
@@ -109,6 +109,8 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   #predict this years total volume at 95 % confidence
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.95)
   pred.params.vol[1,1]<-mean(predictions$fit, na.rm=TRUE)
+  pred.params.vol[1,3]<-predictions$fit[2] #lower prediction interval
+  pred.params.vol[1,4]<-predictions$fit[3] #upper prediction interval
   #This years percent of mean winter flow
   output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,0)
   
@@ -120,7 +122,7 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   #this years total volume at 80 % confidence
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.9)
   #bottom of 90% CI (statisticians) converted ac-ft
-  output.vol[1,4]<-round(exp(predictions$fit[2])/1000,0) #(1.98*183)
+  output.vol[1,4]<-round(exp(predictions$fit[2])/1000,0) #(1.98*183) -- why is this using the lower stat instead of the mean? it the 90% pred. interval of the bottom?
   # 90% exceedance flow as a percent of long-term mean
   output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=TRUE) *100,0)
   output.vol[1,7]<-round(lastQ,0) # last years volume in ac-ft
@@ -191,9 +193,6 @@ png(file.path(fig_dir_mo,"pred.volumes.png"), height = 30*nrow(output.vol), widt
 grid.table(output.vol[,1:5])
 dev.off()
 
-write.csv(output.vol, file.path(model_out,"pred.output.vol.csv"),row.names=T)
-write.csv(pred.params.vol, file.path(model_out,"pred.params.vol.csv"),row.names=T)
-
 # ------------------------------------------------------------------------------  
 #
 # Center of Mass Predictions
@@ -222,7 +221,7 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, 
   #output.cm[1,1]<-mean(apply(hist.temps, MARGIN=2, mean)) 
   #output.cm[1,2]<-as.list(round(cur.temps,3))
 
-  output.cm[1,1]<-  if (grep('swe',names(mod.cm$coefficients))>0) {
+  output.cm[1,1]<-  if (!is.empty(grep('swe',names(mod.cm$coefficients)))) {
     round(mean(as.matrix(pred.swe), na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =TRUE),3)*100
     } else {'No SWE Param'}
     #round(sum(pred.swe, na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =T),3) 
@@ -348,7 +347,7 @@ flow.data = var[var$year >= 1997 & var$year < 2020,] %>% dplyr::select(bwb.vol,
 cor.mat<-cor(cbind(flow.data[c(1,3,5,7)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
 
 # create covariance matrix by multiplying by each models standard error
-pred.pars<-rbind(pred.params.vol, pred.params.cm)
+pred.pars<-rbind(pred.params.vol[,1:2], pred.params.cm)
 outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2]))
 cov.mat<-cor.mat*outer.prod
 
@@ -459,19 +458,48 @@ grid.table(cm_prob)
 dev.off()
 
 
-# Draw sample of years with similar volume for comparison
-vol.data = var[var$year >= 1997 & var$year < pred.yr,]
-vol.data = vol.data %>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
+# Draw sample of years with similar volume for comparison -- 
+# these are too dependent on how the pmvnorm bounds are defined, need to come up with something else
+vol.ranks<- apply(vol.data, 2, rank)
+vol.exed<- 100 *(vol.ranks/(dim(vol.ranks)[1]+1))
+exed.95<- apply(var[grep('vol', colnames(var))][1:4],2,quantile,0.05, na.rm=TRUE)
+
+
+vol.data = var%>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
+vol.data$prob<-NA
+
+vol.dat.std <- apply(vol.data[,2:5], MARGIN = 2, sd)
+vol.dat.min<- apply(vol.data[,2:5], 2, min)
+vol.dat.max <- apply(vol.data[,2:5], 2, max) 
+
+vol.ranks<- apply(vol.data, 2, rank)
+vol.exed<- 100 *(vol.ranks[, 2:5]/(dim(vol.ranks)[1]+1))
+
+exced$e95<- apply(vol.data[2:5],2,quantile,0.05, na.rm=TRUE)
+exced$e05<- apply(vol.data[2:5],2,quantile,0.95, na.rm=TRUE)
+exced$e99<- apply(vol.data[2:5],2,quantile,0.01, na.rm=TRUE)
+exced$e01<- apply(vol.data[2:5],2,quantile,0.99, na.rm=TRUE)
+
+vol.data = var[var$year >1996 & var$year < pred.yr,]%>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
 vol.data$prob<-NA
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
-for(i in 1:dim(vol.data)[1]){
+# using the linear data with logged uppers and lowers to match pred results in 0/1s
+#for(i in 1:dim(vol.data)[1]){
   vec<-vol.data[i,2:5]
-  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-3000,
-                            upper=as.numeric(vec)+3000,mean=exp(pred.params.vol[,1]),corr=cor.mat[1:4,1:4])[1]
+  vol.data$prob[i]<-pmvnorm(lower=as.numeric(exp(log(vec)-1)),  
+                            upper=as.numeric(exp(log(vec)+1)), 
+                            mean=exp(pred.params.vol[,1]),corr=cor.mat[1:4,1:4])[1]
 }
 
-vol.sample.prob<-sample(vol.data$year,5000,replace=TRUE, prob=vol.data$prob) 
+for(i in 1:dim(vol.data)[1]){
+  vec<-log(vol.data[i,2:5])
+  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec-1),  
+                            upper=as.numeric(vec+1), 
+                            mean=pred.params.vol[,1],corr=cor.mat[1:4,1:4])[1]
+}
+
+vol.sample.prob<-sample(vol.data$year, 5000, replace=TRUE, prob=vol.data$prob) 
 vol_prob<-as.data.frame(summary(as.factor(vol.sample.prob))/5000)*100
 colnames(vol_prob)<- c("% of sample")
 
