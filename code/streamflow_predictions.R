@@ -471,10 +471,10 @@ vol.dat.max <- apply(vol.data[,2:5], 2, max)
 vol.ranks<- apply(vol.data, 2, rank)
 vol.exed<- 100 *(vol.ranks[, 2:5]/(dim(vol.ranks)[1]+1))
 
-exced$e95<- apply(vol.data[2:5],2,quantile,0.05, na.rm=TRUE)
-exced$e05<- apply(vol.data[2:5],2,quantile,0.95, na.rm=TRUE)
-exced$e99<- apply(vol.data[2:5],2,quantile,0.01, na.rm=TRUE)
-exced$e01<- apply(vol.data[2:5],2,quantile,0.99, na.rm=TRUE)
+#exced$e95<- apply(vol.data[2:5],2,quantile,0.05, na.rm=TRUE)
+#exced$e05<- apply(vol.data[2:5],2,quantile,0.95, na.rm=TRUE)
+#exced$e99<- apply(vol.data[2:5],2,quantile,0.01, na.rm=TRUE)
+#exced$e01<- apply(vol.data[2:5],2,quantile,0.99, na.rm=TRUE)
 
 vol.data = var[var$year >1996 & var$year < pred.yr,]%>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
 vol.data$prob<-NA
