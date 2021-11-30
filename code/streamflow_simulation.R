@@ -25,7 +25,7 @@ sc.wy<-streamflow[streamflow$abv == 'sc',]
 # distributions and diversion hydrographs 
 cm.year<-read.csv(file.path(model_out,"CMyear.sample.csv"))
 volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
-colnames(volumes)<-c("bwb.nat", "bws.nat","cc.vol", "sc.nat", "div", "sc.div")
+colnames(volumes)<-c("bwb.vol", "bws.vol","cc.vol", "sc.vol")
 #Example figures for presentation
 #plot(dates, bwb.wy$Flow[bwb.wy$wy == 2006][183:365], xlab="Date", ylab ="Flow (cfs)", type='l', col="black", ylim=c(0,6650))
 #lines(dates,bwb.wy$Flow[bwb.wy$wy == 2014][183:365], lwd=1, col="black")
@@ -39,11 +39,11 @@ colnames(volumes)<-c("bwb.nat", "bws.nat","cc.vol", "sc.nat", "div", "sc.div")
 # Create arrays to store outputs of stochastic simulations
 #
 
-cc.flow.s<-bwb.flow.s<-bws.flow.s<-sc.flow.s<-bw.div.s<-sc.div.s<-
+cc.flow.s<-bwb.flow.s<-bws.flow.s<-sc.flow.s<-
   data.frame(array(NA,c(183,ns)))
 
 rownames(cc.flow.s)<-rownames(bwb.flow.s)<-rownames(bws.flow.s)<-
-  rownames(sc.flow.s)<-rownames(bw.div.s)<-rownames(sc.div.s)<-dates
+  rownames(sc.flow.s)<-dates
 
 # ------------------------------------------------------------------------------
 # Simulations
@@ -58,23 +58,19 @@ sim.flow <- function(nat.wy, vol){
 }
 
 for(k in 1:ns){ 
-  # Simulate natural flow supply at the four gages and total diversions
+  # Simulate flow supply at the four gages
   year<-cm.year[k,1] # year sample
   vol<-volumes[k,] # volume sample
 
-  bwb<- bwb.wy[bwb.wy$wy == year, "bwb.nat.q"][183:365]
-  bws<- bws.wy[bws.wy$wy == year, "bws.nat.q"][183:365]
-  bw.div<- bws.wy[bws.wy$wy == year, "bw.div"][183:365]
-  sc<- sc.wy[sc.wy$wy == year, "sc.nat"][183:365]
-  sc.div <- sc.wy[sc.wy$wy == year, "sc.div"][183:365]
+  bwb<- bwb.wy[bwb.wy$wy == year, "Flow"][183:365]
+  bws<- bws.wy[bws.wy$wy == year, "Flow"][183:365]
+  sc<- sc.wy[sc.wy$wy == year, "Flow"][183:365]
   cc <- cc.wy[cc.wy$wy == year, "Flow"][183:365]
   
-  bwb.flow.s[,k]<-sim.flow(bwb, vol$bwb.nat)
-  bws.flow.s[,k]<-sim.flow(bws, vol$bws.nat)
-  bw.div.s[,k]<-sim.flow(bw.div, vol$div) # only in april
-  sc.flow.s[,k]<-sim.flow(sc, vol$sc.nat)
-  sc.div.s[,k]<-sim.flow(sc.div, vol$sc.div)
-  cc.flow.s[,k]<-sim.flow(cc, vol$cc)
+  bwb.flow.s[,k]<-sim.flow(bwb, vol$bwb.vol)
+  bws.flow.s[,k]<-sim.flow(bws, vol$bws.vol)
+  sc.flow.s[,k]<-sim.flow(sc, vol$sc.vol)
+  cc.flow.s[,k]<-sim.flow(cc, vol$cc.vol)
 }
 
 #matplot(bwb.flow.s, type='l',col = "gray90" )
@@ -82,7 +78,7 @@ for(k in 1:ns){
 
 # ------------------------------------------------------------------------------
 # Calculate prediction Intervals
-numpreds<- 24 # nat+reg + div *4
+numpreds<- 16 # reg *4
 pi<-data.frame(array(NA,c(183,numpreds)))
 meanQ<-data.frame(array(NA,c(183,4)))
 medQ<-data.frame(array(NA,c(183,4)))
@@ -97,16 +93,11 @@ pred.int<-function(location){
 }
 
 colnames(pi)<- c("bwb.low", "bwb.hi", "bwb.mean", "bwb.med","bws.low", "bws.hi", "bws.mean", "bws.med", 
-                 "div.low", "div.hi", "div.mean", "div.med", "sc.low", "sc.hi", "sc.mean", "sc.med",
-                 "sc.div.low", "sc.div.hi", "sc.div.mean", "sc.div.med","cc.low", "cc.hi", "cc.mean", "cc.med")
+                  "sc.low", "sc.hi", "sc.mean", "sc.med","cc.low", "cc.hi", "cc.mean", "cc.med")
 pi[,1:4] <-as.data.frame(pred.int(bwb.flow.s))
 pi[,5:8] <-as.data.frame(pred.int(bws.flow.s))
-pi[,9:12]<-as.data.frame(pred.int(bw.div.s))
-pi[,13:16]<-as.data.frame(pred.int(sc.flow.s))
-pi[,17:20]<-as.data.frame(pred.int(sc.div.s))
-pi[,21:24]<-as.data.frame(pred.int(cc.flow.s))
-
-
+pi[,9:12]<-as.data.frame(pred.int(sc.flow.s))
+pi[,13:16]<-as.data.frame(pred.int(cc.flow.s))
 
 ### Average Annual streamflow with maximum and minimum daily flows
 q = read.csv(file.path(data_dir,'streamflow_data.csv'))
@@ -120,19 +111,10 @@ water_year_begin <- ymd('1987-10-01')-1
 q$doWY<- ((q$doy - yday(water_year_begin)) %% ifelse(leap_year(year(q$Date)), 366, 365)) +1
 
 
-# Plot Simulation Results
-if (run_date == 'feb1'){
-  mo_fig_dir = file.path(fig_dir, 'February')
-} else if (run_date == 'march1'){
-  mo_fig_dir = file.path(fig_dir, 'March')
-} else if (run_date == 'april1'){
-  mo_fig_dir = file.path(fig_dir, 'April')
-}
-
-data <- q %>% filter(abv == 'bwb') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(bwb.nat.q, na.rm=TRUE))
+data <- q %>% filter(abv == 'bwb') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(Flow, na.rm=TRUE))
 
 # Big Wood @ Hailey
-png(filename = file.path(mo_fig_dir, "BWB_Simulation.png"),
+png(filename = file.path(fig_dir_mo, "BWB_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 plot(dates, pi[,3], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -148,9 +130,9 @@ legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
 dev.off()
 
 # Summary stats
-data <- q %>% filter(abv == 'bws') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(bws.nat.q, na.rm=TRUE))
+data <- q %>% filter(abv == 'bws') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(Flow, na.rm=TRUE))
 # Big Wood @ Stanton
-png(filename = file.path(mo_fig_dir, "BWS_Simulation.png"),
+png(filename = file.path(fig_dir_mo, "BWS_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 plot(dates, pi[,7], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -166,10 +148,10 @@ legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
 dev.off()
 
 # Summary stats
-data <- q %>% filter(abv == 'sc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(sc.nat, na.rm=TRUE))
+data <- q %>% filter(abv == 'sc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(Flow, na.rm=TRUE))
 
 # Silver Creek
-png(filename = file.path(mo_fig_dir, "SC_Simulation.png"),
+png(filename = file.path(fig_dir_mo, "SC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 plot(dates, pi[,15], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -187,7 +169,7 @@ dev.off()
 # Summary stats 
 data <- q %>% filter(abv == 'cc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(Flow))
 # Camas Creek
-png(filename = file.path(mo_fig_dir, "CC_Simulation.png"),
+png(filename = file.path(fig_dir_mo, "CC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 plot(dates,pi[,23], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -204,18 +186,8 @@ dev.off()
 # ------------------------------------------------------------------------------
 # Save Output
 
-if (run_date == 'feb1'){
-  out_dir = file.path(cd, 'February_output')
-} else if (run_date == 'march1'){
-  out_dir = file.path(cd, 'March_output')
-} else if (run_date == 'april1'){
-  out_dir = file.path(cd, 'April_output')
-}
-
-write.csv(bwb.flow.s, file.path(out_dir, "BWB.nat.sim.csv"), row.names=dates)
-write.csv(bws.flow.s, file.path(out_dir, "BWS.nat.sim.csv"), row.names=dates)
-write.csv(bw.div.s, file.path(out_dir, "BW.div.sim.csv"), row.names=dates)
-write.csv(cc.flow.s, file.path(out_dir, "CC.flow.sim.csv"), row.names=dates)
-write.csv(sc.flow.s, file.path(out_dir, "SC.nat.sim.csv"), row.names=dates)
-write.csv(sc.div.s, file.path(out_dir, "SC.div.sim.csv"), row.names=dates)
+write.csv(bwb.flow.s, file.path(model_out, "BWB.sim.csv"), row.names=dates)
+write.csv(bws.flow.s, file.path(model_out, "BWS.sim.csv"), row.names=dates)
+write.csv(cc.flow.s, file.path(model_out, "CC.sim.csv"), row.names=dates)
+write.csv(sc.div.s, file.path(model_out, "SC.sim.csv"), row.names=dates)
 
