@@ -189,5 +189,5 @@ dev.off()
 write.csv(bwb.flow.s, file.path(model_out, "BWB.sim.csv"), row.names=dates)
 write.csv(bws.flow.s, file.path(model_out, "BWS.sim.csv"), row.names=dates)
 write.csv(cc.flow.s, file.path(model_out, "CC.sim.csv"), row.names=dates)
-write.csv(sc.div.s, file.path(model_out, "SC.sim.csv"), row.names=dates)
+write.csv(sc.flow.s, file.path(model_out, "SC.sim.csv"), row.names=dates)
 
