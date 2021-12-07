@@ -185,7 +185,7 @@ pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$cc$vars)
 
 # Camas Creek Model output
 mod_sum[3,1]<-summary(vol.mods$cc_mod)$adj.r.squared
-mod_out<- modOut(vol.mods$cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], hist$cc.wq, hist$cc.vol, mean(hist$sr.swe, na.rm=T), var$cc.vol[var$year == pred.yr-1])
+mod_out<- modOut(vol.mods$cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], var$cc.wq[var$year < pred.yr], hist$cc.vol, mean(colMeans(swe_cols, na.rm=T)), var$cc.vol[var$year == pred.yr-1])
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
@@ -221,7 +221,7 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, 
   #output.cm[1,1]<-mean(apply(hist.temps, MARGIN=2, mean)) 
   #output.cm[1,2]<-as.list(round(cur.temps,3))
 
-  output.cm[1,1]<-  if (!is.empty(grep('swe',names(mod.cm$coefficients)))) {
+  output.cm[1,1]<-  if (length(grep('swe',names(mod.cm$coefficients))) >0) {
     round(mean(as.matrix(pred.swe), na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =TRUE),3)*100
     } else {'No SWE Param'}
     #round(sum(pred.swe, na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =T),3) 
@@ -256,7 +256,6 @@ pred.params.cm[1,] <- mod_out[[2]]
 sub_params<- cm.params$bws$vars[-grep('aj', cm.params$bws$vars)]
 aj_params<-cm.params$bws$vars[grep('aj', cm.params$bws$vars)]
 hist <- var[var$year < pred.yr,] %>% dplyr::select(bws.cm, cm.params$bws$vars) %>% filter(complete.cases(.))
-
 
 # Prediction Data with modeled temperature data
 pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
