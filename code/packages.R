@@ -33,7 +33,6 @@ library(tidyr)
 library(knitr)
 library(fasstr)
 library(stringr)
-
 library(leaps) #regsubsets
 library(rlist) #list.save
 library(caret) #loocv
