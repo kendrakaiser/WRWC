@@ -1,12 +1,12 @@
 ---
 title: "WRWC Model Run"
 params:
-    fig_dir_mo: 'figures/April'
+    fig_dir_mo: 'figures/March'
     set_author: "Kendra E Kaiser"
     todays_date: "03/30/2021"
     data_dir:  '~/Desktop/WRWC/data'
     git_dir: '~/github/WRWC'
-    input: 'all_dat_apr.csv'
+    input: 'all_dat_mar.csv'
 author: "`r params$set_author`"
 date: "`r params$todays_date`"
 output: 
@@ -21,7 +21,7 @@ header-includes:
 ---
 ```{r, include=FALSE}
 options(tinytex.verbose = TRUE)
-knitr::opts_chunk$set(fig.pos = "!H", out.extra = "")
+#knitr::opts_chunk$set(fig.pos = "!H", out.extra = "")
 ```
 
 ```{r setup, include=FALSE}
@@ -33,18 +33,18 @@ library(lubridate)
 library(fasstr)
 library(kableExtra)
 
-knitr::opts_chunk$set(echo = FALSE)
-knitr::opts_knit$set(verbose = TRUE)  
+#knitr::opts_chunk$set(echo = FALSE)
+#knitr::opts_knit$set(verbose = TRUE)  
 
 fig_dir <<- file.path(params$git_dir, 'figures')
 
 usgs_sites = read.csv(file.path(params$data_dir,'usgs_sites.csv'))
 snotel_sites = read.csv(file.path(params$data_dir,'snotel_sites.csv'))
 snotel_data = read.csv(file.path(params$data_dir,'snotel_data.csv'))
-q = read.csv(file.path(params$data_dir,'streamflow_data.csv'))
-q$Date <- as.Date(q$Date)
-q$doy <- yday(q$Date)
-q<- q %>% filter(abv != 'bwr')
+#q = read.csv(file.path(params$data_dir,'streamflow_data.csv'))
+#q$Date <- as.Date(q$Date)
+#q$doy <- yday(q$Date)
+#q<- q %>% filter(abv != 'bwr')
 feb1swe = read.csv(file.path(params$data_dir, 'feb1swe.csv'))
 mar1swe = read.csv(file.path(params$data_dir, 'mar1swe.csv'))
 apr1swe = read.csv(file.path(params$data_dir, 'april1swe.csv'))
@@ -54,8 +54,8 @@ swe_q = read.csv(file.path(params$data_dir, params$input))
 yr<- year(as.Date(params$todays_date, format = "%m/%d/%Y"))
 mo<- month(as.Date(params$todays_date, format = "%m/%d/%Y"))
 
-pred.curt = read.csv(file.path('~/Desktop/WRWC/April_output/pred.curtailments.csv'))
-colnames(pred.curt)<- c("Water Right", "adjR2", "Predicted Curtailment", "Days +/-")
+#pred.curt = read.csv(file.path('~/Desktop/WRWC/April_output/pred.curtailments.csv'))
+#colnames(pred.curt)<- c("Water Right", "adjR2", "Predicted Curtailment", "Days +/-")
 ```
 
 ## Wood River Model Summary
@@ -68,33 +68,6 @@ The NRCS Water Supply Report can be found here: https://www.wcc.nrcs.usda.gov/ft
 
 ### Time series of historic data from each USGS site
 
-```{r HistoricStreamflowData, echo=FALSE, fig.show='hold', out.width="50%"}
-#png(filename = file.path(fig_dir,"historic_streamflow.png"),
- #   width = 5.5, height = 5.5,units = "in", pointsize = 12,
-  #  bg = "white", res = 600, type ="quartz") 
-#dev.off()
-par(mar = c(4, 4, .1, .1))
-dat<-q %>% filter(abv != 'sc')
-ggplot(data = dat, mapping = aes(x=as.Date(Date), y=Flow))+
-  labs(title = "Historic Data: Big Wood River and Camas Creek") +
-  geom_line(aes(color= abv))+
-  labs(color = "Site")+
-  scale_colour_discrete(labels = c("Big Wood Hailey", "Big Wood Stanton Crossing", 
-                                   "Camas Creek")) +
-  xlab('Year')+
-  ylab('Flow (cfs)') +
-  theme_bw() +
-  theme(legend.position = c(.18, .84)) 
-
-dat<-q %>% filter(abv == 'sc') 
-ggplot(data = dat, mapping = aes(x=as.Date(Date), y=Flow))+
-  labs(title = "Historic Data: Silver Creek at Sportsman's Access ") +
-  geom_line(show.legend = FALSE)+
-  xlab('Year')+
-  ylab('Flow (cfs)')+
-  theme_bw()
-
-```
 
 ### Snotel Data Summary
 
@@ -122,8 +95,15 @@ ytd_swe<- snotel_data[snotel_data$date == last_date,] %>% dplyr::select(c(site_n
 rownames(ytd_swe) <- c("Chocolate Gulch", "Camas Creek Divide", "Soldier R.S.", "Dollarhide Summit", "Galena", "Garfield R.S.", "Hyndman Creek", "Lost-Wood Divide", "Galena Summit", "Swede Peak", "Stickney Mill", "Bear Canyon")
 
 swe<- merge(round(swe_means,0), ytd_swe, by=0) %>% dplyr::select(-site_name)
-#TODO: update this to auto select the month to compare average to
-swe$per <- round(swe[,5]/swe$Apr1,2)*100
+
+if (mo == 2){
+  swe_mo<-swe$Feb1
+} else if (mo == 3){
+  swe_mo<-swe$Mar1
+} else if (mo == 4){
+  swe_mo<-swe$Apr1
+}
+swe$per <- round(swe[,5]/swe_mo,2)*100
 da<-format(last_date, "%b %d %Y")
 
 swe %>% mutate(per = cell_spec(per, color = ifelse(per > 75, "blue","red"))) %>% `colnames<-`(c("Site", "Feb 1 Hist. Avg.", "Mar 1 Hist. Avg.", "Apr 1 Hist. Avg.", da, "Per of Avg"))  %>% kable(align=rep('c', 6), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
@@ -149,7 +129,7 @@ knitr::include_graphics(file.path(params$fig_dir_mo, "pred.volumes.png"))
 These box plots show the historic range of volumes (grey) and the predicted range of volumes that were calculated for each basin (blue). The boxes represent the 25th - 75th percentiles, the median is the solid line in the middle, and circles are outliers. 
 
 ```{r,sampledVolumes, echo=FALSE, out.width = '50%', fig.show="hold"}
-knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), file.path(params$fig_dir_mo, "sampled_sc_diversions.png")))
+knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), file.path(params$fig_dir_mo, "sampled_sc_vol.png")))
 ```
 
 \newpage
@@ -187,13 +167,13 @@ While the curtailment date models do fairly well at predicting curtailment dates
 #if (params$fig_dir_mo == 'figures/April'){  }
   #knitr::include_graphics(file.path(params$fig_dir_mo, "curt_summary.png"))
 
-pred.curt %>% mutate(adjR2 = cell_spec(adjR2, color = ifelse(adjR2 > 0.70, "OliveGreen","red")))  %>% kable(align=rep('c', 9), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
+#pred.curt %>% mutate(adjR2 = cell_spec(adjR2, color = ifelse(adjR2 > 0.70, "OliveGreen","red")))  %>% kable(align=rep('c', 9), escape = FALSE, format = "latex") %>% kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) 
 ```
 
 
 ```{r, sampledCurtailmentDates, echo=FALSE, out.width = '60%', fig.align='center'}
 #if (params$fig_dir_mo == 'figures/April'){}
-knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_curtailments.png"))
+#knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_curtailments.png"))
 ```
 
 \newpage
