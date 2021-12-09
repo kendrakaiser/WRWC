@@ -149,10 +149,10 @@ knitr::include_graphics(c(file.path(params$fig_dir_mo,"SC_Simulation.png"), file
 
 \newpage
 
-The following tables are estimates of the most similar years (since 1996) based on total irrigation season volume (left) and based on the timing of snowmelt (right).
+The following tables are estimates of the most similar years (since 1996) based on the timing of snowmelt (right).
 
 ```{r, yearComparison, echo=FALSE, out.width = '100%', fig.show="hold"}
-knitr::include_graphics(c(file.path(params$fig_dir_mo,"vol_prob.png"), file.path(params$fig_dir_mo,"CM_summary_prob.png")))
+knitr::include_graphics(file.path(params$fig_dir_mo,"CM_summary_prob.png")) #c(file.path(params$fig_dir_mo,"vol_prob.png")
 ```
 
 \newpage
