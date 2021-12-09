@@ -113,12 +113,14 @@ q$doWY<- ((q$doy - yday(water_year_begin)) %% ifelse(leap_year(year(q$Date)), 36
 
 data <- q %>% filter(abv == 'bwb') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(Flow, na.rm=TRUE))
 
+minBW=min(pi[,1], pi[,5])
+maxBW=max(pi[,2], pi[,6])
 # Big Wood @ Hailey
 png(filename = file.path(fig_dir_mo, "BWB_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 plot(dates, pi[,3], type="n", xlab="Date", ylab ="Flow (cfs)",
-     main = "Big Wood Natural Streamflow at Hailey", ylim=c(min(pi[,1]), max(pi[,2])))
+     main = "Big Wood Natural Streamflow at Hailey", ylim=c(minBW, maxBW))
 polygon(c(dates[1], dates, rev(dates)), c(pi[1,1], pi[,2], rev(pi[,1])), 
         col = "gray90", border = NA)
 lines(dates,data$meanQ[457:639],lwd=1.5,col="black")
@@ -136,7 +138,7 @@ png(filename = file.path(fig_dir_mo, "BWS_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 plot(dates, pi[,7], type="n", xlab="Date", ylab ="Flow (cfs)",
-     main = "Big Wood Streamflow at Stanton Crossing", ylim=c(min(pi[,1]), max(pi[,2])))
+     main = "Big Wood Streamflow at Stanton Crossing", ylim=c(minBW, maxBW))
 polygon(c(dates[1], dates, rev(dates)), c(pi[1,5], pi[,6], rev(pi[,5])), 
         col = "gray90", border = NA)
 lines(dates,data$meanQ[196:378],lwd=1.5,col="black")
@@ -173,7 +175,7 @@ png(filename = file.path(fig_dir_mo, "CC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 plot(dates,pi[,15], type="n", xlab="Date", ylab ="Flow (cfs)",
-     main = "Camas Creek Streamflow Simulation", ylim=c(min(pi[,13]), max(pi[,13])))
+     main = "Camas Creek Streamflow Simulation", ylim=c(min(pi[,13]), max(pi[,14])))
 polygon(c(dates[1], dates, rev(dates) ), c(pi[1,13], pi[,14], rev(pi[,13])), 
         col = "gray90", border = NA)
 lines(dates,data$meanQ[91:273],lwd=1.5,col="black")
