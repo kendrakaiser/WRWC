@@ -189,10 +189,6 @@ mod_out<- modOut(vol.mods$cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], var$
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
-png(file.path(fig_dir_mo,"pred.volumes.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
-grid.table(output.vol[,1:5])
-dev.off()
-
 # ------------------------------------------------------------------------------  
 #
 # Center of Mass Predictions
@@ -374,11 +370,10 @@ vol.hist$value<-vol.hist$value/1000
 vol.hist.sm<-as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(sc.vol)) %>% `colnames<-`(c("Silver Creek Hist")) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") )
 vol.hist.sm$value<-vol.hist.sm$value/1000
 
-vol.pred <-as.data.frame(exp(vol.sample[,1:3])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
-vol.pred.sm <- as.data.frame(exp(vol.sample[,4])/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+vol.pred <-as.data.frame(exp(vol.sample)/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
 
-vol.big<- rbind(vol.hist, vol.pred)
-vol.sm<- rbind(vol.hist.sm, vol.pred.sm)
+vol.big<- rbind(vol.hist, vol.pred[vol.pred$site != "Silver Creek",])
+vol.sm<- rbind(vol.hist.sm, vol.pred[vol.pred$site == "Silver Creek",])
 
 vol.big$site<-factor(vol.big$site,levels = c("Big Wood Hailey Hist","Big Wood Hailey", "Big Wood Stanton Hist", "Big Wood Stanton", "Camas Creek Hist", "Camas Creek" ), ordered = TRUE)
 vol.sm$site<-factor(vol.sm$site,levels = c("Silver Creek Hist","Silver Creek"), ordered = TRUE)
@@ -402,7 +397,7 @@ vol.big %>%
 dev.off()
 
 png(filename = file.path(fig_dir_mo,"sampled_sc_vol.png"),
-    width = 2.5, height = 5.5,units = "in", pointsize = 12,
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 
 vol.sm %>%
