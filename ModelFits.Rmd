@@ -1,0 +1,92 @@
+---
+title: "ModelFits"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document shows the observed versus modeled streamflow volume and center of mass with data through 2019 for each location and each months model. 
+
+## February
+```{r Feb_model_summary, echo=FALSE, out.width="100%"}
+knitr::include_graphics('figures/February/r2s.png'))
+knitr::include_graphics('figures/February/r2s_cm.png')
+```
+### Big Wood Hailey
+```{r, Big Wood Hailey February Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/February/BWH_modelFit.png', 
+                          'figures/February/bwh.cm_modelFit.png'))
+```
+
+### Big Wood Stanton
+```{r, Big Wood Stanton February Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/February/BWH_modelFit.png', 
+                          'figures/February/bwh.cm_modelFit.png'))
+```
+### Silver Creek
+```{r, Siver Creek February Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/February/BWH_modelFit.png', 
+                          'figures/February/bwh.cm_modelFit.png'))
+```
+### Camas Creek
+```{r, Camas Creek February Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/February/BWH_modelFit.png', 
+                          'figures/February/bwh.cm_modelFit.png'))
+```
+
+## March
+
+```{r March_model_summary, echo=FALSE, out.width="100%"}
+knitr::include_graphics('figures/March/r2s.png')
+knitr::include_graphics('figures/March/r2s_cm.png')
+```
+### Big Wood Hailey
+```{r, Big Wood Hailey March Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/March/BWH_modelFit.png', 
+                          'figures/March/bwh.cm_modelFit.png'))
+```
+
+### Big Wood Stanton
+```{r, Big Wood Stanton March Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/March/BWH_modelFit.png', 
+                          'figures/March/bwh.cm_modelFit.png'))
+```
+### Silver Creek
+```{r, Siver Creek March Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/March/BWH_modelFit.png', 
+                          'figures/March/bwh.cm_modelFit.png'))
+```
+### Camas Creek
+```{r, Camas Creek March Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/March/BWH_modelFit.png', 
+                          'figures/March/bwh.cm_modelFit.png'))
+```
+
+## April
+```{r April_model_summary, echo=FALSE, out.width="100%"}
+knitr::include_graphics('figures/April/r2s.png')
+knitr::include_graphics('figures/April/r2s_cm.png')
+```
+### Big Wood Hailey
+```{r, Big Wood Hailey April Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/April/BWH_modelFit.png', 
+                          'figures/April/bwh.cm_modelFit.png'))
+```
+
+### Big Wood Stanton
+```{r, Big Wood Stanton April Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/April/BWH_modelFit.png', 
+                          'figures/April/bwh.cm_modelFit.png'))
+```
+### Silver Creek
+```{r, Siver Creek April Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/April/BWH_modelFit.png', 
+                          'figures/April/bwh.cm_modelFit.png'))
+```
+### Camas Creek
+```{r, Camas Creek April Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
+knitr::include_graphics(c('figures/April/BWH_modelFit.png', 
+                          'figures/April/bwh.cm_modelFit.png'))
+```
