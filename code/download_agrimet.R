@@ -84,8 +84,8 @@ agri_metT$wy[!is.na(agri_metT$date_time)]<- as.numeric(as.character(water_year(a
 agri_met<- full_join(pici, fafi, by='date_time')
 agri_met$wy[!is.na(agri_met$date_time)]<- as.numeric(as.character(water_year(agri_met$date_time[!is.na(agri_met$date_time)], origin='usgs')))
 
-# saving to input directory to deal with potential download errors
-write.csv(agri_metT, file.path(input_dir,'agri_metT.csv'), row.names = FALSE)
+# saving to local directory
+write.csv(agri_metT, file.path(data_dir,'agri_metT.csv'), row.names = FALSE)
 #not sure the the wide version is really needed??
-write.csv(agri_met, file.path(input_dir,'agri_met.csv'))
+write.csv(agri_met, file.path(data_dir,'agri_met.csv'))
 

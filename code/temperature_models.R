@@ -8,7 +8,7 @@
 
 # import data ----
 snotel = read.csv(file.path(data_dir,'snotel_data.csv'))
-agrimet = read.csv(file.path(input_dir,'agri_metT.csv'))
+agrimet = read.csv(file.path(data_dir,'agri_metT.csv'))
 
 #renaming agrimet columns to match snotel for calculations
 colnames(agrimet)<- c("date_time","temperature_mean", "site_name", "mo", "y", "wy")
@@ -104,7 +104,7 @@ write.csv(nj.tdata, file.path(data_dir, 'njTemps.csv'), row.names=FALSE)
 write.csv(nf.tdata, file.path(data_dir, 'nfTemps.csv'), row.names=FALSE)
 write.csv(fm.tdata, file.path(data_dir, 'fmTemps.csv'), row.names=FALSE)
 
-snotel_abrv <- c("cg", "g", "gs", "hc", "lwd", "ds", "ccd", "sr", "ga", "sp")
+
 #plot all data
 png(filename = file.path(fig_dir,"SpringTemps.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -139,7 +139,7 @@ summary(lr.elev)
 # TODO: make a plot that represents the model better
 #plot the observed versus fitted 
 png(filename = file.path(fig_dir,"ModeledTemps.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    width = 5.5, height = 3.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 
 ggplot(input, aes(x=spring.tempF, y=fitted, color=site)) + 
