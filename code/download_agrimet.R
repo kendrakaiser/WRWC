@@ -16,7 +16,7 @@ source(file.path(git_dir, 'code/grabAgriMetData.R'))
 # start: 06/25/1987; site number: 3108
 
 # create increments to download data
-fiveYearDates=c(as.character(seq.Date(from=as.Date("1987-06-25"), to=as.Date(end_date), by="5 years")), end_date)
+fiveYearDates=c(seq.Date(from=as.Date("1987-06-25"), to=as.Date(end_date), by="5 years"), end_date)
 fafi = data.frame()
 
 # download site data in ten year increments to prevent timing out server, will produce warning, that's okay
@@ -51,7 +51,7 @@ colnames(fafiT) <- c("date_time","t", "site_name", 'month', 'y')
 # Has SWE 1993-2002 and 2005-2017 - but can't be used predicatively since it is no longer available
 
 # create increments to download data
-fiveYearDates_p=c(as.character(seq.Date(from=as.Date("1982-06-01"), to=as.Date(end_date), by="5 years")), end_date)
+fiveYearDates_p=c(seq.Date(from=as.Date("1982-06-01"), to=end_date, by="5 years"),end_date) 
 pici = data.frame()
 
 # download site data in ten year increments to prevent timing out server
