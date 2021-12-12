@@ -258,7 +258,7 @@ pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% s
 pred.data[aj_params] <- temp.ran[aj_params]
 
 # Big Wood Stanton Model output
-mod_sum[1,2]<-summary(cm.mods$bws_cm.mod)$adj.r.squared
+mod_sum[2,2]<-summary(cm.mods$bws_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm.mods$bws_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
                    (var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
                    hist$bws.cm, var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
@@ -284,7 +284,7 @@ if (is.array(grep('aj', cm.params$sc$vars))){
 hist <- var[var$year < pred.yr,] %>% dplyr::select(sc.cm, cm.params$sc$vars) %>% filter(complete.cases(.))
 
 # Silver Creek  Model output
-mod_sum[1,2]<-summary(cm.mods$sc_cm.mod)$adj.r.squared
+mod_sum[4,2]<-summary(cm.mods$sc_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm.mods$sc_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
                    (var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
                    hist$sc.cm, var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
@@ -304,7 +304,7 @@ pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% s
 pred.data[aj_params] <- temp.ran[aj_params]
 
 # Camas Creek Model output
-mod_sum[1,2]<-summary(cm.mods$cc_cm.mod)$adj.r.squared
+mod_sum[3,2]<-summary(cm.mods$cc_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm.mods$cc_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
                    (var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
                    hist$cc.cm, var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
