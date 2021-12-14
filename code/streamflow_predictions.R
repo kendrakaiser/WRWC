@@ -379,11 +379,8 @@ vol.big$site<-factor(vol.big$site,levels = c("Big Wood Hailey Hist","Big Wood Ha
 vol.sm$site<-factor(vol.sm$site,levels = c("Silver Creek Hist","Silver Creek"), ordered = TRUE)
 
 # Plot boxplots of total annual flow from each model
-png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
 
-vol.big %>%
+p<-vol.big %>%
   ggplot(aes(x=site, y=value, fill=site)) +
   geom_boxplot(alpha=0.7) +
   scale_fill_manual(values=c("grey90","blue", "grey90","blue", "grey90","blue")) +
@@ -393,14 +390,15 @@ vol.big %>%
   theme(legend.position="none") +
   ggtitle("Sampled Irrigation Season Volumes") +
   xlab("")+
-  ylab("Irrigation Season Volume (KAF)")
-dev.off()
+  ylab("Irrigation Season Volume (KAF)") 
 
-png(filename = file.path(fig_dir_mo,"sampled_sc_vol.png"),
+png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
+print(p)
+dev.off()
 
-vol.sm %>%
+ps<- vol.sm %>%
   ggplot(aes(x=site, y=value, fill=site)) +
   geom_boxplot(alpha=0.7) +
   scale_fill_manual(values=c("grey90","blue")) +
@@ -411,6 +409,11 @@ vol.sm %>%
   ggtitle("") +
   xlab("")+
   ylab("Irrigation Volume (KAF)")
+
+png(filename = file.path(fig_dir_mo,"sampled_sc_vol.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+print(ps)
 dev.off()
 
 # ------------------------------------------------------------------------------
