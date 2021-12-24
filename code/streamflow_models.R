@@ -219,7 +219,15 @@ write.list(mod_sum, file.path(data_dir, vol.vars))
 list.save(mod_sum, file.path(data_dir, vol_params))
 list.save(vol_models, file.path(data_dir, vol_mods))
 
+r2s<- data.frame(matrix(ncol = 2, nrow = 4))
+colnames(r2s)<-c("AdjR2", "Loocv R2")
+rownames(r2s)<-c("BWH", "BWS", "SC", "CC")
+r2s[,1]<- round(c(mod_sum$bwh$adjr2, mod_sum$bws$adjr2,mod_sum$sc$adjr2,mod_sum$cc$adjr2)*100, 2)
+r2s[,2]<- round(c(mod_sum$bwh$loocv$Rsquared, mod_sum$bws$loocv$Rsquared,mod_sum$sc$loocv$Rsquared,mod_sum$cc$loocv$Rsquared)*100, 2)
 
+png(file.path(fig_dir_mo,"r2s.png"), height = 25*nrow(r2s), width = 80*ncol(r2s))
+grid.table(r2s)
+dev.off()
 # ----------------------
 # use regsubsets to plot the results
 #regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
@@ -357,7 +365,6 @@ dev.off()
 
 ### EXPORT Center of Mass MODEL DETAILS
 # -----------------------------------------------------------------------------
-
 #compile all model details into one list to export
 mod_cm.sum<- list(bwh = bwh.cm_sum, bws = bws.cm_sum, sc = sc.cm_sum, cc = cc.cm_sum)
 cm_models<- list(bwh_cm.mod = bwh_cm.mod, bws_cm.mod = bws_cm.mod, sc_cm.mod = sc_cm.mod, cc_cm.mod = cc_cm.mod)
@@ -366,6 +373,16 @@ write.list(mod_cm.sum, file.path(data_dir, cm.vars))
 
 list.save(mod_cm.sum, file.path(data_dir, cm_params))
 list.save(cm_models, file.path(data_dir, cm_mods))
+
+r2s_cm<- data.frame(matrix(ncol = 2, nrow = 4))
+colnames(r2s_cm)<-c("AdjR2", "Loocv R2")
+rownames(r2s_cm)<-c("BWH", "BWS", "SC", "CC")
+r2s_cm[,1]<- round(c(mod_cm.sum$bwh$adjr2, mod_cm.sum$bws$adjr2,mod_cm.sum$sc$adjr2,mod_cm.sum$cc$adjr2)*100, 2)
+r2s_cm[,2]<- round(c(mod_cm.sum$bwh$loocv$Rsquared, mod_cm.sum$bws$loocv$Rsquared,mod_cm.sum$sc$loocv$Rsquared,mod_cm.sum$cc$loocv$Rsquared)*100, 2)
+
+png(file.path(fig_dir_mo,"r2s_cm.png"), height = 25*nrow(r2s_cm), width = 80*ncol(r2s_cm))
+grid.table(r2s_cm)
+dev.off()
 
 options(warn = defaultW)
 
