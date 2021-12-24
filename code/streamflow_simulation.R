@@ -170,12 +170,14 @@ dev.off()
 
 # Summary stats 
 data <- q %>% filter(abv == 'cc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(Flow))
+mincc=min(pi[,13], data$meanQ[91:273])
+maxcc=max(pi[,14], data$meanQ[91:273])
 # Camas Creek
 png(filename = file.path(fig_dir_mo, "CC_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 plot(dates,pi[,15], type="n", xlab="Date", ylab ="Flow (cfs)",
-     main = "Camas Creek Streamflow Simulation", ylim=c(min(pi[,13]), max(pi[,14])))
+     main = "Camas Creek Streamflow Simulation", ylim=c(mincc, maxcc))
 polygon(c(dates[1], dates, rev(dates) ), c(pi[1,13], pi[,14], rev(pi[,13])), 
         col = "gray90", border = NA)
 lines(dates,data$meanQ[91:273],lwd=1.5,col="black")
