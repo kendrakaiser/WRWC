@@ -1,10 +1,11 @@
 # ---------------------------------------------------------------------------- #
-# WRWC Curtailment Date Model
+# WRWC Curtailment Date Models
 # Kendra Kaiser
 # December, 16 2020
+# Linear regression models of specific curtailment dates in the Big Wood Basin
+# ---------------------------------------------------------------------------- #
 
-
-# Import Data ------------------------------------------------------------------ # 
+# Import Data -----------------------------------------------------------------# 
 volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
 curtailments<- read.csv(file.path(input_dir,"historic_shutoff_dates_071520.csv"))
 var<-read.csv(file.path(model_out,'all_vars.csv')) %>% dplyr::select(-X) 
@@ -22,11 +23,6 @@ key <- unique(curtailments[c("subbasin", 'water_right_cat')])
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 
-for (i in 1:dim(key)[1]){
-curt<- curtailments %>% filter(subbasin == key[i,1] & water_right_cat == key[i,2]) %>% select(year, shut_off_julian)
-plot(var$bwb.vol[var$year <2020]/1000, curt$shut_off_julian[curt$year >= 1988])
-}
-
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
 
@@ -38,6 +34,7 @@ curtNames<-expand.grid(basins, wr_cat)
 water_right= wr_cat[i]
 subws= basins[j]
 
+# function to develop model and predict curtailment dates for each water right
 mod_dev<- function(water_right, subws){
   pred.params.curt <-array(NA,c(1,4))
   fitFigName<- paste(subws, water_right, ".png", sep='')
@@ -89,10 +86,12 @@ mod_dev<- function(water_right, subws){
   return(list(pred.params.curt)) # is there something else we need here?
 }
 
+# pre-deinfe arrays to store output
 wr_mod_out <-array(NA,c(9,4))
 rownames(wr_mod_out)<- paste(curtNames[,1], curtNames[,2], sep="")
 colnames(wr_mod_out)<- c("Adj R2", "LOOCV R2", "Curt.Doy", "Error")
 
+# run all water rights through model dev and prediction function
 for(i in 1:length(wr_cat)){
   for(j in 1:length(basins)){
     wr_name<- paste(basins[j], wr_cat[i], sep="")
@@ -100,6 +99,7 @@ for(i in 1:length(wr_cat)){
   }
 }
 
+# save output
 png(file.path(fig_dir_mo,"r2s_wr.png"), height = 25*nrow(wr_mod_out), width = 80*ncol(wr_mod_out))
 grid.table(wr_mod_out)
 dev.off()
