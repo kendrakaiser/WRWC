@@ -14,13 +14,13 @@ git_dir <<- '~/github/WRWC'
 cd <<- '~/Desktop/WRWC'
 
 # set prediction year
-pred.yr <<- 2020
+pred.yr <<- 2022
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
-run_date <<- 'feb1'
+run_date <<- 'april1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
-todays_date <<- "03/30/2021"
+todays_date <<- "04/07/2021"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -89,11 +89,16 @@ vol.mods <<- list.load(file.path(data_dir, vol_mods))
 cm.params <<- list.load(file.path(data_dir,cm_params))
 cm.mods <<- list.load(file.path(data_dir, cm_mods))
 
-source(file.path(git_dir, 'code/streamflow_predictions.R'))
-
+source(file.path(git_dir, 'code/curtailment_model.R'))
 
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
-             "data_dir", "input", "fig_dir_mo", "author", "todays_date", "model_out"))
+             "data_dir", "input", "fig_dir_mo", "author", "todays_date", 
+             "model_out", "vol.params", "vol.mods", "cm.params", "cm.mods"))
+
+source(file.path(git_dir, 'code/streamflow_predictions.R'))
+
+rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
+             "data_dir", "input", "fig_dir_mo", "author", "end_date", "run_date", "model_out"))
 
 source(file.path(git_dir, 'code/streamflow_simulation.R'))
 
@@ -101,7 +106,7 @@ source(file.path(git_dir, 'code/streamflow_simulation.R'))
 detach(package:plyr) #plyr interferes with a grouping function needed for plotting
 params_list = list(fig_dir_mo = fig_dir_mo, set_author = author, 
                    todays_date=todays_date, data_dir = data_dir, 
-                   git_dir = git_dir, input = input)
+                   git_dir = git_dir, input = input, run_date=run_date)
 rmarkdown::render(file.path(git_dir, 'ModelOutputv2.Rmd'), params = params_list)
 
 
