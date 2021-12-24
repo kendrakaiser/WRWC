@@ -3,12 +3,13 @@
 # Kendra Kaiser
 # December, 16 2020
 
-cd <<- '~/Desktop/Data/WRWC'
 
 # Import Data ------------------------------------------------------------------ # 
 volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
 curtailments<- read.csv(file.path(input_dir,"historic_shutoff_dates_071520.csv"))
 var<-read.csv(file.path(model_out,'all_vars.csv')) %>% dplyr::select(-X) 
+nat_cols<-grep('nat', colnames(var))
+var<- var %>% dplyr::select(-c(all_of(nat_cols), "div", "sc.div", "abv.s", "abv.h", "bws.loss")) 
 
 swe_cols<-grep('swe', colnames(var))
 t_cols<-grep('.t.', colnames(var))
@@ -33,6 +34,9 @@ ctrl <- trainControl(method = "LOOCV")
 basins<-unique(curtailments$subbasin)
 wr_cat<- unique(curtailments$water_right_cat)
 curtNames<-expand.grid(basins, wr_cat)
+
+water_right= wr_cat[i]
+subws= basins[j]
 
 mod_dev<- function(water_right, subws){
   pred.params.curt <-array(NA,c(1,4))
