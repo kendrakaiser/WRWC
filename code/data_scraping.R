@@ -7,6 +7,8 @@
 # ------------------------------------------------------------------------------     
 # import and manage diversion data
 # ------------------------------------------------------------------------------
+cfs_to_AF<- 1.983
+
 bw.div <- read.csv(file.path(input_dir, 'bwr_diversion_data_1987_2019_111620.csv'))
 names(bw.div)[1]<- 'Date'
 bw.div$Date <- as.Date(bw.div$Date, format = "%m/%d/%y")
@@ -42,10 +44,19 @@ bw.div.gage<- bw.div %>% dplyr::select(c(Date, abv.h, abv.s))
 bw.div.sum<- bw.div %>% dplyr::select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
 bw.div.tot<- bw.div.sum %>% dplyr::select(c(year, abv.h, abv.s))
 
+bw.div.tot.AF<- as.numeric(bw.div.tot$Year)
+bw.div.tot.AF$abv.h <- as.array(bw.div.tot$abv.h*cfs_to_AF)
+bw.div.tot.AF$abv.s <- as.numeric(bw.div.tot$abv.s*cfs_to_AF)
 #
+
 priorities <- read.csv(file.path(input_dir, 'ABV_PRIORITY_2020.csv'))
+priorities$wr.vol.af<- priorities$TOTAL * cfs_to_AF
+priorities$wr.date<- as.Date(paste(priorities$year_prior, priorities$mo, priorities$date, sep="-"))
+
 wr <- read.csv(file.path(input_dir, 'WD37_Irrigation rights Big Wood Above Magic.csv'))
 total_af<-  sum(wr$Overall.Max.Diversion.Volume.af., na.rm = TRUE)
+
+
 # ------------------------------------------------------------------------------
 # USGS Gages
 # ------------------------------------------------------------------------------
@@ -117,7 +128,7 @@ for(i in 1:length(stream.id)){
     sub1<- sub %>% filter(wy == years[y] & (mo >= 10 | mo < 2))
     wq <- mean(sub1$Flow)
     
-    #total april-september flow
+    #total april-september flow in AF
     sub2<- sub %>% filter(wy == years[y] & between(mo, 4, 9)) 
     vol<- sum(sub2$Flow)*1.98 #convert from cfs to ac-ft
     
@@ -214,7 +225,7 @@ for (i in 1:length(snotel_sites)) {
   april1swe[which(april1swe$year == min(sub$wy)) : which(april1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
   sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
   if (month(end_date) < 5){
-  today_swe[i]<- sub2$snow_water_equivalent[sub2$date == max(sub2$date)-1]
+  today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
   } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 4 & sub2$day ==30 & sub2$wy == (pred.yr-1)]}
 }
 
@@ -234,7 +245,7 @@ for (i in 1:length(snotel_sites)) {
   mar1swe[which(mar1swe$year == min(sub$wy)) : which(mar1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
   sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
   if (month(end_date) < 4){
-    today_swe[i]<- sub2$snow_water_equivalent[sub2$date == max(sub2$date)-1]
+    today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
   } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 3 & sub2$day ==31 & sub2$wy == (pred.yr-1)]}
   }
 
@@ -255,7 +266,7 @@ for (i in 1:length(snotel_sites)) {
   feb1swe[which(feb1swe$year == min(sub$wy)) : which(feb1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
   sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
   if (month(end_date) < 3){
-    today_swe[i]<- sub2$snow_water_equivalent[sub2$date == max(sub2$date)-1]
+    today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
   } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 2 & sub2$day ==28 & sub2$wy == (pred.yr-1)]}
   #today_swe[i]<-snotel_data_out$snow_water_equivalent[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$date == max(snotel_data_out$date)-1]
 }
