@@ -5,48 +5,26 @@
 
 cd <<- '~/Desktop/Data/WRWC'
 
+# Import Data ------------------------------------------------------------------ # 
 volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
 curtailments<- read.csv(file.path(input_dir,"historic_shutoff_dates_071520.csv"))
-var<-read.csv(file.path(model_out,'all_vars.csv'))
-
-key <- unique(curtailments[c("subbasin", 'water_right_cat')])
-
-for (i in 1:dim(key)[1]){
-curt<- curtailments %>% filter(subbasin == key[i,1] & water_right_cat == key[i,2]) %>% select(year, shut_off_julian)
-plot(var$bwb.vol[var$year <2020]/1000, curt$shut_off_julian[curt$year >= 1988])
-}
-
-# Import Data ------------------------------------------------------------------ # 
-# Streamflow, Current SWE, historic and Modeled Temperature Data
-usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
-swe_q = read.csv(file.path(data_dir,input))
-swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
-swe_q<-swe_q[!(names(swe_q) %in% c("bwb.cm.nat","bws.cm.nat","abv.h","abv.s","sc.div","bwb.vol.nat","bws.vol.nat","bws.loss","sc.vol.nat"))]
-
-spring.temps = read.csv(file.path(data_dir, 'sprTemps.csv'))
-wint.temps = read.csv(file.path(data_dir, 'wintTemps.csv')) #average temps, november - march
-nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
-nf.temps = read.csv(file.path(data_dir, 'nfTemps.csv'))
-fm.temps = read.csv(file.path(data_dir, 'fmTemps.csv'))
-
-var = swe_q %>% dplyr::select(-X) %>% inner_join(spring.temps, by ="year") %>% inner_join(nj.temps, by ="year")
-# sp.test<-apply(var, MARGIN=2, shapiro.test) 
-# normailze parameters that have a shapiro.test() < 0.05
-var$log.cg.swe <- log(var$cg.swe)
-var$log.g.swe <- log(var$g.swe)
-var$log.gs.swe <- log(var$gs.swe)
-var$log.hc.swe <- log(var$hc.swe)
-var$log.lwd.swe <- log(var$lwd.swe)
-var$log.ga.swe <- log(var$ga.swe)
-var$log.bc.swe <- log(var$bc.swe)
-var<-var[,!(names(var) %in% c('cg.swe', 'g.swe','gs.swe','hc.swe', 'lwd.swe','ga.swe','bc.swe', 'nj.t.sr', 'aj.t.sr'))]
+var<-read.csv(file.path(model_out,'all_vars.csv')) %>% 
 
 swe_cols<-grep('swe', colnames(var))
 t_cols<-grep('.t.', colnames(var))
 wint_t_cols<-grep('nj.t', colnames(var))
 vol_cols<- grep('vol', colnames(var))
 
+key <- unique(curtailments[c("subbasin", 'water_right_cat')])
+
+usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
+
+for (i in 1:dim(key)[1]){
+curt<- curtailments %>% filter(subbasin == key[i,1] & water_right_cat == key[i,2]) %>% select(year, shut_off_julian)
+plot(var$bwb.vol[var$year <2020]/1000, curt$shut_off_julian[curt$year >= 1988])
+}
+
 
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
@@ -117,4 +95,7 @@ for(i in 1:length(wr_cat)){
   }
 }
 
-wr_mod_out
+png(file.path(fig_dir_mo,"r2s_wr.png"), height = 25*nrow(wr_mod_out), width = 80*ncol(wr_mod_out))
+grid.table(wr_mod_out)
+dev.off()
+
