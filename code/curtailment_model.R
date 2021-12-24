@@ -8,12 +8,13 @@ cd <<- '~/Desktop/Data/WRWC'
 # Import Data ------------------------------------------------------------------ # 
 volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
 curtailments<- read.csv(file.path(input_dir,"historic_shutoff_dates_071520.csv"))
-var<-read.csv(file.path(model_out,'all_vars.csv')) %>% 
+var<-read.csv(file.path(model_out,'all_vars.csv')) %>% dplyr::select(-X) 
 
 swe_cols<-grep('swe', colnames(var))
 t_cols<-grep('.t.', colnames(var))
 wint_t_cols<-grep('nj.t', colnames(var))
 vol_cols<- grep('vol', colnames(var))
+wq_cols<- grep('wq', colnames(var))
 
 key <- unique(curtailments[c("subbasin", 'water_right_cat')])
 
@@ -25,7 +26,6 @@ curt<- curtailments %>% filter(subbasin == key[i,1] & water_right_cat == key[i,2
 plot(var$bwb.vol[var$year <2020]/1000, curt$shut_off_julian[curt$year >= 1988])
 }
 
-
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
 
@@ -35,16 +35,16 @@ wr_cat<- unique(curtailments$water_right_cat)
 curtNames<-expand.grid(basins, wr_cat)
 
 mod_dev<- function(water_right, subws){
-  pred.params.curt <-array(NA,c(1,3))
-  fitFigName<- paste(subbasin, water_right, ".png", sep='')
+  pred.params.curt <-array(NA,c(1,4))
+  fitFigName<- paste(subws, water_right, ".png", sep='')
     
   curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% 
     subset(water_right_cat == water_right) %>% subset(subbasin == subws) %>% dplyr::select(-c(subbasin, water_right_cat))
 
-  curt <- var %>% dplyr::select(year, bwb.vol, bwb.wq, all_of(swe_cols),all_of(wint_t_cols)) %>% 
+  curt <- var %>% dplyr::select(year, all_of(vol_cols),all_of(wq_cols), all_of(swe_cols),all_of(wint_t_cols)) %>% 
     inner_join(curt_sub, by = 'year') %>% filter(complete.cases(.))
   #use regsubsets to assess the results
-  tryCatch({regsubsets.out<-regsubsets(shut_off_julian~., data=curt[,-c(1)], nbest=1, nvmax=12)}, 
+  tryCatch({regsubsets.out<-regsubsets(shut_off_julian~., data=curt[,-c(1)], nbest=1, nvmax=8)}, 
          error= function(e) {print(c("Curtailment model did not work", subws))}) #error catch
   reg_sum<- summary(regsubsets.out)
   rm(regsubsets.out)
@@ -66,8 +66,9 @@ mod_dev<- function(water_right, subws){
   # Model output
   preds.curt<-predict(mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
   pred.params.curt[1,1]<-round(summary(mod)$adj.r.squared,2) 
-  pred.params.curt[1,2]<-round(mean(preds.curt$fit),1) # mean of predicted
-  pred.params.curt[1,3]<-round(mean(preds.curt$se.fit),1)
+  pred.params.curt[1,2]<-round(mod_sum$loocv$Rsquared,2)
+  pred.params.curt[1,3]<-round(mean(preds.curt$fit),1) # mean of predicted
+  pred.params.curt[1,4]<-round(mean(preds.curt$se.fit),1)
 
   #make the max prediction doy 275
   if (pred.params.curt[1,2] > 275){pred.params.curt[1,2] =275}
@@ -84,14 +85,14 @@ mod_dev<- function(water_right, subws){
   return(list(pred.params.curt)) # is there something else we need here?
 }
 
-wr_mod_out <-array(NA,c(9,3))
+wr_mod_out <-array(NA,c(9,4))
 rownames(wr_mod_out)<- paste(curtNames[,1], curtNames[,2], sep="")
-colnames(wr_mod_out)<- c("Adj R2", "Curt.Doy", "Error")
+colnames(wr_mod_out)<- c("Adj R2", "LOOCV R2", "Curt.Doy", "Error")
 
 for(i in 1:length(wr_cat)){
   for(j in 1:length(basins)){
     wr_name<- paste(basins[j], wr_cat[i], sep="")
-    wr_mod_out[wr_name,]<- mod_dev(wr_cat[i],basins[j])[[1]]
+    wr_mod_out[wr_name,]<- mod_dev(wr_cat[i], basins[j])[[1]]
   }
 }
 
