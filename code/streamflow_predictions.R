@@ -20,32 +20,14 @@ rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir",
              "model_out", "vol.params", "vol.mods", "cm.params", "cm.mods"))
 
 # Import Data ------------------------------------------------------------------  
-# Streamflow, SWE, historic and Modeled Temperature Data
+
+var<-read.csv(file.path(model_out,'all_vars.csv')) %>% 
+
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
-swe_q = read.csv(file.path(data_dir,input))
-swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
-temps = read.csv(file.path(data_dir, 'njTemps.csv'))
-temps_aj = read.csv(file.path(data_dir, 'sprTemps.csv'))
-var = swe_q %>% dplyr::select(-X) %>% inner_join(temps, by ="year") %>% inner_join(temps_aj, by="year") # %>% dplyr::select(-X)
-
-var$div <- var$abv.h + var$abv.s
-
-var$log.bbwq.swe <-log(var$bwb.wq)
-var$log.scwq<- log(var$sc.wq)
-var$log.ccwq<- log(var$cc.wq)
-
-var$log.cg.swe <- log(var$cg.swe)
-var$log.g.swe <- log(var$g.swe)
-var$log.gs.swe <- log(var$gs.swe)
-var$log.hc.swe <- log(var$hc.swe)
-var$log.lwd.swe <- log(var$lwd.swe)
-var$log.ga.swe <- log(var$ga.swe)
-var$log.bc.swe <- log(var$bc.swe)
+stream.id<-unique(as.character(usgs_sites$abv))
 
 curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
-stream.id<-unique(as.character(usgs_sites$abv))
-write.csv(var, file.path(model_out,'all_vars.csv'))
 
 # ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates, changed to start at the beginning of year in accordance with my calculation of cm, consider changing to day of wy
