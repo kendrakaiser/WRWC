@@ -113,8 +113,8 @@ q$doWY<- ((q$doy - yday(water_year_begin)) %% ifelse(leap_year(year(q$Date)), 36
 
 data <- q %>% filter(abv == 'bwb') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(Flow, na.rm=TRUE))
 
-minBW=min(pi[,1], pi[,5])
-maxBW=max(pi[,2], pi[,6])
+minBW=min(pi[,1], pi[,5],data$meanQ[457:639])
+maxBW=max(pi[,2], pi[,6],data$meanQ[457:639])
 # Big Wood @ Hailey
 png(filename = file.path(fig_dir_mo, "BWB_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -194,4 +194,7 @@ write.csv(bwb.flow.s, file.path(model_out, "BWB.sim.csv"), row.names=dates)
 write.csv(bws.flow.s, file.path(model_out, "BWS.sim.csv"), row.names=dates)
 write.csv(cc.flow.s, file.path(model_out, "CC.sim.csv"), row.names=dates)
 write.csv(sc.flow.s, file.path(model_out, "SC.sim.csv"), row.names=dates)
+
+plot(dates, cumsum(pi[,3])*1.983, ylab="Cumulative Sum of Streamflow (AF)")
+plot(priorities$wr.date, priorities$wr.vol.af, ylab="Cumulative volume of water rights (AF)", xlab="WR priority date")
 

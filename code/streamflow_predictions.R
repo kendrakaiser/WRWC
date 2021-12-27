@@ -463,3 +463,8 @@ colnames(vol_prob)<- c("% of sample")
 png(file.path(fig_dir_mo,"vol_prob.png"), height = 50*nrow(vol_prob), width = 200*ncol(vol_prob))
 grid.table(vol_prob)
 dev.off()
+
+# Figure for model details
+#hist(exp(vol.sample$`Big Wood Hailey`)/1000, xlab="Irrigation Season Streamflow (KAF)", main ="")
+
+
