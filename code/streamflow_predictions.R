@@ -3,30 +3,20 @@
 # Kendra Kaiser
 # January 18th, 2021
 #
-# Linear models to predict total April-September streamflow volume and center of mass 
-# based on average winter flows, current SWE and predicted temperature; 
-# model selection explored in 'streamflow_model_exploration.R' using BIC
+# Linear models are run to predict total April-September streamflow volume and 
+# center of mass based on average winter flows, current SWE and predicted temperature; 
 # 
-# Linear models are also used to predict total diversions for each basin and 
-# curtailment dates for three priority dates in the Big Wood above and below Magic 
-# reservoir and in Silver Creek
-#
 # This model was informed by the statistical tools developed for the Henry's Fork 
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
 
-rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
-             "data_dir", "input", "fig_dir_mo", "author", "todays_date", 
-             "model_out", "vol.params", "vol.mods", "cm.params", "cm.mods"))
-
 # Import Data ------------------------------------------------------------------  
 
-var<-read.csv(file.path(model_out,'all_vars.csv')) %>% 
+var<-read.csv(file.path(model_out,'all_vars.csv')) %>% select(-X)
 
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 
-curtailments = read.csv(file.path(input_dir,'historic_shutoff_dates_071520.csv'))
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 
 # ------------------------------------------------------------------------------  
@@ -252,7 +242,7 @@ pred.params.cm[2,] <- mod_out[[2]]
 # Silver Creek Center of Mass
 #
 # added 'if' statement here because March SC CM doesn't use aj temperatures
-if (is.array(grep('aj', cm.params$sc$vars))){ 
+if (is.integer(grep('aj', cm.params$sc$vars))){ 
   sub_params<- cm.params$sc$vars[-grep('aj', cm.params$sc$vars)]
   aj_params<-cm.params$sc$vars[grep('aj', cm.params$sc$vars)]
   # Prediction Data with modeled temperature data
@@ -318,7 +308,7 @@ write.csv(pred.params.cm, file.path(model_out,"pred.params.cm.csv"),row.names=T)
 
 # calculate correlations between flow conditions across the basins
 flow.data = var[var$year >= 1997 & var$year < 2020,] %>% dplyr::select(bwb.vol, 
-      bwb.cm, bws.vol, bws.cm, cc.vol, cc.cm, sc.vol, sc.cm, div, sc.div) 
+      bwb.cm, bws.vol, bws.cm, cc.vol, cc.cm, sc.vol, sc.cm) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
 cor.mat<-cor(cbind(flow.data[c(1,3,5,7)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
