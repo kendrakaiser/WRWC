@@ -2,8 +2,10 @@
 # Predictive Streamflow Model Exploration for the Wood River Water Collaborative
 # Kendra Kaiser
 # October 1, 2020
-# Linear models to predict total streamflow volume and center of mass based on 
-# calculated baseflow, current SWE and, winter and predicted spring temperature 
+#
+# Linear models to predict total irrigation season streamflow volume (Acre-Feet)  
+# and center of mass based on calculated baseflow, current SWE, winter and 
+# predicted spring temperature 
 # ----------------------------------------------------------------------------- # 
 
 defaultW <- getOption("warn") 
