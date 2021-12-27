@@ -1,7 +1,7 @@
 ---
 title: "Wood River Water Collaborative Predictive Streamflow and Curtailment Date Model Details"
 author: "Kendra Kaiser, n\ Boise State University, n\ Department of Geosciences"
-date: "01/19/2021"
+date: "12/27/2021"
 output: 
   pdf_document:
     toc: yes
@@ -29,14 +29,14 @@ vol.params <<- list.load('~/Desktop/WRWC/data/mar_vol_vars.rdata')
 # 1. Introduction
 The Wood River Collaborative is a grassroots effort to tackle water usage challenges among irrigators, municipalities, and protect minimum flows for fish and wildlife habitat. Its many, basin-wide participants include private citizens, representatives of water agencies, non-profit organizations, private interests and the public sector. The outcome of the collaboration is to bring all stakeholders together and develop strategies and tools for best use of water for consumptive use, while conserving water for groundwater and in-stream flows.
 
-The following suite of modeling tools were developed in response to stakeholder interests in improving management of surface and groundwater resources for agriculture and conservation purposes. These tools include automated data retrieval and organization for use in predictive models of irrigation season streamflow volume and timing in the Big Wood River Basin at the Hailey and Stanton Crossing gages, Camas Creek, and Silver Creek at Sportsman's Access (Figure 1). Annual river diversions are also predicted to estimate curtailment dates for three water right priority dates. 
+The following suite of modeling tools were developed in response to stakeholder interests in improving management of surface and groundwater resources for agriculture and conservation purposes. These tools include automated data retrieval and organization for use in predictive models of irrigation season streamflow volume and timing in the Big Wood River Basin at the Hailey and Stanton Crossing gages, Camas Creek, and Silver Creek at Sportsman's Access (Figure 1). Curtailment dates for three priority water right dates are also predicted. 
 
 ```{r, Map, echo=FALSE, fig.cap="Map of the Big Wood River, Camas Creek and Silver Creek Watersheds and locations of automated data", fig.aling="left", out.width = '90%'}
 knitr::include_graphics("figures/WRWC_ModelDomain.png")
 ```
 
 ## Getting Started
-Download code zip file by clicking on the green code button and save in a convineient place on your computer. You will need to enter this file path into the scripts to run the code locally.
+Download code zip file by clicking on the green code button and save in a convenient place on your computer. You will need to enter this file path into the scripts to run the code locally.
 
 Install RStudio on your computer https://rstudio.com/products/rstudio/download/
 
@@ -54,7 +54,7 @@ You will need to create the following set of subfolders in the local folder for 
 ```
 ## Run the Models
  
- The only script you need to open to run the models is `run_models.R`. In this script you will modify the file paths and run date as described below. The `packages` automatically installs and loads the libraries needed to run all the scripts. Once you have installed the packages once, you may comment out the installation lines with a `#`.
+The only script you need to open to run the models is `run_models.R`. In this script you will modify the file paths and run date as described below. The `packages.R` script automatically installs and loads the libraries needed to run all the scripts. Once you have installed the packages once, you may comment out the installation lines with a `#`.
  
 ### File paths
 There are two sets of file paths for the project. The first are the paths to where you saved the gitHub code files, in the example: `'~/github/WRWC/`, and the second set is the local folder where final datasets and .csv files will be saved. 
@@ -69,7 +69,7 @@ cd <<- '~/Desktop/WRWC'
 
 ### Run Date and Prediction Year
 
-The  prediction year is the year of interest, and the 'run_date' is the date that you are running the models. In this case, there is a different set of models that are run for February / March / April 1. The optional name inputs are provided, any other naming convention will not work (e.g. March1 or mar1 will not work, only 'march1'. The models cannot be run prior to the run date (e.g. 'feb1' 2021) because the predictor variables will not be available yet.
+The  prediction year is the year of interest, and the 'run_date' is the date that you are running the models. There is a different set of models that are run for February, March and April. The optional name inputs are provided, any other naming convention will not work (e.g. March1 or mar1 will not work, only 'march1'. While the models were developed using data from th first of the month, they models can be run any date in the month.
 
 ```
 # set prediction year
@@ -96,13 +96,13 @@ If you run the model and an error occurs, the process for getting help is to rai
 # 2. Methodology & Model Fits
 
 ## Overview 
-Individual multivariate linear regression models were developed for each of these locations using USGS streamflow data, Snotel SWE and temperature data, AgriMet temperature data, and diversion data from Water District 37 (Table 1). The Baysian Information Criterion (BIC, 2008) was used to select model parameters for each of the gage locations for total irrigation season streamflow volume and timing, characterized by the center of mass. Center of mass is the mean of the probability distribution of April - September streamflow, or the date of the "mean" streamflow between April and September. Linear regressions were also created to estimate total diversions in the Big Wood above Stanton Crossing and in Silver Creek above Sportsmans' Access. These predicted diversions are subtracted from the USGS gage data to predict "natural" flow at each gage. This "natural" flow is needed to predict curtailment dates. 
+Individual multivariate linear regression models were developed for each of these locations using USGS streamflow data, Snotel SWE and temperature data, AgriMet temperature data (Table 1). The Baysian Information Criterion (BIC, 2008) was used to select model parameters for each of the gage locations for total irrigation season streamflow volume and timing as well as the selected curtailment dates. Timing is characterized by the center of mass which is the mean of the probability distribution of April - September streamflow, or the date of the "mean" streamflow between April and September.
 
 ```{r, Data_sources, echo=FALSE, fig.aling="left", out.width = '90%'}
 knitr::include_graphics("figures/Data_sources.png")
 ```
 
-Once the linear regression models were developed for total irrigation season volume, diversions, and timing at each location, multivariate distributions were used to stochastically model hydrographs for each location. The residuals (standard error) from each of the regression models and correlations between gauge stations are used to create the multivariate distributions. This ensures that given a set of predictor variables (e.g. SWE, temp) the predicted volumes will be statistically consistent across gage locations (e.g. the models wont predict that Camas Creek will have really low runoff year while the Big Wood has a really high runoff year because they are statistically correlated). Repeated, random selection from these multivariate distributions produces a `sample` of predicted volumes and timing of streamflow. The samples of total volume and streamflow timing are then used to create simulations of the irrigation season hydrograph. Variability in final model outputs is quantified by percentiles of the resulting predictions. 
+Once the linear regression models were developed for total irrigation season volume and timing at each location, multivariate distributions were used to stochastically model hydrographs for each location. The residuals (standard error) from each of the regression models and correlations between gauge stations are used to create the multivariate distributions. This ensures that given a set of predictor variables (e.g. SWE, temp), the predicted volumes will be statistically consistent across gage locations (e.g. the models wont predict that Camas Creek will have really low runoff year while the Big Wood has a really high runoff year because they are statistically correlated). Repeated, random selection from these multivariate distributions produces a `sample` of predicted volumes and timing of streamflow. The samples of total volume and streamflow timing are then used to create simulations of the irrigation season hydrograph. Variability in final model outputs is quantified by percentiles of the resulting predictions. 
 
 The methods for predicting curtailments dates currently follow those for streamflow timing, where once the linear regressions are made the covariance between curtailment dates are used to create a multivariate distribution from which potential dates are sampled from.
 
@@ -164,12 +164,8 @@ A linear regression model was developed to predict mean April - June temperature
 ```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
 # linear regression using elevation and year
 lr.elev<- lm(spring.tempF~  elev+year, data=input)
-# data for prediction
-new.data<-data.frame(array(NA,c(length(site.key),4)))
-colnames(new.data)<-c("year","site", "elev", "spr.tempF")
-new.data$year<-rep(last.yr+1,length(site.key))
-new.data$site<-(site.key)
-new.data$elev<-elev
+# covariance matrix (var-cov matrix) 
+site.cov<- cov(spring.tdata[-1], use="complete.obs")
 
 #predict the mean april-june temperature at each site
 new.data$spr.tempF[1:12]<-predict(lr.elev, new.data[1:12,])
@@ -188,13 +184,11 @@ knitr::include_graphics("figures/ModeledTemps.png")
 ```
 
 ## 2.3.1 Streamflow Models
-Models are automatically developed in the `streamflow_modes.R` script. The full suite of predictor variables are subset for each gage and the final set of predictor variables were determined using the `regsubsets` package, which enables visualization of adjusted R2 and BIC of each parameter set, and automatically saves the best predictor variables `vars<-reg_sum$which[which.min(reg_sum$bic),]` 
+Models are automatically developed in the `streamflow_modes.R` script. The full suite of predictor variables are subset for each gage and the final set of predictor variables were determined using the `regsubsets` package, which enables visualization of adjusted R2 and BIC of each parameter set, and automatically saves the best predictor variables `vars<-reg_sum$which[which.min(reg_sum$bic),]`. Final streamflow models and center of mass models are saved in lists, such that the model structure and summary may be uploaded in other scripts. This workflow enables the models to be automatically updated every year. 
 
 ```{r, Regsubsets BIC example, echo=FALSE, fig.aling="center", out.width = '80%', fig.pos='H'}
 knitr::include_graphics("figures/BIC_regsubsets.png")
 ```
-
-Final streamflow models and center of mass models are saved in lists, such that the model structure and summary may be uploaded in other scripts.
 
 The `streamflow_predictions.R` script creates predictions for each model for the user defined year. Data is imported, and data structures are set up to save model output. The `modOut` function returns relevant metrics and statistics from the modeled results for the year being predicted. 
 
@@ -236,71 +230,11 @@ output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
 ```
 
-After the streamflow volume model section of code, the same procedure is done for creating multivariate linear regressions for predicting center of mass. Here, model fits for irrigation season volume and center of mass ar shown together for each gage. 
-
-```{r model_summary, echo=FALSE, out.width="45%"}
-knitr::include_graphics(file.path(fig_dir_mo,"r2s.png"))
-```
-
-
-```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
-# Big Wood at Hailey Flow Volume model
-form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
-# Big Wood at Hailey  Center of Mass model
-form<- paste("bwb.cm~ ", paste(bwh.cm_sum$vars, collapse=" + "), sep = "")
-```
-
-```{r, Big Wood Hailey Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(c(file.path(params$fig_dir_mo, "BWH_modelFit.png"), 
-                          file.path(params$fig_dir_mo, "bwh.cm_modelFit.png")))
-```
-
-### Big Wood at Stanton Crossing
-
-```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
-# Big Wood at Stanton Flow Volume model
-form<- paste("log(bws.vol)~ ", paste(bws_sum$vars, collapse=" + "), sep = "")
-# Big Wood at Stanton Center of Mass model
-form<- paste("bws.cm~ ", paste(bws.cm_sum$vars, collapse=" + "), sep = "")
-```
-
-```{r, Big Wood Stanton Model Fit, echo=FALSE, fig.cap="", fig.show="hold", fig.aling="left", out.width = '45%', fig.pos='H'}
-knitr::include_graphics(c(file.path(params$fig_dir_mo, "BWS_modelFit.png"), 
-                          file.path(params$fig_dir_mo, "bws.cm_modelFit.png")))
-```
-
-### Silver Creek
-
-The Silver Creek Model is unique in that it uses a mixture of SWE data from both the Big Wood and Little Wood Basins. Using SWE from outside of the delineated HUC basin is also done by the NRCS because SWE from these locations are correlated to flows in Silver Creek.
-
-```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
-# Silver Creek Flow Volume model
-form<- paste("log(bws.vol)~ ", paste(bws_sum$vars, collapse=" + "), sep = "")
-# Silver Creek Center of Mass model
-form<- paste("bws.cm~ ", paste(bws.cm_sum$vars, collapse=" + "), sep = "")
-```
-
-```{r, Silver Creek Model Fit, echo=FALSE, fig.cap="", fig.show="hold", fig.aling="left", out.width = '45%', fig.pos='H'}
-knitr::include_graphics(c(file.path(params$fig_dir_mo, "SC_modelFit.png"), 
-                          file.path(params$fig_dir_mo, "sc.cm_modelFit.png")))
-```
-
-### Camas Creek
-
-```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
-# Camas Creek Flow Volume model
-form<- paste("log(cc.vol)~ ", paste(cc_sum$vars, collapse=" + "), sep = "")
-# Camas Creek Center of Mass model
-form<- paste("cc.cm~ ", paste(cc.cm_sum$vars, collapse=" + "), sep = "")
-```
-
-```{r, Camas Creek Model Fit, echo=FALSE, fig.cap="", fig.show="hold", fig.aling="left", out.width = '45%', fig.pos='H'}
-knitr::include_graphics(c(file.path(params$fig_dir_mo, "CC_modelFit.png"), file.path(params$fig_dir_mo,"cc.cm_modelFit.png")))
-```
+After the streamflow volume model section of code, the same procedure is done for creating multivariate linear regressions for predicting center of mass. All model details and fits are provided in the `ModelFits.pdf`.
 
 ## 2.3.2 Streamflow Correlations 
 
-Given the proximity of the three basins, correlations between the basins' total annual irrigation season streamflow, diversions, and center of mass allow us to ensure that the predicted flows at each gage are representative of how regional climatic patterns will be effecting all locations. For example, we would not expect Camas Creek to have an exceptionally dry year in a year when the Big Wood is experiencing an exceptionally high streamflow year. The correlation between sites is combined with the standard error from each linear model to create a covariance matrix which is use to bootstrap model predictions.
+Given the proximity of the three basins, correlations between the basins' total annual irrigation season streamflow and center of mass allow us to ensure that the predicted flows at each gage are representative of how regional climatic patterns will be effecting all locations. For example, we would not expect Camas Creek to have an exceptionally dry year in a year when the Big Wood is experiencing an exceptionally high streamflow year. The correlation between sites is combined with the standard error from each linear model to create a covariance matrix which is use to bootstrap model predictions (or run the models multiple times).
 
 
 ```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
@@ -325,10 +259,9 @@ vol.sample<-mvrnorm(n=5000,mu=(vol.pars[,1]),Sigma=cov.mat[1:5,1:5]) # historica
 ```
 
 This results in a distribution of potential volumes for each gage, given the input predictor variables.
--- put in a figure here showing the distribution of results as an example of the output 
 
 ```{r, Sampled Volumes, echo=FALSE, fig.cap="Distrubution of sampled volumes at each gage", fig.aling="left", out.width = '100%', fig.pos='H'}
-knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_volumes.png"))
+knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), "figures/Streamflow_Prediction_histogram.png"))
 ```
 
 A similar process is used for estimating the timing of runoff.
@@ -360,7 +293,7 @@ The resulting matrices are then saved as `.csv` to be used in the final simulati
 
 The final irrigation season streamflow simulations are modeled in the `streamflow_simulation.R` script.
 
-The original streamflow data, sampled volumes and centers of mass are imported and the irrigation season hydrographs are simulated. This is done by selecting the timeseries of natural flow that corresponds with a given year from the center of mass sample and normalizing it by a volume from the multivariate distribution sample. This 'analog water year' approach effectively uses the linear models to estimate the most similar year in runoff timing, and normalizes (another way to say this?) that hydrograph based on the predicted volume estimates.
+The original streamflow data, sampled volumes and centers of mass are imported to simulate the irrigation season hydrographs. This is done by selecting the timeseries of streamflow that corresponds with a given year from the center of mass sample and normalizing it by a volume from the multivariate distribution sample. This 'analog water year' approach effectively uses the linear models to estimate the most similar year in runoff timing, and normalizes that hydrograph based on the predicted volume estimates.
 
 ```{python, echo=TRUE, eval=FALSE, python.reticulate=FALSE}
 for(k in 1:ns){ # ns = number of simulations, in our case 5000
@@ -409,18 +342,16 @@ knitr::include_graphics("figures/BigWood_Hailey_Simulation_2019.png")
 
 # 3. Overview of modeling results
 
-While many of the individual linear regression models have strong fits, the compounding effects of multiple predictions make for large uncertainty windows. This is both valuable (ensures appropriate uncertainty in modeling results), and challenging for desired use of the model (narrower prediction windows for crop / irrigation planning). This initial suite of models (6 temperature, 16 streamflow, 9 curtailment) and the automated process lays a strong groundwork for future model development which will likely be necessary to create a modeling suite that can fulfill the needs of the WRWC. Continued model development should focus on the components of the hydrograph that are most valuable to the members, namely the hydrograph recession. Ideally those modeling results would be available by April, but the largest uncertainty in the current models are spring weather (e.g. once we've reached the peak of the hydrograph, predicting the recession is relatively straight forward, but by that time it is later than needed by users.) Maintaining focus on the desired use of the model will be critical in prioritizing the next steps. 
+While many of the individual linear regression models have strong fits, the compounding effects of multiple predictions make for large uncertainty windows. This is both valuable (ensures appropriate uncertainty in modeling results), and challenging for desired use of the model (narrower prediction windows for crop / irrigation planning). This suite of models (1 temperature, 16 streamflow, 9 curtailment) and the automated process lays a strong groundwork for continued model development to fulfill the needs of the WRWC. Continued model development should focus on the components of the hydrograph that are most valuable to the members, namely the hydrograph recession. Ideally those modeling results would be available by April, but the largest uncertainty in the current models are spring weather (e.g. once we've reached the peak of the hydrograph, predicting the recession is relatively straight forward, but by that time it is later than needed by users.) Maintaining focus on the desired use of the model will be critical in prioritizing the next steps. 
 
 # 4. Recommendations
 
 * continue to update diversion data annually
-* Evaluate alternative methods for estimation of curtailment dates using all water right data
+* Evaluate alternative methods for estimation of curtailment dates using all water rights data
 
 * Evaluate use of available groundwater data (there may not be enough for this to be viable)
 * Incorporate additional model variables (e.g. last years streamflow volume)
 * Explore snow covered extent modeling
-* Evaluate alternative combinations and prediction windows for temperatures (e.g. June-July temperatures specifically for diversions)
-* Evaluate alternative center of mass calculation methods (e.g. different timing windows such as April - July)
 
 * Incorporate prediction data from the National Operational Hydrologic Remote Sensing Center, and other regional forecasting centers (summer temperatures in particular)
 * Conduct a sensitivity analysis on prediction results to identify the most sensitive predictor variables, particularly on streamflow recession
