@@ -85,23 +85,27 @@ mod_dev<- function(water_right, subws){
     plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted")
     abline(0,1,col="gray50",lty=1)
   dev.off()
-  return(list(pred.params.curt)) # is there something else we need here?
+  return(list(pred.params.curt, mod_sum$vars)) # is there something else we need here?
 }
 
 # save the model variables for the model fits report
 #, list(mod_sum$vars)[[1]]
 
 
-# pre-define arrays to store output
+# initialize arrays to store output
 wr_mod_out <-data.frame(array(NA,c(9,5)))
 rownames(wr_mod_out)<- paste(curtNames[,1], curtNames[,2], sep="")
 colnames(wr_mod_out)<- c("Adj R2", "LOOCV R2", "RMSE", "Curt Day", "Day +/-")
+wr_vars <-vector(mode = "list", length = 9)
+names(wr_vars)<- paste(curtNames[,1], curtNames[,2], sep="")
 
 # run all water rights through model dev and prediction function
 for(i in 1:length(wr_cat)){
   for(j in 1:length(basins)){
     wr_name<- paste(basins[j], wr_cat[i], sep="")
-    wr_mod_out[wr_name,]<- mod_dev(wr_cat[i], basins[j])[[1]]
+    mod_out<- mod_dev(wr_cat[i], basins[j])
+    wr_mod_out[wr_name,]<- mod_out[[1]]
+    wr_vars[wr_name]<- mod_out[2]
   }
 }
 
@@ -111,6 +115,9 @@ for(i in 1:length(wr_cat)){
 png(file.path(fig_dir_mo,"r2s_wr.png"), height = 25*nrow(wr_mod_out), width = 80*ncol(wr_mod_out))
 grid.table(wr_mod_out[,1:3])
 dev.off()
+
+# Save model parameters
+list.save(wr_vars, file.path(fig_dir_mo, wr_params))
 
 # Curtailment Summary ------
 # couldnt get pivot wider to work ...
@@ -129,6 +136,7 @@ julian_curt$sc_b <- curtailments %>% subset(water_right_cat =="B") %>% subset(su
 julian_curt$sc_c <- curtailments %>% subset(water_right_cat =="C") %>% subset(subbasin == 'sc_lw') %>% dplyr::select(shut_off_julian) 
 
 
+# Curtailment Correlations ------
 # calculate correlations between locations
 curt.cor.mat<-cor(julian_curt[-1], use="pairwise.complete")
 # create covariance matrix by multiplying by each models standard error
