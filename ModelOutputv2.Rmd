@@ -162,8 +162,7 @@ knitr::include_graphics(file.path(params$fig_dir_mo,"CM_summary_prob.png"))
 
 ### Curtailment Date Model Output
 
-While the curtailment date models do fairly well at predicting curtailment dates with historic data they do rely on an estimate of spring time temperatures and cannot capture uncertainty associated with summer temperatures and associated irrigation needs. The "Days +/-" is the variance around the predicted value. In many of the curtailment models, this means that the prediction could be off by a week in either direction (early or late). 
-
+While the curtailment date models do well at predicting curtailment dates with historic data they do rely on the predicted streamflow volumes and cannot capture uncertainty associated with summer temperatures and associated irrigation needs. The "Days +/-" is solely the variance around the predicted curtailment date (e.g. does not incorporate the uncertainty of the streamflow volume estimate). In many of the curtailment models, this means that the prediction could be off by at least a week in either direction (early or late). 
 
 ```{r curtailmentSummary, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics(file.path(params$fig_dir_mo, "wr_preds.png"))
