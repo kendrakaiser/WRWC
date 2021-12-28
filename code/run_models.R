@@ -100,7 +100,7 @@ wr.params <<- list.load(file.path(data_dir,wr_params))
 source(file.path(git_dir, 'code/streamflow_predictions.R'))
 
 # Develop curtailment models and make curtailment date predictions
-source(file.path(git_dir, 'code/curtailment_model.R'))
+suppressWarnings(source(file.path(git_dir, 'code/curtailment_model.R')))
 
 # Remove unesseary variables in the environment
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
