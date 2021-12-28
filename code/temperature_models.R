@@ -167,7 +167,6 @@ ggplot(input, aes(x=spring.tempF, y=fitted)) + geom_point()+
 #stat_smooth(method = lm,  data = input, formula = y ~ poly(x, 2) + z)
 #adding in fairfield and picabo throws off the regression - it effectively does poorly everywhere
 
-
 # covarience matrix (var-cov matrix) - diagonal the variance of temp at each site, the rest are the correlations
 site.cov<- cov(spring.tdata[-1], use="complete.obs")
 # calculate the correlations
@@ -182,9 +181,9 @@ new.data$elev<-elev
 
 #predict the mean april-june temperature at each site
 new.data$spr.tempF[1:12]<-predict(lr.elev, new.data[1:12,])
-# use the mean of fairfield and picabo - has no trend and decreasess strength of lm
-new.data$spr.tempF[13]<- mean(tdata$spring.tempF[tdata$site == "fairfield"])
-new.data$spr.tempF[14]<- mean(tdata$spring.tempF[tdata$site == "picabo"])
+# use the mean of fairfield and picabo - has no trend and decreases strength of lm
+new.data$spr.tempF[13]<- mean(tdata$spring.tempF[tdata$site == "fairfield"], na.rm = TRUE)
+new.data$spr.tempF[14]<- mean(tdata$spring.tempF[tdata$site == "picabo"], na.rm = TRUE)
 
 # Draw stream temperatures using multivariate normal distribution
 nboot<-5000
