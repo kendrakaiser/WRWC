@@ -92,7 +92,7 @@ mod_dev<- function(water_right, subws){
 #, list(mod_sum$vars)[[1]]
 
 
-# pre-deinfe arrays to store output
+# pre-define arrays to store output
 wr_mod_out <-data.frame(array(NA,c(9,5)))
 rownames(wr_mod_out)<- paste(curtNames[,1], curtNames[,2], sep="")
 colnames(wr_mod_out)<- c("Adj R2", "LOOCV R2", "RMSE", "Curt Day", "Day +/-")
@@ -143,7 +143,7 @@ write.csv(curt.sample, file.path(cd,"model_out/curt.sample.csv"),row.names=F)
 
 # Plot boxplots of predicted curtailment dates from each model
 png(filename = file.path(fig_dir_mo,"sampled_curtailments.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    width = 6.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 
 curt.sample %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
