@@ -14,7 +14,7 @@ git_dir <<- '~/github/WRWC'
 cd <<- '~/Desktop/WRWC'
 
 # set prediction year
-pred.yr <<- 2022
+pred.yr <<- 2021
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
 run_date <<- 'april1'
 
