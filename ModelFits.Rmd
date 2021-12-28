@@ -1,20 +1,91 @@
 ---
-title: "ModelFits"
+title: "Model Fits 2021"
 output: pdf_document
+header-includes: 
+  \usepackage{placeins}
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+data_dir <<- '~/Desktop/WRWC/data'
+
+library(rlist) #list.save
+library(kableExtra)
+library(utils) #view
+
+usgs_sites = read.csv('~/Desktop/WRWC/data/usgs_sites.csv')
+snotel_sites = read.csv('~/Desktop/WRWC/data/snotel_sites.csv')
 ```
 
-This document shows the observed versus modeled streamflow volume and center of mass with data through 2019 for each location and each months model. 
+This document shows the observed versus modeled streamflow volume and center of mass with data through 2021 for each location and each months model. 
+
+### Data Inputs
+
+Data is automatically downloaded from the USGS, NRCS and AgriMet (Fairfield and Picabo).
+```{r dataInfo, echo=FALSE, out.width="45%"}
+kable(usgs_sites[c(1,2,3,5),] %>% dplyr::select(station_nm, huc_cd, begin_date, end_date, abv) %>% `colnames<-`(c("Station", "HUC", "Start", "End", "Abv")), booktabs = T) %>%
+  kable_styling(font_size = 9, latex_options = c("hold_position"))
+```
+
+```{r snotelDataInfo, echo=FALSE, out.width="65%"}
+kable(snotel_sites %>% dplyr::select(start, end, site_name, huc8, abv), booktabs = T) %>%
+kable_styling(latex_options = c("hold_position","striped"))
+```
+\newpage
 
 ## February
 ```{r Feb_model_summary, echo=FALSE, out.width="100%"}
-knitr::include_graphics('figures/February/r2s.png'))
+knitr::include_graphics('figures/February/r2s.png')
 knitr::include_graphics('figures/February/r2s_cm.png')
+
+cm_mods<-list.load(file.path(data_dir, 'feb_cm_vars.rdata'))
+vol_mods<-list.load(file.path(data_dir, 'feb_vol_vars.rdata'))
 ```
+
+### Irrigation Season Volume Models
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Big Wood Hailey Vol)~ ", paste(vol_mods$bwh$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Big Wood Stanton Vol)~ ", paste(vol_mods$bws$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Silver Creek Vol)~ ", paste(vol_mods$sc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Camas Creek Vol)~ ", paste(vol_mods$cc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+### Center of Mass Models
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Big Wood Hailey CM~ ", paste(vol_mods$bwh$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Big Wood Stanton CM~ ", paste(vol_mods$bws$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Silver Creek CM~ ", paste(vol_mods$sc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Camas Creek CM~ ", paste(vol_mods$cc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
 ### Big Wood Hailey
+
 ```{r, Big Wood Hailey February Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
 knitr::include_graphics(c('figures/February/BWH_modelFit.png', 
                           'figures/February/bwh.cm_modelFit.png'))
@@ -22,18 +93,20 @@ knitr::include_graphics(c('figures/February/BWH_modelFit.png',
 
 ### Big Wood Stanton
 ```{r, Big Wood Stanton February Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(c('figures/February/BWH_modelFit.png', 
-                          'figures/February/bwh.cm_modelFit.png'))
+knitr::include_graphics(c('figures/February/BWS_modelFit.png', 
+                          'figures/February/bws.cm_modelFit.png'))
 ```
+
 ### Silver Creek
 ```{r, Siver Creek February Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(c('figures/February/BWH_modelFit.png', 
-                          'figures/February/bwh.cm_modelFit.png'))
+knitr::include_graphics(c('figures/February/SC_modelFit.png', 
+                          'figures/February/sc.cm_modelFit.png'))
 ```
+
 ### Camas Creek
 ```{r, Camas Creek February Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(c('figures/February/BWH_modelFit.png', 
-                          'figures/February/bwh.cm_modelFit.png'))
+knitr::include_graphics(c('figures/February/CC_modelFit.png', 
+                          'figures/February/cc.cm_modelFit.png'))
 ```
 
 ## March
@@ -41,7 +114,52 @@ knitr::include_graphics(c('figures/February/BWH_modelFit.png',
 ```{r March_model_summary, echo=FALSE, out.width="100%"}
 knitr::include_graphics('figures/March/r2s.png')
 knitr::include_graphics('figures/March/r2s_cm.png')
+cm_mods<-list.load(file.path(data_dir, 'mar_cm_vars.rdata'))
+vol_mods<-list.load(file.path(data_dir, 'mar_vol_vars.rdata'))
 ```
+
+### Irrigation Season Volume Models
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Big Wood Hailey Vol)~ ", paste(vol_mods$bwh$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Big Wood Stanton Vol)~ ", paste(vol_mods$bws$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Silver Creek Vol)~ ", paste(vol_mods$sc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Camas Creek Vol)~ ", paste(vol_mods$cc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+### Center of Mass Models
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Big Wood Hailey CM~ ", paste(cm_mods$bwh$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Big Wood Stanton CM~ ", paste(cm_mods$bws$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Silver Creek CM~ ", paste(cm_mods$sc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Camas Creek CM~ ", paste(cm_mods$cc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
 ### Big Wood Hailey
 ```{r, Big Wood Hailey March Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
 knitr::include_graphics(c('figures/March/BWH_modelFit.png', 
@@ -50,25 +168,72 @@ knitr::include_graphics(c('figures/March/BWH_modelFit.png',
 
 ### Big Wood Stanton
 ```{r, Big Wood Stanton March Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(c('figures/March/BWH_modelFit.png', 
-                          'figures/March/bwh.cm_modelFit.png'))
+knitr::include_graphics(c('figures/March/BWS_modelFit.png', 
+                          'figures/March/bws.cm_modelFit.png'))
 ```
+
 ### Silver Creek
 ```{r, Siver Creek March Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(c('figures/March/BWH_modelFit.png', 
-                          'figures/March/bwh.cm_modelFit.png'))
+knitr::include_graphics(c('figures/March/SC_modelFit.png', 
+                          'figures/March/sc.cm_modelFit.png'))
 ```
+
 ### Camas Creek
 ```{r, Camas Creek March Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(c('figures/March/BWH_modelFit.png', 
-                          'figures/March/bwh.cm_modelFit.png'))
+knitr::include_graphics(c('figures/March/CC_modelFit.png', 
+                          'figures/March/cc.cm_modelFit.png'))
 ```
 
 ## April
 ```{r April_model_summary, echo=FALSE, out.width="100%"}
 knitr::include_graphics('figures/April/r2s.png')
 knitr::include_graphics('figures/April/r2s_cm.png')
+cm_mods<-list.load(file.path(data_dir, 'apr_cm_vars.rdata'))
+vol_mods<-list.load(file.path(data_dir, 'apr_vol_vars.rdata'))
 ```
+
+### Irrigation Season Volume Models
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Big Wood Hailey Vol)~ ", paste(vol_mods$bwh$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Big Wood Stanton Vol)~ ", paste(vol_mods$bws$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Silver Creek Vol)~ ", paste(vol_mods$sc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("log(Camas Creek Vol)~ ", paste(vol_mods$cc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+### Center of Mass Models
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Big Wood Hailey CM~ ", paste(cm_mods$bwh$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Big Wood Stanton CM~ ", paste(cm_mods$bws$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Silver Creek CM~ ", paste(cm_mods$sc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
+```{r, echo=FALSE, results = 'asis'}
+form<- paste("Camas Creek CM~ ", paste(cm_mods$cc$vars, collapse=" + "), sep = "")
+cat(form)
+```
+
 ### Big Wood Hailey
 ```{r, Big Wood Hailey April Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
 knitr::include_graphics(c('figures/April/BWH_modelFit.png', 
@@ -77,16 +242,110 @@ knitr::include_graphics(c('figures/April/BWH_modelFit.png',
 
 ### Big Wood Stanton
 ```{r, Big Wood Stanton April Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(c('figures/April/BWH_modelFit.png', 
-                          'figures/April/bwh.cm_modelFit.png'))
+knitr::include_graphics(c('figures/April/BWS_modelFit.png', 
+                          'figures/April/bws.cm_modelFit.png'))
 ```
+
 ### Silver Creek
 ```{r, Siver Creek April Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(c('figures/April/BWH_modelFit.png', 
-                          'figures/April/bwh.cm_modelFit.png'))
+knitr::include_graphics(c('figures/April/SC_modelFit.png', 
+                          'figures/April/sc.cm_modelFit.png'))
 ```
+
 ### Camas Creek
 ```{r, Camas Creek April Model Fits, echo=FALSE, fig.show="hold", out.width = '50%', fig.pos='H'}
-knitr::include_graphics(c('figures/April/BWH_modelFit.png', 
-                          'figures/April/bwh.cm_modelFit.png'))
+knitr::include_graphics(c('figures/April/CC_modelFit.png', 
+                          'figures/April/cc.cm_modelFit.png'))
+```
+
+### Water Right Curtailment Models
+
+The variables for each water right model are show in the tables for each month. The adjusted R squared is a metric of model fit, with 1 being perfect and anything under 0.75 not being a strong fit. The "LOOCV" stands for leave-one-out cross validation, it is a stronger metric of model fit because it removes one data point at a time and evaluates the fit iteratively, thus incorperating how strongly an individual point impacts the overall fit. "RMSE" is the root mean square error - a metric that quantifies the spread in the divergence the predicted values are from the observed value. High RMSE correlates with low R2, and are particularly valuable for comparing across models. For example, in February, while the Big Wood Below Magic C had a Adj R2 of 0.85 (which is good), its LOOCV R2 is 0.42 (not great) and its RMSE is 32, which is significantly higher than the rest of the models. By March, this RMSE drops to 10, showing a significant improvement in the model.
+
+```{r, wr curtialment params, echo=FALSE}
+feb_wr_params<- list.load('figures/February/feb_wr_vars.rdata')
+mar_wr_params<- list.load('figures/March/mar_wr_vars.rdata')
+apr_wr_params<- list.load('figures/April/apr_wr_vars.rdata')
+```
+
+
+#### February Water Right Curtailment Parameters & Fits
+
+```{r, feb r2s, echo=FALSE, fig.show="hold", fig.align='center'}
+knitr::include_graphics('figures/February/r2s_wr.png') 
+```
+
+```{r, feb params, echo=FALSE, out.width = '60%', fig.show="hold"}
+as.data.frame(feb_wr_params[c(1,4,7)]) %>% kbl() %>%
+  kable_styling(full_width = F, latex_options = "HOLD_position")
+as.data.frame(feb_wr_params[c(2,5,8)]) %>% kbl() %>%
+  kable_styling(full_width = F, latex_options = "HOLD_position")
+as.data.frame(feb_wr_params[c(3,6,9)]) %>% kbl() %>%
+  kable_styling(full_width = F, latex_options = "HOLD_position")
+```
+
+#### March Water Right Curtailment Parameters
+
+```{r, march w2s, echo=FALSE, fig.show="hold", fig.align='center'}
+knitr::include_graphics('figures/March/r2s_wr.png') 
+```
+
+```{r, march params, echo=FALSE, out.width = '60%', fig.show="hold"}
+as.data.frame(mar_wr_params[c(1,4,7)]) %>% kbl() %>%
+  kable_styling(full_width = F, latex_options = "HOLD_position")
+as.data.frame(mar_wr_params[c(2,5,8)]) %>% kbl() %>%
+  kable_styling(full_width = F, latex_options = "HOLD_position")
+as.data.frame(mar_wr_params[c(3,6,9)]) %>% kbl() %>%
+  kable_styling(full_width = F, latex_options = "HOLD_position")
+```
+
+#### April Water Right Curtailment Parameters
+
+```{r, april r2, echo=FALSE, fig.show="hold", fig.align='center'}
+knitr::include_graphics('figures/April/r2s_wr.png') 
+```
+
+
+```{r, april params, echo=FALSE, out.width = '75%', fig.show="hold"}
+as.data.frame(apr_wr_params[c(1,4,7)]) %>% kbl() %>%
+  kable_styling(full_width = F, latex_options = "HOLD_position")
+as.data.frame(apr_wr_params[c(2,5,8)]) %>% kbl() %>%
+  kable_styling(full_width = F, latex_options = "HOLD_position")
+as.data.frame(apr_wr_params[c(3,6,9)]) %>% kbl() %>%
+  kable_styling(full_width = F, latex_options = "HOLD_position")
+```
+
+# Big Wood Above Magic
+```{r, WR BW abv Model Fits, echo=FALSE, fig.show="hold", out.width = '33%', fig.pos='H'}
+knitr::include_graphics(c('figures/February/bw_ab_magicA.png', 
+                          'figures/February/bw_ab_magicB.png', 'figures/February/bw_ab_magicC.png'))
+
+knitr::include_graphics(c('figures/March/bw_ab_magicA.png', 
+                          'figures/March/bw_ab_magicB.png', 'figures/March/bw_ab_magicC.png'))
+
+knitr::include_graphics(c('figures/April/bw_ab_magicA.png', 
+                          'figures/April/bw_ab_magicB.png', 'figures/April/bw_ab_magicC.png'))
+```
+
+# Big Wood Below Magic
+```{r, April WR BW blw Model Fits, echo=FALSE, fig.show="hold", out.width = '33%', fig.pos='H'}
+knitr::include_graphics(c('figures/February/bw_bl_magicA.png', 
+                          'figures/February/bw_bl_magicB.png', 'figures/February/bw_bl_magicC.png'))
+
+knitr::include_graphics(c('figures/March/bw_bl_magicA.png', 
+                          'figures/March/bw_bl_magicB.png', 'figures/March/bw_ab_magicC.png'))
+
+knitr::include_graphics(c('figures/April/bw_bl_magicA.png', 
+                          'figures/April/bw_bl_magicB.png', 'figures/April/bw_bl_magicC.png'))
+```
+
+# Silver Creek
+```{r, April WR SC Model Fits, echo=FALSE, fig.show="hold", out.width = '33%', fig.pos='H'}
+knitr::include_graphics(c('figures/February/sc_lwA.png', 
+                          'figures/February/sc_lwB.png', 'figures/February/sc_lwC.png'))
+
+knitr::include_graphics(c('figures/March/sc_lwA.png', 
+                          'figures/March/sc_lwB.png', 'figures/March/sc_lwC.png'))
+knitr::include_graphics(c('figures/April/sc_lwA.png', 
+                          'figures/April/sc_lwB.png', 'figures/April/sc_lwC.png'))
 ```
