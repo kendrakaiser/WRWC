@@ -77,20 +77,17 @@ mod_dev<- function(water_right, subws){
   if (pred.params.curt[1,2] > 275){pred.params.curt[1,2] =275}
   model$pred$pred[model$pred$pred > 275] = 275
 
+  plt_name=paste(run_date, subws, water_right, sep= " ")
   # Plot Big Wood at Hailey modeled data for visual evaluation 
   png(filename = file.path(fig_dir_mo, fitFigName),
      width = 5.5, height = 5.5,units = "in", pointsize = 12,
      bg = "white", res = 600) 
 
-    plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted")
+    plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted", main=plt_name)
     abline(0,1,col="gray50",lty=1)
   dev.off()
   return(list(pred.params.curt, mod_sum$vars)) # is there something else we need here?
 }
-
-# save the model variables for the model fits report
-#, list(mod_sum$vars)[[1]]
-
 
 # initialize arrays to store output
 wr_mod_out <-data.frame(array(NA,c(9,5)))
@@ -147,7 +144,7 @@ curt.cov.mat<-curt.cor.mat*curt.outer.prod
 curt.sample<-data.frame(mvrnorm(n=5000,mu=(wr_mod_out[,4]),Sigma=curt.cov.mat))
 
 colnames(curt.sample)<-c("Big Wood abv Magic A", "Big Wood abv Magic B", "Big Wood abv Magic C", "Big Wood blw Magic A", "Big Wood blw Magic B", "Big Wood blw Magic C", "Silver Creek A", "Silver Creek B", "Silver Creek C")
-write.csv(curt.sample, file.path(cd,"model_out/curt.sample.csv"),row.names=F)
+write.csv(curt.sample, file.path(model_out,"curt.sample.csv"),row.names=F)
 
 # Plot boxplots of predicted curtailment dates from each model
 png(filename = file.path(fig_dir_mo,"sampled_curtailments.png"),
