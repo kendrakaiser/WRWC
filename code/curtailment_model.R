@@ -9,8 +9,9 @@
 volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
 curtailments<- read.csv(file.path(input_dir,"historic_shutoff_dates_071520.csv"))
 var<-read.csv(file.path(model_out,'all_vars.csv')) %>% dplyr::select(-X) 
-nat_cols<-grep('nat', colnames(var))
-var<- var %>% dplyr::select(-c(all_of(nat_cols), "div", "sc.div", "abv.s", "abv.h", "bws.loss")) 
+#check on full run
+#nat_cols<-grep('nat', colnames(var))
+#var<- var %>% dplyr::select(-c(all_of(nat_cols), "div", "sc.div", "abv.s", "abv.h", "bws.loss")) 
 
 swe_cols<-grep('swe', colnames(var))
 t_cols<-grep('.t.', colnames(var))
@@ -31,12 +32,12 @@ basins<-unique(curtailments$subbasin)
 wr_cat<- unique(curtailments$water_right_cat)
 curtNames<-expand.grid(basins, wr_cat)
 
-water_right= wr_cat[i]
-subws= basins[j]
+water_right= wr_cat[1]
+subws= basins[3]
 
 # function to develop model and predict curtailment dates for each water right
 mod_dev<- function(water_right, subws){
-  pred.params.curt <-array(NA,c(1,4))
+  pred.params.curt <-array(NA,c(1,5))
   fitFigName<- paste(subws, water_right, ".png", sep='')
     
   curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% 
@@ -51,7 +52,7 @@ mod_dev<- function(water_right, subws){
   rm(regsubsets.out)
 
   vars<-reg_sum$which[which.min(reg_sum$bic),]
-  mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+  mod_sum<-list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
   #fit the regression model and use LOOCV to evaluate performance
   form<- paste("shut_off_julian~ ", paste(mod_sum$vars, collapse=" + "), sep = "")
@@ -68,14 +69,15 @@ mod_dev<- function(water_right, subws){
   preds.curt<-predict(mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
   pred.params.curt[1,1]<-round(summary(mod)$adj.r.squared,2) 
   pred.params.curt[1,2]<-round(mod_sum$loocv$Rsquared,2)
-  pred.params.curt[1,3]<-round(mean(preds.curt$fit),1) # mean of predicted
-  pred.params.curt[1,4]<-round(mean(preds.curt$se.fit),1)
-
-  #make the max prediction doy 275
+  pred.params.curt[1,3]<-round(mod_sum$loocv$RMSE)
+  pred.params.curt[1,4]<-round(mean(preds.curt$fit),1) # mean of predicted
+  pred.params.curt[1,5]<-round(mean(preds.curt$se.fit),1)
+  
+  # Make the max prediction doy 275
   if (pred.params.curt[1,2] > 275){pred.params.curt[1,2] =275}
   model$pred$pred[model$pred$pred > 275] = 275
 
-  #Plot Big Wood at Hailey modeled data for visual evaluation 
+  # Plot Big Wood at Hailey modeled data for visual evaluation 
   png(filename = file.path(fig_dir_mo, fitFigName),
      width = 5.5, height = 5.5,units = "in", pointsize = 12,
      bg = "white", res = 600) 
@@ -86,10 +88,14 @@ mod_dev<- function(water_right, subws){
   return(list(pred.params.curt)) # is there something else we need here?
 }
 
+# save the model variables for the model fits report
+#, list(mod_sum$vars)[[1]]
+
+
 # pre-deinfe arrays to store output
-wr_mod_out <-array(NA,c(9,4))
+wr_mod_out <-data.frame(array(NA,c(9,5)))
 rownames(wr_mod_out)<- paste(curtNames[,1], curtNames[,2], sep="")
-colnames(wr_mod_out)<- c("Adj R2", "LOOCV R2", "Curt.Doy", "Error")
+colnames(wr_mod_out)<- c("Adj R2", "LOOCV R2", "RMSE", "Curt Day", "Day +/-")
 
 # run all water rights through model dev and prediction function
 for(i in 1:length(wr_cat)){
@@ -99,8 +105,63 @@ for(i in 1:length(wr_cat)){
   }
 }
 
-# save output
+# Silver Creek A only has two values 9/31 and 10/1 - the model isn't that useful
+
+# Save model fit output  
 png(file.path(fig_dir_mo,"r2s_wr.png"), height = 25*nrow(wr_mod_out), width = 80*ncol(wr_mod_out))
-grid.table(wr_mod_out)
+grid.table(wr_mod_out[,1:3])
 dev.off()
 
+# Curtailment Summary ------
+# couldnt get pivot wider to work ...
+# tst<-pivot_wider(curtailments, names_from = c(subbasin, water_right_cat), values_from = shut_off_julian)
+julian_curt<- data.frame(matrix(ncol = 10, nrow = length(min(curtailments$year):max(curtailments$year))))
+colnames(julian_curt)<- c("year", "uwr_a", "uwr_b", "uwr_c", "lwr_a", "lwr_b", "lwr_c", "sc_a", "sc_b", "sc_c")
+julian_curt$year <- min(curtailments$year):max(curtailments$year)
+julian_curt$uwr_a <- curtailments %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_ab_magic') %>% dplyr::select(shut_off_julian) 
+julian_curt$uwr_b <- curtailments %>% subset(water_right_cat =="B") %>% subset(subbasin == 'bw_ab_magic') %>% dplyr::select(shut_off_julian) 
+julian_curt$uwr_c <- curtailments %>% subset(water_right_cat =="C") %>% subset(subbasin == 'bw_ab_magic') %>% dplyr::select(shut_off_julian) 
+julian_curt$lwr_a <- curtailments %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_bl_magic') %>% dplyr::select(shut_off_julian) 
+julian_curt$lwr_b <- curtailments %>% subset(water_right_cat =="B") %>% subset(subbasin == 'bw_bl_magic') %>% dplyr::select(shut_off_julian) 
+julian_curt$lwr_c <- curtailments %>% subset(water_right_cat =="C") %>% subset(subbasin == 'bw_bl_magic') %>% dplyr::select(shut_off_julian) 
+julian_curt$sc_a <- curtailments %>% subset(water_right_cat =="A") %>% subset(subbasin == 'sc_lw') %>% dplyr::select(shut_off_julian) 
+julian_curt$sc_b <- curtailments %>% subset(water_right_cat =="B") %>% subset(subbasin == 'sc_lw') %>% dplyr::select(shut_off_julian) 
+julian_curt$sc_c <- curtailments %>% subset(water_right_cat =="C") %>% subset(subbasin == 'sc_lw') %>% dplyr::select(shut_off_julian) 
+
+
+# calculate correlations between locations
+curt.cor.mat<-cor(julian_curt[-1], use="pairwise.complete")
+# create covariance matrix by multiplying by each models standard error
+curt.outer.prod<-as.matrix(wr_mod_out[,5])%*%t(as.matrix(wr_mod_out[,5]))
+curt.cov.mat<-curt.cor.mat*curt.outer.prod
+
+# Draw curtailment dates using multivariate normal distribution
+curt.sample<-data.frame(mvrnorm(n=5000,mu=(wr_mod_out[,4]),Sigma=curt.cov.mat))
+
+colnames(curt.sample)<-c("Big Wood abv Magic A", "Big Wood abv Magic B", "Big Wood abv Magic C", "Big Wood blw Magic A", "Big Wood blw Magic B", "Big Wood blw Magic C", "Silver Creek A", "Silver Creek B", "Silver Creek C")
+write.csv(curt.sample, file.path(cd,"model_out/curt.sample.csv"),row.names=F)
+
+# Plot boxplots of predicted curtailment dates from each model
+png(filename = file.path(fig_dir_mo,"sampled_curtailments.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+
+curt.sample %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
+  ggplot(aes(x=site, y=as.Date(value, origin=as.Date(paste(pred.yr,"-01-01",sep=""))), fill=site)) +
+  theme_bw()+
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  scale_y_date(date_breaks = "1 week", date_labels = "%b %d")+
+  scale_x_discrete(labels = wrap_format(10)) +
+  theme(legend.position="none") +
+  ggtitle("Sampled Curtailment Dates") +
+  xlab("")+
+  ylab("Curtailment Date")
+dev.off()
+
+# change from day of year to date for the table
+wr_mod_out[,4]<- as.Date(wr_mod_out[,4], origin=as.Date(paste(pred.yr,"-01-01",sep="")), format='%m/%d')
+
+png(file.path(fig_dir_mo,"wr_preds.png"), height = 25*nrow(wr_mod_out), width = 80*ncol(wr_mod_out))
+grid.table(wr_mod_out[,4:5])
+dev.off()
