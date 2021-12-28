@@ -54,6 +54,7 @@ if (run_date == 'feb1'){
   vol_mods <<- 'feb_vol_mods.rdata'
   cm_params <<- 'feb_cm_vars.rdata'
   cm_mods <<- 'feb_cm_mods.rdata'
+  wr_params <<- 'feb_wr_vars.rdata'
   
 } else if (run_date == 'march1'){
   input <<- 'all_dat_mar.csv'
@@ -67,6 +68,7 @@ if (run_date == 'feb1'){
   vol_mods <<- 'mar_vol_mods.rdata'
   cm_params <<- 'mar_cm_vars.rdata'
   cm_mods <<- 'mar_cm_mods.rdata'
+  wr_params <<- 'mar_wr_vars.rdata'
   
 } else if (run_date == 'april1'){
   input <<- 'all_dat_apr.csv'
@@ -80,26 +82,32 @@ if (run_date == 'feb1'){
   vol_mods <<- 'apr_vol_mods.rdata'
   cm_params <<- 'apr_cm_vars.rdata'
   cm_mods <<- 'apr_cm_mods.rdata'
+  wr_params <<- 'apr_wr_vars.rdata'
 }
 
+# Develop the streamflow Models
+# Once ran in a given month this can be commented out
 suppressWarnings(source(file.path(git_dir, 'code/streamflow_models.R')))# warning messages are expected and okay
 
+# Load the models and parameters from all the models 
 vol.params <<- list.load(file.path(data_dir, vol_params))
 vol.mods <<- list.load(file.path(data_dir, vol_mods))
 cm.params <<- list.load(file.path(data_dir,cm_params))
 cm.mods <<- list.load(file.path(data_dir, cm_mods))
+wr.params <<- list.load(file.path(data_dir,wr_params))
 
-source(file.path(git_dir, 'code/curtailment_model.R'))
-
-rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
-             "data_dir", "input", "fig_dir_mo", "author", "todays_date", 
-             "model_out", "vol.params", "vol.mods", "cm.params", "cm.mods"))
-
+# Make the Irrigation Season Streamflow Predictions
 source(file.path(git_dir, 'code/streamflow_predictions.R'))
 
-rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
-             "data_dir", "input", "fig_dir_mo", "author", "end_date", "run_date", "model_out"))
+# Develop curtailment models and make curtailment date predictions
+source(file.path(git_dir, 'code/curtailment_model.R'))
 
+# Remove unesseary variables in the environment
+rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
+             "data_dir", "input", "fig_dir_mo", "author",  "todays_date", "end_date", 
+             "model_out"))
+
+# Simulate the Irrigation Season Hydrograph
 source(file.path(git_dir, 'code/streamflow_simulation.R'))
 
 # knit Model Results PDF
@@ -107,6 +115,9 @@ detach(package:plyr) #plyr interferes with a grouping function needed for plotti
 params_list = list(fig_dir_mo = fig_dir_mo, set_author = author, 
                    todays_date=todays_date, data_dir = data_dir, 
                    git_dir = git_dir, input = input, run_date=run_date)
+write.list(params_list, file.path(git_dir, rmd_params_list))
+
+# knit PDF - if it doesn't work you can open the 'ModelOutputv2.Rmd' and press 'knit'
 rmarkdown::render(file.path(git_dir, 'ModelOutputv2.Rmd'), params = params_list)
 
 
