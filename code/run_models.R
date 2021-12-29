@@ -16,11 +16,11 @@ cd <<- '~/Desktop/WRWC'
 # set prediction year
 pred.yr <<- 2021
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
-run_date <<- 'april1'
+run_date <<- 'mar1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
-todays_date <<- "04/07/2021"
+todays_date <<- "03/15/2021"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -28,7 +28,7 @@ input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 data_dir <<- file.path(cd, 'data') # local
 
 # set end date for AgriMet Data download
-end_date <<- Sys.Date()
+end_date <<- as.Date("2021-03-15") #Sys.Date()
 
 # ---- Run Model code
 
@@ -94,7 +94,6 @@ vol.params <<- list.load(file.path(data_dir, vol_params))
 vol.mods <<- list.load(file.path(data_dir, vol_mods))
 cm.params <<- list.load(file.path(data_dir,cm_params))
 cm.mods <<- list.load(file.path(data_dir, cm_mods))
-wr.params <<- list.load(file.path(data_dir,wr_params))
 
 # Make the Irrigation Season Streamflow Predictions
 source(file.path(git_dir, 'code/streamflow_predictions.R'))
@@ -115,10 +114,12 @@ detach(package:plyr) #plyr interferes with a grouping function needed for plotti
 params_list = list(fig_dir_mo = fig_dir_mo, set_author = author, 
                    todays_date=todays_date, data_dir = data_dir, 
                    git_dir = git_dir, input = input, run_date=run_date)
-write.list(params_list, file.path(git_dir, rmd_params_list))
+list.save(params_list, file.path(git_dir, 'rmd_params_list.rdata'))
 
 # knit PDF - if it doesn't work you can open the 'ModelOutputv2.Rmd' and press 'knit'
-rmarkdown::render(file.path(git_dir, 'ModelOutputv2.Rmd'), params = params_list)
+rmarkdown::render(file.path(git_dir, 'ModelOutputv2.Rmd'), params = params_list, 
+     output_file = file.path(git_dir, paste0("ModelOutput-", end_date, ".pdf")))
+
 
 
 

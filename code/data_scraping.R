@@ -42,11 +42,11 @@ bw.div$abv.s <-rowSums(cbind(bw.div$WRVID.45, bw.div$Bannon.49,
 bw.div.gage<- bw.div %>% dplyr::select(c(Date, abv.h, abv.s))
 #summarize by year
 bw.div.sum<- bw.div %>% dplyr::select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
-bw.div.tot<- bw.div.sum %>% dplyr::select(c(year, abv.h, abv.s))
+bw.div.tot<- bw.div.sum %>% dplyr::select(c(year, abv.h, abv.s)) %>% as.data.frame()
 
-bw.div.tot.AF<- as.numeric(bw.div.tot$Year)
-bw.div.tot.AF$abv.h <- as.array(bw.div.tot$abv.h*cfs_to_AF)
-bw.div.tot.AF$abv.s <- as.numeric(bw.div.tot$abv.s*cfs_to_AF)
+bw.div.tot.AF<- as.numeric(bw.div.tot$year) %>% as.data.frame()
+bw.div.tot.AF$abv.h <- bw.div.tot$abv.h*cfs_to_AF
+bw.div.tot.AF$abv.s <- bw.div.tot$abv.s*cfs_to_AF
 #
 
 priorities <- read.csv(file.path(input_dir, 'ABV_PRIORITY_2020.csv'))

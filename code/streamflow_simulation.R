@@ -195,6 +195,3 @@ write.csv(bws.flow.s, file.path(model_out, "BWS.sim.csv"), row.names=dates)
 write.csv(cc.flow.s, file.path(model_out, "CC.sim.csv"), row.names=dates)
 write.csv(sc.flow.s, file.path(model_out, "SC.sim.csv"), row.names=dates)
 
-plot(dates, cumsum(pi[,3])*1.983, ylab="Cumulative Sum of Streamflow (AF)")
-plot(priorities$wr.date, priorities$wr.vol.af, ylab="Cumulative volume of water rights (AF)", xlab="WR priority date")
-

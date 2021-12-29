@@ -1,13 +1,13 @@
 ---
 title: "WRWC Model Run"
 params:
-    fig_dir_mo: 'figures/April'
+    fig_dir_mo: './figures/March'
     set_author: "Kendra E Kaiser"
-    todays_date: "04/08/2021"
+    todays_date: "03/15/2021"
     data_dir:  '~/Desktop/WRWC/data'
     git_dir: '~/github/WRWC'
-    input: 'all_dat_apr.csv'
-    run_date: 'april1'
+    input: 'all_dat_mar.csv'
+    run_date: 'march1'
 author: "`r params$set_author`"
 date: "`r params$todays_date`"
 output: 
@@ -32,6 +32,8 @@ options(knitr.table.format = "latex")
 ```
 
 ```{r setup, include=FALSE}
+
+library(rlist) #list.save
 library(knitr)
 library(tidyverse)
 library(ggplot2)
@@ -40,9 +42,6 @@ library(lubridate)
 library(fasstr)
 library(kableExtra)
 
-
-#knitr::opts_chunk$set(echo = FALSE)
-#knitr::opts_knit$set(verbose = TRUE)  
 
 fig_dir <<- file.path(params$git_dir, 'figures')
 snotel_data = read.csv(file.path(params$data_dir,'snotel_data.csv'))
@@ -60,9 +59,6 @@ apr1swe = read.csv(file.path(params$data_dir, 'april1swe.csv'))
 swe_q = read.csv(file.path(params$data_dir, params$input))
 
 yr<- year(as.Date(params$todays_date, format = "%m/%d/%Y"))
-
-#pred.curt = read.csv(file.path('~/Desktop/WRWC/April_output/pred.curtailments.csv'))
-#colnames(pred.curt)<- c("Water Right", "adjR2", "Predicted Curtailment", "Days +/-")
 ```
 
 ## Wood River Model Summary
@@ -73,10 +69,9 @@ The NRCS Water Supply Report can be found here: https://www.wcc.nrcs.usda.gov/ft
 
 ## Data Summary
 
-
 ### Snotel Data Summary
 
-``` {r SnotelSummary, echo=FALSE, out.width="75%", fig.align='center'}
+``` {r SnotelSummary, echo=FALSE, out.width="75%", fig.align='center', warning=TRUE}
 # Summary stats
 ggplot(data= (snotel_data %>% filter(wy == yr)), mapping= aes(x=as.Date(date), y=precipitation_cumulative))+
   labs(title = "Year to Date Precipitation") +
@@ -126,11 +121,11 @@ https://www.nrcs.usda.gov/wps/portal/nrcs/detail/id/snow/products/?cid=nrcseprd1
 
 ### Streamflow Volume Model Output
 
+These box plots show the historic range of volumes (grey) and the predicted range of volumes that were calculated for each basin (blue). The boxes represent the 25th - 75th percentiles, the median is the solid line in the middle, and circles are outliers. 
+
 ```{r, volumeTables, echo=FALSE, out.width = '100%'}
 knitr::include_graphics(file.path(params$fig_dir_mo, "pred.volumes.png"))
 ```
-
-These box plots show the historic range of volumes (grey) and the predicted range of volumes that were calculated for each basin (blue). The boxes represent the 25th - 75th percentiles, the median is the solid line in the middle, and circles are outliers. 
 
 ```{r,sampledVolumes, echo=FALSE, out.width = '50%', fig.show="hold"}
 knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), file.path(params$fig_dir_mo, "sampled_sc_vol.png")))
@@ -159,10 +154,10 @@ The following table is an estimate of the most similar years (since 1996) based 
 knitr::include_graphics(file.path(params$fig_dir_mo,"CM_summary_prob.png")) 
 ```
 </p>
-
+  
 ### Curtailment Date Model Output
-
-While the curtailment date models do well at predicting curtailment dates with historic data they do rely on the predicted streamflow volumes and cannot capture uncertainty associated with summer temperatures and associated irrigation needs. The "Days +/-" is solely the variance around the predicted curtailment date (e.g. does not incorporate the uncertainty of the streamflow volume estimate). In many of the curtailment models, this means that the prediction could be off by at least a week in either direction (early or late). 
+  
+  While the curtailment date models do well at predicting curtailment dates with historic data they do rely on the predicted streamflow volumes and cannot capture uncertainty associated with summer temperatures and associated irrigation needs. The "Days +/-" is solely the variance around the predicted curtailment date (e.g. does not incorporate the uncertainty of the streamflow volume estimate). In many of the curtailment models, this means that the prediction could be off by at least a week in either direction (early or late). 
 
 ```{r curtailmentSummary, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics(file.path(params$fig_dir_mo, "wr_preds.png"))
@@ -171,4 +166,5 @@ knitr::include_graphics(file.path(params$fig_dir_mo, "wr_preds.png"))
 ```{r curtailmentSample, echo=FALSE, out.width = '90%', fig.align='center'}
 knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_curtailments.png"))
 ```
+
 

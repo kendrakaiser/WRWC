@@ -1,0 +1,133 @@
+---
+title: "WRWC Model Run"
+params:
+    fig_dir_mo: '~/github/WRWC/figures/March'
+    set_author: "Kendra E Kaiser"
+    todays_date: "03/30/2021"
+    data_dir:  '~/Desktop/WRWC/data'
+    git_dir: '~/github/WRWC'
+    input: 'all_dat_apr.csv'
+    run_date: 'april1'
+author: "`r params$set_author`"
+date: "`r params$todays_date`"
+output: 
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+  highlight: tango
+urlcolor: blue
+csl: AmJBot.csl
+header-includes:
+  \PassOptionsToPackage{dvipsnames,table}{xcolor}
+    \usepackage{float}
+     \usepackage{booktabs}
+     \usepackage{colortbl}
+    
+---
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+#knitr::opts_chunk$set(fig.pos = "!H", out.extra = "")
+options(knitr.table.format = "latex")
+```
+
+```{r setup, include=FALSE}
+library(knitr)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(fasstr)
+library(kableExtra)
+
+
+#knitr::opts_chunk$set(echo = FALSE)
+#knitr::opts_knit$set(verbose = TRUE)  
+
+fig_dir <<- file.path(params$git_dir, 'figures')
+snotel_data = read.csv(file.path(params$data_dir,'snotel_data.csv'))
+usgs_sites = read.csv('~/Desktop/WRWC/data/usgs_sites.csv')
+snotel_sites = read.csv('~/Desktop/WRWC/data/snotel_sites.csv')
+snotel_data$date<- as.Date(snotel_data$date)
+#q = read.csv(file.path(params$data_dir,'streamflow_data.csv'))
+#q$Date <- as.Date(q$Date)
+#q$doy <- yday(q$Date)
+#q<- q %>% filter(abv != 'bwr')
+feb1swe = read.csv(file.path(params$data_dir, 'feb1swe.csv'))
+mar1swe = read.csv(file.path(params$data_dir, 'mar1swe.csv'))
+apr1swe = read.csv(file.path(params$data_dir, 'april1swe.csv'))
+
+swe_q = read.csv(file.path(params$data_dir, params$input))
+
+yr<- year(as.Date(params$todays_date, format = "%m/%d/%Y"))
+
+#pred.curt = read.csv(file.path('~/Desktop/WRWC/April_output/pred.curtailments.csv'))
+#colnames(pred.curt)<- c("Water Right", "adjR2", "Predicted Curtailment", "Days +/-")
+```
+
+## Wood River Model Summary
+
+The WRWC Modeling Suite predicts spring air temperatures, total summer runoff volumes, "center of mass", total diversions and timing of delivery calls in the Big Wood River Basin, Camas Creek and Silver Creek. Curtailment dates are currently only predicted in the April model run.
+
+The NRCS Water Supply Report can be found here: https://www.wcc.nrcs.usda.gov/ftpref/states/id/webftp/wsor/2021/borid221.pdf
+
+## Data Summary
+
+
+### Snotel Data Summary
+
+``` {r SnotelSummary, echo=FALSE, out.width="75%", fig.align='center'}
+# Summary stats
+ggplot(data= (snotel_data %>% filter(wy == yr)), mapping= aes(x=as.Date(date), y=precipitation_cumulative))+
+  labs(title = "Year to Date Precipitation") +
+  geom_line(aes(color = site_name))+
+  labs(color = "Snotel Site")+
+  xlab('Date')+
+  ylab('Cumulative Precipitation (mm)')+
+  theme_bw()
+
+#Calculate Historic Means
+feb_mean<- data.frame(colMeans(feb1swe[3:14], na.rm = TRUE))
+mar_mean<- data.frame(colMeans(mar1swe[3:14], na.rm = TRUE))
+apr_mean<- data.frame(colMeans(apr1swe[3:14], na.rm = TRUE))
+
+swe_means<- cbind(feb_mean, mar_mean, apr_mean)
+colnames(swe_means) <- c("Feb1", "Mar1", "Apr1")
+rownames(swe_means) <- c("Chocolate Gulch", "Galena", "Galena Summit", "Hyndman Creek", "Lost-Wood Divide", "Dollarhide Summit", "Camas Creek Divide", "Soldier R.S.", "Garfield R.S.", "Swede Peak", "Stickney Mill", "Bear Canyon")
+
+last_date<- max(snotel_data$date)-1
+ytd_swe<- snotel_data[snotel_data$date == last_date,] %>% dplyr::select(c(site_name, snow_water_equivalent))
+rownames(ytd_swe) <- c("Chocolate Gulch", "Camas Creek Divide", "Soldier R.S.", "Bear Canyon", "Dollarhide Summit", "Galena", "Garfield R.S.", "Hyndman Creek", "Lost-Wood Divide", "Stickney Mill", "Galena Summit", "Swede Peak")
+
+swe<- merge(round(swe_means,0), ytd_swe, by=0) %>% dplyr::select(-site_name)
+
+if (params$run_date == 'feb1'){
+  swe_mo<-swe$Feb1
+} else if (params$run_date == 'march1'){
+  swe_mo<-swe$Mar1
+} else if (params$run_date == 'april1'){
+  swe_mo<-swe$Apr1
+}
+swe$per <- round(swe[,5]/swe_mo,2)*100
+da<-format(last_date, "%b %d %Y")
+
+swe %>% mutate(per = cell_spec(per, color = ifelse(per > 75, "blue","red"))) %>% `colnames<-`(c("Site", "Feb 1 Hist. Avg.", "Mar 1 Hist. Avg.", "Apr 1 Hist. Avg.", da, "Per of Avg")) %>% kbl(align=rep('c', 6), escape = FALSE, booktabs=TRUE, format="latex") %>% kable_styling(latex_options = c("striped", "HOLD_position"), full_width = FALSE) 
+```
+
+Historic mean SWE at each Snotel site, year-to-date SWE, and percent of average.
+
+Graphs of individual Snotel Sites, SWE predictions and comparison to historic 
+records can be found here:
+
+https://www.nrcs.usda.gov/wps/portal/nrcs/detail/id/snow/products/?cid=nrcseprd1491214
+\newpage
+
+## Model Output
+
+### Streamflow Volume Model Output
+
+```{r, volTabels}
+include_graphics(file.path(params$fig_dir_mo, "pred.volumes.png"))
+```
+
+These box plots show the historic range of volumes (grey) and the predicted range of volumes that were calculated for each basin (blue). The boxes represent the 25th - 75th percentiles, the median is the solid line in the middle, and circles are outliers. 
+\newpage
