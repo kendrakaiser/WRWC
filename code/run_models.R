@@ -20,7 +20,7 @@ run_date <<- 'march1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
-todays_date <<- "03/15/2021"
+todays_date <<- "03/01/2021"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -28,7 +28,7 @@ input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 data_dir <<- file.path(cd, 'data') # local
 
 # set end date for AgriMet Data download
-end_date <<- as.Date("2021-03-15") #Sys.Date()
+end_date <<- as.Date("2021-03-01") #Sys.Date()
 
 # ---- Run Model code
 
