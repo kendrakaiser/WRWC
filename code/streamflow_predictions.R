@@ -121,7 +121,7 @@ pred.params.vol[1,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
-hist <- var[var$year < pred.yr & var$year > 1996,] %>% dplyr::select(c(bws.vol, vol.params$bws$vars)) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bws.vol, vol.params$bws$vars)) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #  bws Prediction Data 
