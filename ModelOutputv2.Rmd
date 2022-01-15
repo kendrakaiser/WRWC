@@ -1,13 +1,23 @@
 ---
 title: "WRWC Model Run"
 params:
-    fig_dir_mo: './figures/March'
-    set_author: "Kendra E Kaiser"
-    todays_date: "03/15/2021"
     data_dir:  '~/Desktop/WRWC/data'
     git_dir: '~/github/WRWC'
-    input_data: 'all_dat_mar.csv'
-    run_date: 'march1'
+    fig_dir_mo: 
+     input: select
+     value: './figures/March'
+     choices: ['./figures/February', './figures/March', './figures/April']
+    input_data: 
+      input: select
+      value: 'all_dat_mar.csv'
+      choices: ['all_dat_feb.csv','all_dat_mar.csv', 'all_dat_apr.csv']
+    run_date: 
+      input: select
+      value: feb1
+      choices: [feb1, march1, april1]
+    set_author: "Kendra E Kaiser"
+    todays_date: "03/15/2021"
+    
 author: "`r params$set_author`"
 date: "`r params$todays_date`"
 output: 
