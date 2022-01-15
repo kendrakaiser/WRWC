@@ -43,7 +43,7 @@ source(file.path(git_dir, 'code/temperature_models.R'))
 
 # sets input/output file directories and selects model params and models depending on model run date 
 if (run_date == 'feb1'){
-  input <<- 'all_dat_feb.csv'
+  input_data <<- 'all_dat_feb.csv'
   fig_dir_mo <<- file.path(git_dir,'figures/February')
   model_out <<-  file.path(cd, 'February_output')
   
@@ -57,7 +57,7 @@ if (run_date == 'feb1'){
   wr_params <<- 'feb_wr_vars.rdata'
   
 } else if (run_date == 'march1'){
-  input <<- 'all_dat_mar.csv'
+  input_data <<- 'all_dat_mar.csv'
   fig_dir_mo <<- file.path(git_dir,'figures/March')
   model_out <<-  file.path(cd, 'March_output')
   
@@ -71,7 +71,7 @@ if (run_date == 'feb1'){
   wr_params <<- 'mar_wr_vars.rdata'
   
 } else if (run_date == 'april1'){
-  input <<- 'all_dat_apr.csv'
+  input_data <<- 'all_dat_apr.csv'
   fig_dir_mo <<- file.path(git_dir,'figures/April')
   model_out <<-  file.path(cd, 'April_output')
   
@@ -113,7 +113,7 @@ source(file.path(git_dir, 'code/streamflow_simulation.R'))
 detach(package:plyr) #plyr interferes with a grouping function needed for plotting
 params_list = list(fig_dir_mo = fig_dir_mo, set_author = author, 
                    todays_date=todays_date, data_dir = data_dir, 
-                   git_dir = git_dir, input = input, run_date=run_date)
+                   git_dir = git_dir, input_data = input_data, run_date=run_date)
 list.save(params_list, file.path(git_dir, 'rmd_params_list.rdata'))
 
 # knit PDF - if it doesn't work you can open the 'ModelOutputv2.Rmd' and press 'knit'
