@@ -6,7 +6,7 @@ params:
     todays_date: "03/15/2021"
     data_dir:  '~/Desktop/WRWC/data'
     git_dir: '~/github/WRWC'
-    input: 'all_dat_mar.csv'
+    input_data: 'all_dat_mar.csv'
     run_date: 'march1'
 author: "`r params$set_author`"
 date: "`r params$todays_date`"
@@ -29,9 +29,6 @@ header-includes:
 options(tinytex.verbose = TRUE)
 #knitr::opts_chunk$set(fig.pos = "!H", out.extra = "")
 options(knitr.table.format = "latex")
-```
-
-```{r setup, include=FALSE}
 
 library(rlist) #list.save
 library(knitr)
@@ -41,12 +38,14 @@ library(dplyr)
 library(lubridate)
 library(fasstr)
 library(kableExtra)
+```
 
+```{r dataInport, include=FALSE}
 
 fig_dir <<- file.path(params$git_dir, 'figures')
 snotel_data = read.csv(file.path(params$data_dir,'snotel_data.csv'))
-usgs_sites = read.csv('~/Desktop/WRWC/data/usgs_sites.csv')
-snotel_sites = read.csv('~/Desktop/WRWC/data/snotel_sites.csv')
+usgs_sites = read.csv(file.path(params$data_dir,'usgs_sites.csv'))
+snotel_sites = read.csv(file.path(params$data_dir,'snotel_sites.csv'))
 snotel_data$date<- as.Date(snotel_data$date)
 #q = read.csv(file.path(params$data_dir,'streamflow_data.csv'))
 #q$Date <- as.Date(q$Date)
@@ -56,7 +55,7 @@ feb1swe = read.csv(file.path(params$data_dir, 'feb1swe.csv'))
 mar1swe = read.csv(file.path(params$data_dir, 'mar1swe.csv'))
 apr1swe = read.csv(file.path(params$data_dir, 'april1swe.csv'))
 
-swe_q = read.csv(file.path(params$data_dir, params$input))
+swe_q = read.csv(file.path(params$data_dir, params$input_data))
 
 yr<- year(as.Date(params$todays_date, format = "%m/%d/%Y"))
 ```
