@@ -147,21 +147,21 @@ colnames(curt.sample)<-c("Big Wood abv Magic A", "Big Wood abv Magic B", "Big Wo
 write.csv(curt.sample, file.path(model_out,"curt.sample.csv"),row.names=F)
 
 # Plot boxplots of predicted curtailment dates from each model
+curt.samp.fig<- curt.sample %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+
 png(filename = file.path(fig_dir_mo,"sampled_curtailments.png"),
     width = 6.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-
-curt.sample %>% pivot_longer(everything(),  names_to = "site", values_to = "value") %>%
-  ggplot(aes(x=site, y=as.Date(value, origin=as.Date(paste(pred.yr,"-01-01",sep=""))), fill=site)) +
-  theme_bw()+
-  geom_boxplot() +
-  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
-  scale_y_date(date_breaks = "1 week", date_labels = "%b %d")+
-  scale_x_discrete(labels = wrap_format(10)) +
-  theme(legend.position="none") +
-  ggtitle("Sampled Curtailment Dates") +
-  xlab("")+
-  ylab("Curtailment Date")
+  ggplot(data=curt.samp.fig, aes(x=site, y=as.Date(value, origin=as.Date(paste(pred.yr,"-01-01",sep=""))), fill=site)) +
+    theme_bw()+
+    geom_boxplot() +
+    scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+    scale_y_date(date_breaks = "1 week", date_labels = "%b %d")+
+    scale_x_discrete(labels = wrap_format(10)) +
+    theme(legend.position="none") +
+    ggtitle("Sampled Curtailment Dates") +
+    xlab("")+
+    ylab("Curtailment Date")
 dev.off()
 
 # change from day of year to date for the table
