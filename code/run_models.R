@@ -103,7 +103,7 @@ suppressWarnings(source(file.path(git_dir, 'code/curtailment_model.R')))
 
 # Remove unesseary variables in the environment
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
-             "data_dir", "input", "fig_dir_mo", "author",  "todays_date", "end_date", 
+             "data_dir", "input_data", "fig_dir_mo", "author",  "todays_date", "end_date", 
              "model_out"))
 
 # Simulate the Irrigation Season Hydrograph
