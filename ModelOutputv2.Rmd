@@ -3,13 +3,13 @@ title: "WRWC Model Run"
 params:
     data_dir:  '~/Desktop/WRWC/data'
     git_dir: '~/github/WRWC'
-    fig_dir_mo: 
+    fig_dir_mo_rmd: 
      input: select
-     value: './figures/March'
+     value: './figures/February'
      choices: ['./figures/February', './figures/March', './figures/April']
     input_data: 
       input: select
-      value: 'all_dat_mar.csv'
+      value: 'all_dat_feb.csv'
       choices: ['all_dat_feb.csv','all_dat_mar.csv', 'all_dat_apr.csv']
     run_date: 
       input: select
@@ -133,11 +133,11 @@ https://www.nrcs.usda.gov/wps/portal/nrcs/detail/id/snow/products/?cid=nrcseprd1
 These box plots show the historic range of volumes (grey) and the predicted range of volumes that were calculated for each basin (blue). The boxes represent the 25th - 75th percentiles, the median is the solid line in the middle, and circles are outliers. 
 
 ```{r, volumeTables, echo=FALSE, out.width = '100%'}
-knitr::include_graphics(file.path(params$fig_dir_mo, "pred.volumes.png"))
+knitr::include_graphics(file.path(params$fig_dir_mo_rmd, "pred.volumes.png"))
 ```
 
 ```{r,sampledVolumes, echo=FALSE, out.width = '50%', fig.show="hold"}
-knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), file.path(params$fig_dir_mo, "sampled_sc_vol.png")))
+knitr::include_graphics(c(file.path(params$fig_dir_mo_rmd, "sampled_volumes.png"), file.path(params$fig_dir_mo_rmd, "sampled_sc_vol.png")))
 ```
 
 \newpage
@@ -147,12 +147,12 @@ knitr::include_graphics(c(file.path(params$fig_dir_mo, "sampled_volumes.png"), f
 Mean simulated 'natural' streamflow is shown in the solid blue line, the average historic daily 'natural' streamflow is shown in black and the 95% confidence interval around the simulations is shown in the shaded gray area.
 
 ```{r, bwSim, echo=FALSE, out.width = '50%', fig.show="hold"}
-knitr::include_graphics(c(file.path(params$fig_dir_mo, "BWB_Simulation.png"), 
-                          file.path(params$fig_dir_mo, "BWS_Simulation.png")))
+knitr::include_graphics(c(file.path(params$fig_dir_mo_rmd, "BWB_Simulation.png"), 
+                          file.path(params$fig_dir_mo_rmd, "BWS_Simulation.png")))
 ```
 
 ```{r, scSim, echo=FALSE, out.width = '50%', fig.show="hold"}
-knitr::include_graphics(c(file.path(params$fig_dir_mo,"SC_Simulation.png"), file.path(params$fig_dir_mo,"CC_Simulation.png")))
+knitr::include_graphics(c(file.path(params$fig_dir_mo_rmd,"SC_Simulation.png"), file.path(params$fig_dir_mo_rmd,"CC_Simulation.png")))
 ```
 
 \newpage
@@ -160,7 +160,7 @@ knitr::include_graphics(c(file.path(params$fig_dir_mo,"SC_Simulation.png"), file
 The following table is an estimate of the most similar years (since 1996) based on the timing of snowmelt.
 <p>
 ```{r, yearComparison, echo=FALSE, out.width = '100%', fig.show="hold"}
-knitr::include_graphics(file.path(params$fig_dir_mo,"CM_summary_prob.png")) 
+knitr::include_graphics(file.path(params$fig_dir_mo_rmd,"CM_summary_prob.png")) 
 ```
 </p>
   
@@ -169,11 +169,11 @@ knitr::include_graphics(file.path(params$fig_dir_mo,"CM_summary_prob.png"))
   While the curtailment date models do well at predicting curtailment dates with historic data they do rely on the predicted streamflow volumes and cannot capture uncertainty associated with summer temperatures and associated irrigation needs. The "Days +/-" is solely the variance around the predicted curtailment date (e.g. does not incorporate the uncertainty of the streamflow volume estimate). In many of the curtailment models, this means that the prediction could be off by at least a week in either direction (early or late). 
 
 ```{r curtailmentSummary, echo=FALSE, out.width = '100%', fig.align='center'}
-knitr::include_graphics(file.path(params$fig_dir_mo, "wr_preds.png"))
+knitr::include_graphics(file.path(params$fig_dir_mo_rmd, "wr_preds.png"))
 ```
 
 ```{r curtailmentSample, echo=FALSE, out.width = '90%', fig.align='center'}
-knitr::include_graphics(file.path(params$fig_dir_mo, "sampled_curtailments.png"))
+knitr::include_graphics(file.path(params$fig_dir_mo_rmd, "sampled_curtailments.png"))
 ```
 
 

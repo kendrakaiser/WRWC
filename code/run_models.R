@@ -16,11 +16,11 @@ cd <<- '~/Desktop/WRWC'
 # set prediction year
 pred.yr <<- 2021
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
-run_date <<- 'march1'
+run_date <<- 'feb1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
-todays_date <<- "03/01/2021"
+todays_date <<- "02/01/2021"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -28,7 +28,7 @@ input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 data_dir <<- file.path(cd, 'data') # local
 
 # set end date for AgriMet Data download
-end_date <<- as.Date("2021-03-01") #Sys.Date()
+end_date <<- as.Date("2021-02-01") #Sys.Date()
 
 # ---- Run Model code
 
@@ -44,7 +44,8 @@ source(file.path(git_dir, 'code/temperature_models.R'))
 # sets input/output file directories and selects model params and models depending on model run date 
 if (run_date == 'feb1'){
   input_data <<- 'all_dat_feb.csv'
-  fig_dir_mo <<- file.path(git_dir,'figures/February')
+  fig_dir_mo <<- file.path(fig_dir,'February')
+  fig_dir_mo_rmd <<- './figures/February'
   model_out <<-  file.path(cd, 'February_output')
   
   vol.vars <<-'feb_vol_vars.csv'
@@ -58,7 +59,8 @@ if (run_date == 'feb1'){
   
 } else if (run_date == 'march1'){
   input_data <<- 'all_dat_mar.csv'
-  fig_dir_mo <<- file.path(git_dir,'figures/March')
+  fig_dir_mo <<- file.path(fig_dir,'March')
+  fig_dir_mo_rmd <<- './figures/March'
   model_out <<-  file.path(cd, 'March_output')
   
   vol.vars <<-'mar_vol_vars.csv'
@@ -72,7 +74,8 @@ if (run_date == 'feb1'){
   
 } else if (run_date == 'april1'){
   input_data <<- 'all_dat_apr.csv'
-  fig_dir_mo <<- file.path(git_dir,'figures/April')
+  fig_dir_mo <<- file.path(fig_dir,'April')
+  fig_dir_mo_rmd <<- './figures/April'
   model_out <<-  file.path(cd, 'April_output')
   
   vol.vars <<-'apr_vol_vars.csv'
@@ -103,7 +106,7 @@ suppressWarnings(source(file.path(git_dir, 'code/curtailment_model.R')))
 
 # Remove unesseary variables in the environment
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
-             "data_dir", "input_data", "fig_dir_mo", "author",  "todays_date", "end_date", 
+             "data_dir", "input_data", "fig_dir_mo_rmd", "fig_dir_mo",  "author",  "todays_date", "end_date", 
              "model_out"))
 
 # Simulate the Irrigation Season Hydrograph
@@ -111,7 +114,7 @@ source(file.path(git_dir, 'code/streamflow_simulation.R'))
 
 # knit Model Results PDF
 detach(package:plyr) #plyr interferes with a grouping function needed for plotting
-params_list = list(fig_dir_mo = fig_dir_mo, set_author = author, 
+params_list = list(fig_dir_mo_rmd = fig_dir_mo_rmd, set_author = author, 
                    todays_date=todays_date, data_dir = data_dir, 
                    git_dir = git_dir, input_data = input_data, run_date=run_date)
 list.save(params_list, file.path(git_dir, 'rmd_params_list.rdata'))
