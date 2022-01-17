@@ -17,7 +17,7 @@ options(warn = -1)
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 
-swe_q = read.csv(file.path(data_dir,input))
+swe_q = read.csv(file.path(data_dir,input_data))
 swe_q[swe_q == 0] <- NA # change zeros to a value so lm works
 swe_q<-swe_q[!(names(swe_q) %in% c("bwb.cm.nat","bws.cm.nat","abv.h","abv.s","sc.div","bwb.vol.nat","bws.vol.nat","bws.loss","sc.vol.nat"))]
 
