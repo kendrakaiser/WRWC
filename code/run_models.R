@@ -28,7 +28,7 @@ input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 data_dir <<- file.path(cd, 'data') # local
 
 # set end date for AgriMet Data download
-end_date <<- as.Date("2021-02-01") #Sys.Date()
+end_date <<- Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
 # ---- Run Model code
 
@@ -117,7 +117,6 @@ detach(package:plyr) #plyr interferes with a grouping function needed for plotti
 params_list = list(fig_dir_mo_rmd = fig_dir_mo_rmd, set_author = author, 
                    todays_date=todays_date, data_dir = data_dir, 
                    git_dir = git_dir, input_data = input_data, run_date=run_date)
-list.save(params_list, file.path(git_dir, 'rmd_params_list.rdata'))
 
 # knit PDF - if it doesn't work you can open the 'ModelOutputv2.Rmd' and press 'knit'
 rmarkdown::render(file.path(git_dir, 'ModelOutputv2.Rmd'), params = params_list, 
