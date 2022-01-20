@@ -132,7 +132,11 @@ dev.off()
 # linear regression using elevation alone
 input <- tdata[tdata$site != "fairfield" & tdata$site != "picabo",] %>% filter(complete.cases(.))
 lr.elev<- lm(spring.tempF~  elev+year, data=input)
+#lr.elev<- lm(spring.tempF~  poly(elev,2) +year, data=input)
 input$fitted<- predict(lr.elev)
+#el <- as.data.frame(seq(from=1700, to=2700, by=30))
+#y <- as.data.frame(seq(from=1988, to=2021, by=1))
+#predicted_df <- data.frame(t_pred = predict(lr.elev, el, y, interval = 'confidence', level=0.95), elev=el, year=y)
 
 summary(lr.elev)
 
@@ -150,6 +154,7 @@ ggplot(input, aes(x=spring.tempF, y=fitted, color=site)) +
   xlab('Observed Mean April - June Temperature (F)') +
   ylab('Predicted Mean April - June Temperature (F)') +
   theme_bw()
+  #+geom_line(color='red', data = predicted_df, aes(y=kwh_pred.fit/1000, x=MonthlyQ/1000))
 dev.off()
   
 ggplot(input, aes(x=spring.tempF, y=fitted)) + geom_point()+
