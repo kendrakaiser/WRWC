@@ -11,7 +11,6 @@
 # -----------------------------------------------------------------------------  
 
 # Import Data ------------------------------------------------------------------  
-
 var<-read.csv(file.path(model_out,'all_vars.csv')) %>% select(-X)
 
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
@@ -91,14 +90,19 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   #Division by long-term mean to generate % of average volume, with lognormal residuals
   output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=TRUE) *100,0)
   
-  #this years total volume at 80 % confidence
+  #this years total volume at 90 % confidence
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.9)
+  
   #bottom of 90% CI (statisticians) converted ac-ft
   output.vol[1,4]<-round(exp(predictions$fit[2])/1000,0) #(1.98*183) -- why is this using the lower stat instead of the mean? it the 90% pred. interval of the bottom?
-  # 90% exceedance flow as a percent of long-term mean
+  
+  # 90% CI as a percent of long-term mean
   output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=TRUE) *100,0)
+  # last years volume
   output.vol[1,7]<-round(lastQ,0) # last years volume in ac-ft
   output.vol[1,8]<-round(lastQ/mean(vol, na.rm=TRUE),3)*100 # Last years percent of average historic volume
+  
+  # 50% Confidence interval
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.5)
   output.vol[1,6]<-round(exp(predictions$fit[2])/1000,0) #(1.98*183)
   return(list(output.vol, pred.params.vol))
@@ -287,7 +291,7 @@ pred.params.cm[3,] <- mod_out[[2]]
 ### Save model outputs 
 
 png(file.path(fig_dir_mo,"pred.volumes.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
-grid.table(output.vol[,1:6])
+grid.table(output.vol[,1:3])
 dev.off()
 
 png(file.path(fig_dir_mo,"pred.cm.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
@@ -430,7 +434,7 @@ dev.off()
 # Draw sample of years with similar volume for comparison -- 
 # these are too dependent on how the pmvnorm bounds are defined, need to come up with something else
 
-vol.data = var%>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
+vol.data = var %>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
 vol.data$prob<-NA
 
 vol.dat.std <- apply(vol.data[,2:5], MARGIN = 2, sd)
