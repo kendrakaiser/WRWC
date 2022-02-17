@@ -122,11 +122,31 @@ png(filename = file.path(fig_dir,"SummerTemps.png"),
 ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=sum.tempF, color=site)) +geom_point()
 dev.off()
 
+wt<-ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=wint.tempF, color=site)) +geom_point()
+
 png(filename = file.path(fig_dir,"WinterTemps.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=year, y=wint.tempF, color=site)) +geom_point()
+  print(wt)
 dev.off()
+
+
+subT<-tdata[tdata$site != "fairfield" & tdata$site != "picabo",]
+
+wt_box<- ggplot(subT%>% filter(year < pred.yr), aes(x=reorder(factor(site), nj.tempF, na.rm = TRUE), y=nj.tempF))+
+  geom_boxplot(alpha=0.8)+
+  theme_bw()+
+  xlab("Snotel Site")+
+  ylab("Average Nov-Jan Temperature (F)")+
+  geom_point(data = subT %>% filter(year == pred.yr), aes(reorder(factor(site), nj.tempF, na.rm = TRUE), y=nj.tempF), color="blue", size=3, shape=15)+
+  coord_flip()
+
+png(filename = file.path(fig_dir_mo,"NovJanT_box.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+print(wt_box)
+dev.off()
+
 
 # have 500 predictions of the upcoming years temperature for each site -- make sure that the notation (aj.site) is consitent with the model selection
 # linear regression using elevation alone
