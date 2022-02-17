@@ -319,6 +319,22 @@ if (run_date == 'feb1'){
 
 write.csv(alldat, file.path(data_dir,filename))
 
+wq<- alldat %>% select("year", "bwb.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
+
+sitelabs<- c( "Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")
+wq_box<- ggplot(wq %>% filter(year < pred.yr), aes(x=factor(site), y=winterFlow))+
+  geom_boxplot(alpha=0.8)+
+  theme_bw()+
+  xlab("USGS Site")+
+  ylab("Average Nov-Jan Winter Flow (cfs)")+
+  geom_point(data = wq %>% filter(year == pred.yr),  aes(x=factor(site), y=winterFlow), color="blue", size=3, shape=15)+
+  scale_x_discrete(labels= sitelabs)
+
+png(filename = file.path(fig_dir,"wq_box.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+print(wq_box)
+dev.off()
 
 # Additional Data Sources ----
 # National Operational Hydrologic Remote Sensing Center data - max SWE at 17 locations?
