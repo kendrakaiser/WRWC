@@ -14,13 +14,13 @@ git_dir <<- '~/github/WRWC'
 cd <<- '~/Desktop/WRWC'
 
 # set prediction year
-pred.yr <<- 2021
+pred.yr <<- 2022
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
 run_date <<- 'feb1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
-todays_date <<- "02/01/2021"
+todays_date <<- "02/17/2022"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
