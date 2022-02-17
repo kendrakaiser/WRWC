@@ -52,7 +52,7 @@ library(kableExtra)
 
 ```{r dataInport, include=FALSE}
 
-fig_dir <<- file.path(params$git_dir, 'figures')
+fig_dir <<- file.path('./figures')
 snotel_data = read.csv(file.path(params$data_dir,'snotel_data.csv'))
 usgs_sites = read.csv(file.path(params$data_dir,'usgs_sites.csv'))
 snotel_sites = read.csv(file.path(params$data_dir,'snotel_sites.csv'))
@@ -74,7 +74,11 @@ yr<- year(as.Date(params$todays_date, format = "%m/%d/%Y"))
 
 The WRWC Modeling Suite predicts spring air temperatures, total summer runoff volumes, "center of mass", total diversions and timing of delivery calls in the Big Wood River Basin, Camas Creek and Silver Creek. Curtailment dates are currently only predicted in the April model run.
 
-The NRCS Water Supply Report can be found here: https://www.wcc.nrcs.usda.gov/ftpref/states/id/webftp/wsor/2021/borid221.pdf
+The NRCS Water Supply Report can be found here: 
+https://www.nrcs.usda.gov/wps/portal/wcc/home/
+
+The Northwest River Forecast Center Water Supply Forecast for the Big Wood at Hailey found here:
+https://www.nwrfc.noaa.gov/water_supply/ws_forecasts.php?id=HALI1
 
 ## Data Summary
 
@@ -119,18 +123,32 @@ da<-format(last_date, "%b %d %Y")
 swe %>% mutate(per = cell_spec(per, color = ifelse(per > 75, "blue","red"))) %>% `colnames<-`(c("Site", "Feb 1 Hist. Avg.", "Mar 1 Hist. Avg.", "Apr 1 Hist. Avg.", da, "Per of Avg")) %>% kbl(align=rep('c', 6), escape = FALSE, booktabs=TRUE, format="latex") %>% kable_styling(latex_options = c("striped", "HOLD_position"), full_width = FALSE) 
 ```
 
-Historic mean SWE at each Snotel site, year-to-date SWE, and percent of average.
+Historic mean snow water equivalent (SWE) at each Snotel site, year-to-date SWE, and percent of average.
 
 Graphs of individual Snotel Sites, SWE predictions and comparison to historic 
 records can be found here:
-https://www.nrcs.usda.gov/wps/portal/nrcs/detail/id/snow/products/?cid=nrcseprd1491214
+https://www.nrcs.usda.gov/wps/portal/wcc/home/
+\newpage
+
+```{r, temperatureData, echo=FALSE, out.width = '50%', fig.align='center'}
+knitr::include_graphics(file.path(params$fig_dir_mo_rmd, "NovJanT_box.png"))
+```
+
+Historic average winter (November - January) temperatures across SNOTEL sites, with this years average winter temperature at each site shown as the blue square. 
+
+```{r, winterFlows, echo=FALSE, out.width = '50%', fig.align='center'}
+knitr::include_graphics(file.path(fig_dir, "wq_box.png"))
+```
+
+Boxplots of winter flows at each USGS site, with this years winter flow shown as the blue square.
+
 \newpage
 
 ## Model Output
 
 ### Streamflow Volume Model Output
 
-These box plots show the historic range of volumes (grey) and the predicted range of volumes that were calculated for each basin (blue). The boxes represent the 25th - 75th percentiles, the median is the solid line in the middle, and circles are outliers. 
+These box plots show the historic range of irrigation season (April- September) volume (grey) and the predicted range of volumes that were calculated for each basin (blue). The boxes represent the 25th - 75th percentiles, the median is the solid line in the middle, and circles are outliers. Exceedance probabilities can be interpreted as "We are 50% sure total April - Sept streamflow will exceed 39 KAF", these are being updated to match NRCS and NWRFC exceedance probabilities.
 
 ```{r, volumeTables, echo=FALSE, out.width = '100%'}
 knitr::include_graphics(file.path(params$fig_dir_mo_rmd, "pred.volumes.png"))
@@ -144,7 +162,7 @@ knitr::include_graphics(c(file.path(params$fig_dir_mo_rmd, "sampled_volumes.png"
 
 ### Streamflow Simulations
 
-Mean simulated 'natural' streamflow is shown in the solid blue line, the average historic daily 'natural' streamflow is shown in black and the 95% confidence interval around the simulations is shown in the shaded gray area.
+Mean simulated streamflow is shown in the solid blue line, the average historic daily 'natural' streamflow is shown in black and the 95% confidence interval around the simulations is shown in the shaded gray area.
 
 ```{r, bwSim, echo=FALSE, out.width = '50%', fig.show="hold"}
 knitr::include_graphics(c(file.path(params$fig_dir_mo_rmd, "BWB_Simulation.png"), 
@@ -157,16 +175,11 @@ knitr::include_graphics(c(file.path(params$fig_dir_mo_rmd,"SC_Simulation.png"), 
 
 \newpage
 
-The following table is an estimate of the most similar years (since 1996) based on the timing of snowmelt.
-<p>
-```{r, yearComparison, echo=FALSE, out.width = '100%', fig.show="hold"}
-knitr::include_graphics(file.path(params$fig_dir_mo_rmd,"CM_summary_prob.png")) 
-```
-</p>
-  
 ### Curtailment Date Model Output
   
   While the curtailment date models do well at predicting curtailment dates with historic data they do rely on the predicted streamflow volumes and cannot capture uncertainty associated with summer temperatures and associated irrigation needs. The "Days +/-" is solely the variance around the predicted curtailment date (e.g. does not incorporate the uncertainty of the streamflow volume estimate). In many of the curtailment models, this means that the prediction could be off by at least a week in either direction (early or late). 
+  
+**Water right labels** correspond to: A. March 24, 1883, B. October 14, 1884, C. June 1, 1886 for the Big Wood above Magic Reservoir, below Magic Reservoir and on Silver Creek.
 
 ```{r curtailmentSummary, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics(file.path(params$fig_dir_mo_rmd, "wr_preds.png"))
