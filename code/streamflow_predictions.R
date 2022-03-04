@@ -11,7 +11,7 @@
 # -----------------------------------------------------------------------------  
 
 # Import Data ------------------------------------------------------------------  
-var<-read.csv(file.path(model_out,'all_vars.csv')) %>% select(-X)
+var<-read.csv(file.path(model_out,'all_vars.csv'))# %>% select(-X)
 
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
@@ -116,7 +116,7 @@ swe_cols <- hist %>% dplyr::select(contains('swe'))
 #Prediction Data
 pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$bwh$vars) 
 
-# Big Wood at Hailey Model output --- check this output**
+# Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol.mods$bwh_mod)$adj.r.squared
 mod_out<- modOut(vol.mods$bwh_mod, pred.dat, var$bwb.wq[var$year == pred.yr], var$bwb.wq[var$year < pred.yr], hist$bwb.vol, mean(colMeans(swe_cols, na.rm=T)), var$bwb.vol[var$year == pred.yr-1])
 #these could be formatted differently to be saved to the gloabl env. within the function
@@ -289,7 +289,7 @@ output.cm[3,] <- mod_out[[1]]
 pred.params.cm[3,] <- mod_out[[2]]
 
 ### Save model outputs 
-
+# --------------------
 png(file.path(fig_dir_mo,"pred.volumes.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
 grid.table(output.vol[,1:3])
 dev.off()
@@ -311,7 +311,7 @@ write.csv(pred.params.cm, file.path(model_out,"pred.params.cm.csv"),row.names=T)
 # between each gage
 
 # calculate correlations between flow conditions across the basins
-flow.data = var[var$year >= 1997 & var$year < 2020,] %>% dplyr::select(bwb.vol, 
+flow.data = var[var$year >= 1997 & var$year < 2022,] %>% dplyr::select(bwb.vol, 
       bwb.cm, bws.vol, bws.cm, cc.vol, cc.cm, sc.vol, sc.cm) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
