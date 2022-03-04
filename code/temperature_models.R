@@ -41,7 +41,7 @@ for(i in 1:14){ #hard coded this in after adding agrimet sites to site.key list
     if (i<13){
       sub<- snotel[snotel$site_name == site.key[i] & snotel$wy==y, ]
     } else if (i>=13){
-      sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$y==y, ])}
+      sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$wy==y, ])}
     #average april - june temps
     #if length is greater than 95% of the desired period calculate the mean
     if (length(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"]) > 88) {
