@@ -29,11 +29,10 @@ colnames(wy)<-c("Date","day")
 # ------------------------------------------------------------------------------ # 
 
 # volumes
-output.vol<-array(NA,c(length(stream.id),8))
+output.vol<-array(NA,c(length(stream.id),3))
 rownames(output.vol)<-stream.id
 output.vol<-output.vol[-4,]
-colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol \nKAF", "Pred. Vol \n% of mean", "90% exc. \nKAF", 
-                        "90% exc. \n% of mean", "50% exc. \nKAF", "Prev Year \nVol KAF", "Prev Year \n% of mean Volume")
+colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol \nKAF", "Pred. Vol \n% of mean")
 rownames(output.vol)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
 pred.params.vol<-array(NA,c(4,4))
@@ -90,21 +89,6 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   #Division by long-term mean to generate % of average volume, with lognormal residuals
   output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=TRUE) *100,0)
   
-  #this years total volume at 90 % confidence
-  predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.9)
-  
-  #bottom of 90% CI (statisticians) converted ac-ft
-  output.vol[1,4]<-round(exp(predictions$fit[2])/1000,0) #(1.98*183) -- why is this using the lower stat instead of the mean? it the 90% pred. interval of the bottom?
-  
-  # 90% CI as a percent of long-term mean
-  output.vol[1,5]<-round(exp(predictions$fit[2])/mean(vol, na.rm=TRUE) *100,0)
-  # last years volume
-  output.vol[1,7]<-round(lastQ,0) # last years volume in ac-ft
-  output.vol[1,8]<-round(lastQ/mean(vol, na.rm=TRUE),3)*100 # Last years percent of average historic volume
-  
-  # 50% Confidence interval
-  predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.5)
-  output.vol[1,6]<-round(exp(predictions$fit[2])/1000,0) #(1.98*183)
   return(list(output.vol, pred.params.vol))
 }
 
@@ -468,7 +452,34 @@ png(file.path(fig_dir_mo,"vol_prob.png"), height = 50*nrow(vol_prob), width = 20
 grid.table(vol_prob)
 dev.off()
 
-# Figure for model details
-#hist(exp(vol.sample$`Big Wood Hailey`)/1000, xlab="Irrigation Season Streamflow (KAF)", main ="")
+# Calculate Exceedance Probabilities
+
+
+
+exceed.probs<- function(vols, probs){
+  'calculate exceedance probabilities of model output
+  p=m/(n+1)
+  vols: numeric of volumes
+  probs: array of probabilities to calculate'
+  #if could figure out match with matrix this could be better
+  #n=nrow(vols)
+  #ranks<- apply(vols, 2, rank)
+  
+  n=length(vols) 
+  m=round(p*(n+1))
+  #rank the sampled volumes
+  ranks<- rank(vols)
+  # find the index of which volume goes with each exceedance
+  ix=match(m, ranks)
+  # find the actual volume of each exceedance
+  ex.vols=exp(vols[ix])
+  return(ex.vols)
+}
+
+# Exceedance probs from NWRFC
+p<- c(0.1, 0.25, 0.5, 0.75, 0.9)
+
+ex.vols<- apply(vol.sample, 2, exceed.probs, p)
+ex.vols<- cbind(p*100, round(ex.vols/1000))
 
 
