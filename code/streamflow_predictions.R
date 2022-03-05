@@ -32,7 +32,7 @@ colnames(wy)<-c("Date","day")
 output.vol<-array(NA,c(length(stream.id),3))
 rownames(output.vol)<-stream.id
 output.vol<-output.vol[-4,]
-colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol \nKAF", "Pred. Vol \n% of mean")
+colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol (KAF)", "Pred. Vol \n% of mean")
 rownames(output.vol)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
 pred.params.vol<-array(NA,c(4,4))
@@ -275,7 +275,7 @@ pred.params.cm[3,] <- mod_out[[2]]
 ### Save model outputs 
 # --------------------
 png(file.path(fig_dir_mo,"pred.volumes.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
-grid.table(output.vol[,1:3])
+grid.table(t(output.vol[,1:3]))
 dev.off()
 
 png(file.path(fig_dir_mo,"pred.cm.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
@@ -322,6 +322,37 @@ write.csv(cov.mat, file.path(model_out,"cov.mat.csv"),row.names=T)
 write.csv(pred.pars, file.path(model_out,"pred.pars.csv"),row.names=T)
 
 # ------------------------------------------------------------------------------
+# Calculate Exceedance Probabilities
+# ------------------------------------------------------------------------------
+
+exceed.probs<- function(vols, probs){
+  'calculate exceedance probabilities of model output
+  p=m/(n+1)
+  vols: numeric of volumes
+  probs: array of probabilities to calculate'
+  
+  n=length(vols) 
+  m=round(p*(n+1))
+  #rank the sampled volumes
+  ranks<- rank(vols)
+  # find the index of which volume goes with each exceedance
+  ix=match(m, ranks)
+  # find the actual volume of each exceedance
+  ex.vols=exp(vols[ix])
+  return(ex.vols)
+}
+
+# Exceedance probs from NWRFC
+p<- c(0.1, 0.25, 0.5, 0.75, 0.9)
+
+ex.vols<- round(apply(vol.sample, 2, exceed.probs, p)/1000)
+rownames(ex.vols)<- c('10% Exceed', '25% Exceed', '50% Exceed', '75% Exceed', '95% Exceed')
+
+png(file.path(fig_dir_mo,"ex.vols.png"), height = 30*nrow(ex.vols), width = 130*ncol(ex.vols))
+grid.table(ex.vols)
+dev.off()
+
+# ------------------------------------------------------------------------------
 # Plot boxplots of total annual flow from each model
 # ------------------------------------------------------------------------------
 # Subset for plotting
@@ -357,6 +388,12 @@ png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
     bg = "white", res = 600) 
 print(p)
 dev.off()
+
+ex.vols %>% ggplot()+
+  stat_summary(ex.vols[,1:3],
+             geom = "point",
+             size = 3,
+             color = "steelblue") +
 
 ps<- vol.sm %>%
   ggplot(aes(x=site, y=value, fill=site)) +
@@ -418,21 +455,6 @@ dev.off()
 # Draw sample of years with similar volume for comparison -- 
 # these are too dependent on how the pmvnorm bounds are defined, need to come up with something else
 
-vol.data = var %>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
-vol.data$prob<-NA
-
-vol.dat.std <- apply(vol.data[,2:5], MARGIN = 2, sd)
-vol.dat.min<- apply(vol.data[,2:5], 2, min)
-vol.dat.max <- apply(vol.data[,2:5], 2, max) 
-
-vol.ranks<- apply(vol.data, 2, rank)
-vol.exed<- 100 *(vol.ranks[, 2:5]/(dim(vol.ranks)[1]+1))
-
-#exced$e95<- apply(vol.data[2:5],2,quantile,0.05, na.rm=TRUE)
-#exced$e05<- apply(vol.data[2:5],2,quantile,0.95, na.rm=TRUE)
-#exced$e99<- apply(vol.data[2:5],2,quantile,0.01, na.rm=TRUE)
-#exced$e01<- apply(vol.data[2:5],2,quantile,0.99, na.rm=TRUE)
-
 vol.data = var[var$year >1996 & var$year < pred.yr,]%>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
 vol.data$prob<-NA
 
@@ -452,34 +474,5 @@ png(file.path(fig_dir_mo,"vol_prob.png"), height = 50*nrow(vol_prob), width = 20
 grid.table(vol_prob)
 dev.off()
 
-# Calculate Exceedance Probabilities
-
-
-
-exceed.probs<- function(vols, probs){
-  'calculate exceedance probabilities of model output
-  p=m/(n+1)
-  vols: numeric of volumes
-  probs: array of probabilities to calculate'
-  #if could figure out match with matrix this could be better
-  #n=nrow(vols)
-  #ranks<- apply(vols, 2, rank)
-  
-  n=length(vols) 
-  m=round(p*(n+1))
-  #rank the sampled volumes
-  ranks<- rank(vols)
-  # find the index of which volume goes with each exceedance
-  ix=match(m, ranks)
-  # find the actual volume of each exceedance
-  ex.vols=exp(vols[ix])
-  return(ex.vols)
-}
-
-# Exceedance probs from NWRFC
-p<- c(0.1, 0.25, 0.5, 0.75, 0.9)
-
-ex.vols<- apply(vol.sample, 2, exceed.probs, p)
-ex.vols<- cbind(p*100, round(ex.vols/1000))
 
 
