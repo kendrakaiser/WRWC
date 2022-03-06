@@ -71,7 +71,7 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$year == pred.yr-1] 
   '
   pred.params.vol<-array(NA,c(1,4))
-  output.vol<-array(NA,c(1,8))
+  output.vol<-array(NA,c(1,3))
   
   meanSWE <- mean(hist.swe, trim=0, na.rm=TRUE)
   sig<-summary(mod)$sigma
@@ -274,8 +274,8 @@ pred.params.cm[3,] <- mod_out[[2]]
 
 ### Save model outputs 
 # --------------------
-png(file.path(fig_dir_mo,"pred.volumes.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
-grid.table(t(output.vol[,1:3]))
+png(file.path(fig_dir_mo,"pred.volumes.png"), height = 25*nrow(output.vol), width = 70*ncol(output.vol))
+grid.table(t(output.vol[,2:3]))
 dev.off()
 
 png(file.path(fig_dir_mo,"pred.cm.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
