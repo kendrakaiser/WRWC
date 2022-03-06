@@ -343,43 +343,58 @@ exceed.probs<- function(vols, probs){
 }
 
 # Exceedance probs from NWRFC
-p<- c(0.1, 0.25, 0.5, 0.75, 0.9)
+prb<- c(0.1, 0.25, 0.5, 0.75, 0.9)
 
-ex.vols<- round(apply(vol.sample, 2, exceed.probs, p)/1000)
+ex.vols<- round(apply(vol.sample, 2, exceed.probs, prb)/1000)
 rownames(ex.vols)<- c('10% Exceed', '25% Exceed', '50% Exceed', '75% Exceed', '95% Exceed')
+
 
 png(file.path(fig_dir_mo,"ex.vols.png"), height = 30*nrow(ex.vols), width = 130*ncol(ex.vols))
 grid.table(ex.vols)
 dev.off()
 
+ex.vols2<- as.data.frame(ex.vols)
+ex.vols2$exceed <- c('10%', '25%', '50%', '75%', '90%')
+ex.vols3 <- ex.vols2 %>%pivot_longer(!exceed, names_to="site", values_to="value")
+ex.vols3$t<- "Predicted"
 # ------------------------------------------------------------------------------
 # Plot boxplots of total annual flow from each model
 # ------------------------------------------------------------------------------
 # Subset for plotting
 vol.hist<- as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(bwb.vol, bws.vol, cc.vol)) %>% `colnames<-`(c("Big Wood Hailey Hist", "Big Wood Stanton Hist","Camas Creek Hist")) %>%pivot_longer(everything(),  names_to = "site", values_to = "value") )
 vol.hist$value<-vol.hist$value/1000
+vol.hist$t<- "Historic"
 vol.hist.sm<-as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(sc.vol)) %>% `colnames<-`(c("Silver Creek Hist")) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") )
 vol.hist.sm$value<-vol.hist.sm$value/1000
+vol.hist.sm$t<- "Historic"
 
 vol.pred <-as.data.frame(exp(vol.sample)/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
-
+vol.pred$t<- "Predicted"
 vol.big<- rbind(vol.hist, vol.pred[vol.pred$site != "Silver Creek",])
 vol.sm<- rbind(vol.hist.sm, vol.pred[vol.pred$site == "Silver Creek",])
-
+vol.big$t <- factor(vol.big$t)
+vol.sm$t <- factor(vol.sm$t)
 vol.big$site<-factor(vol.big$site,levels = c("Big Wood Hailey Hist","Big Wood Hailey", "Big Wood Stanton Hist", "Big Wood Stanton", "Camas Creek Hist", "Camas Creek" ), ordered = TRUE)
 vol.sm$site<-factor(vol.sm$site,levels = c("Silver Creek Hist","Silver Creek"), ordered = TRUE)
 
-# Plot boxplots of total annual flow from each model
+colfunc<-colorRampPalette(c("red","darkorange","green3","deepskyblue", "blue3"))
 
-p<-vol.big %>%
-  ggplot(aes(x=site, y=value, fill=site)) +
-  geom_boxplot(alpha=0.7) +
-  scale_fill_manual(values=c("grey90","blue", "grey90","blue", "grey90","blue")) +
+# Plot boxplots of total annual flow from each model
+ggplot(ex.vols3[ex.vols3$site !="Silver Creek",])+
+  geom_point(aes(x=site, y=value, color=as.factor(exceed)))+
+  #scale_fill_manual(values=c("red","darkorange","green3","deepskyblue", "blue3"))
+  scale_color_manual(values=c("blue3","deepskyblue","green3", "red","darkorange"))
+  
+p<-ggplot(vol.big, aes(x=site, y=value, fill=t), alpha=0.6) +
+  geom_boxplot() +
+  scale_fill_manual(values=c("blue", "grey90","blue", "grey90","blue","grey90")) +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
   scale_y_continuous(breaks = round(seq(0, max(vol.big$value, na.rm=TRUE), by = 50),1))+
+  theme(legend.title = element_blank())+
+  geom_point(data=ex.vols3[ex.vols3$site !="Silver Creek",], aes(x=site, y=value, color=as.factor(exceed), size =5))+
+  scale_color_manual(values=c("red","darkorange","green3","deepskyblue", "blue3"))+
   theme_bw()+
-  theme(legend.position="none") +
-  ggtitle("Sampled Irrigation Season Volumes") +
+  ggtitle("Historic & Modeled Irrigation Season Volumes (April-Sept.)") +
   xlab("")+
   ylab("Irrigation Season Volume (KAF)") 
 
