@@ -347,11 +347,11 @@ prb<- c(0.1, 0.25, 0.5, 0.75, 0.9)
 # Calculate exceedance probabilities and save table with labels
 ex.vols<- round(apply(vol.sample, 2, exceed.probs, prb)/1000) %>% as.data.frame()
 ex.vols$Exceedance <- c('90%', '75%', '50%', '25%', '10%') 
-ex.vols%>% relocate(Exceedance)
+ex.vols<- ex.vols%>% relocate(Exceedance)
 
-
+my_table_theme <- ttheme_default(core=list(fg_params = list(col = c("red","darkorange","green3","deepskyblue", "blue3"), col=NA)))
 png(file.path(fig_dir_mo,"ex.vols.png"), height = 30*nrow(ex.vols), width = 130*ncol(ex.vols))
-grid.table(ex.vols)
+grid.table(ex.vols, theme = my_table_theme, rows = NULL)
 dev.off()
 
 ex.vols3 <- ex.vols %>%pivot_longer(!Exceedance, names_to="site", values_to="value")
