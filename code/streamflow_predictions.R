@@ -332,7 +332,7 @@ exceed.probs<- function(vols, probs){
   probs: array of probabilities to calculate'
   
   n=length(vols) 
-  m=round(p*(n+1))
+  m=round(probs*(n+1))
   #rank the sampled volumes
   ranks<- rank(vols)
   # find the index of which volume goes with each exceedance
@@ -344,18 +344,17 @@ exceed.probs<- function(vols, probs){
 
 # Exceedance probs from NWRFC
 prb<- c(0.1, 0.25, 0.5, 0.75, 0.9)
-
-ex.vols<- round(apply(vol.sample, 2, exceed.probs, prb)/1000)
-rownames(ex.vols)<- c('10% Exceed', '25% Exceed', '50% Exceed', '75% Exceed', '95% Exceed')
+# Calculate exceedance probabilities and save table with labels
+ex.vols<- round(apply(vol.sample, 2, exceed.probs, prb)/1000) %>% as.data.frame()
+ex.vols$Exceedance <- c('90%', '75%', '50%', '25%', '10%') 
+ex.vols%>% relocate(Exceedance)
 
 
 png(file.path(fig_dir_mo,"ex.vols.png"), height = 30*nrow(ex.vols), width = 130*ncol(ex.vols))
 grid.table(ex.vols)
 dev.off()
 
-ex.vols2<- as.data.frame(ex.vols)
-ex.vols2$exceed <- c('10%', '25%', '50%', '75%', '90%')
-ex.vols3 <- ex.vols2 %>%pivot_longer(!exceed, names_to="site", values_to="value")
+ex.vols3 <- ex.vols %>%pivot_longer(!Exceedance, names_to="site", values_to="value")
 ex.vols3$t<- "Predicted"
 # ------------------------------------------------------------------------------
 # Plot boxplots of total annual flow from each model
@@ -370,55 +369,54 @@ vol.hist.sm$t<- "Historic"
 
 vol.pred <-as.data.frame(exp(vol.sample)/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
 vol.pred$t<- "Predicted"
+
 vol.big<- rbind(vol.hist, vol.pred[vol.pred$site != "Silver Creek",])
 vol.sm<- rbind(vol.hist.sm, vol.pred[vol.pred$site == "Silver Creek",])
+vol.cc<- rbind(vol.hist[vol.hist$site == "Camas Creek Hist",], vol.pred[vol.pred$site == "Camas Creek",])
+vol.cc$t <- factor(vol.cc$t)
 vol.big$t <- factor(vol.big$t)
 vol.sm$t <- factor(vol.sm$t)
 vol.big$site<-factor(vol.big$site,levels = c("Big Wood Hailey Hist","Big Wood Hailey", "Big Wood Stanton Hist", "Big Wood Stanton", "Camas Creek Hist", "Camas Creek" ), ordered = TRUE)
 vol.sm$site<-factor(vol.sm$site,levels = c("Silver Creek Hist","Silver Creek"), ordered = TRUE)
+vol.cc$site<-factor(vol.cc$site,levels = c("Camas Creek Hist", "Camas Creek" ), ordered = TRUE)
+
 
 colfunc<-colorRampPalette(c("red","darkorange","green3","deepskyblue", "blue3"))
 
-# Plot boxplots of total annual flow from each model
-ggplot(ex.vols3[ex.vols3$site !="Silver Creek",])+
-  geom_point(aes(x=site, y=value, color=as.factor(exceed)))+
-  #scale_fill_manual(values=c("red","darkorange","green3","deepskyblue", "blue3"))
-  scale_color_manual(values=c("blue3","deepskyblue","green3", "red","darkorange"))
+# Plot boxplots of total annual flow from each model with exceedance probabilities
   
 p<-ggplot(vol.big, aes(x=site, y=value, fill=t), alpha=0.6) +
-  geom_boxplot() +
-  scale_fill_manual(values=c("blue", "grey90","blue", "grey90","blue","grey90")) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  scale_fill_manual(values=c("royalblue3", "grey90")) +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
   scale_y_continuous(breaks = round(seq(0, max(vol.big$value, na.rm=TRUE), by = 50),1))+
-  theme(legend.title = element_blank())+
-  geom_point(data=ex.vols3[ex.vols3$site !="Silver Creek",], aes(x=site, y=value, color=as.factor(exceed), size =5))+
+
+  geom_point(data=ex.vols3[ex.vols3$site !="Silver Creek",], aes(x=site, y=value, color=as.factor(Exceedance)), size=2, shape=15)+
   scale_color_manual(values=c("red","darkorange","green3","deepskyblue", "blue3"))+
   theme_bw()+
   ggtitle("Historic & Modeled Irrigation Season Volumes (April-Sept.)") +
+  labs(fill="", color="Exceedance")+
   xlab("")+
   ylab("Irrigation Season Volume (KAF)") 
 
 png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    width = 6.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 print(p)
 dev.off()
 
-ex.vols %>% ggplot()+
-  stat_summary(ex.vols[,1:3],
-             geom = "point",
-             size = 3,
-             color = "steelblue") +
-
-ps<- vol.sm %>%
-  ggplot(aes(x=site, y=value, fill=site)) +
-  geom_boxplot(alpha=0.7) +
-  scale_fill_manual(values=c("grey90","blue")) +
+ps<- ggplot(vol.sm, aes(x=site, y=value, fill=site), alpha=0.6) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  scale_fill_manual(values=c("royalblue3", "grey90")) +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
   scale_y_continuous(breaks = round(seq(0, max(vol.sm$value, na.rm=TRUE), by = 10),1))+
+  geom_point(data=ex.vols3[ex.vols3$site =="Silver Creek",], aes(x=site, y=value, color=as.factor(Exceedance)), size=2, shape=15)+
+  scale_color_manual(values=c("red","darkorange","green3","deepskyblue", "blue3"))+
+  
   theme_bw()+
   theme(legend.position="none") +
   ggtitle("") +
+  labs(fill="", color="Exceedance")+
   xlab("")+
   ylab("Irrigation Volume (KAF)")
 
@@ -426,6 +424,27 @@ png(filename = file.path(fig_dir_mo,"sampled_sc_vol.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 print(ps)
+dev.off()
+
+pc<- ggplot(vol.cc, aes(x=site, y=value, fill=site), alpha=0.6) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  scale_fill_manual(values=c("royalblue3", "grey90")) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  scale_y_continuous(breaks = round(seq(0, max(vol.cc$value, na.rm=TRUE), by = 20),1))+
+  geom_point(data=ex.vols3[ex.vols3$site =="Camas Creek",], aes(x=site, y=value, color=as.factor(Exceedance)), size=2, shape=15)+
+  scale_color_manual(values=c("red","darkorange","green3","deepskyblue", "blue3"))+
+  
+  theme_bw()+
+  theme(legend.position="none") +
+  ggtitle("") +
+  labs(fill="", color="Exceedance")+
+  xlab("")+
+  ylab("Irrigation Volume (KAF)")
+
+png(filename = file.path(fig_dir_mo,"sampled_cc_vol.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+print(pc)
 dev.off()
 
 # ------------------------------------------------------------------------------
