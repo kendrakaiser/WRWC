@@ -75,10 +75,10 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   
   meanSWE <- mean(hist.swe, trim=0, na.rm=TRUE)
   sig<-summary(mod)$sigma
-  pred.params.vol[1,2]<-sig
+  pred.params.vol[1,2]<-sig^2/2 #lognormal residuals
   #predict this years total volume at 95 % confidence
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.95)
-  pred.params.vol[1,1]<-mean(predictions$fit, na.rm=TRUE)
+  pred.params.vol[1,1]<-predictions$fit[1] #mean prediction 
   pred.params.vol[1,3]<-predictions$fit[2] #lower prediction interval
   pred.params.vol[1,4]<-predictions$fit[3] #upper prediction interval
   #This years percent of mean winter flow
@@ -118,7 +118,7 @@ pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$bws$vars)
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol.mods$bws_mod)$adj.r.squared
 mod_out<- modOut(vol.mods$bws_mod, pred.dat, var$bws.wq[var$year == pred.yr], var$bws.wq[var$year < pred.yr], hist$bws.vol, mean(colMeans(swe_cols, na.rm=T)), var$bws.vol[var$year == pred.yr-1])
-output.vol[2,] <- mod_out[[1]]
+output.vol[2,] <- mod_out[[1]] #prediction plus sigma^2
 pred.params.vol[2,] <- mod_out[[2]]
 
 # --------------------------------------------------
@@ -274,7 +274,7 @@ pred.params.cm[3,] <- mod_out[[2]]
 
 ### Save model outputs 
 # --------------------
-png(file.path(fig_dir_mo,"pred.volumes.png"), height = 25*nrow(output.vol), width = 70*ncol(output.vol))
+png(file.path(fig_dir_mo,"pred.volumes.png"), height = 25*nrow(output.vol), width = 130*ncol(t(output.vol[,2:3])))
 grid.table(t(output.vol[,2:3]))
 dev.off()
 
@@ -300,7 +300,7 @@ flow.data = var[var$year >= 1997 & var$year < 2022,] %>% dplyr::select(bwb.vol,
 
 # calculate correlations between gages' total volume, diversions and center of mass
 cor.mat<-cor(cbind(flow.data[c(1,3,5,7)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
-
+#pred.params.vol[2,2]<-0.2
 # create covariance matrix by multiplying by each models standard error
 pred.pars<-rbind(pred.params.vol[,1:2], pred.params.cm)
 outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2]))
