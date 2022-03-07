@@ -75,7 +75,7 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   
   meanSWE <- mean(hist.swe, trim=0, na.rm=TRUE)
   sig<-summary(mod)$sigma
-  pred.params.vol[1,2]<-sig^2/2 #lognormal residuals
+  pred.params.vol[1,2]<-sig #^2/2 #lognormal residuals
   #predict this years total volume at 95 % confidence
   predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.95)
   pred.params.vol[1,1]<-predictions$fit[1] #mean prediction 
@@ -84,10 +84,10 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   #This years percent of mean winter flow
   output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,0)
   
-  # back-transformation of log-transformed data to expected value in original units, with lognormal residuals; 183 is the number of days between April-Sept and 1.98 converts back to cfs
-  output.vol[1,2]<-round(exp(predictions$fit[1]+sig^2/2)/1000,0)
-  #Division by long-term mean to generate % of average volume, with lognormal residuals
-  output.vol[1,3]<-round(exp(predictions$fit[1]+sig^2/2)/mean(vol, na.rm=TRUE) *100,0)
+  # back-transformation of log-transformed data to expected value in original units; 183 is the number of days between April-Sept and 1.98 converts back to cfs
+  output.vol[1,2]<-round(exp(predictions$fit[1])/1000,0) #+sig^2/2 , with lognormal residuals
+  #Division by long-term mean to generate % of average volume
+  output.vol[1,3]<-round(exp(predictions$fit[1])/mean(vol, na.rm=TRUE) *100,0) # +sig^2/2 , with lognormal residuals
   
   return(list(output.vol, pred.params.vol))
 }
@@ -119,6 +119,7 @@ pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$bws$vars)
 mod_sum[2,1]<-summary(vol.mods$bws_mod)$adj.r.squared
 mod_out<- modOut(vol.mods$bws_mod, pred.dat, var$bws.wq[var$year == pred.yr], var$bws.wq[var$year < pred.yr], hist$bws.vol, mean(colMeans(swe_cols, na.rm=T)), var$bws.vol[var$year == pred.yr-1])
 output.vol[2,] <- mod_out[[1]] #prediction plus sigma^2
+mod_out[[2]][,2]<- mod_out[[2]][,2]^2 #manually lognormalizing the sigma
 pred.params.vol[2,] <- mod_out[[2]]
 
 # --------------------------------------------------
