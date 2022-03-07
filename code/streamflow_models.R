@@ -57,7 +57,8 @@ ctrl <- trainControl(method = "LOOCV")
 #------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for April-Sept Volume Predictions
 #------------------------------------------------------------------------------ # 
- 
+nv_max=10
+
 # Big Wood at Hailey
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, 
               all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
@@ -106,12 +107,13 @@ hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.vol, bws.wq,
                   all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to explore models
-tryCatch({regsubsets.out<-regsubsets(log(hist$bws.vol)~., data=hist[,-c(1)], nbest=1, nvmax=12)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$bws.vol)~., data=hist[,-c(1)], nbest=1, nvmax=nv_max)}, 
          error= function(e) {print("Big Wood Stanton Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out) #summary of regsubsets to pull info from
 rm(regsubsets.out)
 
 vars<-reg_sum$which[which.min(reg_sum$bic),] #T/F of variables
+#vars3<-coef(regsubsets.out, 5)
 bws_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit a regression model and use LOOCV to evaluate performance
@@ -144,7 +146,7 @@ hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, bwb.wq,
              all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.)) 
 
 # Silver Creek regsubsets 
-tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=14)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=nv_max)}, 
          error= function(e) {print("Silver Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -181,7 +183,7 @@ hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, bwb.wq,
             all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.)) 
 
 #select parameters
-tryCatch({regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=12)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
          error= function(e) {print("Camas Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
