@@ -23,6 +23,8 @@ key <- unique(curtailments[c("subbasin", 'water_right_cat')])
 
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
+pred.vols<- as.data.frame(t(output.vol[,3]))
+colnames(pred.vols)<- c('bwb.vol','bws.vol', 'cc.vol', 'sc.vol') 
 
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
@@ -64,6 +66,11 @@ mod_dev<- function(water_right, subws){
 
   # Prediction Data 
   pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(mod_sum$vars)
+  #if predicted flows are in the model, add them here
+  if (grep('vol', mod_sum$vars) > 0){
+    pred.var<- mod_sum$vars[grep('vol', mod_sum$vars)]
+    pred.dat[pred.var]<- pred.vols[pred.var]
+  }
 
   # Model output
   preds.curt<-predict(mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
@@ -120,16 +127,18 @@ list.save(wr_vars, file.path(fig_dir_mo, wr_params))
 # couldnt get pivot wider to work ...
 # tst<-pivot_wider(curtailments, names_from = c(subbasin, water_right_cat), values_from = shut_off_julian)
 julian_curt<- data.frame(matrix(ncol = 10, nrow = length(min(curtailments$year):max(curtailments$year))))
-colnames(julian_curt)<- c("year", "uwr_a", "uwr_b", "uwr_c", "lwr_a", "lwr_b", "lwr_c", "sc_a", "sc_b", "sc_c")
+colnames(julian_curt)<- c("year", "uwr_a", "lwr_a", "sc_a", "uwr_b", "lwr_b","sc_b", "uwr_c",  "lwr_c",  "sc_c")
 julian_curt$year <- min(curtailments$year):max(curtailments$year)
 julian_curt$uwr_a <- curtailments %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_ab_magic') %>% dplyr::select(shut_off_julian) 
-julian_curt$uwr_b <- curtailments %>% subset(water_right_cat =="B") %>% subset(subbasin == 'bw_ab_magic') %>% dplyr::select(shut_off_julian) 
-julian_curt$uwr_c <- curtailments %>% subset(water_right_cat =="C") %>% subset(subbasin == 'bw_ab_magic') %>% dplyr::select(shut_off_julian) 
 julian_curt$lwr_a <- curtailments %>% subset(water_right_cat =="A") %>% subset(subbasin == 'bw_bl_magic') %>% dplyr::select(shut_off_julian) 
-julian_curt$lwr_b <- curtailments %>% subset(water_right_cat =="B") %>% subset(subbasin == 'bw_bl_magic') %>% dplyr::select(shut_off_julian) 
-julian_curt$lwr_c <- curtailments %>% subset(water_right_cat =="C") %>% subset(subbasin == 'bw_bl_magic') %>% dplyr::select(shut_off_julian) 
 julian_curt$sc_a <- curtailments %>% subset(water_right_cat =="A") %>% subset(subbasin == 'sc_lw') %>% dplyr::select(shut_off_julian) 
+
+julian_curt$uwr_b <- curtailments %>% subset(water_right_cat =="B") %>% subset(subbasin == 'bw_ab_magic') %>% dplyr::select(shut_off_julian) 
+julian_curt$lwr_b <- curtailments %>% subset(water_right_cat =="B") %>% subset(subbasin == 'bw_bl_magic') %>% dplyr::select(shut_off_julian) 
 julian_curt$sc_b <- curtailments %>% subset(water_right_cat =="B") %>% subset(subbasin == 'sc_lw') %>% dplyr::select(shut_off_julian) 
+
+julian_curt$uwr_c <- curtailments %>% subset(water_right_cat =="C") %>% subset(subbasin == 'bw_ab_magic') %>% dplyr::select(shut_off_julian) 
+julian_curt$lwr_c <- curtailments %>% subset(water_right_cat =="C") %>% subset(subbasin == 'bw_bl_magic') %>% dplyr::select(shut_off_julian) 
 julian_curt$sc_c <- curtailments %>% subset(water_right_cat =="C") %>% subset(subbasin == 'sc_lw') %>% dplyr::select(shut_off_julian) 
 
 
@@ -143,7 +152,7 @@ curt.cov.mat<-curt.cor.mat*curt.outer.prod
 # Draw curtailment dates using multivariate normal distribution
 curt.sample<-data.frame(mvrnorm(n=5000,mu=(wr_mod_out[,4]),Sigma=curt.cov.mat))
 
-colnames(curt.sample)<-c("Big Wood abv Magic A", "Big Wood abv Magic B", "Big Wood abv Magic C", "Big Wood blw Magic A", "Big Wood blw Magic B", "Big Wood blw Magic C", "Silver Creek A", "Silver Creek B", "Silver Creek C")
+colnames(curt.sample)<-c("Big Wood abv Magic '83", "Big Wood blw Magic 83", "Silver Creek '83", "Big Wood abv Magic '84", "Big Wood blw Magic '84", "Silver Creek '84", "Big Wood abv Magic '86", "Big Wood blw Magic '86", "Silver Creek '86")
 write.csv(curt.sample, file.path(model_out,"curt.sample.csv"),row.names=F)
 
 # Plot boxplots of predicted curtailment dates from each model
