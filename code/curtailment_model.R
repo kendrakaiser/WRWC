@@ -81,7 +81,7 @@ mod_dev<- function(water_right, subws){
   pred.params.curt[1,5]<-round(mean(preds.curt$se.fit),1)
   
   # Make the max prediction doy 275
-  if (pred.params.curt[1,2] > 275){pred.params.curt[1,2] =275}
+  if (pred.params.curt[1,4] > 275){pred.params.curt[1,4] =275}
   model$pred$pred[model$pred$pred > 275] = 275
 
   plt_name=paste(run_date, subws, water_right, sep= " ")
@@ -150,15 +150,20 @@ curt.outer.prod<-as.matrix(wr_mod_out[,5])%*%t(as.matrix(wr_mod_out[,5]))
 curt.cov.mat<-curt.cor.mat*curt.outer.prod
 
 # Draw curtailment dates using multivariate normal distribution
-curt.sample<-data.frame(mvrnorm(n=5000,mu=(wr_mod_out[,4]),Sigma=curt.cov.mat))
+curt.sample<-data.frame(mvrnorm(n=5000,mu=(as.matrix(wr_mod_out[,4])),Sigma=curt.cov.mat))
+
+curt.sample[curt.sample>275] = 275
 
 colnames(curt.sample)<-c("Big Wood abv Magic '83", "Big Wood blw Magic 83", "Silver Creek '83", "Big Wood abv Magic '84", "Big Wood blw Magic '84", "Silver Creek '84", "Big Wood abv Magic '86", "Big Wood blw Magic '86", "Silver Creek '86")
 write.csv(curt.sample, file.path(model_out,"curt.sample.csv"),row.names=F)
 
 # Plot boxplots of predicted curtailment dates from each model
-#curt.samp.fig<- 
-cs<- ggplot(curt.sample %>% pivot_longer(everything(),  names_to = "site", values_to = "value"),
-            aes(x=site, y=as.Date(value, origin=as.Date(paste(pred.yr,"-01-01",sep=""))), fill=site)) +
+curt.samp.fig<- curt.sample %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+curt.samp.fig$yr<-as.factor(rep(c(1983, 1983, 1983, 1984, 1984, 1984, 1986, 1986, 1986),5000))
+curt.samp.fig$loc<-rep(c(1,4,7,2,5,8,3,6,9),5000)
+
+cs<- ggplot(curt.samp.fig,
+            aes(x=reorder(site, loc), y=as.Date(value, origin=as.Date(paste(pred.yr,"-01-01",sep=""))), fill=yr)) +
   theme_bw()+
   geom_boxplot() +
   scale_fill_viridis(discrete = TRUE, alpha=0.6) +
@@ -176,8 +181,10 @@ png(filename = file.path(fig_dir_mo,"sampled_curtailments.png"),
 dev.off()
 
 # change from day of year to date for the table
-wr_mod_out[,4]<- as.Date(wr_mod_out[,4], origin=as.Date(paste(pred.yr,"-01-01",sep="")), format='%m/%d')
+wr_tbl<-wr_mod_out[,4:5]
+wr_tbl[,1]<- as.Date(wr_tbl[,1], origin=as.Date(paste(pred.yr,"-01-01",sep="")), format='%m/%d')
+rownames(wr_tbl)<- c('Big Wood Above Magic 3-24-83', 'Big Wood Below Magic 83', 'Silver Creek 83', 'Big Wood Above Magic 10-14-84', 'Big Wood Below Magic 84', 'Silver Creek 84', 'Big Wood Above Magic 6-01-86', 'Big Wood Below Magic 86', 'Silver Creek 86')
 
 png(file.path(fig_dir_mo,"wr_preds.png"), height = 25*nrow(wr_mod_out), width = 80*ncol(wr_mod_out))
-grid.table(wr_mod_out[,4:5])
+grid.table(wr_tbl)
 dev.off()
