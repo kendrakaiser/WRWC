@@ -195,7 +195,7 @@ aj_params<-cm.params$bwh$vars[grep('aj', cm.params$bwh$vars)]
 hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.cm, cm.params$bwh$vars) %>% filter(complete.cases(.))
 
 # Prediction Data with modeled temperature data
-pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::slice(rep(1:n(), 5000))
 pred.data[aj_params] <- temp.ran[aj_params]
 
 # Big Wood Hailey Model output
