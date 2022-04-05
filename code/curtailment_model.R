@@ -183,9 +183,16 @@ curt_hist<- ggplot(curtailments,
   geom_boxplot()+
   scale_fill_viridis(discrete = TRUE, alpha=0.6) +
   scale_y_date(date_breaks = "1 week", date_labels = "%b %d")+
-  scale_x_discrete(labels = wrap_format(10))
-
-print(curt_hist)
+  scale_x_discrete(labels = wrap_format(10))  +
+  ggtitle("Historic Curtailment Dates") +
+  theme(legend.position="none") +
+  xlab("")+
+  ylab("Curtailment Date")
+png(filename = file.path(fig_dir_mo,"hist_curtailments.png"),
+    width = 6.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+  print(curt_hist)
+dev.off()
 # change from day of year to date for the table
 wr_tbl<-wr_mod_out[,4:5]
 wr_tbl[,1]<- as.Date(wr_tbl[,1], origin=as.Date(paste(pred.yr,"-01-01",sep="")), format='%m/%d')
