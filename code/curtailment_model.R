@@ -12,6 +12,7 @@ var<-read.csv(file.path(model_out,'all_vars.csv')) %>% dplyr::select(-X)
 #check on full run
 #nat_cols<-grep('nat', colnames(var))
 #var<- var %>% dplyr::select(-c(all_of(nat_cols), "div", "sc.div", "abv.s", "abv.h", "bws.loss")) 
+curtailments$wr_name<- paste(curtailments$subbasin, curtailments$water_right_cat, sep='')
 
 swe_cols<-grep('swe', colnames(var))
 t_cols<-grep('.t.', colnames(var))
@@ -23,7 +24,7 @@ key <- unique(curtailments[c("subbasin", 'water_right_cat')])
 
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
-pred.vols<- as.data.frame(t(output.vol[,2]))
+pred.vols<- as.data.frame(t(output.vol[,2]))*1000
 colnames(pred.vols)<- c('bwb.vol','bws.vol', 'cc.vol', 'sc.vol') 
 
 #specify the cross-validation method
@@ -34,8 +35,8 @@ basins<-unique(curtailments$subbasin)
 wr_cat<- unique(curtailments$water_right_cat)
 curtNames<-expand.grid(basins, wr_cat, stringsAsFactors = FALSE)
 
-water_right= wr_cat[1]
-subws= basins[3]
+water_right= key[i,2]
+subws= key[i,1]
 
 # function to develop model and predict curtailment dates for each water right
 mod_dev<- function(water_right, subws){
@@ -43,7 +44,7 @@ mod_dev<- function(water_right, subws){
   fitFigName<- paste(subws, water_right, ".png", sep='')
     
   curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% 
-    subset(water_right_cat == water_right) %>% subset(subbasin == subws) %>% dplyr::select(-c(subbasin, water_right_cat))
+    subset(water_right_cat == water_right) %>% subset(subbasin == subws) %>% dplyr::select(-c(subbasin, water_right_cat, wr_name))
 
   curt <- var %>% dplyr::select(year, all_of(vol_cols),all_of(wq_cols), all_of(swe_cols),all_of(wint_t_cols)) %>% 
     inner_join(curt_sub, by = 'year') %>% filter(complete.cases(.))
@@ -98,26 +99,17 @@ mod_dev<- function(water_right, subws){
 
 # initialize arrays to store output
 wr_mod_out <-data.frame(array(NA,c(9,5)))
-rownames(wr_mod_out)<- paste(curtNames[,1], curtNames[,2], sep="")
+rownames(wr_mod_out)<- paste(key[,1], key[,2], sep="")
 colnames(wr_mod_out)<- c("Adj R2", "LOOCV R2", "RMSE", "Curt Day", "Day +/-")
 wr_vars <-vector(mode = "list", length = 9)
-names(wr_vars)<- paste(curtNames[,1], curtNames[,2], sep="")
+names(wr_vars)<- paste(key[,1], key[,2], sep="")
 
 # run all water rights through model dev and prediction function
-#for(i in 1:length(wr_cat)){
- # for(j in 1:length(basins)){
-  #  wr_name<- paste(basins[j], wr_cat[i], sep="")
-   # mod_out<- mod_dev(wr_cat[i], basins[j])
-  #  wr_mod_out[wr_name,]<- mod_out[[1]]
-  #  wr_vars[wr_name]<- mod_out[2]
-#  }
-#}
-
-for(i in 1:dim(curtNames)[1]){
-    wr_name<- paste(curtNames[i,1], curtNames[i,2], sep="")
-    mod_out<- mod_dev(curtNames[i,2], curtNames[i,1])
-    wr_mod_out[wr_name,]<- mod_out[[1]]
-    wr_vars[wr_name]<- mod_out[2]
+for(i in 1:dim(key)[1]){
+  wr_name<- paste(key[i,1], key[i,2], sep="")
+  mod_out<- mod_dev(key[i,2], key[i,1])
+  wr_mod_out[wr_name,]<- mod_out[[1]]
+  wr_vars[wr_name]<- mod_out[2]
 }
 # Silver Creek A only has two values 9/31 and 10/1 - the model isn't that useful
 
@@ -159,7 +151,7 @@ curt.cov.mat<-curt.cor.mat*curt.outer.prod
 curt.sample<-data.frame(mvrnorm(n=5000,mu=(as.matrix(wr_mod_out[,4])),Sigma=curt.cov.mat))
 
 curt.sample[curt.sample>275] = 275
-colnames(curt.sample)<-c("Big Wood abv Magic '83", "Big Wood blw Magic 83", "Silver Creek '83", "Big Wood abv Magic '84", "Big Wood blw Magic '84", "Silver Creek '84", "Big Wood abv Magic '86", "Big Wood blw Magic '86", "Silver Creek '86")
+colnames(curt.sample)<-c("Big Wood abv Magic '83", "Big Wood blw Magic '83", "Silver Creek '83", "Big Wood abv Magic '84", "Big Wood blw Magic '84", "Silver Creek '84", "Big Wood abv Magic '86", "Big Wood blw Magic '86", "Silver Creek '86")
 write.csv(curt.sample, file.path(model_out,"curt.sample.csv"),row.names=F)
 
 # Plot boxplots of predicted curtailment dates from each model
@@ -185,6 +177,15 @@ png(filename = file.path(fig_dir_mo,"sampled_curtailments.png"),
     print(cs)
 dev.off()
 
+curt_hist<- ggplot(curtailments, 
+                   aes(x=wr_name, y=as.Date(shut_off_julian, origin=as.Date(paste(pred.yr,"-01-01",sep=""))), fill=water_right_cat))+
+  theme_bw()+
+  geom_boxplot()+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  scale_y_date(date_breaks = "1 week", date_labels = "%b %d")+
+  scale_x_discrete(labels = wrap_format(10))
+
+print(curt_hist)
 # change from day of year to date for the table
 wr_tbl<-wr_mod_out[,4:5]
 wr_tbl[,1]<- as.Date(wr_tbl[,1], origin=as.Date(paste(pred.yr,"-01-01",sep="")), format='%m/%d')
