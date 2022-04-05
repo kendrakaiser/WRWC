@@ -23,7 +23,7 @@ key <- unique(curtailments[c("subbasin", 'water_right_cat')])
 
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
-pred.vols<- as.data.frame(t(output.vol[,3]))
+pred.vols<- as.data.frame(t(output.vol[,2]))
 colnames(pred.vols)<- c('bwb.vol','bws.vol', 'cc.vol', 'sc.vol') 
 
 #specify the cross-validation method
