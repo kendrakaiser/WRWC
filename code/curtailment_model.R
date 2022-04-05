@@ -67,7 +67,7 @@ mod_dev<- function(water_right, subws){
   # Prediction Data 
   pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(mod_sum$vars)
   #if predicted flows are in the model, add them here
-  if (grep('vol', mod_sum$vars) > 0){
+  if (length(grep('vol', mod_sum$vars)) > 0){
     pred.var<- mod_sum$vars[grep('vol', mod_sum$vars)]
     pred.dat[pred.var]<- pred.vols[pred.var]
   }
