@@ -32,7 +32,7 @@ ctrl <- trainControl(method = "LOOCV")
 # -----------------Water Right Curtailment Models -----------------------------#
 basins<-unique(curtailments$subbasin)
 wr_cat<- unique(curtailments$water_right_cat)
-curtNames<-expand.grid(basins, wr_cat)
+curtNames<-expand.grid(basins, wr_cat, stringsAsFactors = FALSE)
 
 water_right= wr_cat[1]
 subws= basins[3]
@@ -104,15 +104,21 @@ wr_vars <-vector(mode = "list", length = 9)
 names(wr_vars)<- paste(curtNames[,1], curtNames[,2], sep="")
 
 # run all water rights through model dev and prediction function
-for(i in 1:length(wr_cat)){
-  for(j in 1:length(basins)){
-    wr_name<- paste(basins[j], wr_cat[i], sep="")
-    mod_out<- mod_dev(wr_cat[i], basins[j])
+#for(i in 1:length(wr_cat)){
+ # for(j in 1:length(basins)){
+  #  wr_name<- paste(basins[j], wr_cat[i], sep="")
+   # mod_out<- mod_dev(wr_cat[i], basins[j])
+  #  wr_mod_out[wr_name,]<- mod_out[[1]]
+  #  wr_vars[wr_name]<- mod_out[2]
+#  }
+#}
+
+for(i in 1:dim(curtNames)[1]){
+    wr_name<- paste(curtNames[i,1], curtNames[i,2], sep="")
+    mod_out<- mod_dev(curtNames[i,2], curtNames[i,1])
     wr_mod_out[wr_name,]<- mod_out[[1]]
     wr_vars[wr_name]<- mod_out[2]
-  }
 }
-
 # Silver Creek A only has two values 9/31 and 10/1 - the model isn't that useful
 
 # Save model fit output  
@@ -153,7 +159,6 @@ curt.cov.mat<-curt.cor.mat*curt.outer.prod
 curt.sample<-data.frame(mvrnorm(n=5000,mu=(as.matrix(wr_mod_out[,4])),Sigma=curt.cov.mat))
 
 curt.sample[curt.sample>275] = 275
-
 colnames(curt.sample)<-c("Big Wood abv Magic '83", "Big Wood blw Magic 83", "Silver Creek '83", "Big Wood abv Magic '84", "Big Wood blw Magic '84", "Silver Creek '84", "Big Wood abv Magic '86", "Big Wood blw Magic '86", "Silver Creek '86")
 write.csv(curt.sample, file.path(model_out,"curt.sample.csv"),row.names=F)
 
