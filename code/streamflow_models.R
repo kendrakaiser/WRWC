@@ -18,14 +18,11 @@ usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 
 swe_q = read.csv(file.path(data_dir,input_data))
-swe_q[swe_q == 0] <- 0.01 # change zeros to a value so lm works
-swe_q<-swe_q[!(names(swe_q) %in% c("bwb.cm.nat","bws.cm.nat","abv.h","abv.s","sc.div","bwb.vol.nat","bws.vol.nat","bws.loss","sc.vol.nat"))]
+swe_q[swe_q == 0] <- 0.01 # change zeros to a value so lm works FIX THIS it changes BWS vol to 0 prior to the gage being on 
+swe_q<-swe_q[!(names(swe_q) %in% c("bwb.cm.nat","bws.cm.nat","bwb.vol.nat","bws.vol.nat","bws.loss","sc.vol.nat"))]
 
 spring.temps = read.csv(file.path(data_dir, 'sprTemps.csv'))
-wint.temps = read.csv(file.path(data_dir, 'wintTemps.csv')) #average temps, november - march
 nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
-nf.temps = read.csv(file.path(data_dir, 'nfTemps.csv'))
-fm.temps = read.csv(file.path(data_dir, 'fmTemps.csv'))
 
 var = swe_q %>% dplyr::select(-X) %>% inner_join(spring.temps, by ="year") %>% inner_join(nj.temps, by ="year")
 # sp.test<-apply(var, MARGIN=2, shapiro.test) 
