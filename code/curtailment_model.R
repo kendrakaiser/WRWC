@@ -9,6 +9,8 @@
 volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
 curtailments<- read.csv(file.path(input_dir,"historic_shutoff_dates_071520.csv"))
 var<-read.csv(file.path(model_out,'all_vars.csv')) %>% dplyr::select(-X) 
+var$bw.div <- var$abv.h + var$abv.s
+
 #check on full run
 #nat_cols<-grep('nat', colnames(var))
 #var<- var %>% dplyr::select(-c(all_of(nat_cols), "div", "sc.div", "abv.s", "abv.h", "bws.loss")) 
@@ -21,6 +23,8 @@ vol_cols<- grep('vol', colnames(var))
 wq_cols<- grep('wq', colnames(var))
 
 key <- unique(curtailments[c("subbasin", 'water_right_cat')])
+div.names<- c("abv.h", "abv.s", "sc.div", "bw.div")
+div_cols<- match(div.names, colnames(var))
 
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
@@ -29,6 +33,70 @@ colnames(pred.vols)<- c('bwb.vol','bws.vol', 'cc.vol', 'sc.vol')
 
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
+
+# -----------------Diversion Volume Models
+
+mod_div<- function(div.name){
+  pred.params.div <-array(NA,c(1,5))
+  hist <- var %>% dplyr::select(c(div.name), year, all_of(vol_cols),all_of(wq_cols), all_of(swe_cols),all_of(wint_t_cols)) %>% filter(complete.cases(.))
+ 
+  #use regsubsets to assess the results
+  tryCatch({regsubsets.out<-regsubsets(hist[,c(div.name)]~., data=hist[,-c(1,2)], nbest=1, nvmax=8)}, 
+           error= function(e) {print(c("Diversion model did not work", div.name))}) #error catch
+  reg_sum<- summary(regsubsets.out)
+  rm(regsubsets.out)
+  
+  vars<-reg_sum$which[which.min(reg_sum$bic),]
+  mod_sum<-list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+  
+  #fit the regression model and use LOOCV to evaluate performance
+  form<- paste(div.name,"~", paste(mod_sum$vars, collapse=" + "), sep = "")
+  mod<-lm(form, data=hist)
+  mod_sum$lm<-summary(mod)$adj.r.squared
+  #save summary of LOOCV
+  model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+  mod_sum$loocv<- model$results
+  
+  # Prediction Data 
+  pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(mod_sum$vars)
+  #if predicted flows are in the model, add them here
+  if (length(grep('vol', mod_sum$vars)) > 0){
+    pred.var<- mod_sum$vars[grep('vol', mod_sum$vars)]
+    pred.dat[pred.var]<- pred.vols[pred.var]
+  }
+  
+  # Model output
+  preds.div<-predict(mod,newdata=pred.dat,se.fit=T,interval="prediction",level=0.95)
+  pred.params.div[1,1]<-round(summary(mod)$adj.r.squared,2) 
+  pred.params.div[1,2]<-round(mod_sum$loocv$Rsquared,2)
+  pred.params.div[1,3]<-round(mod_sum$loocv$RMSE)
+  pred.params.div[1,4]<-round(mean(preds.div$fit),1) # mean of predicted
+  pred.params.div[1,5]<-round(mean(preds.div$se.fit),1)
+  
+  plt_name=paste(run_date, div.name, sep= " ")
+  fitFigName<- paste(div.name, ".png", sep='')
+  
+  # Plot Big Wood at Hailey modeled data for visual evaluation 
+  png(filename = file.path(fig_dir_mo, fitFigName),
+      width = 5.5, height = 5.5,units = "in", pointsize = 12,
+      bg = "white", res = 600) 
+  
+  plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted", main=plt_name)
+  abline(0,1,col="gray50",lty=1)
+  dev.off()
+  return(list(pred.params.div, mod_sum$vars)) # is there something else we need here?
+}
+# initialize arrays to store output
+div_mod_out <-data.frame(array(NA,c(length(div.names),5)))
+rownames(div_mod_out)<- div.names
+colnames(div_mod_out)<- c("Adj R2", "LOOCV R2", "RMSE", "Diversion", "+/-")
+div_vars <-vector(mode = "list", length = length(div.names))
+
+for (i in 1:length(div.names)) {
+  mod_out<- mod_div(div.names[i])
+  div_mod_out[div.names[i],]<- mod_out[[1]]
+  div_vars[i]<- mod_out[2]
+}
 
 # -----------------Water Right Curtailment Models -----------------------------#
 basins<-unique(curtailments$subbasin)
@@ -46,7 +114,7 @@ mod_dev<- function(water_right, subws){
   curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% 
     subset(water_right_cat == water_right) %>% subset(subbasin == subws) %>% dplyr::select(-c(subbasin, water_right_cat, wr_name))
 
-  curt <- var %>% dplyr::select(year, all_of(vol_cols),all_of(wq_cols), all_of(swe_cols),all_of(wint_t_cols)) %>% 
+  curt <- var %>% dplyr::select(year, all_of(vol_cols),all_of(wq_cols), all_of(swe_cols),all_of(wint_t_cols), all_of(div_cols)) %>% 
     inner_join(curt_sub, by = 'year') %>% filter(complete.cases(.))
   #use regsubsets to assess the results
   tryCatch({regsubsets.out<-regsubsets(shut_off_julian~., data=curt[,-c(1)], nbest=1, nvmax=8)}, 
@@ -67,10 +135,15 @@ mod_dev<- function(water_right, subws){
 
   # Prediction Data 
   pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(mod_sum$vars)
+  div.vars<- match(div.names, mod_sum$vars)
   #if predicted flows are in the model, add them here
   if (length(grep('vol', mod_sum$vars)) > 0){
     pred.var<- mod_sum$vars[grep('vol', mod_sum$vars)]
     pred.dat[pred.var]<- pred.vols[pred.var]
+  } 
+  if (length(div.vars[!is.na(div.vars)])>0){
+    pred.div<- mod_sum$vars[div.vars[!is.na(div.vars)]]
+    pred.dat[pred.div]<- div_mod_out[pred.div, "Diversion"]
   }
 
   # Model output
@@ -86,7 +159,7 @@ mod_dev<- function(water_right, subws){
   model$pred$pred[model$pred$pred > 275] = 275
 
   plt_name=paste(run_date, subws, water_right, sep= " ")
-  # Plot Big Wood at Hailey modeled data for visual evaluation 
+  # Plot  modeled data for visual evaluation 
   png(filename = file.path(fig_dir_mo, fitFigName),
      width = 5.5, height = 5.5,units = "in", pointsize = 12,
      bg = "white", res = 600) 
