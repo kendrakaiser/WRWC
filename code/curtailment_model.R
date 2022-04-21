@@ -7,7 +7,7 @@
 
 # Import Data -----------------------------------------------------------------# 
 volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
-curtailments<- read.csv(file.path(input_dir,"historic_shutoff_dates_071520.csv"))
+curtailments<- read.csv(file.path(input_dir,"historic_shutoff_dates_042022.csv"))
 var<-read.csv(file.path(model_out,'all_vars.csv')) %>% dplyr::select(-X) 
 var$bw.div <- var$abv.h + var$abv.s
 
@@ -33,6 +33,18 @@ colnames(pred.vols)<- c('bwb.vol','bws.vol', 'cc.vol', 'sc.vol')
 
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
+
+# Look at a few dates
+water_right= key[3,2]
+subws= key[3,1]
+
+curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% 
+  subset(water_right_cat == water_right) %>% subset(subbasin == subws) %>% dplyr::select(-c(subbasin, water_right_cat, wr_name))
+
+curt <- var %>% dplyr::select(year, all_of(vol_cols),all_of(wq_cols), all_of(swe_cols),all_of(wint_t_cols), all_of(div_cols)) %>% 
+  inner_join(curt_sub, by = 'year') %>% filter(complete.cases(.))
+
+
 
 # -----------------Diversion Volume Models
 
@@ -103,21 +115,20 @@ basins<-unique(curtailments$subbasin)
 wr_cat<- unique(curtailments$water_right_cat)
 curtNames<-expand.grid(basins, wr_cat, stringsAsFactors = FALSE)
 
-water_right= key[i,2]
-subws= key[i,1]
+
 
 # function to develop model and predict curtailment dates for each water right
 mod_dev<- function(water_right, subws){
-  pred.params.curt <-array(NA,c(1,5))
+  pred.params.curt <-array(NA,c(1,6))
   fitFigName<- paste(subws, water_right, ".png", sep='')
     
   curt_sub<- curtailments %>% dplyr::select(-c(water_right_date,shut_off_date)) %>% 
     subset(water_right_cat == water_right) %>% subset(subbasin == subws) %>% dplyr::select(-c(subbasin, water_right_cat, wr_name))
 
-  curt <- var %>% dplyr::select(year, all_of(vol_cols),all_of(wq_cols), all_of(swe_cols),all_of(wint_t_cols), all_of(div_cols)) %>% 
+  curt <- var %>% dplyr::select(year, all_of(vol_cols),all_of(wq_cols), all_of(swe_cols),all_of(wint_t_cols)) %>% 
     inner_join(curt_sub, by = 'year') %>% filter(complete.cases(.))
   #use regsubsets to assess the results
-  tryCatch({regsubsets.out<-regsubsets(shut_off_julian~., data=curt[,-c(1)], nbest=1, nvmax=8)}, 
+  tryCatch({regsubsets.out<-regsubsets(shut_off_julian~., data=curt[,-c(1)], nbest=1, nvmax=4)}, 
          error= function(e) {print(c("Curtailment model did not work", subws))}) #error catch
   reg_sum<- summary(regsubsets.out)
   rm(regsubsets.out)
@@ -151,8 +162,9 @@ mod_dev<- function(water_right, subws){
   pred.params.curt[1,1]<-round(summary(mod)$adj.r.squared,2) 
   pred.params.curt[1,2]<-round(mod_sum$loocv$Rsquared,2)
   pred.params.curt[1,3]<-round(mod_sum$loocv$RMSE)
-  pred.params.curt[1,4]<-round(mean(preds.curt$fit),1) # mean of predicted
-  pred.params.curt[1,5]<-round(mean(preds.curt$se.fit),1)
+  pred.params.curt[1,4]<-round(preds.curt$fit[1]) 
+  pred.params.curt[1,5]<-round(preds.curt$se.fit,1)
+  pred.params.curt[1,6]<-round(preds.curt$fit[2]) 
   
   # Make the max prediction doy 275
   if (pred.params.curt[1,4] > 275){pred.params.curt[1,4] =275}
