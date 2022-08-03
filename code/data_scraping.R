@@ -84,7 +84,7 @@ streamflow_data <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCo
 #Re-format dates and pull out month /day/ water year
 streamflow_data$Date <- as.Date(streamflow_data$Date, format = "%Y-%m-%d")
 streamflow_data$mo <- month(streamflow_data$Date)
-streamflow_data$wy <- as.numeric(as.character(water_year(streamflow_data$Date, origin='usgs')))
+streamflow_data$wy <- as.numeric(as.character(waterYear(streamflow_data$Date, numeric=TRUE)))
 streamflow_data$day <- day(streamflow_data$Date)
 # Cleanup Streamflow data frame and join relevant site information
 streamflow_data <- streamflow_data %>% dplyr::select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
@@ -207,7 +207,7 @@ snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, la
 snotel_data_out$site_name<-trimws(snotel_data_out$site_name)
 snotel_data_out$date <- as.Date(snotel_data_out$date, format = "%Y-%m-%d")
 snotel_data_out$mo <- month(snotel_data_out$date)
-snotel_data_out$wy <- as.numeric(as.character(water_year(snotel_data_out$date, origin='usgs')))
+snotel_data_out$wy <- as.numeric(as.character(waterYear(snotel_data_out$date, numeric=TRUE)))
 snotel_data_out$day <- day(snotel_data_out$date)
 
 # subset April 1 data for model 

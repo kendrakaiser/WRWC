@@ -8,6 +8,7 @@
  #'knitr', 'fasstr', 'stringr','kableExtra', 'leaps', 'rlist', 'caret', 'erer', 
  #'ggcorrplot', 'scales'))
 
+remotes::install_github("USGS-R/smwrBase") 
 # load packages
 library(MASS)
 library(plotrix)
@@ -39,5 +40,4 @@ library(caret) #loocv
 library(erer) #write.list to csv
 library(ggcorrplot) # colored correlation plot, not in use
 library(scales) # wrap text of figure labels
-
-
+library(smwrBase)
