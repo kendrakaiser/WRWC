@@ -213,4 +213,4 @@ new.data$spr.tempF[14]<- mean(tdata$spring.tempF[tdata$site == "picabo"], na.rm 
 # Draw stream temperatures using multivariate normal distribution
 nboot<-5000
 aj.pred.temps<- mvrnorm(nboot, new.data$spr.tempF, site.cov)
-write.csv(aj.pred.temps, file.path(data_dir, 'aj_pred.temps.csv'))
+write.csv(aj.pred.temps, file.path(data_dir, 'aj_pred.temps.csv'), row.names=FALSE)

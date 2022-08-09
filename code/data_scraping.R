@@ -278,19 +278,19 @@ feb1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
 # ------------------------------------------------------------------------------
 
 # Save Snotel data as csvs -----
-write.csv(april1swe, file.path(data_dir, 'april1swe.csv'))
-write.csv(mar1swe, file.path(data_dir, 'mar1swe.csv'))
-write.csv(feb1swe, file.path(data_dir, 'feb1swe.csv'))
+write.csv(april1swe, file.path(data_dir, 'april1swe.csv'), row.names=FALSE)
+write.csv(mar1swe, file.path(data_dir, 'mar1swe.csv'), row.names=FALSE)
+write.csv(feb1swe, file.path(data_dir, 'feb1swe.csv'), row.names=FALSE)
 
-write.csv(snotel_data_out, file.path(data_dir,'snotel_data.csv'))
-write.csv(snotel_site_info, file.path(data_dir,'snotel_sites.csv'))
+write.csv(snotel_data_out, file.path(data_dir,'snotel_data.csv'), row.names=FALSE)
+write.csv(snotel_site_info, file.path(data_dir,'snotel_sites.csv'), row.names=FALSE)
 
 # Save flow data as csvs ------
 metrics <- metrics %>% full_join(nat.cm, by= "year")
 
-write.csv(streamflow_data, file.path(data_dir,'streamflow_data.csv'))
-write.csv(metrics, file.path(data_dir,'metrics.csv'))
-write.csv(site_info, file.path(data_dir,'usgs_sites.csv'))
+write.csv(streamflow_data, file.path(data_dir,'streamflow_data.csv'), row.names=FALSE)
+write.csv(metrics, file.path(data_dir,'metrics.csv'), row.names=FALSE)
+write.csv(site_info, file.path(data_dir,'usgs_sites.csv'), row.names=FALSE)
 
 # Merge April 1 SWE and streamflow metrics & diversion data ----
 bw.div.tot$year<- as.integer(bw.div.tot$year)
@@ -317,7 +317,7 @@ if (run_date == 'feb1'){
   filename = 'all_dat_apr.csv'
 }
 
-write.csv(alldat, file.path(data_dir,filename))
+write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
 
 wq<- alldat %>% select("year", "bwb.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
 
