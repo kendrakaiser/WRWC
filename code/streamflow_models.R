@@ -38,7 +38,7 @@ var$log.bc.swe <- log(var$bc.swe)
 var<-var[,!(names(var) %in% c('cg.swe', 'g.swe','gs.swe','hc.swe', 'lwd.swe','ga.swe','bc.swe', 'nj.t.sr', 'aj.t.sr'))]
 
 #save variables for use in other scripts
-write.csv(var, file.path(model_out,'all_vars.csv'))
+write.csv(var, file.path(model_out,'all_vars.csv'), row.names = FALSE)
 
 swe_cols<-grep('swe', colnames(var))
 t_cols<-grep('.t.', colnames(var))
