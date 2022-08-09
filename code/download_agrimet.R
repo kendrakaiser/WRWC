@@ -86,6 +86,3 @@ agri_met$wy[!is.na(agri_met$date_time)]<- as.numeric(as.character(water_year(agr
 
 # saving to local directory
 write.csv(agri_metT, file.path(data_dir,'agri_metT.csv'), row.names = FALSE)
-#not sure the the wide version is really needed??
-write.csv(agri_met, file.path(data_dir,'agri_met.csv'))
-
