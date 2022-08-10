@@ -24,7 +24,7 @@ library(dplyr)
 library(devtools)
 library(readr)
 library(lubridate) #date transformation
-library(lfstat) #water year
+#library(lfstat) #water year
 library(gridExtra)
 #library(RNRCS)
 library(varhandle)
