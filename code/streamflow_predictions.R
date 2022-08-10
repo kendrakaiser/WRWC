@@ -11,7 +11,7 @@
 # -----------------------------------------------------------------------------  
 
 # Import Data ------------------------------------------------------------------  
-var<-read.csv(file.path(model_out,'all_vars.csv'))# %>% select(-X)
+var<-read.csv(file.path(model_out,'all_vars.csv'))
 
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
