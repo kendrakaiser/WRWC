@@ -14,13 +14,13 @@ dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30
 # Import data
 # volume & bootstraps for each gage
 # natural flow and diversion records from which we will select the runoff timing
-#streamflow_data_out<-read.csv(file.path(data_dir,"streamflow_data.csv"))
-streamflow_data_out$year <- year(streamflow_data_out$Date)
+#streamflow_data<-read.csv(file.path(data_dir,"streamflow_data.csv"))
+streamflow_data$year <- year(streamflow_data$Date)
 
-bwb.wy<-streamflow_data_out[streamflow_data_out$abv == 'bwb',]
-bws.wy<-streamflow_data_out[streamflow_data_out$abv == 'bws',]
-cc.wy<-streamflow_data_out[streamflow_data_out$abv == 'cc',]
-sc.wy<-streamflow_data_out[streamflow_data_out$abv == 'sc',]
+bwb.wy<-streamflow_data[streamflow_data$abv == 'bwb',]
+bws.wy<-streamflow_data[streamflow_data$abv == 'bws',]
+cc.wy<-streamflow_data[streamflow_data$abv == 'cc',]
+sc.wy<-streamflow_data[streamflow_data$abv == 'sc',]
 
 # distributions and diversion hydrographs 
 #cm.year<-read.csv(file.path(model_out,"CMyear.sample.csv"))
