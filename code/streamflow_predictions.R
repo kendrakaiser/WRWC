@@ -310,7 +310,7 @@ cov.mat<-cor.mat*outer.prod
 # Draw flow volumes using multivariate normal distribution (ac-ft)
 vol.sample<-data.frame(mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4]))
 colnames(vol.sample)<-c("Big Wood Hailey", "Big Wood Stanton","Camas Creek","Silver Creek")
-write.csv(exp(vol.sample), file.path(model_out,"vol.sample.csv"),row.names=F)
+write.csv(exp(vol.sample), file.path(model_out,paste0("vol.sample-", end_date,".csv")),row.names=F)
 
 # save correlation matrix for model details report
 cor.mat.out<-as.data.frame(round(cor.mat,2))
@@ -474,7 +474,7 @@ grid.table(cm_sum)
 dev.off()
 
 #save the probabilities for use in the simulation
-write.csv(CMyear.sample, file.path(model_out,"CMyear.sample.csv"),row.names=F)
+write.csv(CMyear.sample, file.path(model_out, paste0("CMyear.sample-", end_date,".csv")),row.names=F)
 
 # this version makes the probabilities based on pvnorm distribution, 
 # this is not used in the simulations, but is useful for reference
