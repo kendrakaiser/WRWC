@@ -24,7 +24,7 @@ swe_q<-swe_q[!(names(swe_q) %in% c("bwb.cm.nat","bws.cm.nat","bwb.vol.nat","bws.
 spring.temps = read.csv(file.path(data_dir, 'sprTemps.csv'))
 nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
 
-var = swe_q %>% dplyr::select(-X) %>% inner_join(spring.temps, by ="year") %>% inner_join(nj.temps, by ="year")
+var = swe_q %>% inner_join(spring.temps, by ="year") %>% inner_join(nj.temps, by ="year")
 # sp.test<-apply(var, MARGIN=2, shapiro.test) 
 #TODO : automate this step (e.g. if p < 0.05 log it and remove the og)
 # normailze parameters that have a shapiro.test() < 0.05
