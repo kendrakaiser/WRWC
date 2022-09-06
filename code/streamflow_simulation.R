@@ -23,9 +23,9 @@ cc.wy<-streamflow[streamflow$abv == 'cc',]
 sc.wy<-streamflow[streamflow$abv == 'sc',]
 
 # distributions and diversion hydrographs 
-cm.year<-read.csv(file.path(model_out,"CMyear.sample.csv"))
-volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
-colnames(volumes)<-c("bwb.vol", "bws.vol","cc.vol", "sc.vol")
+#cm.year<-read.csv(file.path(model_out,"CMyear.sample.csv"))
+#vol.sample<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
+colnames(vol.sample)<-c("bwb.vol", "bws.vol","cc.vol", "sc.vol")
 #Example figures for presentation
 #plot(dates, bwb.wy$Flow[bwb.wy$wy == 2006][183:365], xlab="Date", ylab ="Flow (cfs)", type='l', col="black", ylim=c(0,6650))
 #lines(dates,bwb.wy$Flow[bwb.wy$wy == 2014][183:365], lwd=1, col="black")
@@ -59,8 +59,8 @@ sim.flow <- function(nat.wy, vol){
 
 for(k in 1:ns){ 
   # Simulate flow supply at the four gages
-  year<-cm.year[k,1] # year sample
-  vol<-volumes[k,] # volume sample
+  year<-CMyear.sample[k,1] # year sample
+  vol<-vol.sample[k,] # volume sample
 
   bwb<- bwb.wy[bwb.wy$wy == year, "Flow"][183:365]
   bws<- bws.wy[bws.wy$wy == year, "Flow"][183:365]
@@ -190,8 +190,10 @@ dev.off()
 # ------------------------------------------------------------------------------
 # Save Output
 
-write.csv(bwb.flow.s, file.path(model_out, "BWB.sim.csv"), row.names=dates)
-write.csv(bws.flow.s, file.path(model_out, "BWS.sim.csv"), row.names=dates)
-write.csv(cc.flow.s, file.path(model_out, "CC.sim.csv"), row.names=dates)
-write.csv(sc.flow.s, file.path(model_out, "SC.sim.csv"), row.names=dates)
+paste0("ModelOutput-", end_date, ".pdf")
+
+write.csv(bwb.flow.s, file.path(model_out, paste0("BWB.sim-",end_date,".csv")), row.names=dates)
+write.csv(bws.flow.s, file.path(model_out, paste0("BWS.sim-",end_date,".csv")), row.names=dates)
+write.csv(cc.flow.s, file.path(model_out, paste0("CC.sim-", end_date,".csv")), row.names=dates)
+write.csv(sc.flow.s, file.path(model_out, paste0("SC.sim-", end_date,".csv")), row.names=dates)
 
