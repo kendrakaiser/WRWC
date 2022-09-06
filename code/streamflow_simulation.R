@@ -192,8 +192,8 @@ dev.off()
 
 paste0("ModelOutput-", end_date, ".pdf")
 
-write.csv(bwb.flow.s, file.path(model_out, paste0("BWB.sim-",end_date,".csv")), row.names=dates)
-write.csv(bws.flow.s, file.path(model_out, paste0("BWS.sim-",end_date,".csv")), row.names=dates)
-write.csv(cc.flow.s, file.path(model_out, paste0("CC.sim-", end_date,".csv")), row.names=dates)
-write.csv(sc.flow.s, file.path(model_out, paste0("SC.sim-", end_date,".csv")), row.names=dates)
+write.csv(bwb.flow.s, file.path(model_out, paste0("BWB.sim-",end_date,".csv")), row.names=dates, col.names = TRUE)
+write.csv(bws.flow.s, file.path(model_out, paste0("BWS.sim-",end_date,".csv")), row.names=dates, col.names = TRUE)
+write.csv(cc.flow.s, file.path(model_out, paste0("CC.sim-", end_date,".csv")), row.names=dates, col.names = TRUE)
+write.csv(sc.flow.s, file.path(model_out, paste0("SC.sim-", end_date,".csv")), row.names=dates, col.names = TRUE)
 
