@@ -7,8 +7,8 @@
 # ----------------------------------------------------------------------------- # 
 
 # import data ----
-snotel = read.csv(file.path(data_dir,'snotel_data.csv'))
-agrimet = read.csv(file.path(data_dir,'agri_metT.csv'))
+#snotel_data = read.csv(file.path(data_dir,'snotel_data.csv'))
+#agrimet = read.csv(file.path(data_dir,'agri_metT.csv'))
 
 #renaming agrimet columns to match snotel for calculations
 colnames(agrimet)<- c("date_time","temperature_mean", "site_name", "mo", "y", "wy")
@@ -23,7 +23,7 @@ agrimet$temperature_mean[agrimet$temperature_mean > 150] <- NA
 first.yr<-1988
 last.yr<-pred.yr
 nyrs<-last.yr-first.yr+1
-site.key <- c(as.character(unique(snotel$site_name)), as.character(unique(agrimet$site_name)))
+site.key <- c(as.character(unique(snotel_data_out$site_name)), as.character(unique(agrimet$site_name)))
 elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,7)))
@@ -39,7 +39,7 @@ for(i in 1:14){ #hard coded this in after adding agrimet sites to site.key list
   for (y in first.yr:last.yr){
     #subset to indv. site and year
     if (i<13){
-      sub<- snotel[snotel$site_name == site.key[i] & snotel$wy==y, ]
+      sub<- snotel_data_out[snotel_data_out$site_name == site.key[i] & snotel_data_out$wy==y, ]
     } else if (i>=13){
       sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$wy==y, ])}
     #average april - june temps

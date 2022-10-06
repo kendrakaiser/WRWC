@@ -78,11 +78,11 @@ colnames(piciT)<- c("date_time","t", "site_name", 'month', 'y')
 # ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", DayEnd="2020-02-01", pCodes=c("OB", "PC"))
 
 # Merge & save AgriMet Data ---------------------------------
-agri_metT <- rbind(piciT, fafiT)
-agri_metT$wy[!is.na(agri_metT$date_time)]<- as.numeric(as.character(waterYear(agri_metT$date_time[!is.na(agri_metT$date_time)], numeric=TRUE)))
+agrimet <- rbind(piciT, fafiT)
+agrimet$wy[!is.na(agri_metT$date_time)]<- as.numeric(as.character(waterYear(agri_metT$date_time[!is.na(agri_metT$date_time)], numeric=TRUE)))
 
 agri_met<- full_join(pici, fafi, by='date_time')
 agri_met$wy[!is.na(agri_met$date_time)]<- as.numeric(as.character(waterYear(agri_met$date_time[!is.na(agri_met$date_time)], numeric=TRUE)))
 
 # saving to local directory
-write.csv(agri_metT, file.path(data_dir,'agri_metT.csv'), row.names = FALSE)
+write.csv(agrimet, file.path(data_dir,'agri_metT.csv'), row.names = FALSE)

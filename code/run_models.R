@@ -20,7 +20,11 @@ run_date <<- 'april1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
+<<<<<<< HEAD
 todays_date <<- "04/21/2022"
+=======
+todays_date <<- "04/17/2022"
+>>>>>>> f1cf02ee4397f2a90e3c6e40b6f216eaf7d69cbc
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -107,7 +111,7 @@ suppressWarnings(source(file.path(git_dir, 'code/curtailment_model.R')))
 # Remove unesseary variables in the environment
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
              "data_dir", "input_data", "fig_dir_mo_rmd", "fig_dir_mo",  "author",  "todays_date", "end_date", 
-             "model_out"))
+             "model_out", "streamflow_data_out"))
 
 # Simulate the Irrigation Season Hydrograph
 source(file.path(git_dir, 'code/streamflow_simulation.R'))

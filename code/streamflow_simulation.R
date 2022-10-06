@@ -14,18 +14,18 @@ dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30
 # Import data
 # volume & bootstraps for each gage
 # natural flow and diversion records from which we will select the runoff timing
-streamflow<-read.csv(file.path(data_dir,"streamflow_data.csv"))
-streamflow$year <- year(streamflow$Date)
+#streamflow_data<-read.csv(file.path(data_dir,"streamflow_data.csv"))
+streamflow_data$year <- year(streamflow_data$Date)
 
-bwb.wy<-streamflow[streamflow$abv == 'bwb',]
-bws.wy<-streamflow[streamflow$abv == 'bws',]
-cc.wy<-streamflow[streamflow$abv == 'cc',]
-sc.wy<-streamflow[streamflow$abv == 'sc',]
+bwb.wy<-streamflow_data[streamflow_data$abv == 'bwb',]
+bws.wy<-streamflow_data[streamflow_data$abv == 'bws',]
+cc.wy<-streamflow_data[streamflow_data$abv == 'cc',]
+sc.wy<-streamflow_data[streamflow_data$abv == 'sc',]
 
 # distributions and diversion hydrographs 
-cm.year<-read.csv(file.path(model_out,"CMyear.sample.csv"))
-volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
-colnames(volumes)<-c("bwb.vol", "bws.vol","cc.vol", "sc.vol")
+#cm.year<-read.csv(file.path(model_out,"CMyear.sample.csv"))
+#vol.sample<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
+colnames(vol.sample)<-c("bwb.vol", "bws.vol","cc.vol", "sc.vol")
 #Example figures for presentation
 #plot(dates, bwb.wy$Flow[bwb.wy$wy == 2006][183:365], xlab="Date", ylab ="Flow (cfs)", type='l', col="black", ylim=c(0,6650))
 #lines(dates,bwb.wy$Flow[bwb.wy$wy == 2014][183:365], lwd=1, col="black")
@@ -59,8 +59,8 @@ sim.flow <- function(nat.wy, vol){
 
 for(k in 1:ns){ 
   # Simulate flow supply at the four gages
-  year<-cm.year[k,1] # year sample
-  vol<-volumes[k,] # volume sample
+  year<-CMyear.sample[k,1] # year sample
+  vol<-vol.sample[k,] # volume sample
 
   bwb<- bwb.wy[bwb.wy$wy == year, "Flow"][183:365]
   bws<- bws.wy[bws.wy$wy == year, "Flow"][183:365]
@@ -190,10 +190,12 @@ dev.off()
 # ------------------------------------------------------------------------------
 # Save Output
 
-write.csv(bwb.flow.s, file.path(model_out, "BWB.sim.csv"), row.names=dates)
-write.csv(bws.flow.s, file.path(model_out, "BWS.sim.csv"), row.names=dates)
-write.csv(cc.flow.s, file.path(model_out, "CC.sim.csv"), row.names=dates)
-write.csv(sc.flow.s, file.path(model_out, "SC.sim.csv"), row.names=dates)
+paste0("ModelOutput-", end_date, ".pdf")
+
+write.csv(bwb.flow.s, file.path(model_out, paste0("BWB.sim-",end_date,".csv")), row.names=dates, col.names = TRUE)
+write.csv(bws.flow.s, file.path(model_out, paste0("BWS.sim-",end_date,".csv")), row.names=dates, col.names = TRUE)
+write.csv(cc.flow.s, file.path(model_out, paste0("CC.sim-", end_date,".csv")), row.names=dates, col.names = TRUE)
+write.csv(sc.flow.s, file.path(model_out, paste0("SC.sim-", end_date,".csv")), row.names=dates, col.names = TRUE)
 
 # ------------------------------------------------------------------------------
 # Identify when curtailments will occur based on mean simulated streamflow
