@@ -16,11 +16,11 @@ cd <<- '~/Desktop/WRWC'
 # set prediction year
 pred.yr <<- 2022
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
-run_date <<- 'feb1'
+run_date <<- 'april1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
-todays_date <<- "02/17/2022"
+todays_date <<- "04/21/2022"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -28,7 +28,7 @@ input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 data_dir <<- file.path(cd, 'data') # local
 
 # set end date for AgriMet Data download
-end_date <<- Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
+end_date <<-as.Date("2022-08-01")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
 # ---- Run Model code
 
@@ -39,7 +39,7 @@ writeLines(capture.output(sessionInfo()), file.path(cd, "sessionInfo.txt"))
 
 source(file.path(git_dir, 'code/data_scraping.R'))
 source(file.path(git_dir, 'code/download_agrimet.R'))
-source(file.path(git_dir, 'code/temperature_models.R'))
+source(file.path(git_dir, 'code/temperature_models.R')) #fix - fig_dir_mo
 
 # sets input/output file directories and selects model params and models depending on model run date 
 if (run_date == 'feb1'){
