@@ -195,3 +195,33 @@ write.csv(bws.flow.s, file.path(model_out, "BWS.sim.csv"), row.names=dates)
 write.csv(cc.flow.s, file.path(model_out, "CC.sim.csv"), row.names=dates)
 write.csv(sc.flow.s, file.path(model_out, "SC.sim.csv"), row.names=dates)
 
+# ------------------------------------------------------------------------------
+# Identify when curtailments will occur based on mean simulated streamflow
+
+# Big Wood Water Rights -- should this be using flow at stanton, 
+# or cumulative flow going into Magic?
+
+# big wood stanton mean simulated flow 
+wr.cutoffs<- data.frame("date" = array(NA,c(183)))
+wr.cutoffs$date<- dates
+wr.cutoffs$doy<- yday(dates)
+wr.cutoffs$bws.meanQ<-pi[,"bwb.mean"]
+
+
+# find the date of the most senior wr that is above the "current" flow
+cutoff<- function(flow, wr_array){
+  cut.wr<- wr_array$priority.date[min(which(wr_array$cuml.cfs > flow))]
+  return(cut.wr)
+  }
+  
+wr.cutoffs$cut.wr<-Reduce(c, lapply(wr.cutoffs$bws.meanQ, cutoff, wr.sub))
+
+ggplot(wr.cutoffs, aes(x=date, y=bws.meanQ, color= as.factor(cut.wr))) + 
+  geom_point()+
+ theme_bw()
+
+#the big problem / question here is that the old water rights shouldnt get turned off, so I'm wondering which data should be used here??
+# Silver Creek 
+
+
+
