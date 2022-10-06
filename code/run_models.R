@@ -20,11 +20,8 @@ run_date <<- 'april1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
-<<<<<<< HEAD
+
 todays_date <<- "04/21/2022"
-=======
-todays_date <<- "04/17/2022"
->>>>>>> f1cf02ee4397f2a90e3c6e40b6f216eaf7d69cbc
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
