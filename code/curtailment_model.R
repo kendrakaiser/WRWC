@@ -10,7 +10,7 @@ volumes<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
 curtailments<- read.csv(file.path(input_dir,"historic_shutoff_dates_042022.csv"))
 curtailments$shut_off_date<- as.Date(curtailments$shut_off_date, format="%m/%d/%y")
 curtailments$shut_off_julian <- yday(curtailments$shut_off_date)
-var<-read.csv(file.path(model_out,'all_vars.csv')) %>% dplyr::select(-X) 
+var<-read.csv(file.path(model_out,'all_vars.csv'))
 var$bw.div <- var$abv.h + var$abv.s
 
 #check on full run
@@ -241,7 +241,7 @@ curt.outer.prod<-as.matrix(wr_out[,5])%*%t(as.matrix(wr_out[,5]))
 curt.cov.mat<-curt.cor.mat*curt.outer.prod
 # Draw curtailment dates using multivariate normal distribution
 curt.sample<-data.frame(mvrnorm(n=5000,mu=(as.matrix(wr_out[,4])),Sigma=curt.cov.mat))
-
+#TODO export in long format for DB
 curt.sample[curt.sample>275] = 275
 colnames(curt.sample)<-c("Big Wood abv Magic '83", "Big Wood abv Magic '84", "Big Wood abv Magic '86", "Big Wood blw Magic '83", "Big Wood blw Magic '84", "Big Wood blw Magic '86", "Silver Creek '83",  "Silver Creek '84", "Silver Creek '86")
 write.csv(curt.sample, file.path(model_out,"curt.sample.csv"),row.names=F)
