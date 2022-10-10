@@ -427,6 +427,8 @@ png(filename = file.path(fig_dir_mo,"sampled_sc_vol.png"),
 print(ps)
 dev.off()
 
+save(sc, file = file.path(fig_dir_mo, paste0("sampled_sc_vol-", end_date, ".RData")))
+
 pc<- ggplot(vol.cc, aes(x=site, y=value, fill=site), alpha=0.6) +
   geom_boxplot(outlier.alpha = 0.3) +
   scale_fill_manual(values=c("royalblue3", "grey90")) +
@@ -447,6 +449,7 @@ png(filename = file.path(fig_dir_mo,"sampled_cc_vol.png"),
     bg = "white", res = 600) 
 print(pc)
 dev.off()
+
 
 # ------------------------------------------------------------------------------
 # Create distribution and draw samples of CENTER of MASS & Volume
