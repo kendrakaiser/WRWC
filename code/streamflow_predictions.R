@@ -394,7 +394,7 @@ p<-ggplot(vol.big, aes(x=site, y=value, fill=t), alpha=0.6) +
 
   geom_point(data=ex.vols3[ex.vols3$site !="Silver Creek",], aes(x=site, y=value, color=as.factor(Exceedance)), size=2, shape=15)+
   scale_color_manual(values=c("blue3", "deepskyblue", "green3","darkorange","red"))+
-  theme_bw()+
+  theme_bw(base_size = 18)+
   ggtitle("Historic & Modeled Irrigation Season Volumes (April-Sept.)") +
   labs(fill="", color="Exceedance")+
   xlab("")+
@@ -416,7 +416,7 @@ ps<- ggplot(vol.sm, aes(x=site, y=value, fill=site), alpha=0.6) +
   geom_point(data=ex.vols3[ex.vols3$site =="Silver Creek",], aes(x=site, y=value, color=as.factor(Exceedance)), size=2, shape=15)+
   scale_color_manual(values=c("blue3", "deepskyblue", "green3","darkorange","red"))+
   
-  theme_bw()+
+  theme_bw(base_size = 18)+
   theme(legend.position="none") +
   ggtitle("") +
   labs(fill="", color="Exceedance")+
