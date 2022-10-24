@@ -406,6 +406,8 @@ png(filename = file.path(fig_dir_mo,"sampled_volumes.png"),
 print(p)
 dev.off()
 
+saveRDS(p, file.path(fig_dir_mo,"sampled_volumes.rds"))
+
 ps<- ggplot(vol.sm, aes(x=site, y=value, fill=site), alpha=0.6) +
   geom_boxplot(outlier.alpha = 0.3) +
   scale_fill_manual(values=c("royalblue3", "grey90")) +
@@ -427,7 +429,7 @@ png(filename = file.path(fig_dir_mo,"sampled_sc_vol.png"),
 print(ps)
 dev.off()
 
-save(sc, file = file.path(fig_dir_mo, paste0("sampled_sc_vol-", end_date, ".RData")))
+saveRDS(ps, file = file.path(fig_dir_mo, paste0("sampled_sc_vol-", end_date, ".rds")))
 
 pc<- ggplot(vol.cc, aes(x=site, y=value, fill=site), alpha=0.6) +
   geom_boxplot(outlier.alpha = 0.3) +
