@@ -141,7 +141,7 @@ wt_box<- ggplot(subT%>% filter(year < pred.yr), aes(x=reorder(factor(site), nj.t
   geom_point(data = subT %>% filter(year == pred.yr), aes(reorder(factor(site), nj.tempF, na.rm = TRUE), y=nj.tempF), color="blue", size=3, shape=15)+
   coord_flip()
 
-png(filename = file.path(fig_dir_mo,"NovJanT_box.png"),
+png(filename = file.path(fig_dir,"NovJanT_box.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 print(wt_box)
