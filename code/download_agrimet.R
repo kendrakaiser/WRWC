@@ -79,7 +79,7 @@ colnames(piciT)<- c("date_time","t", "site_name", 'month', 'y')
 
 # Merge & save AgriMet Data ---------------------------------
 agrimet <- rbind(piciT, fafiT)
-agrimet$wy[!is.na(agri_metT$date_time)]<- as.numeric(as.character(waterYear(agri_metT$date_time[!is.na(agri_metT$date_time)], numeric=TRUE)))
+agrimet$wy[!is.na(agrimet$date_time)]<- as.numeric(as.character(waterYear(agrimet$date_time[!is.na(agrimet$date_time)], numeric=TRUE)))
 
 agri_met<- full_join(pici, fafi, by='date_time')
 agri_met$wy[!is.na(agri_met$date_time)]<- as.numeric(as.character(waterYear(agri_met$date_time[!is.na(agri_met$date_time)], numeric=TRUE)))
