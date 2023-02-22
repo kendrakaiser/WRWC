@@ -126,7 +126,7 @@ for(i in 1:length(stream.id)){
   for (y in 1: length(years)){
     #average winter flow
     sub1<- sub %>% filter(wy == years[y] & (mo >= 10 | mo < 2))
-    wq <- mean(sub1$Flow)
+    wq <- mean(sub1$Flow, na.rm = TRUE)
     
     #total april-september flow in AF
     sub2<- sub %>% filter(wy == years[y] & between(mo, 4, 9)) 
@@ -340,79 +340,3 @@ dev.off()
 # National Operational Hydrologic Remote Sensing Center data - max SWE at 17 locations?
 # Reservoir Data
 # Groundwater Data
-
-# -------------- Create Summary Figures ----
-# These are generated in the ModelOutput.Rmd
-# streamflow_data$Date <- as.Date(streamflow_data$Date)
-# streamflow_data$doy <- yday(streamflow_data$Date)
-# q<- streamflow_data %>% filter(abv != 'bwr')
-# #Calculate day of water-year
-# water_year_begin <- ymd('1987-10-01')-1
-# #deal with leap years
-# q$doWY<- ((q$doy - yday(water_year_begin)) %% ifelse(leap_year(year(q$Date)), 366, 365)) +1
-# 
-# # Summary stats
-# detach(package:plyr) #plyr interferes with a group_by
-# data <- group_by(q, doWY) %>% filter(abv == 'bwb') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
-# # Plot
-# png(filename = file.path(fig_dir,"bwb_historicQ.png"),
-#     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-#     bg = "white", res = 600, type ="quartz") 
-# 
-# ggplot(data=data, mapping=aes(x=doWY))+
-#   labs(title = "Big Wood River at Hailey")+
-#   geom_line(mapping=aes(y=meanQ), color='red')+
-#   geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
-#   xlab('DOY')+
-#   ylab('Flow (cfs)')+
-#   theme_bw()
-# dev.off()
-# 
-# # Summary stats
-# data <- group_by(q, doWY) %>% filter(abv == 'bws') %<>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
-# # Plot
-# png(filename = file.path(fig_dir,"bws_historicQ.png"),
-#     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-#     bg = "white", res = 600, type ="quartz") 
-# 
-# ggplot(data=data, mapping=aes(x=doWY))+
-#   labs(title = "Big Wood River at Stanton Crossing") +
-#   geom_line(mapping=aes(y=meanQ), color='red')+
-#   geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
-#   xlab('DOY')+
-#   ylab('Flow (cfs)')+
-#   theme_bw()
-# dev.off()
-# 
-# # Summary stats
-# data <- group_by(q, doWY) %>% filter(abv == 'cc') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
-# # Plot
-# png(filename = file.path(fig_dir,"cc_historicQ.png"),
-#     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-#     bg = "white", res = 600, type ="quartz") 
-# 
-# ggplot(data=data, mapping=aes(x=doWY))+
-#   labs(title = "Camas Creek") +
-#   geom_line(mapping=aes(y=meanQ), color='red')+
-#   geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
-#   xlab('DOY')+
-#   ylab('Flow (cfs)')+
-#   theme_bw()
-# dev.off()
-# 
-# # Summary stats
-# data <- group_by(q, doWY) %>% filter(abv == 'sc') %>% mutate(meanQ=mean(Flow), maxQ=max(Flow), minQ=min(Flow))
-# # Plot
-# png(filename = file.path(fig_dir,"sc_historicQ.png"),
-#     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-#     bg = "white", res = 600, type ="quartz") 
-# 
-# ggplot(data=data, mapping=aes(x=doWY))+
-#   labs(title = "Silver Creek") +
-#   geom_line(mapping=aes(y=meanQ), color='red')+
-#   geom_ribbon(mapping=aes(ymin=minQ, ymax=maxQ), alpha=.1)+
-#   xlab('DOY')+
-#   ylab('Flow (cfs)')+
-#   theme_bw()
-# 
-# dev.off()
