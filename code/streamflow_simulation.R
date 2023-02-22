@@ -23,7 +23,6 @@ cc.wy<-streamflow_data[streamflow_data$abv == 'cc',]
 sc.wy<-streamflow_data[streamflow_data$abv == 'sc',]
 
 # distributions and diversion hydrographs 
-#cm.year<-read.csv(file.path(model_out,"CMyear.sample.csv"))
 #vol.sample<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
 colnames(vol.sample)<-c("bwb.vol", "bws.vol","cc.vol", "sc.vol")
 #Example figures for presentation
