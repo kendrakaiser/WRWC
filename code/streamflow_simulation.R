@@ -220,15 +220,20 @@ wr.cutoffs$cut.wr[1:which(wr.cutoffs$bws.meanQ == max(wr.cutoffs$bws.meanQ))]<-N
 wr.cutoffs$ymo<- zoo::as.yearmon(wr.cutoffs$cut.wr)
 wr.cutoffs<- wr.cutoffs[complete.cases(wr.cutoffs),]
 
+
 ggplot(wr.cutoffs, aes(x=date, y=bws.meanQ, color= as.factor(ymo))) + 
   geom_point()+
   theme_bw()+
   scale_y_continuous(n.breaks=8)+
   scale_x_date(date_breaks = "weeks" , date_labels = "%m/%d")+
   scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1)+  
-  scale_fill_discrete(name = "Water Right")+
+  labs(color = "Water Right")+
   ylab("Average Simulated Streamflow @ Hailey (cfs)")+
   xlab("Date")
+
+ggsave(filename = file.path(fig_dir_mo, "curtailment_recession.png"),
+    width = 8.5, height = 5.5, units = "in", pointsize = 12,
+    bg = "white") 
 
 #the big problem / question here is that the old water rights shouldnt get turned off, so I'm wondering which data should be used here??
 # Silver Creek 
