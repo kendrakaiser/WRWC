@@ -310,11 +310,11 @@ alldat$bws.loss <- alldat$bws.vol.nat - alldat$bwb.vol
 alldat$sc.vol.nat<- alldat$sc.vol + alldat$sc.div
 
 if (run_date == 'feb1'){
-  filename = 'all_dat_feb.csv'
+  filename = 'alldat_feb.csv'
 } else if (run_date == 'march1'){
-  filename = 'all_dat_mar.csv'
+  filename = 'alldat_mar.csv'
 } else if (run_date == 'april1'){
-  filename = 'all_dat_apr.csv'
+  filename = 'alldat_apr.csv'
 }
 
 write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
