@@ -66,10 +66,10 @@ for(k in 1:ns){
   sc<- sc.wy[sc.wy$wy == year, "Flow"][183:365]
   cc <- cc.wy[cc.wy$wy == year, "Flow"][183:365]
   
-  bwb.flow.s[,k]<-sim.flow(bwb, vol$bwb.vol)
-  bws.flow.s[,k]<-sim.flow(bws, vol$bws.vol)
-  sc.flow.s[,k]<-sim.flow(sc, vol$sc.vol)
-  cc.flow.s[,k]<-sim.flow(cc, vol$cc.vol)
+  bwb.flow.s[,k]<-sim.flow(bwb, exp(vol$bwb.vol))
+  bws.flow.s[,k]<-sim.flow(bws, exp(vol$bws.vol))
+  sc.flow.s[,k]<-sim.flow(sc, exp(vol$sc.vol))
+  cc.flow.s[,k]<-sim.flow(cc, exp(vol$cc.vol))
 }
 
 #matplot(bwb.flow.s, type='l',col = "gray90" )
@@ -216,10 +216,19 @@ cutoff<- function(flow, wr_array){
   }
   
 wr.cutoffs$cut.wr<-Reduce(c, lapply(wr.cutoffs$bws.meanQ, cutoff, wr.sub))
+wr.cutoffs$cut.wr[1:which(wr.cutoffs$bws.meanQ == max(wr.cutoffs$bws.meanQ))]<-NA #ignore cutoffs before peak
+wr.cutoffs$ymo<- zoo::as.yearmon(wr.cutoffs$cut.wr)
+wr.cutoffs<- wr.cutoffs[complete.cases(wr.cutoffs),]
 
-ggplot(wr.cutoffs, aes(x=date, y=bws.meanQ, color= as.factor(cut.wr))) + 
+ggplot(wr.cutoffs, aes(x=date, y=bws.meanQ, color= as.factor(ymo))) + 
   geom_point()+
- theme_bw()
+  theme_bw()+
+  scale_y_continuous(n.breaks=8)+
+  scale_x_date(date_breaks = "weeks" , date_labels = "%m/%d")+
+  scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1)+  
+  scale_fill_discrete(name = "Water Right")+
+  ylab("Average Simulated Streamflow @ Hailey (cfs)")+
+  xlab("Date")
 
 #the big problem / question here is that the old water rights shouldnt get turned off, so I'm wondering which data should be used here??
 # Silver Creek 
