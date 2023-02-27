@@ -14,14 +14,14 @@ git_dir <<- '~/github/WRWC'
 cd <<- '~/Desktop/WRWC'
 
 # set prediction year
-pred.yr <<- 2022
+pred.yr <<- 2023
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
-run_date <<- 'april1'
+run_date <<- 'feb1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
 
-todays_date <<- "04/21/2022"
+todays_date <<- "02/22/2023"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -29,7 +29,7 @@ input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 data_dir <<- file.path(cd, 'data') # local
 
 # set end date for AgriMet Data download
-end_date <<-as.Date("2022-08-01")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
+end_date <<-as.Date("2023-02-22")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
 # ---- Run Model code
 
@@ -89,8 +89,7 @@ if (run_date == 'feb1'){
   wr_params <<- 'apr_wr_vars.rdata'
 }
 
-# Develop the streamflow Models
-# Once ran in a given month this can be commented out
+# Develop the streamflow Models & Compile Data Sources
 suppressWarnings(source(file.path(git_dir, 'code/streamflow_models.R')))# warning messages are expected and okay
 
 # Load the models and parameters from all the models 
