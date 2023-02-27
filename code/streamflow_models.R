@@ -11,7 +11,7 @@
 defaultW <- getOption("warn") 
 options(warn = -1) 
 
-# Import Data ------------------------------------------------------------------ # 
+# Import & Compile Data -------------------------------------------------------# 
 # Streamflow, Current SWE, historic and Modeled Temperature Data
 #q = read.csv(file.path(cd,'streamflow_data.csv'))
 usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
