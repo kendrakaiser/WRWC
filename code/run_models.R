@@ -92,12 +92,6 @@ if (run_date == 'feb1'){
 # Develop the streamflow Models & Compile Data Sources
 suppressWarnings(source(file.path(git_dir, 'code/streamflow_models.R')))# warning messages are expected and okay
 
-# Load the models and parameters from all the models 
-vol.params <<- list.load(file.path(data_dir, vol_params))
-vol.mods <<- list.load(file.path(data_dir, vol_mods))
-cm.params <<- list.load(file.path(data_dir,cm_params))
-cm.mods <<- list.load(file.path(data_dir, cm_mods))
-
 # Make the Irrigation Season Streamflow Predictions
 source(file.path(git_dir, 'code/streamflow_predictions.R'))
 

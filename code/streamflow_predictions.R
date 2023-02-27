@@ -8,15 +8,20 @@
 # 
 # This model was informed by the statistical tools developed for the Henry's Fork 
 # Foundation by Rob VanKirk
+# TODO: NEED TO ERROR CHECK THAT pred.params.vol are NOT NA
 # -----------------------------------------------------------------------------  
 
 # Import Data ------------------------------------------------------------------  
-var<-read.csv(file.path(model_out,'all_vars.csv'))
-
-usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
+# var= read.csv(file.path(data_dir,'var_feb.csv'))
+# usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
-
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
+
+# Load the models and parameters from all the models 
+vol.params <<- list.load(file.path(data_dir, vol_params))
+vol.mods <<- list.load(file.path(data_dir, vol_mods))
+cm.params <<- list.load(file.path(data_dir,cm_params))
+cm.mods <<- list.load(file.path(data_dir, cm_mods))
 
 # ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates, changed to start at the beginning of year in accordance with my calculation of cm, consider changing to day of wy
@@ -81,6 +86,8 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   pred.params.vol[1,1]<-predictions$fit[1] #mean prediction 
   pred.params.vol[1,3]<-predictions$fit[2] #lower prediction interval
   pred.params.vol[1,4]<-predictions$fit[3] #upper prediction interval
+  #ADD ERROR CHECK HERE IF NA then STOP
+  
   #This years percent of mean winter flow
   output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,0)
   
@@ -149,6 +156,7 @@ mod_sum[3,1]<-summary(vol.mods$cc_mod)$adj.r.squared
 mod_out<- modOut(vol.mods$cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], var$cc.wq[var$year < pred.yr], hist$cc.vol, mean(colMeans(swe_cols, na.rm=T)), var$cc.vol[var$year == pred.yr-1])
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
+
 
 # ------------------------------------------------------------------------------  
 #
