@@ -21,7 +21,7 @@ run_date <<- 'feb1'
 # info for model run report
 author <<- "Kendra Kaiser"
 
-todays_date <<- "02/22/2023"
+todays_date <<- "02/28/2023"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -29,7 +29,7 @@ input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 data_dir <<- file.path(cd, 'data') # local
 
 # set end date for AgriMet Data download
-end_date <<-as.Date("2023-02-22")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
+end_date <<-as.Date("2023-02-28")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
 # ---- Run Model code
 
@@ -44,7 +44,7 @@ source(file.path(git_dir, 'code/temperature_models.R')) #fix - fig_dir_mo
 
 # sets input/output file directories and selects model params and models depending on model run date 
 if (run_date == 'feb1'){
-  input_data <<- 'all_dat_feb.csv'
+  input_data <<- 'alldat_feb.csv'
   fig_dir_mo <<- file.path(fig_dir,'February')
   fig_dir_mo_rmd <<- './figures/February'
   model_out <<-  file.path(cd, 'February_output')
@@ -59,7 +59,7 @@ if (run_date == 'feb1'){
   wr_params <<- 'feb_wr_vars.rdata'
   
 } else if (run_date == 'march1'){
-  input_data <<- 'all_dat_mar.csv'
+  input_data <<- 'alldat_mar.csv'
   fig_dir_mo <<- file.path(fig_dir,'March')
   fig_dir_mo_rmd <<- './figures/March'
   model_out <<-  file.path(cd, 'March_output')
@@ -74,7 +74,7 @@ if (run_date == 'feb1'){
   wr_params <<- 'mar_wr_vars.rdata'
   
 } else if (run_date == 'april1'){
-  input_data <<- 'all_dat_apr.csv'
+  input_data <<- 'alldat_apr.csv'
   fig_dir_mo <<- file.path(fig_dir,'April')
   fig_dir_mo_rmd <<- './figures/April'
   model_out <<-  file.path(cd, 'April_output')
@@ -97,6 +97,8 @@ source(file.path(git_dir, 'code/streamflow_predictions.R'))
 
 # Develop curtailment models and make curtailment date predictions
 suppressWarnings(source(file.path(git_dir, 'code/curtailment_model.R')))
+#curtailment predictions needs to be here because the data is necessary for the wr cutoff figure that is in the simulation script -- this should be re-organized
+source(file.path(git_dir, 'code/curtailment_predictions.R'))
 
 # Remove unesseary variables in the environment
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
