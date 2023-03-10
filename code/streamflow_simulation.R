@@ -14,7 +14,7 @@ dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30
 # Import data
 # volume & bootstraps for each gage
 # natural flow and diversion records from which we will select the runoff timing
-#streamflow_data<-read.csv(file.path(data_dir,"streamflow_data.csv"))
+streamflow_data<-read.csv(file.path(data_dir,"streamflow_data.csv"))
 streamflow_data$year <- year(streamflow_data$Date)
 
 bwb.wy<-streamflow_data[streamflow_data$abv == 'bwb',]
