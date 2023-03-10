@@ -106,11 +106,11 @@ rownames(div_mod_out)<- div.names
 colnames(div_mod_out)<- c("Adj R2", "LOOCV R2", "RMSE", "Diversion", "+/-")
 div_vars <-vector(mode = "list", length = length(div.names))
 
-for (i in 1:length(div.names)) {
-  mod_out<- mod_div(div.names[i])
-  div_mod_out[div.names[i],]<- mod_out[[1]]
-  div_vars[i]<- mod_out[2]
-}
+#for (i in 1:length(div.names)) {
+ # mod_out<- mod_div(div.names[i])
+  #div_mod_out[div.names[i],]<- mod_out[[1]]
+  #div_vars[i]<- mod_out[2]
+#}
 
 # -----------------Water Right Curtailment Models -----------------------------#
 basins<-unique(curtailments$subbasin)
