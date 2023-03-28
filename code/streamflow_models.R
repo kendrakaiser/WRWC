@@ -56,13 +56,13 @@ ctrl <- trainControl(method = "LOOCV")
 # Evaluate alternative model combinations for April-Sept Volume Predictions
 #------------------------------------------------------------------------------ # 
 nv_max=10
-
+# decreased the max number of variables
 # Big Wood at Hailey
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, 
               all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to assess the results
-tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=12)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=10)}, 
          error= function(e) {print("Big Wood Hailey Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -72,7 +72,9 @@ vars<-reg_sum$which[which.min(reg_sum$bic),]
 bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit the regression model and use LOOCV to evaluate performance
-form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
+form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), " + bwb.wq", sep = "")
+bwh_sum$vars<- append("bwb.wq", bwh_sum$vars)
+
 bwh_mod<-lm(form, data=hist)
 bwh_sum$lm<-summary(bwh_mod)$adj.r.squared
 #save summary of LOOCV
