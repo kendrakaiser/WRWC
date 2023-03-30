@@ -3,8 +3,11 @@
 # Sam Carlson, Kendra Kaiser
 
 # load libaries
+devtools::install_github('marinosr/SNODASR')
+
 library(curl)
 library(terra)
+library(R.utils)
 
 ##SNODAS, Version 1: 
 
@@ -40,6 +43,12 @@ getSnodasFile=function(dataDate=as.Date("2021-04-20"),
   #come back to this
   sweFile=gzFiles[grepl(pattern=".*34tS.*\\.dat.*", gzFiles)]
   sweFiles=gzFiles[grepl(pattern=".*34tS.*", gzFiles)]
+  
+  #testing
+  outSWE<-gunzip(paste0(workingDirectory, "/ext/", sweFile))
+  readLines(outSWE, n=10)
+  tst=gdal.open(paste0("vsigzip/", workingDirectory, "/ext/", sweFiles))
+  rast(gzfile(paste0(workingDirectory, "/ext/", sweFile)))
 }
 
 dat<- getSnodasFile()
