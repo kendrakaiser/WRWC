@@ -24,12 +24,18 @@ extract_ws_swe <- function(ws_id, ws_geoms){
   out_img<-extract.SNODAS.subset(date, values_wanted='SWE', extent=ws_extent, write_file = FALSE) 
   #convert images to raster
   out_rast=rast(out_img[[1]])
+  
+  #is there another function to extract data by elevation band??
+  
   ## --- extract values from all relevant parameters and modify into metrics ---#
   out_swe<-terra::extract(out_rast, ws_geom_tr)
+  hist(out_swe[,2])
   tot_swe<-sum(out_swe[,2]) ## this needs to be modified
   
   return(tot_swe)
 }
+
+# insert in other metrics of interest
 
 #download by largest extent, then use extract w diff watersheds
 grab_ws_snow = function(ws_id, date, param, metric){ #need to make work for both single date and sequence
@@ -66,7 +72,7 @@ param='SWE'
 out<- grab_ws_snow(full_extent, date_seq, param ='SWE')
 
 plot(out_img)
-plotfull_extent, add=TRUE)
+#plotfull_extent, add=TRUE)
 
 
 
