@@ -16,35 +16,31 @@ boundingbox <- dbGetQuery(conn, "SELECT ST_EXTENT(watersheds.geometry) FROM wate
 
 %>% st_transform(crs=st_crs(4326))
 
-# function to pull spatial geometry from location ID and transform it 
-grab_geom = function(ws_id){
-  ws_geom=st_read(conn, query=paste0("SELECT watershedgeometry FROM locationattributes WHERE locationid=",
-                                   ws_id, ";"))
-  ws_geom_tr= st_transform(ws_geom, crs=st_crs(4326))
-  return(ws_geom_tr)
-}
-
 #download by largest extent, then use extract w diff watersheds
-grab_ws_snow = function(ws_geom_trs, date_seq, param){ #need to make work for both single date and sequence
+grab_ws_snow = function(ws_id, date_seq, param, metric){ #need to make work for both single date and sequence
   
   #look in db to see if the metric exists
-    #return values
+    #return metric
   
   #if doesnt exist in database pull all data for that date / date range & calculate metrics
   
   
+  ### --- pull spatial geometry from location ID and transform it to extent 
+  ws_geom=st_read(conn, query=paste0("SELECT watershedgeometry FROM locationattributes WHERE locationid=",
+                                     ws_id, ";"))
+  ws_geom_tr= st_transform(ws_geom, crs=st_crs(4326))
   # pull extent of watershed
-  extent=matrix(st_bbox(ws_geom_trs), nrow=2)
+  extent=matrix(st_bbox(ws_geom_tr), nrow=2)
   
-  ## Download the SNODAS dataset
+  ### --- Download the full SNODAS dataset
   download.SNODAS(date_seq)
-  ## extract SNODAS
-  out_img<-extract.SNODAS.subset(date_seq, values_wanted='SWE', extent=baseline_extent, write_file = FALSE) 
+  ### --- extract all SNODAS values wanted 
+  out_img<-extract.SNODAS.subset(date_seq, values_wanted=c('SWE', 'Runoff'), extent=baseline_extent, write_file = FALSE) 
   
   #convert image to raster
   out_img=rast(out_img[[1]])
   
-  #extract values
+  #extract values from all relevant parameters and modeify into metrics
   out_swe<-terra::extract(out_img, baseline_geomt)
   tot_swe<-c(date_ts, sum(out_swe$X2023.03.16)) ## this needs to be modified
   
