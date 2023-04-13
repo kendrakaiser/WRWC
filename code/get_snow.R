@@ -16,6 +16,21 @@ source("~/github/WRWC/code/init_db.R") # /Documents
 
 boundingbox <- dbGetQuery(conn, "SELECT ST_EXTENT(watersheds.geometry) FROM watersheds;") 
 
+extract_ws_swe <- function(ws_id, ws_geoms){ 
+  # geometries of sub watershed to use to extract metrics of interest
+  ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
+  ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
+  ## --- extract all SNODAS values wanted 
+  out_img<-extract.SNODAS.subset(date, values_wanted='SWE', extent=ws_extent, write_file = FALSE) 
+  #convert images to raster
+  out_rast=rast(out_img[[1]])
+  ## --- extract values from all relevant parameters and modify into metrics ---#
+  out_swe<-terra::extract(out_rast, ws_geom_tr)
+  tot_swe<-sum(out_swe[,2]) ## this needs to be modified
+  
+  return(tot_swe)
+}
+
 #download by largest extent, then use extract w diff watersheds
 grab_ws_snow = function(ws_id, date, param, metric){ #need to make work for both single date and sequence
   
@@ -29,24 +44,11 @@ grab_ws_snow = function(ws_id, date, param, metric){ #need to make work for both
   download.SNODAS(date)
 
   ## --- pull spatial geometry from location ID and transform it to extent --- #
-  ws_ids = c(140,161)#c()
-  ws_geoms=st_read(conn, query=paste0("SELECT watershedgeometry FROM locationattributes WHERE locationid IN ('",
+  ws_ids = c(140,167)#c()
+  ws_geoms=st_read(conn, query=paste0("SELECT outflowlocationid, geometry FROM watersheds WHERE outflowlocationid IN ('",
                                       paste(ws_ids, collapse= "', '"),"');"))
-  
-  # geometries of sub watersheds to use to extract metrics of interest
-  ws_geoms_tr= st_transform(ws_geoms, crs=st_crs(4326))
-  # create full extent of combined watershed area
-  ws_extent=matrix(st_bbox(ws_geoms_tr), nrow=2)
-
-  ## --- extract all SNODAS values wanted 
-  out_img<-extract.SNODAS.subset(date, values_wanted=c('SWE', 'Runoff'), extent=ws_extent, write_file = FALSE) 
-  
-  #convert images to rasters -- NEED TO MODIFY TO MULT RASTERS
-  out_img=rast(out_img[[1]])
-  
-  ## --- extract values from all relevant parameters and modify into metrics ---#
-  out_swe<-terra::extract(out_img, ws_geoms_tr) ## MODIFY for stack of rasters
-  tot_swe<-c(date_ts, sum(out_swe$X2023.03.16)) ## this needs to be modified
+ 
+  ws_tot_swe<-sapply(ws_ids, extract_ws_swe, ws_geoms)
   
   #write new metrics to database
   #return metric of interest
@@ -59,6 +61,7 @@ grab_ws_snow = function(ws_id, date, param, metric){ #need to make work for both
 date_seq<-seq(as.Date("2021-10-01"), as.Date("2022-09-30"), by= "day")
 full_extent = grab_geom(161)
 date = as.Date("2023-04-11")
+param='SWE'
 
 out<- grab_ws_snow(full_extent, date_seq, param ='SWE')
 
