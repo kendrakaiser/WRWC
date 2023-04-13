@@ -3,7 +3,9 @@
 # Sam Carlson, Kendra Kaiser
 
 # load libaries
-devtools::install_github('marinosr/SNODASR')
+
+source("~/github/SNODASR-main/R/extract.SNODAS.subset.R")
+source("~/github/SNODASR-main/R/download.SNODAS.R")
 
 library(SNODASR)
 library(curl)
@@ -13,8 +15,6 @@ library(R.utils)
 source("~/github/WRWC/code/init_db.R") # /Documents
 
 boundingbox <- dbGetQuery(conn, "SELECT ST_EXTENT(watersheds.geometry) FROM watersheds;") 
-
-%>% st_transform(crs=st_crs(4326))
 
 #download by largest extent, then use extract w diff watersheds
 grab_ws_snow = function(ws_id, date, param, metric){ #need to make work for both single date and sequence
@@ -36,7 +36,7 @@ grab_ws_snow = function(ws_id, date, param, metric){ #need to make work for both
   # geometries of sub watersheds to use to extract metrics of interest
   ws_geoms_tr= st_transform(ws_geoms, crs=st_crs(4326))
   # create full extent of combined watershed area
-  ws_extent=matrix(st_bbox(ws_geom_tr), nrow=2)
+  ws_extent=matrix(st_bbox(ws_geoms_tr), nrow=2)
 
   ## --- extract all SNODAS values wanted 
   out_img<-extract.SNODAS.subset(date, values_wanted=c('SWE', 'Runoff'), extent=ws_extent, write_file = FALSE) 
