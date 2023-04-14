@@ -108,11 +108,9 @@ grab_ws_snow = function(ws_ids, date, metric, metricDefinitions=snodasMetrics){
     
     #simple way to match 'metric' arg to this whole function to a specific function for calculating that metric.  
     #For example, if metric = 'SWE_total', this will run sapply(ws_ids, extract_ws_swe, ws_geoms) , and return the result as SNODAS_values.
-    #however, if metric = 'Poodle_density', it will run calculatePoodleDensity()
     #we need to add more functions for other  metrics of interest, and add the metrics to the check above (knownMetrics)
     SNODAS_values=switch(addMetric,
-                         SWE_total=sapply(ws_ids, extract_ws_swe, ws_geoms=ws_geoms, date=date)#,
-                         #Poodle_density=calculatePoodleDensity()
+                         SWE_total=sapply(ws_ids, extract_ws_swe, ws_geoms=ws_geoms, date=date)
                          )
     
     
