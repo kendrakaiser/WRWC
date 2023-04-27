@@ -18,7 +18,7 @@ source("~/Documents/R Workspace/snodasr/SNODASR_functions.R")
 #source("~/github/SNODASR-main/R/download.SNODAS.R")
 #library(SNODASR)
 
-
+#made a note
 
 #df of snodas-derived metric names and units
 snodasMetrics=data.frame(metric=c("SWE_total"),
