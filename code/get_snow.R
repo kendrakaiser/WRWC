@@ -124,12 +124,12 @@ grab_ws_snow = function(ws_ids, date, metric, metricDefinitions=snodasMetrics){
 
 
 #simple test:
-swe_totals=grab_ws_snow(ws_ids = 140, date=as.Date("2023-04-12"),metric="SWE_total")
+#swe_totals=grab_ws_snow(ws_ids = 140, date=as.Date("2023-04-12"),metric="SWE_total")
 
 
 #multiple locations
-swe_totals=grab_ws_snow(ws_ids = c(140,167), date=as.Date("2023-04-15"),metric="SWE_total")
+#swe_totals=grab_ws_snow(ws_ids = c(140,167), date=as.Date("2023-04-15"),metric="SWE_total")
 
 #grab_ws_snow does not work across dates, but we can make a wrapper for it, or just apply:
-date_seq<-seq(as.Date("2021-10-01"), as.Date("2021-10-11"), by= "day")
-swe_totals=do.call(rbind,lapply(date_seq,grab_ws_snow,ws_ids=c(140,167),metric="SWE_total"))
+#date_seq<-seq(as.Date("2021-10-01"), as.Date("2021-10-11"), by= "day")
+#swe_totals=do.call(rbind,lapply(date_seq,grab_ws_snow,ws_ids=c(140,167),metric="SWE_total"))
