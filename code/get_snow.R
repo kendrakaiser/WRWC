@@ -25,7 +25,7 @@ conn=scdbConnect() #connect to database
 
 #data frame of snodas-derived metric names and units
 # add additional metrics here
-snodasMetrics=data.frame(metric=c("SWE_total"),
+snodasMetrics=data.frame(metric=c("SWE_total"), #"melt_total, precip_total, snow_temp_avg, snow_cover_fraction
                          units=c("cubic meters")
 )
 
@@ -58,8 +58,59 @@ extract_ws_swe <- function(ws_id, ws_geoms, date){
   return(tot_swe_m3)
 }
 
-# write functions for other metrics of interest
-# e.g. temp function...
+extract_ws_melt <- function(ws_id, ws_geoms, date){ 
+  # geometries of sub watershed to use to extract metrics of interest
+  ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
+  ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
+  ## --- extract all SNODAS values wanted 
+  out_img<-extract.SNODAS.subset(date, values_wanted='Runoff', extent=ws_extent, write_file = FALSE) 
+  #convert images to raster
+  out_rast=rast(out_img[[1]])
+  
+  ## --- extract values from all relevant parameters and modify into metrics ---#
+  out_runoff<-terra::extract(out_rast, vect(ws_geom_tr))
+  #hist(out_swe[,2])
+  tot_runoff<-sum(out_runoff[,2]) 
+  
+  # convert integer to meters based on scale factor
+  tot_runoff_m=tot_runoff/100000 
+  
+  # raster pixels are approximately 929*673, or more precisely, 625129 meters^2 per pixel on average
+  tot_runoff_m3=tot_runoff_m*625129
+  
+  # add error catch to make sure there is data in here -- doesnt work yet
+  #tryCatch( {if(nrow(tot_runoff_m3) == 0)}
+          #  , error = function(e) {message('Dataframe is EMPTY')
+          #    print(e)})
+  return(tot_runoff_m3)
+}
+
+extract_ws_melt <- function(ws_id, ws_geoms, date){ 
+  # geometries of sub watershed to use to extract metrics of interest
+  ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
+  ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
+  ## --- extract all SNODAS values wanted 
+  out_img<-extract.SNODAS.subset(date, values_wanted='Runoff', extent=ws_extent, write_file = FALSE) 
+  #convert images to raster
+  out_rast=rast(out_img[[1]])
+  
+  ## --- extract values from all relevant parameters and modify into metrics ---#
+  out_runoff<-terra::extract(out_rast, vect(ws_geom_tr))
+  #hist(out_swe[,2])
+  tot_runoff<-sum(out_runoff[,2]) 
+  
+  # convert integer to meters based on scale factor
+  tot_runoff_m=tot_runoff/100000 
+  
+  # raster pixels are approximately 929*673, or more precisely, 625129 meters^2 per pixel on average
+  tot_runoff_m3=tot_runoff_m*625129
+  
+  # add error catch to make sure there is data in here -- doesnt work yet
+  #tryCatch( {if(nrow(tot_runoff_m3) == 0)}
+  #  , error = function(e) {message('Dataframe is EMPTY')
+  #    print(e)})
+  return(tot_runoff_m3)
+}
 
 ### ---------------- Grab and/or Process SNODAS Data ------------------------ ###
 # Wrapper function that pulls data from db if it exists or downloads and processes SNODAS data
