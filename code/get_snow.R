@@ -25,15 +25,15 @@ conn=scdbConnect() #connect to database
 
 #data frame of snodas-derived metric names and units
 # add additional metrics here
-snodasMetrics=data.frame(metric=c("swe_total", "runoff_total", "snow_temp_avg", "snow_coverd_area"),
-                         units=c("meters", "meters", "celcius", "pixels")
+snodasMetrics=data.frame(metric=c("swe_total", "runoff_total", "snow_temp_avg", "snow_covered_area", "liguid_precip"),
+                         units=c("meters", "meters", "celcius", "km2", "mm")
 )
 
 #### ------------ Define Metrics and associated functions ------------------ ###
 # each new derived metric must be defined here, and must have a function created to calculate it
 # the function is then matched to the metric in the 'switch' statement in the main function
 
-# Extract swe from extent
+# Extract swe (m) from extent
 extract_ws_swe <- function(ws_id, ws_geoms, date){ 
   # geometries of sub watershed to use to extract metrics of interest
   ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
@@ -46,15 +46,14 @@ extract_ws_swe <- function(ws_id, ws_geoms, date){
   ## --- extract values from all relevant parameters and modify into metrics ---#
   out_swe<-terra::extract(out_rast, vect(ws_geom_tr))
   #hist(out_swe[,2])
-  tot_swe<-sum(out_swe[,2]) ## this needs to be modified
-  
-  #From a quick look at snodas user guide, I believe SWE is in mm.  Might as well convert to a reasonable unit to stuff in the db
-  tot_swe_m=tot_swe/1000 # convert to meters
+  tot_swe<-sum(out_swe[,2])
+  # convert to meters using scale factor from user guide
+  tot_swe_m=tot_swe/1000 
 
   # add error catch to make sure there is data in here
   return(tot_swe_m3)
 }
-#total 24 hour melt
+#Extract total 24 hour melt (m)
 extract_ws_runoff <- function(ws_id, ws_geoms, date){ 
   # geometries of sub watershed to use to extract metrics of interest
   ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
@@ -78,7 +77,7 @@ extract_ws_runoff <- function(ws_id, ws_geoms, date){
           #    print(e)})
   return(tot_runoff_m3)
 }
-# average snow pack temperature
+# average snow pack temperature; parameter is not included in files prior to 21 February 2004.
 extract_ws_snowT <- function(ws_id, ws_geoms, date){ 
   # geometries of sub watershed to use to extract metrics of interest
   ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
@@ -102,7 +101,7 @@ extract_ws_snowT <- function(ws_id, ws_geoms, date){
   #    print(e)})
   return(avg_snow_tempC)
 }
-# snow covered area (pixels)
+# snow covered area (km2)
 extract_ws_sca <- function(ws_id, ws_geoms, date){ 
   # geometries of sub watershed to use to extract metrics of interest
   ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
@@ -123,6 +122,28 @@ extract_ws_sca <- function(ws_id, ws_geoms, date){
   #  , error = function(e) {message('Dataframe is EMPTY')
   #    print(e)})
   return(sca)
+}
+# liquid precip, 24hr total (mm)
+extract_ws_precip <- function(ws_id, ws_geoms, date){ 
+  # geometries of sub watershed to use to extract metrics of interest
+  ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
+  ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
+  ## --- extract all SNODAS values wanted 
+  out_img<-extract.SNODAS.subset(date, values_wanted='P_Liquid', extent=ws_extent, write_file = FALSE) 
+  #convert images to raster 
+  out_rast=rast(out_img[[1]])
+  
+  ## --- extract values from all relevant parameters and modify into metrics ---#
+  # extract and divide by scale factor to get into meters
+  out_p<-terra::extract(out_rast, vect(ws_geom_tr))
+  # convert to kg/m2 (mm) using scale factor from user guide
+  tot_p<-sum(out_p[,2])/10 
+
+  # add error catch to make sure there is data in here -- doesnt work yet
+  #tryCatch( {if(nrow(tot_runoff_m3) == 0)}
+  #  , error = function(e) {message('Dataframe is EMPTY')
+  #    print(e)})
+  return(tot_p)
 }
 
 ### ---------------- Grab and/or Process SNODAS Data ------------------------ ###
