@@ -25,8 +25,8 @@ conn=scdbConnect() #connect to database
 
 #data frame of snodas-derived metric names and units
 # add additional metrics here
-snodasMetrics=data.frame(metric=c("SWE_total"), #"melt_total, precip_total, snow_temp_avg, snow_cover_fraction
-                         units=c("meters")
+snodasMetrics=data.frame(metric=c("swe_total", "runoff_total", "snow_temp_avg", "snow_coverd_area"),
+                         units=c("meters", "meters", "celcius", "pixels")
 )
 
 #### ------------ Define Metrics and associated functions ------------------ ###
@@ -54,7 +54,6 @@ extract_ws_swe <- function(ws_id, ws_geoms, date){
   # add error catch to make sure there is data in here
   return(tot_swe_m3)
 }
-
 #total 24 hour melt
 extract_ws_runoff <- function(ws_id, ws_geoms, date){ 
   # geometries of sub watershed to use to extract metrics of interest
@@ -79,7 +78,7 @@ extract_ws_runoff <- function(ws_id, ws_geoms, date){
           #    print(e)})
   return(tot_runoff_m3)
 }
-
+# average snow pack temperature
 extract_ws_snowT <- function(ws_id, ws_geoms, date){ 
   # geometries of sub watershed to use to extract metrics of interest
   ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
@@ -103,8 +102,7 @@ extract_ws_snowT <- function(ws_id, ws_geoms, date){
   #    print(e)})
   return(avg_snow_tempC)
 }
-
-# extract snow covered area
+# snow covered area (pixels)
 extract_ws_sca <- function(ws_id, ws_geoms, date){ 
   # geometries of sub watershed to use to extract metrics of interest
   ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
