@@ -26,7 +26,7 @@ conn=scdbConnect() #connect to database
 #data frame of snodas-derived metric names and units
 # add additional metrics here
 snodasMetrics=data.frame(metric=c("SWE_total"), #"melt_total, precip_total, snow_temp_avg, snow_cover_fraction
-                         units=c("cubic meters")
+                         units=c("meters")
 )
 
 #### ------------ Define Metrics and associated functions ------------------ ###
@@ -49,16 +49,14 @@ extract_ws_swe <- function(ws_id, ws_geoms, date){
   tot_swe<-sum(out_swe[,2]) ## this needs to be modified
   
   #From a quick look at snodas user guide, I believe SWE is in mm.  Might as well convert to a reasonable unit to stuff in the db
-  
   tot_swe_m=tot_swe/1000 # convert to meters
-  
-  # raster pixels are approximately 929*673, or more precisely, 625129 meters^2 per pixel on average
-  tot_swe_m3=tot_swe_m*625129
+
   # add error catch to make sure there is data in here
   return(tot_swe_m3)
 }
 
-extract_ws_melt <- function(ws_id, ws_geoms, date){ 
+#total 24 hour melt
+extract_ws_runoff <- function(ws_id, ws_geoms, date){ 
   # geometries of sub watershed to use to extract metrics of interest
   ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
   ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
@@ -74,9 +72,6 @@ extract_ws_melt <- function(ws_id, ws_geoms, date){
   
   # convert integer to meters based on scale factor
   tot_runoff_m=tot_runoff/100000 
-  
-  # raster pixels are approximately 929*673, or more precisely, 625129 meters^2 per pixel on average
-  tot_runoff_m3=tot_runoff_m*625129
   
   # add error catch to make sure there is data in here -- doesnt work yet
   #tryCatch( {if(nrow(tot_runoff_m3) == 0)}
@@ -85,31 +80,51 @@ extract_ws_melt <- function(ws_id, ws_geoms, date){
   return(tot_runoff_m3)
 }
 
-extract_ws_melt <- function(ws_id, ws_geoms, date){ 
+extract_ws_snowT <- function(ws_id, ws_geoms, date){ 
   # geometries of sub watershed to use to extract metrics of interest
   ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
   ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
   ## --- extract all SNODAS values wanted 
-  out_img<-extract.SNODAS.subset(date, values_wanted='Runoff', extent=ws_extent, write_file = FALSE) 
+  out_img<-extract.SNODAS.subset(date, values_wanted='T_Mean', extent=ws_extent, write_file = FALSE) 
   #convert images to raster
   out_rast=rast(out_img[[1]])
   
   ## --- extract values from all relevant parameters and modify into metrics ---#
-  out_runoff<-terra::extract(out_rast, vect(ws_geom_tr))
+  out_snow_temp<-terra::extract(out_rast, vect(ws_geom_tr))
   #hist(out_swe[,2])
-  tot_runoff<-sum(out_runoff[,2]) 
+  avg_snow_temp<-mean(out_snow_temp[,2], na.rm=TRUE) 
   
-  # convert integer to meters based on scale factor
-  tot_runoff_m=tot_runoff/100000 
-  
-  # raster pixels are approximately 929*673, or more precisely, 625129 meters^2 per pixel on average
-  tot_runoff_m3=tot_runoff_m*625129
+  # convert from Kelvin to C
+  avg_snow_tempC= avg_snow_temp - 273.15
   
   # add error catch to make sure there is data in here -- doesnt work yet
   #tryCatch( {if(nrow(tot_runoff_m3) == 0)}
   #  , error = function(e) {message('Dataframe is EMPTY')
   #    print(e)})
-  return(tot_runoff_m3)
+  return(avg_snow_tempC)
+}
+
+# extract snow covered area
+extract_ws_sca <- function(ws_id, ws_geoms, date){ 
+  # geometries of sub watershed to use to extract metrics of interest
+  ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
+  ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
+  ## --- extract all SNODAS values wanted 
+  out_img<-extract.SNODAS.subset(date, values_wanted='Depth', extent=ws_extent, write_file = FALSE) 
+  #convert images to raster 
+  out_rast=rast(out_img[[1]])
+  
+  ## --- extract values from all relevant parameters and modify into metrics ---#
+  # extract and divide by scale factor to get into meters
+  out_depth<-terra::extract(out_rast, vect(ws_geom_tr))/1000
+  # ID which pixels have more than 0.15m of snow and sum
+  sca = sum(out_depth[,2] > 0.15)
+  
+  # add error catch to make sure there is data in here -- doesnt work yet
+  #tryCatch( {if(nrow(tot_runoff_m3) == 0)}
+  #  , error = function(e) {message('Dataframe is EMPTY')
+  #    print(e)})
+  return(sca)
 }
 
 ### ---------------- Grab and/or Process SNODAS Data ------------------------ ###
