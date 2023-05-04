@@ -16,17 +16,16 @@ library(RPostgres)
 #to run on sam's computer:
 #source("~/Documents/R Workspace/snodasr/SNODASR_functions.R")
 
-
-#source("~/github/SNODASR-main/R/extract.SNODAS.subset.R")
-#source("~/github/SNODASR-main/R/download.SNODAS.R")
 source(paste0(git_dir,"/code/dbIntakeTools.R")) #tools to connect and write to database
+source("~/github/SNODASR-main/R/download.SNODAS.R")
+source("~/github/SNODASR-main/R/extract.SNODAS.subset.R")
 conn=scdbConnect() #connect to database
 
 
 #data frame of snodas-derived metric names and units
 # add additional metrics here
-snodasMetrics=data.frame(metric=c("swe_total", "runoff_total", "snow_temp_avg", "snow_covered_area", "liguid_precip"),
-                         units=c("meters", "meters", "celcius", "km2", "mm")
+snodasMetrics=data.frame(metric=c("swe_total", "runoff_total", "snow_covered_area", "liquid_precip"),
+                         units=c("meters", "meters", "km2", "mm")
 )
 
 #### ------------ Define Metrics and associated functions ------------------ ###
@@ -51,10 +50,12 @@ extract_ws_swe <- function(ws_id, ws_geoms, date){
   tot_swe_m=tot_swe/1000 
 
   # add error catch to make sure there is data in here
-  return(tot_swe_m3)
+  return(tot_swe_m)
 }
 #Extract total 24 hour melt (m)
 extract_ws_runoff <- function(ws_id, ws_geoms, date){ 
+  # add error catch to make sure there is data in here -- doesnt work yet
+  #tryCatch({
   # geometries of sub watershed to use to extract metrics of interest
   ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
   ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
@@ -71,35 +72,11 @@ extract_ws_runoff <- function(ws_id, ws_geoms, date){
   # convert integer to meters based on scale factor
   tot_runoff_m=tot_runoff/100000 
   
-  # add error catch to make sure there is data in here -- doesnt work yet
-  #tryCatch( {if(nrow(tot_runoff_m3) == 0)}
-          #  , error = function(e) {message('Dataframe is EMPTY')
-          #    print(e)})
-  return(tot_runoff_m3)
-}
-# average snow pack temperature; parameter is not included in files prior to 21 February 2004.
-extract_ws_snowT <- function(ws_id, ws_geoms, date){ 
-  # geometries of sub watershed to use to extract metrics of interest
-  ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
-  ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
-  ## --- extract all SNODAS values wanted 
-  out_img<-extract.SNODAS.subset(date, values_wanted='T_Mean', extent=ws_extent, write_file = FALSE) 
-  #convert images to raster
-  out_rast=rast(out_img[[1]])
-  
-  ## --- extract values from all relevant parameters and modify into metrics ---#
-  out_snow_temp<-terra::extract(out_rast, vect(ws_geom_tr))
-  #hist(out_swe[,2])
-  avg_snow_temp<-mean(out_snow_temp[,2], na.rm=TRUE) 
-  
-  # convert from Kelvin to C
-  avg_snow_tempC= avg_snow_temp - 273.15
-  
-  # add error catch to make sure there is data in here -- doesnt work yet
-  #tryCatch( {if(nrow(tot_runoff_m3) == 0)}
-  #  , error = function(e) {message('Dataframe is EMPTY')
-  #    print(e)})
-  return(avg_snow_tempC)
+  return(tot_runoff_m)
+  #}
+  #warning = function(w) {message('Snodas Dataframe is EMPTY')
+   #           print(w)})
+
 }
 # snow covered area (km2)
 extract_ws_sca <- function(ws_id, ws_geoms, date){ 
@@ -145,6 +122,30 @@ extract_ws_precip <- function(ws_id, ws_geoms, date){
   #    print(e)})
   return(tot_p)
 }
+# average snow pack temperature; parameter is not included in files prior to 21 February 2004.
+#extract_ws_snowT <- function(ws_id, ws_geoms, date){ 
+  # geometries of sub watershed to use to extract metrics of interest
+  ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
+  ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
+  ## --- extract all SNODAS values wanted 
+  out_img<-extract.SNODAS.subset(date, values_wanted='T_Mean', extent=ws_extent, write_file = FALSE) 
+  #convert images to raster
+  out_rast=rast(out_img[[1]])
+  
+  ## --- extract values from all relevant parameters and modify into metrics ---#
+  out_snow_temp<-terra::extract(out_rast, vect(ws_geom_tr))
+  #hist(out_swe[,2])
+  avg_snow_temp<-mean(out_snow_temp[,2], na.rm=TRUE) 
+  
+  # convert from Kelvin to C
+  avg_snow_tempC= avg_snow_temp - 273.15
+  
+  # add error catch to make sure there is data in here -- doesnt work yet
+  #tryCatch( {if(nrow(tot_runoff_m3) == 0)}
+  #  , error = function(e) {message('Dataframe is EMPTY')
+  #    print(e)})
+  return(avg_snow_tempC)
+}
 
 ### ---------------- Grab and/or Process SNODAS Data ------------------------ ###
 # Wrapper function that pulls data from db if it exists or downloads and processes SNODAS data
@@ -154,10 +155,10 @@ grab_ws_snow = function(ws_ids, date, metric, metricDefinitions=snodasMetrics){
   ##for debug:
   #ws_ids = c(140,167)
   #date=as.Date("2023-04-03")
-  #metric="SWE_total"
+  #metric="swe_total"
+  #metricDefinitions=snodasMetrics
   
   #known metrics - to throw an error if a metric is not understood
- 
   if(!metric %in% metricDefinitions$metric){
     stop("metric ",metric," can not be interpreted  >grab_ws_snow( metric )")
   }
@@ -185,8 +186,10 @@ grab_ws_snow = function(ws_ids, date, metric, metricDefinitions=snodasMetrics){
     #For example, if metric = 'SWE_total', this will run sapply(ws_ids, extract_ws_swe, ws_geoms) , and return the result as SNODAS_values.
     #we need to add more functions for other  metrics of interest, and add the metrics to the check above (knownMetrics)
     SNODAS_values=switch(addMetric,
-                         SWE_total=sapply(ws_ids, extract_ws_swe, ws_geoms=ws_geoms, date=date)#,
-                         # insert other metric e.g. temp=sapply(ws_ids, extract_ws_temp, ws_geoms=ws_geoms, date=date)
+                         swe_total= sapply(ws_ids, extract_ws_swe, ws_geoms=ws_geoms, date=date),
+                         runoff_total= sapply(ws_ids, extract_ws_runoff, ws_geoms=ws_geoms, date=date),
+                         snow_covered_area= sapply(ws_ids, extract_ws_sca, ws_geoms=ws_geoms, date=date),
+                         liquid_precip = sapply(ws_ids, extract_ws_precip, ws_geoms=ws_geoms, date=date)
                          )
     
     
@@ -198,7 +201,7 @@ grab_ws_snow = function(ws_ids, date, metric, metricDefinitions=snodasMetrics){
   unlink("./SNODAS",recursive=T)
   
   #everything has been calculated an written to db. Return to the users dataframe
-  dbData=dbGetQuery(conn, paste0("SELECT metric, value, datetime, locationid FROM data WHERE data.locationid IN ('",paste(ws_ids,collapse="', '"),"') AND datetime::date = '",date,"' AND metric = '",addMetric,"';"))
+  dbData=dbGetQuery(conn, paste0("SELECT metric, value, datetime, locationid FROM data WHERE data.locationid IN ('",paste(ws_ids,collapse="', '"),"') AND datetime::date = '",date,"' AND metric = '", metric,"';"))
   return(dbData) #return the same values that were written to db
 }
 
@@ -209,12 +212,13 @@ grab_ws_snow = function(ws_ids, date, metric, metricDefinitions=snodasMetrics){
 
 
 #simple test:
-#swe_totals=grab_ws_snow(ws_ids = 140, date=as.Date("2023-04-12"),metric="SWE_total")
+runoff_totals=grab_ws_snow(ws_ids = 140, date=as.Date("2023-04-12"),metric="runoff_total")
+sca=grab_ws_snow(ws_ids = 140, date=as.Date("2023-04-12"),metric="snow_covered_area")
 
 
 #multiple locations
-#swe_totals=grab_ws_snow(ws_ids = c(140,167), date=as.Date("2023-04-15"),metric="SWE_total")
+runoff_totals=grab_ws_snow(ws_ids = c(140,167), date=as.Date("2023-04-15"),metric="runoff_total")
 
 #grab_ws_snow does not work across dates, but we can make a wrapper for it, or just apply:
-#date_seq<-seq(as.Date("2021-10-01"), as.Date("2021-10-11"), by= "day")
-#swe_totals=do.call(rbind,lapply(date_seq,grab_ws_snow,ws_ids=c(140,167),metric="SWE_total"))
+date_seq<-seq(as.Date("2021-10-01"), as.Date("2021-10-11"), by= "day")
+runoff_totals=do.call(rbind,lapply(date_seq,grab_ws_snow,ws_ids=c(140,167),metric="runoff_total"))
