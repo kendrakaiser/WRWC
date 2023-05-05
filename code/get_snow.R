@@ -154,7 +154,7 @@ grab_ws_snow = function(ws_ids, date, metric, metricDefinitions=snodasMetrics){
   
   ##for debug:
   #ws_ids = c(140,167)
-  #date=as.Date("2023-04-03")
+  #date=as.Date("2001-04-03")
   #metric="swe_total"
   #metricDefinitions=snodasMetrics
   
@@ -215,10 +215,14 @@ grab_ws_snow = function(ws_ids, date, metric, metricDefinitions=snodasMetrics){
 runoff_totals=grab_ws_snow(ws_ids = 140, date=as.Date("2023-04-12"),metric="runoff_total")
 sca=grab_ws_snow(ws_ids = 140, date=as.Date("2023-04-12"),metric="snow_covered_area")
 
+dbGetQuery(conn, "SELECT distinct data.locationid, name FROM data left join locations on data.locationid = locations.locationid WHERE metric = 'flow'")
 
 #multiple locations
 runoff_totals=grab_ws_snow(ws_ids = c(140,167), date=as.Date("2023-04-15"),metric="runoff_total")
 
 #grab_ws_snow does not work across dates, but we can make a wrapper for it, or just apply:
-date_seq<-seq(as.Date("2021-10-01"), as.Date("2021-10-11"), by= "day")
-runoff_totals=do.call(rbind,lapply(date_seq,grab_ws_snow,ws_ids=c(140,167),metric="runoff_total"))
+date_seq<-seq(as.Date("2020-10-01"), as.Date("2021-09-30"), by= "day")
+print(Sys.time())
+swe=do.call(rbind,lapply(date_seq,grab_ws_snow,ws_ids=c(140,167,144,141),metric="swe_total"))
+
+#lappy runs through every date, but returns as list so do.call pulls everything row by row
