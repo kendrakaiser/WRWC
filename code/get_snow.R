@@ -15,7 +15,7 @@ library(RPostgres)
 # kek think about other snodas metrics to calculate; confirm IDs of relevant pourpoints; 
 
 #to run on sam's computer:
-source("~/Documents/R Workspace/snodasr/SNODASR_functions.R")
+source(paste0(getwd(),"/code/SNODASR_functions.R"))
 source(paste0(getwd(),"/code/dbIntakeTools.R"))
 
 #source(paste0(git_dir,"/code/dbIntakeTools.R")) #tools to connect and write to database
@@ -169,7 +169,7 @@ grab_ws_snow_worker = function(ws_ids, d, metric, metricDefinitions=allMetrics){
   ##--------------------------------------------------------------------------#
   ## --- Download the full SNODAS dataset
   dlWorked=tryCatch(
-    download.SNODAS(d, parallel = T, overwrite=T),
+    download.SNODAS(d, parallel = F, overwrite=T),
     error=function(e){
       print(e)
       print("snodas download failed, proceeding to next date...")
@@ -281,7 +281,7 @@ grab_ws_snow=function(ws_ids, dates, metric, allMetrics=snodasMetrics){
 runoff_totals=grab_ws_snow(ws_ids = c(167,144), dates=as.Date("2023-01-1"),metric="runoff_total")
 
 #day w/ no data
-runoff_totals=grab_ws_snow(ws_ids = 140, dates=as.Date("2001-04-12"),metric="runoff_total")
+runoff_totals=grab_ws_snow(ws_ids = 140, dates=as.Date("1980-04-12"),metric="runoff_total")
 
 #across big date range
 date_seq=seq.Date(from=as.Date("2000-01-01"),to=as.Date("2023-05-06"),by="day")
