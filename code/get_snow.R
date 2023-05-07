@@ -237,6 +237,7 @@ grab_ws_snow=function(ws_ids, dates, metric){
     
     moreData=data.frame(metric=character(0),value=numeric(0),datetime=as.Date(character(0)),locationid=numeric(0))#data frame for holding newly generated data
     
+    datesToRun=datesToRun[order(datesToRun)]
     pb=txtProgressBar(max=length(datesToRun),style=3,width=min(100,getOption("width")))
     i=1
     for(d in as.list(datesToRun)){  #run snodas worker function for days without complete data
