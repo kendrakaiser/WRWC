@@ -238,12 +238,12 @@ grab_ws_snow=function(ws_ids, dates, metric){
     moreData=data.frame(metric=character(0),value=numeric(0),datetime=as.Date(character(0)),locationid=numeric(0))#data frame for holding newly generated data
     
     datesToRun=datesToRun[order(datesToRun)]
-    pb=txtProgressBar(max=length(datesToRun),style=3,width=min(100,getOption("width")))
+    pb=txtProgressBar(max=length(datesToRun),style=3) 
     i=1
     for(d in as.list(datesToRun)){  #run snodas worker function for days without complete data
       print(d)
-      moreData=rbind(moreData,grab_ws_snow_worker(ws_ids=ws_ids, date=d, metric=metric))
       setTxtProgressBar(pb,value=i)
+      moreData=rbind(moreData,grab_ws_snow_worker(ws_ids=ws_ids, date=d, metric=metric))
       i=i+1
       writeLines("")
     }
@@ -263,11 +263,13 @@ grab_ws_snow=function(ws_ids, dates, metric){
 
 #simple test:
 runoff_totals=grab_ws_snow(ws_ids = 140, dates=as.Date("2023-04-12"),metric="runoff_total")
+#date range
 sca=grab_ws_snow(ws_ids = 140, dates=seq.Date(from=as.Date("2023-04-14"),to=as.Date("2023-05-05"),by="day"),metric="snow_covered_area")
 
 #multiple locations
 runoff_totals=grab_ws_snow(ws_ids = c(140,167), dates=as.Date("2013-04-15"),metric="runoff_total")
 
+#day w/ no data
 runoff_totals=grab_ws_snow(ws_ids = 140, dates=as.Date("2001-04-12"),metric="runoff_total")
 
 #across big date range
