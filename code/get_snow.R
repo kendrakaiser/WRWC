@@ -15,12 +15,12 @@ library(RPostgres)
 # kek think about other snodas metrics to calculate; confirm IDs of relevant pourpoints; 
 
 #to run on sam's computer:
-source(paste0(getwd(),"/code/SNODASR_functions.R"))
-source(paste0(getwd(),"/code/dbIntakeTools.R"))
+#source(paste0(getwd(),"/code/SNODASR_functions.R"))
+#source(paste0(getwd(),"/code/dbIntakeTools.R"))
 
-#source(paste0(git_dir,"/code/dbIntakeTools.R")) #tools to connect and write to database
-#source("~/github/SNODASR-main/R/download.SNODAS.R")
-#source("~/github/SNODASR-main/R/extract.SNODAS.subset.R")
+source(paste0(git_dir,"/code/dbIntakeTools.R")) #tools to connect and write to database
+source("~/github/SNODASR-main/R/download.SNODAS.R")
+source("~/github/SNODASR-main/R/extract.SNODAS.subset.R")
 conn=scdbConnect() #connect to database
 
 #all flow locations
@@ -284,9 +284,12 @@ runoff_totals=grab_ws_snow(ws_ids = c(167,144), dates=as.Date("2023-01-1"),metri
 runoff_totals=grab_ws_snow(ws_ids = 140, dates=as.Date("1980-04-12"),metric="runoff_total")
 
 #across big date range
-date_seq=seq.Date(from=as.Date("2000-01-01"),to=as.Date("2023-05-06"),by="day")
+date_seq=seq.Date(from=as.Date("2003-09-29"),to=as.Date("2023-05-06"),by="day")
 grab_ws_snow(ws_ids=c(140,167,144,141),dates=date_seq,metric="swe_total")
 
 #slow query, but should return all snodas-sourced data
 allSnodasData=dbGetQuery(conn,"SELECT * FROM data LEFT JOIN batches ON data.batchid = batches.batchid WHERE batches.source = 'snodas';")
 unique(allSnodasData$datetime)
+
+#save locally for data exploration, likely remove later
+write.csv(allSnodasData, file.path(data_dir, 'allSnodasData.csv'), row.names=FALSE)
