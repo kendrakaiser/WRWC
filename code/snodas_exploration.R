@@ -23,4 +23,12 @@ sno_april1<- snodas[snodas$mo == 4 & snodas$day ==1,] %>% dplyr::select (metric,
 
 snovol<- merge(vol,sno_april1, by=c('year', 'locationid'))
 
-ggplot()
+snovol.swe<- subset(snovol, metric=='swe_total' & site != 'bws.vol' & site != 'sc.vol')
+#filter(metric=='swe_total') %>% filter(site )
+snovol.bws<- subset(snovol, metric=='SWE_total')
+
+ggplot(snovol.swe, aes(x=value, y=volume, color=site)) + geom_point() + 
+  theme_bw()
+
+ggplot(snovol.bws, aes(x=value, y=volume)) + geom_point() + 
+  theme_bw()
