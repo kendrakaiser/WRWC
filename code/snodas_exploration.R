@@ -18,9 +18,27 @@ siteIDs<-t(matrix(c(140, 'BIG WOOD RIVER AT HAILEY', 'bwb.vol', 'bwb', 167,'CAMA
 colnames(siteIDs)<-c('locationid', 'name', 'site', 'site.s')
 vol<-merge(vol, siteIDs, by='site')
 
-
+# PIVOT snodas data to merge into the allDat frame
 sno.wide<- snodas[,c(1:3,5)] %>% pivot_wider(names_from = c(metric, locationid), names_glue = "{metric}.{locationid}", values_from = value) 
-allDat<- merge(allDat, siteIDs, by='site')
+#modify df to merge
+sno.wide$year <- year(sno.wide$datetime)
+sno.wide$mo<- month(sno.wide$datetime)
+sno.wide$day<- day(sno.wide$datetime)
+
+pTemp<-sno.wide[,c(1,5,9,14,15, 19,20)]
+pTemp$wy<- as.numeric(as.character(waterYear(pTemp$datetime, numeric=TRUE)))
+n.yrs<- unique(sno.wide$year)
+
+for (i in 1:length(n.yrs)){
+  sub1<- pTemp %>% filter(wy == n.yrs[i] & (mo >= 10 | mo < 4)) %>% as.data.frame() 
+  p.wint[i, 2:5]<- sub1 %>% dplyr::select(c(2:5)) %>% colSums() %>% t()  %>% as.data.frame() 
+  p.wint$wy[i] <-n.yrs[i]
+}
+
+
+sno.wide.apr<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
+
+allDat <- merge(allDat, sno.wide.apr, by= 'year')
 
 
 #subset timeseries data to plot 
