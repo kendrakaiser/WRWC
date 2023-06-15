@@ -38,6 +38,7 @@ snodasMetrics=data.frame(metric=c("swe_total", "runoff_total", "snow_covered_are
 # the function is then matched to the metric in the 'switch' statement in the main function
 
 extract_ws_swe <- function(ws_id, ws_geoms, d){ 
+  
   # geometries of sub watershed to use to extract metrics of interest
   ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
   ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
@@ -183,8 +184,6 @@ grab_ws_snow_worker = function(ws_ids, d, metric, metricDefinitions=allMetrics){
     ## --- pull spatial geometry(s) from location ID and transform it to extent --- #
     ws_geoms=st_read(conn, query=paste0("SELECT outflowlocationid, geometry FROM watersheds WHERE outflowlocationid IN ('",
                                         paste(ws_ids, collapse= "', '"),"');"))
-    
-    
     #since we have downloaded the SNODAS data, calculate all metrics regardless of what was asked for:
     for(addMetric in metricDefinitions$metric){
       
@@ -292,3 +291,9 @@ swe=grab_ws_snow(ws_ids=c(140,167,144,141),dates=date_seq,metric="swe_total")
 #slow query, but should return all snodas-sourced data
 allSnodasData=dbGetQuery(conn,"SELECT * FROM data LEFT JOIN batches ON data.batchid = batches.batchid WHERE batches.source = 'snodas';")
 unique(allSnodasData$datetime)
+
+
+
+date_seq=seq.Date(from=as.Date("2003-09-30"),to=as.Date("2013-09-30"),by="day")
+grab_ws_snow(ws_ids = 141, dates=date_seq,metric="swe_total")
+
