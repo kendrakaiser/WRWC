@@ -19,8 +19,7 @@ library(RPostgres)
 #source(paste0(getwd(),"/code/dbIntakeTools.R"))
 
 source(paste0(git_dir,"/code/dbIntakeTools.R")) #tools to connect and write to database
-source("~/github/SNODASR-main/R/download.SNODAS.R")
-source("~/github/SNODASR-main/R/extract.SNODAS.subset.R")
+source(paste0(git_dir,"/code/SNODASR_functions.R")) 
 conn=scdbConnect() #connect to database
 
 #all flow locations
