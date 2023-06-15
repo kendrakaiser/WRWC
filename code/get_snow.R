@@ -169,7 +169,7 @@ grab_ws_snow_worker = function(ws_ids, d, metric, metricDefinitions=allMetrics){
   ##--------------------------------------------------------------------------#
   ## --- Download the full SNODAS dataset
   dlWorked=tryCatch(
-    download.SNODAS(d, parallel = F, overwrite=T),
+    download.SNODAS(d, parallel = FALSE, overwrite=TRUE),
     error=function(e){
       print(e)
       print("snodas download failed, proceeding to next date...")
