@@ -1,11 +1,21 @@
-#explore snow data
+#explore snow data and relationships 
 
+#tools to connect and write to database
+library(RPostgres)
+source(paste0(git_dir,"/code/dbIntakeTools.R")) 
+#connect to database
+conn=scdbConnect() 
+#update the snodas data when necessary
+dbExecuteQuery(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
+
+### Data Import -----------------------------------------------------------###
 #import relevant data
-snodas<-read.csv(file.path(data_dir, 'allSnodasData.csv'))
+snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata;")
 snotel<-read.csv(file.path(data_dir, 'snotel_data.csv'))
 streamflow<-read.csv(file.path(data_dir, 'streamflow_data.csv'))
 allDat<-read.csv(file.path(data_dir, 'all_dat_apr.csv'))
 
+### Data Munging -----------------------------------------------------------###
 #modify df to subset and plot
 snodas$year <- year(snodas$datetime)
 snodas$mo<- month(snodas$datetime)
