@@ -48,13 +48,13 @@ sno.wide$wy<- as.numeric(as.character(waterYear(sno.wide$datetime, numeric=TRUE)
 n.yrs<- unique(sno.wide$year)
 
 pTemp<-sno.wide[,c(1,5,9,12,17, 18,19,21)] # need to use reg expressions to do this correctly
-p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 4)))
+p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(p.wint) <- colnames(pTemp)[c(8, 2:5)]
-p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 4)))
+p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(p.spring) <- colnames(pTemp)[c(8, 2:5)]
 
 runoffTemp<-sno.wide[,c(1,3,7,13,15, 18,19,21)]
-runoff.apr<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 4)))
+runoff.apr<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.apr) <- colnames(runoffTemp)[c(8, 2:5)]
 
 cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
@@ -63,11 +63,12 @@ cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
     out_array$wy[i] <-n.yrs[i]
     out_array[i,2:5]<- sub1 %>% dplyr::select(c(2:5)) %>% colSums() %>% t()  %>% as.data.frame() 
   }
+  return(out_array)
 }
 
-cuml.snodas(pTemp, p.wint, 10, 4)
-cuml.snodas(pTemp, p.spring, 4, 7)
-cuml.snodas(runoffTemp, runoff.apr, 10, 4)
+p.wint<- cuml.snodas(pTemp, p.wint, 10, 4)
+p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
+runoff.apr<- cuml.snodas(runoffTemp, runoff.apr, 10, 4)
 
 
 sno.wide.apr<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
