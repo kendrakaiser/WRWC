@@ -23,7 +23,7 @@ dbExecuteQuery(conn, "REFRESH MATERIALIZED VIEW snodasdata")
 snodas<-read.csv(file.path(data_dir, 'allSnodasData.csv'))
 snotel<-read.csv(file.path(data_dir, 'snotel_data.csv'))
 streamflow<-read.csv(file.path(data_dir, 'streamflow_data.csv'))
-allDat<-read.csv(file.path(data_dir, 'all_dat_apr.csv'))
+allDat<-read.csv(file.path(data_dir, 'all_dat_apr.csv')) %>% select(-c("X"))
 
 ### Data Munging -----------------------------------------------------------###
 #modify df to subset and plot
@@ -41,65 +41,86 @@ vol<-merge(vol, siteIDs, by='site')
 # PIVOT snodas data to merge into the allDat frame
 sno.wide<- snodas[,c(1:3,5)] %>% pivot_wider(names_from = c(metric, locationid), names_glue = "{metric}.{locationid}", values_from = value) 
 #modify df to merge
-sno.wide$year <- year(sno.wide$datetime)
+sno.wide$yearog <- year(sno.wide$datetime)
 sno.wide$mo<- month(sno.wide$datetime)
 sno.wide$day<- day(sno.wide$datetime)
-sno.wide$wy<- as.numeric(as.character(waterYear(sno.wide$datetime, numeric=TRUE)))
+sno.wide$year<- as.numeric(as.character(waterYear(sno.wide$datetime, numeric=TRUE)))
 n.yrs<- unique(sno.wide$year)
 
-pTemp<-sno.wide[,c(1,5,9,12,17, 18,19,21)] # need to use reg expressions to do this correctly
+#subset snodas data to calculate cumulative values
+pTemp<-sno.wide[,c(1,5,9,12,17,18,19,21)] # need to use reg expressions to do this correctly
 p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(p.wint) <- colnames(pTemp)[c(8, 2:5)]
 p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(p.spring) <- colnames(pTemp)[c(8, 2:5)]
-
 runoffTemp<-sno.wide[,c(1,3,7,13,15, 18,19,21)]
 runoff.apr<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.apr) <- colnames(runoffTemp)[c(8, 2:5)]
 
+#function to sum data for a given range of months
 cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
   for (i in 1:length(n.yrs)){
-    sub1<- in_array %>% filter(wy == n.yrs[i] & (mo >= start_mo | mo < end_mo)) %>% as.data.frame() 
-    out_array$wy[i] <-n.yrs[i]
+    sub1<- in_array %>% filter(year == n.yrs[i] & (mo >= start_mo | mo < end_mo)) %>% as.data.frame() 
+    out_array$year[i] <-n.yrs[i]
     out_array[i,2:5]<- sub1 %>% dplyr::select(c(2:5)) %>% colSums() %>% t()  %>% as.data.frame() 
   }
   return(out_array)
 }
 
+#calculate seasonal totals 
 p.wint<- cuml.snodas(pTemp, p.wint, 10, 4)
 p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
 runoff.apr<- cuml.snodas(runoffTemp, runoff.apr, 10, 4)
 
-
+##### ----- COMPILE ALL NEW DATA for modeling ---------------
 sno.wide.apr<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-allDat <- merge(allDat, sno.wide.apr, by= 'year')
+allDat <- merge(allDat, sno.wide.apr[,c(1,3,5,7,9,10,13,15,18)], by= 'year')
+allDat <- allDat %>% merge(p.wint, by= 'year') %>% merge(p.spring, by= 'year') %>% merge(runoff.apr, by= 'year')
 
 
-#subset timeseries data to plot 
+#### Plotting for data exploration
+
+#subset and merge timeseries data to plot 
 sno_april1<- snodas[snodas$mo == 4 & snodas$day ==1,] %>% dplyr::select (metric, value, locationid,year)
-
-snovol<- merge(vol,sno_april1, by=c('year', 'locationid'))
+snovol<- merge(vol, sno_april1, by=c('year', 'locationid'))
 
 #addnl subsetting, change to tidy verse or cleaner way, there is a prob w snodas data having two versions of swe 
 snovol.swe<- subset(snovol, metric=='swe_total' & site != 'sc.vol')
-snovol.bws<- subset(snovol, metric=='swe_total' & site == 'bws.vol')
 snovol.sca<- subset(snovol, metric=='snow_covered_area')# & site != 'bws.vol')
-snovol.runoff<- subset(snovol, metric=='runoff_total' & site != 'bws.vol')
 
 # plot swe versus total summer volume
 ggplot(snovol.swe, aes(x=value, y=volume/1000, color=site)) + geom_point() + 
   theme_bw() +ylab('Irrigation Season Vol KAF') +xlab('SWE')
   # plot SNOTEL data over top of this 
-  
+
+# SCA v.s. vol -- april 1 sca above haily doesnt tell us much ...
 ggplot(snovol.sca, aes(x=value, y=volume/1000, color=site)) + geom_point() + 
   theme_bw() +ylab('Irrigation Season Vol KAF')  +xlab('Snow Covered Area')
 
-#runoff needs to be cumulative? does it actually makes sense?
-ggplot(snovol.runoff, aes(x=value, y=volume/1000, color=site)) + geom_point() + 
-  theme_bw() +ylab('Irrigation Season Vol KAF')  +xlab('Runoff')
+# subset to precip and runoff
+p.spr.long<- p.spring %>% pivot_longer(!wy, names_to = c("metric", "locationid"), names_sep="\\.", values_to = "value")
+p.spr.long$metric<- "liquid_precip_spr"
+p.wint.long<- p.wint %>% pivot_longer(!wy, names_to = c("metric", "locationid"), names_sep="\\.", values_to = "value")
+p.wint.long$metric<- "liquid_precip_wint"
+runoff.long<- runoff.apr %>% pivot_longer(!wy, names_to = c("metric", "locationid"), names_sep="\\.", values_to = "value")
+p.run<- rbind(p.spr.long, p.wint.long, runoff.long) %>% subset(wy >2003)
 
-ggplot(snovol.bws, aes(x=value, y=volume/1000)) + geom_point() + 
-  theme_bw()+ylab('Irrigation Season Vol KAF')  +xlab('Snow Covered Area')
+
+# --- Precip and runoff 
+snop<- merge(vol, p.run, by=c('year', 'locationid'))
+
+snop.p.sp<- subset(snop, metric=='liquid_precip_spr')# & site != 'sc.vol')
+snop.p.wint<- subset(snop, metric=='liquid_precip_wint')
+snop.run<- subset(snop, metric=='runoff_total')
+
+ggplot(snop.p.sp, aes(x=value/1000, y=volume/1000, color=site)) + geom_point() + 
+  theme_bw() +ylab('Irrigation Season Vol KAF')  +xlab('Spring Precip')
+
+ggplot(snop.p.wint, aes(x=value/1000, y=volume/1000, color=site)) + geom_point() + 
+  theme_bw()+ylab('Irrigation Season Vol KAF')  +xlab('Winter Precip')
+
+ggplot(snop.run, aes(x=value, y=volume/1000, color=site)) + geom_point() + 
+  theme_bw()+ylab('Irrigation Season Vol KAF')  +xlab('SRunoff')
 
 
-sno.runoff<- subset(snodas, metric=='runoff_total' & locationid == 140)
+
