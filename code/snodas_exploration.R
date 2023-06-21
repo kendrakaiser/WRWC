@@ -2,7 +2,16 @@
 
 #tools to connect and write to database
 library(RPostgres)
+# GitHub File Path
+git_dir <<- '~/github/WRWC'
+# Local File Path
+cd <<- '~/Desktop/WRWC'
+data_dir <<- file.path(cd, 'data') # local
+
 source(paste0(git_dir,"/code/dbIntakeTools.R")) 
+source(paste0(git_dir,"/code/SNODASR_functions.R")) 
+source(file.path(git_dir, 'code/packages.R'))
+
 #connect to database
 conn=scdbConnect() 
 #update the snodas data when necessary
@@ -10,7 +19,8 @@ dbExecuteQuery(conn, "REFRESH MATERIALIZED VIEW snodasdata")
 
 ### Data Import -----------------------------------------------------------###
 #import relevant data
-snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata;")
+#snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata;")
+snodas<-read.csv(file.path(data_dir, 'allSnodasData.csv'))
 snotel<-read.csv(file.path(data_dir, 'snotel_data.csv'))
 streamflow<-read.csv(file.path(data_dir, 'streamflow_data.csv'))
 allDat<-read.csv(file.path(data_dir, 'all_dat_apr.csv'))
@@ -35,16 +45,17 @@ sno.wide$year <- year(sno.wide$datetime)
 sno.wide$mo<- month(sno.wide$datetime)
 sno.wide$day<- day(sno.wide$datetime)
 
-pTemp<-sno.wide[,c(1,5,9,14,15, 19,20)]
+pTemp<-sno.wide[,c(1,5,9,12,17, 18, 19)]
 pTemp$wy<- as.numeric(as.character(waterYear(pTemp$datetime, numeric=TRUE)))
 n.yrs<- unique(sno.wide$year)
+p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 4)))
 
 for (i in 1:length(n.yrs)){
   sub1<- pTemp %>% filter(wy == n.yrs[i] & (mo >= 10 | mo < 4)) %>% as.data.frame() 
-  p.wint[i, 2:5]<- sub1 %>% dplyr::select(c(2:5)) %>% colSums() %>% t()  %>% as.data.frame() 
   p.wint$wy[i] <-n.yrs[i]
+  p.wint[i,1:4]<- sub1 %>% dplyr::select(c(2:5)) %>% colSums() %>% t()  %>% as.data.frame() 
 }
-
+colnames(p.wint)[1:4] <- colnames(pTemp)[2:5]
 
 sno.wide.apr<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
 
@@ -57,7 +68,7 @@ sno_april1<- snodas[snodas$mo == 4 & snodas$day ==1,] %>% dplyr::select (metric,
 snovol<- merge(vol,sno_april1, by=c('year', 'locationid'))
 
 #addnl subsetting, change to tidy verse or cleaner way, there is a prob w snodas data having two versions of swe 
-snovol.swe<- subset(snovol, metric=='swe_total' & site != 'bws.vol' & site != 'sc.vol')
+snovol.swe<- subset(snovol, metric=='swe_total' & site != 'sc.vol')
 snovol.bws<- subset(snovol, metric=='swe_total' & site == 'bws.vol')
 snovol.sca<- subset(snovol, metric=='snow_covered_area')# & site != 'bws.vol')
 snovol.runoff<- subset(snovol, metric=='runoff_total' & site != 'bws.vol')
