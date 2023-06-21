@@ -44,21 +44,33 @@ sno.wide<- snodas[,c(1:3,5)] %>% pivot_wider(names_from = c(metric, locationid),
 sno.wide$year <- year(sno.wide$datetime)
 sno.wide$mo<- month(sno.wide$datetime)
 sno.wide$day<- day(sno.wide$datetime)
-
-pTemp<-sno.wide[,c(1,5,9,12,17, 18, 19)]
-pTemp$wy<- as.numeric(as.character(waterYear(pTemp$datetime, numeric=TRUE)))
+sno.wide$wy<- as.numeric(as.character(waterYear(sno.wide$datetime, numeric=TRUE)))
 n.yrs<- unique(sno.wide$year)
-p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 4)))
 
-for (i in 1:length(n.yrs)){
-  sub1<- pTemp %>% filter(wy == n.yrs[i] & (mo >= 10 | mo < 4)) %>% as.data.frame() 
-  p.wint$wy[i] <-n.yrs[i]
-  p.wint[i,1:4]<- sub1 %>% dplyr::select(c(2:5)) %>% colSums() %>% t()  %>% as.data.frame() 
+pTemp<-sno.wide[,c(1,5,9,12,17, 18,19,21)] # need to use reg expressions to do this correctly
+p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 4)))
+colnames(p.wint) <- colnames(pTemp)[c(8, 2:5)]
+p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 4)))
+colnames(p.spring) <- colnames(pTemp)[c(8, 2:5)]
+
+runoffTemp<-sno.wide[,c(1,3,7,13,15, 18,19,21)]
+runoff.apr<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 4)))
+colnames(runoff.apr) <- colnames(runoffTemp)[c(8, 2:5)]
+
+cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
+  for (i in 1:length(n.yrs)){
+    sub1<- in_array %>% filter(wy == n.yrs[i] & (mo >= start_mo | mo < end_mo)) %>% as.data.frame() 
+    out_array$wy[i] <-n.yrs[i]
+    out_array[i,2:5]<- sub1 %>% dplyr::select(c(2:5)) %>% colSums() %>% t()  %>% as.data.frame() 
+  }
 }
-colnames(p.wint)[1:4] <- colnames(pTemp)[2:5]
+
+cuml.snodas(pTemp, p.wint, 10, 4)
+cuml.snodas(pTemp, p.spring, 4, 7)
+cuml.snodas(runoffTemp, runoff.apr, 10, 4)
+
 
 sno.wide.apr<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-
 allDat <- merge(allDat, sno.wide.apr, by= 'year')
 
 
