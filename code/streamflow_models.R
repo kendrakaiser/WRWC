@@ -45,9 +45,11 @@ swe_cols<-grep('swe', colnames(var))
 t_cols<-grep('.t.', colnames(var))
 wint_t_cols<-grep('nj.t', colnames(var))
 vol_cols<- grep('vol', colnames(var))
+#snodas_cols<- c(grep('liquid', colnames(var)), grep('runoff', colnames(var)), grep('snow', colnames(var)), grep('swe_total', colnames(var)))
+snodas_cols<- c(grep('wint', colnames(var)), grep('runoff', colnames(var)), grep('snow', colnames(var)), grep('swe_total', colnames(var)))
 
 #par(mar=c(1, 1, 1, 1))
-#pairs(c(var[vol_cols], var[wint_t_cols]))
+#pairs(c(var[swe_cols[1:8]], var[snodas_cols[1:10]]))
 #var[wint_t_cols]<- var[wint_t_cols]*var[wint_t_cols]
 
 #specify the cross-validation method
@@ -59,7 +61,7 @@ nv_max=10
 # decreased the max number of variables
 # Big Wood at Hailey
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, 
-              all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
+              all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to assess the results
 tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=10)}, 
@@ -74,7 +76,7 @@ bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.m
 #fit the regression model and use LOOCV to evaluate performance
 form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), " + bwb.wq", sep = "")
 bwh_sum$vars<- append("bwb.wq", bwh_sum$vars)
-
+#pairs(var[bwh_sum$vars])
 bwh_mod<-lm(form, data=hist)
 bwh_sum$lm<-summary(bwh_mod)$adj.r.squared
 #save summary of LOOCV
