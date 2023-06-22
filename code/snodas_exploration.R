@@ -23,7 +23,7 @@ snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE qcstatus = 'TRUE';")
 #snodas<-read.csv(file.path(data_dir, 'allSnodasData.csv'))
 snotel<-read.csv(file.path(data_dir, 'snotel_data.csv'))
 streamflow<-read.csv(file.path(data_dir, 'streamflow_data.csv'))
-allDat<-read.csv(file.path(data_dir, 'all_dat_apr.csv')) %>% select(-c("X"))
+allDat<-read.csv(file.path(data_dir, 'all_dat_mar.csv')) ## will need to check the naming convention here and make sure automation with full script works
 
 ### Data Munging -----------------------------------------------------------###
 #modify df to subset and plot
@@ -54,8 +54,10 @@ colnames(p.wint) <- c('year', "liquid_precip.140.wint", "liquid_precip.167.wint"
 p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(p.spring) <- c('year', "liquid_precip.140.spr", "liquid_precip.167.spr", "liquid_precip.144.spr", "liquid_precip.141.spr")
 runoffTemp<-sno.wide[,c(1,3,7,13,15, 18,19,21)]
-runoff.apr<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
-colnames(runoff.apr) <- colnames(runoffTemp)[c(8, 2:5)]
+runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
+colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
+
+# UPDATE THIS SECTION TO RUN FOR EACH MONTH ------
 
 #function to sum data for a given range of months
 cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
@@ -68,15 +70,17 @@ cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
 }
 
 #calculate seasonal totals 
-p.wint<- cuml.snodas(pTemp, p.wint, 10, 4)
-p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
-runoff.apr<- cuml.snodas(runoffTemp, runoff.apr, 10, 4)
+p.wint<- cuml.snodas(pTemp, p.wint, 10, 3)
+#p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
+runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 3)
 
 ##### ----- COMPILE ALL NEW DATA for modeling ---------------
-sno.wide.apr<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-allDat <- merge(allDat, sno.wide.apr[,c(1,3,5,7,9,10,13,15,18)], by= 'year')
-allDat <- allDat %>% merge(p.wint, by= 'year') %>% merge(p.spring, by= 'year') %>% merge(runoff.apr, by= 'year')
-write.csv(allDat, file.path(data_dir, 'all_dat_apr.csv'), row.names=FALSE)
+sno.wide.sub<- sno.wide[sno.wide$mo == 3 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
+allDat <- merge(allDat, sno.wide.sub[,c(1,3,5,7,9,10,13,15,18)], by= 'year')
+allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
+write.csv(allDat, file.path(data_dir, 'alldat_mar.csv'), row.names=FALSE)
+
+### ---------
 
 
 #### Plotting for data exploration
@@ -123,5 +127,7 @@ ggplot(snop.p.wint, aes(x=value/1000, y=volume/1000, color=site)) + geom_point()
 ggplot(snop.run, aes(x=value, y=volume/1000, color=site)) + geom_point() + 
   theme_bw()+ylab('Irrigation Season Vol KAF')  +xlab('SRunoff')
 
-
+sno.pre<- subset(snodas, metric=='liquid_precip')
+snop.p.bw<- subset(sno.pre, locationid == '140') %>% subset(locationid == '140')
+ggplot(snop.p.bw, aes(x=datetime, y=value)) + geom_point()
 
