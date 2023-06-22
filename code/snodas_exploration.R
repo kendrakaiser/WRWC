@@ -50,9 +50,9 @@ n.yrs<- unique(sno.wide$year)
 #subset snodas data to calculate cumulative values
 pTemp<-sno.wide[,c(1,5,9,12,17,18,19,21)] # need to use reg expressions to do this correctly
 p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
-colnames(p.wint) <- colnames(pTemp)[c(8, 2:5)]
+colnames(p.wint) <- c('year', "liquid_precip.140.wint", "liquid_precip.167.wint", "liquid_precip.144.wint", "liquid_precip.141.wint")
 p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
-colnames(p.spring) <- colnames(pTemp)[c(8, 2:5)]
+colnames(p.spring) <- c('year', "liquid_precip.140.spr", "liquid_precip.167.spr", "liquid_precip.144.spr", "liquid_precip.141.spr")
 runoffTemp<-sno.wide[,c(1,3,7,13,15, 18,19,21)]
 runoff.apr<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.apr) <- colnames(runoffTemp)[c(8, 2:5)]
