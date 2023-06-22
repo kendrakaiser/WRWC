@@ -106,7 +106,7 @@ r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
 # -------------------------------------------------------------
 # Big Wood at Stanton
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.vol, bws.wq, 
-                  all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
+                  all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to explore models
 tryCatch({regsubsets.out<-regsubsets(log(hist$bws.vol)~., data=hist[,-c(1)], nbest=1, nvmax=nv_max)}, 
@@ -145,10 +145,10 @@ dev.off()
 # -------------------------------------------------------------
 # Silver Creek
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, bwb.wq, 
-             all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.)) 
+             all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Silver Creek regsubsets 
-tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=12)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=10)}, 
          error= function(e) {print("Silver Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -182,10 +182,10 @@ dev.off()
 # -------------------------------------------------------------
 # Camas creek
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, bwb.wq,
-            all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.)) 
+            all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 #select parameters
-tryCatch({regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=8)}, 
          error= function(e) {print("Camas Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
