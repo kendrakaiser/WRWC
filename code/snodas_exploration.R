@@ -15,12 +15,12 @@ source(file.path(git_dir, 'code/packages.R'))
 #connect to database
 conn=scdbConnect() 
 #update the snodas data when necessary
-dbExecuteQuery(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
+dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
 
 ### Data Import -----------------------------------------------------------###
 #import relevant data
-#snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata;")
-snodas<-read.csv(file.path(data_dir, 'allSnodasData.csv'))
+snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE qcstatus = 'TRUE';")
+#snodas<-read.csv(file.path(data_dir, 'allSnodasData.csv'))
 snotel<-read.csv(file.path(data_dir, 'snotel_data.csv'))
 streamflow<-read.csv(file.path(data_dir, 'streamflow_data.csv'))
 allDat<-read.csv(file.path(data_dir, 'all_dat_apr.csv')) %>% select(-c("X"))
