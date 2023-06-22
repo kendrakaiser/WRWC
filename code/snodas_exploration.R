@@ -76,6 +76,7 @@ runoff.apr<- cuml.snodas(runoffTemp, runoff.apr, 10, 4)
 sno.wide.apr<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
 allDat <- merge(allDat, sno.wide.apr[,c(1,3,5,7,9,10,13,15,18)], by= 'year')
 allDat <- allDat %>% merge(p.wint, by= 'year') %>% merge(p.spring, by= 'year') %>% merge(runoff.apr, by= 'year')
+write.csv(allDat, file.path(data_dir, 'all_dat_apr.csv'), row.names=FALSE)
 
 
 #### Plotting for data exploration
