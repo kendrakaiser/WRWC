@@ -24,7 +24,7 @@ swe_q<-swe_q[!(names(swe_q) %in% c("bwb.cm.nat","bws.cm.nat","bwb.vol.nat","bws.
 
 spring.temps = read.csv(file.path(data_dir, 'sprTemps.csv'))
 nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
-
+# var<- read.csv(file.path(model_out,'all_vars.csv'))
 var = swe_q %>% inner_join(spring.temps, by ="year") %>% inner_join(nj.temps, by ="year")
 # sp.test<-apply(var, MARGIN=2, shapiro.test) 
 #TODO : automate this step (e.g. if p < 0.05 log it and remove the og)
@@ -57,14 +57,14 @@ ctrl <- trainControl(method = "LOOCV")
 #------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for April-Sept Volume Predictions
 #------------------------------------------------------------------------------ # 
-nv_max=10
+nv_max=8
 # decreased the max number of variables
 # Big Wood at Hailey
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, 
               all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to assess the results
-tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=10)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=nv_max)}, 
          error= function(e) {print("Big Wood Hailey Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -79,6 +79,10 @@ bwh_sum$vars<- append("bwb.wq", bwh_sum$vars)
 #pairs(var[bwh_sum$vars])
 bwh_mod<-lm(form, data=hist)
 bwh_sum$lm<-summary(bwh_mod)$adj.r.squared
+
+#put coefficients into DF to save across runs
+bwh_coef<- signif(bwh_mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
+
 #save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bwh_sum$loocv<- model$results
@@ -148,7 +152,7 @@ hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, bwb.wq,
              all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Silver Creek regsubsets 
-tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=10)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=8)}, 
          error= function(e) {print("Silver Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
