@@ -127,6 +127,9 @@ form<- paste("log(bws.vol)~ ", paste(bws_sum$vars, collapse=" + "), sep = "")
 bws_mod<-lm(form, data=hist)
 bws_sum$lm<-summary(bws_mod)$adj.r.squared
 
+#put coefficients into DF to save across runs
+bws_coef<- signif(bws_mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
+
 #save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bws_sum$loocv<- model$results
@@ -165,6 +168,9 @@ form<- paste("log(sc.vol)~ ", paste(sc_sum$vars, collapse=" + "), sep = "")
 sc_mod<-lm(form, data=hist)
 sc_sum$lm<-summary(sc_mod)$adj.r.squared
 
+#put coefficients into DF to save across runs
+sc_coef<- signif(sc_mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
+
 #Save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 sc_sum$loocv<- model$results
@@ -201,6 +207,9 @@ cc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min
 form<- paste("log(cc.vol)~ ", paste(cc_sum$vars, collapse=" + "), sep = "")
 cc_mod<-lm(form, data=hist)
 cc_sum$lm<-summary(cc_mod)$adj.r.squared
+
+cc_coef<- signif(cc_mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
+
 
 #save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
