@@ -6,7 +6,7 @@ scdbConnect=function(readOnly=T){
                    port="25060",
                    dbname="silvercreekdb" ,
                    user="dbread",
-                   password=Sys.getenv("scdb_readPass")
+                   password="dbread"
     )
   } else {
     conn=dbConnect(RPostgres::Postgres(),
