@@ -57,14 +57,14 @@ ctrl <- trainControl(method = "LOOCV")
 #------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for April-Sept Volume Predictions
 #------------------------------------------------------------------------------ # 
-nv_max=8
+nv_max=9
 # decreased the max number of variables
 # Big Wood at Hailey
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, 
               all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to assess the results
-tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=nv_max)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=8)}, 
          error= function(e) {print("Big Wood Hailey Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -155,7 +155,7 @@ hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, bwb.wq,
              all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Silver Creek regsubsets 
-tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=8)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=nv_max)}, 
          error= function(e) {print("Silver Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -195,7 +195,7 @@ hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, bwb.wq,
             all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 #select parameters
-tryCatch({regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=8)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
          error= function(e) {print("Camas Creek Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -234,7 +234,9 @@ dev.off()
 # compile all model details into one list to export
 mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
 vol_models<- list(bwh_mod = bwh_mod, bws_mod = bws_mod, sc_mod = sc_mod, cc_mod = cc_mod)
+mod_coef<- cbind(bwh_coef, bws_coef, sc_coef, cc_coef)
 
+write.csv(mod_coef, file.path(model_out,'mod_coeff.csv'), row.names = FALSE)
 write.list(mod_sum, file.path(data_dir, vol.vars))
 
 list.save(mod_sum, file.path(data_dir, vol_params))
