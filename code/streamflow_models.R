@@ -64,7 +64,7 @@ hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq,
               all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to assess the results
-tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=8)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=9)}, 
          error= function(e) {print("Big Wood Hailey Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -75,7 +75,7 @@ bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.m
 
 #fit the regression model and use LOOCV to evaluate performance
 form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), " + bwb.wq", sep = "")
-bwh_sum$vars<- append("bwb.wq", bwh_sum$vars)
+bwh_sum$vars<- append("bwb.wq", bwh_sum$vars) #WHY  am i forcing this here??
 #pairs(var[bwh_sum$vars])
 bwh_mod<-lm(form, data=hist)
 bwh_sum$lm<-summary(bwh_mod)$adj.r.squared
@@ -101,6 +101,11 @@ png(filename = file.path(fig_dir_mo, "BWH_modelFit.png"),
 plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
+
+#TODO
+#create a linear model of the following 
+# (exp(model$pred$obs)/1000, exp(model$pred$pred)
+# this will be the true R2
 
 
 # calculate the correlations
