@@ -74,8 +74,7 @@ vars<-reg_sum$which[which.min(reg_sum$bic),]
 bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit the regression model and use LOOCV to evaluate performance
-form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), " + bwb.wq", sep = "")
-bwh_sum$vars<- append("bwb.wq", bwh_sum$vars) #WHY  am i forcing this here??
+form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
 #pairs(var[bwh_sum$vars])
 bwh_mod<-lm(form, data=hist)
 bwh_sum$lm<-summary(bwh_mod)$adj.r.squared
@@ -103,10 +102,9 @@ abline(0,1,col="gray50",lty=1)
 dev.off()
 
 #TODO
-#create a linear model of the following 
-# (exp(model$pred$obs)/1000, exp(model$pred$pred)
-# this will be the true R2
-
+#create a linear model of the following
+bwh_r2<- lm(exp(model$pred$pred)/1000 ~ exp(model$pred$obs)/1000)
+bwh_sum$true.r2<-summary(bwh_r2)$adj.r.squared
 
 # calculate the correlations
 r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
