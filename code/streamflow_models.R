@@ -139,6 +139,12 @@ model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bws_sum$loocv<- model$results
 #bws_sum
 
+#linear model of logged prediction v.s. observed for a more accurate r2
+pred<-exp(model$pred$pred)/1000
+obs<- exp(model$pred$obs)/1000
+bws_r2<- lm(pred ~obs)
+bws_sum$true.r2<-summary(bws_r2)$adj.r.squared
+
 #check residuals
 mod.red<- resid(model)
 #hist(mod.red)
@@ -179,6 +185,13 @@ sc_coef<- signif(sc_mod$coefficients, 2) %>% as.data.frame() %>% tibble::rowname
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 sc_sum$loocv<- model$results
 #sc_sum
+
+#linear model of logged prediction v.s. observed for a more accurate r2
+pred<-exp(model$pred$pred)/1000
+obs<- exp(model$pred$obs)/1000
+sc_r2<- lm(pred ~obs)
+sc_sum$true.r2<-summary(sc_r2)$adj.r.squared
+
 #check residuals
 mod.red<- resid(model)
 #hist(mod.red)
@@ -214,10 +227,15 @@ cc_sum$lm<-summary(cc_mod)$adj.r.squared
 
 cc_coef<- signif(cc_mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
 
-
 #save summary of LOOCV
 model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 cc_sum$loocv<- model$results
+
+#linear model of logged prediction v.s. observed for a more accurate r2
+pred<-exp(model$pred$pred)/1000
+obs<- exp(model$pred$obs)/1000
+cc_r2<- lm(pred ~obs)
+cc_sum$true.r2<-summary(cc_r2)$adj.r.squared
 
 #check residuals
 mod.red<- resid(model)
