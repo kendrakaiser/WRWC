@@ -87,6 +87,12 @@ model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
 bwh_sum$loocv<- model$results
 #bwh_sum
 
+#linear model of logged prediction v.s. observed for a more accurate r2
+pred<-exp(model$pred$pred)/1000
+obs<- exp(model$pred$obs)/1000
+bwh_r2<- lm(pred ~obs)
+bwh_sum$true.r2<-summary(bwh_r2)$adj.r.squared
+
 #check residuals
 mod.red<- resid(model)
 #hist(mod.red)
@@ -100,11 +106,6 @@ png(filename = file.path(fig_dir_mo, "BWH_modelFit.png"),
 plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
 abline(0,1,col="gray50",lty=1)
 dev.off()
-
-#TODO
-#create a linear model of the following
-bwh_r2<- lm(exp(model$pred$pred)/1000 ~ exp(model$pred$obs)/1000)
-bwh_sum$true.r2<-summary(bwh_r2)$adj.r.squared
 
 # calculate the correlations
 r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
