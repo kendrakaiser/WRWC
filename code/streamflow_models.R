@@ -64,7 +64,7 @@ hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq,
               all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to assess the results
-tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=9)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=nv_max)}, 
          error= function(e) {print("Big Wood Hailey Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
