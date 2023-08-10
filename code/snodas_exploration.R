@@ -29,13 +29,9 @@ streamflow<-read.csv(file.path(data_dir, 'streamflow_data.csv'))
 snodas$year <- year(snodas$datetime)
 snodas$mo<- month(snodas$datetime)
 snodas$day<- day(snodas$datetime)
-
-vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
-vol<- vol[!is.na(vol$volume),]
-vol<- vol[vol$volume>0,]
 siteIDs<-t(matrix(c(140, 'BIG WOOD RIVER AT HAILEY', 'bwb.vol', 'bwb', 167,'CAMAS CREEK NR BLAINE ID', 'cc.vol', 'cc', 144, 'SILVER CREEK AT SPORTSMAN ACCESS', 'sc.vol', 'sc', 141, 'BIG WOOD RIVER AT STANTON CROSSING', 'bws.vol', 'bws'), nrow=4, ncol=4))
 colnames(siteIDs)<-c('locationid', 'name', 'site', 'site.s')
-vol<-merge(vol, siteIDs, by='site')
+
 
 # PIVOT snodas data to merge into the allDat frame
 sno.wide<- snodas[,c(1:3,5)] %>% pivot_wider(names_from = c(metric, locationid), names_glue = "{metric}.{locationid}", values_from = value) 
@@ -70,6 +66,10 @@ cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
 
 ##### FEB
 allDat<-read.csv(file.path(data_dir, 'all_dat_feb.csv')) ## will need to check the naming convention here and make sure automation with full script works
+vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
+vol<- vol[!is.na(vol$volume),]
+vol<- vol[vol$volume>0,]
+vol<-merge(vol, siteIDs, by='site')
 #calculate seasonal totals 
 p.wint<- cuml.snodas(pTemp, p.wint, 10, 2)
 #p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
@@ -83,6 +83,10 @@ write.csv(allDat, file.path(data_dir, 'alldat_feb.csv'), row.names=FALSE)
 
 #### March 
 allDat<-read.csv(file.path(data_dir, 'all_dat_mar.csv')) ## will need to check the naming convention here and make sure automation with full script works
+vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
+vol<- vol[!is.na(vol$volume),]
+vol<- vol[vol$volume>0,]
+vol<-merge(vol, siteIDs, by='site')
 #calculate seasonal totals 
 p.wint<- cuml.snodas(pTemp, p.wint, 10, 3)
 #p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
@@ -96,7 +100,10 @@ write.csv(allDat, file.path(data_dir, 'alldat_mar.csv'), row.names=FALSE)
 
 ### April
 allDat<-read.csv(file.path(data_dir, 'all_dat_apr.csv')) ## will need to check the naming convention here and make sure automation with full script works
-
+vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
+vol<- vol[!is.na(vol$volume),]
+vol<- vol[vol$volume>0,]
+vol<-merge(vol, siteIDs, by='site')
 #calculate seasonal totals 
 p.wint<- cuml.snodas(pTemp, p.wint, 10, 4)
 #p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
@@ -108,11 +115,7 @@ allDat <- merge(allDat, sno.wide.sub[,c(1,3,5,7,9,10,13,15,18)], by= 'year')
 allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
 write.csv(allDat, file.path(data_dir, 'alldat_apr.csv'), row.names=FALSE)
 
-
-
 ### ---------
-
-
 #### Plotting for data exploration
 
 #subset and merge timeseries data to plot 
