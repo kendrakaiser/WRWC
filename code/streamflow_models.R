@@ -264,11 +264,12 @@ write.list(mod_sum, file.path(data_dir, vol.vars))
 list.save(mod_sum, file.path(data_dir, vol_params))
 list.save(vol_models, file.path(data_dir, vol_mods))
 
-r2s<- data.frame(matrix(ncol = 2, nrow = 4))
-colnames(r2s)<-c("AdjR2", "Loocv R2")
+r2s<- data.frame(matrix(ncol = 3, nrow = 4))
+colnames(r2s)<-c("AdjR2", "Loocv R2", "MAE")
 rownames(r2s)<-c("BWH", "BWS", "SC", "CC")
-r2s[,1]<- round(c(mod_sum$bwh$adjr2, mod_sum$bws$adjr2,mod_sum$sc$adjr2,mod_sum$cc$adjr2)*100, 2)
+r2s[,1]<- round(c(mod_sum$bwh$true.r2, mod_sum$bws$true.r2,mod_sum$sc$true.r2,mod_sum$cc$true.r2)*100, 2)
 r2s[,2]<- round(c(mod_sum$bwh$loocv$Rsquared, mod_sum$bws$loocv$Rsquared,mod_sum$sc$loocv$Rsquared,mod_sum$cc$loocv$Rsquared)*100, 2)
+r2s[,3]<- round(c(exp(mod_sum$bwh$loocv$MAE), exp(mod_sum$bws$loocv$MAE), exp(mod_sum$sc$loocv$MAE), exp(mod_sum$cc$loocv$MAE)), 2)
 
 png(file.path(fig_dir_mo,"r2s.png"), height = 25*nrow(r2s), width = 80*ncol(r2s))
 grid.table(r2s)
@@ -289,9 +290,9 @@ dev.off()
 
 # Big Wood at Hailey
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.cm, bwb.wq, 
-                  all_of(swe_cols), all_of(t_cols)) %>% filter(complete.cases(.)) 
+                  all_of(swe_cols), all_of(t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
-tryCatch({regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=10)}, 
+tryCatch({regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=nv_max, really.big=TRUE)}, 
          error= function(e) {print("Big Wood Hailey CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -319,7 +320,7 @@ dev.off()
 # -------------------------------------------------------------
 # Big Wood at Stanton
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.cm, bws.wq,
-                  all_of(swe_cols), all_of(t_cols)) %>% filter(complete.cases(.)) 
+                  all_of(swe_cols), all_of(t_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 #select Parameters
 tryCatch({regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=6)}, 
@@ -350,7 +351,7 @@ dev.off()
 # -------------------------------------------------------------
 # Silver Creek Center of Mass
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwb.wq, bws.wq, 
-         all_of(swe_cols), all_of(t_cols)) %>% filter(complete.cases(.)) 
+         all_of(swe_cols), all_of(t_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Select and Save Parameters
 tryCatch({regsubsets.out<- regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=10)}, 
@@ -379,7 +380,7 @@ dev.off()
 # -------------------------------------------------------------
 # Camas Creek Center of Mass
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.cm, cc.wq, all_of(swe_cols), 
-                                  all_of(t_cols)) %>% filter(complete.cases(.)) 
+                                  all_of(t_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Select and Save model parameters
 tryCatch({regsubsets.out<-regsubsets(hist$cc.cm~., data=hist[,-1], nbest=1, nvmax=10)}, 
