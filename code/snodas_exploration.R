@@ -43,12 +43,12 @@ sno.wide$year<- as.numeric(as.character(waterYear(sno.wide$datetime, numeric=TRU
 n.yrs<- unique(sno.wide$year)
 
 #subset snodas data to calculate cumulative values
-pTemp<-sno.wide[,c(1,5,9,12,17,18,19,21)] # need to use reg expressions to do this correctly
+pTemp<-sno.wide[,c(1,5,9,12,16,18,19,21)] # need to use reg expressions to do this correctly
 p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(p.wint) <- c('year', "liquid_precip.140.wint", "liquid_precip.167.wint", "liquid_precip.144.wint", "liquid_precip.141.wint")
 p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(p.spring) <- c('year', "liquid_precip.140.spr", "liquid_precip.167.spr", "liquid_precip.144.spr", "liquid_precip.141.spr")
-runoffTemp<-sno.wide[,c(1,3,7,13,15, 18,19,21)]
+runoffTemp<-sno.wide[,c(1,3,7,13,14,18,19,21)] #prob need to change this subsetting
 runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
 
@@ -77,7 +77,7 @@ runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 2)
 
 ##### ----- COMPILE February Data for modeling ---------------
 sno.wide.sub<- sno.wide[sno.wide$mo == 2 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-allDat <- merge(allDat, sno.wide.sub[,c(1,3,5,7,9,10,13,15,18)], by= 'year')
+allDat <- merge(allDat[,c(1:25)], sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year')
 allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
 write.csv(allDat, file.path(data_dir, 'alldat_feb.csv'), row.names=FALSE)
 
@@ -94,7 +94,7 @@ runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 3)
 
 ##### ----- COMPILE March Data for modeling ---------------
 sno.wide.sub<- sno.wide[sno.wide$mo == 3 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-allDat <- merge(allDat, sno.wide.sub[,c(1,3,5,7,9,10,13,15,18)], by= 'year')
+allDat <- merge(allDat[,c(1:25)], sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year')
 allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
 write.csv(allDat, file.path(data_dir, 'alldat_mar.csv'), row.names=FALSE)
 
@@ -111,7 +111,7 @@ runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 4)
 
 ##### ----- COMPILE April Data for modeling ---------------
 sno.wide.sub<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-allDat <- merge(allDat, sno.wide.sub[,c(1,3,5,7,9,10,13,15,18)], by= 'year')
+allDat <- merge(allDat[,c(1:25)], sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year')
 allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
 write.csv(allDat, file.path(data_dir, 'alldat_apr.csv'), row.names=FALSE)
 
