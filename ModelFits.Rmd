@@ -15,9 +15,12 @@ library(utils) #view
 
 usgs_sites = read.csv('~/Desktop/WRWC/data/usgs_sites.csv')
 snotel_sites = read.csv('~/Desktop/WRWC/data/snotel_sites.csv')
+april_mod_coef = read.csv('~/Desktop/WRWC/April_output/mod_coeff.csv')
+feb_mod_coef = read.csv('~/Desktop/WRWC/February_output/mod_coeff.csv')
+mar_mod_coef = read.csv('~/Desktop/WRWC/March_output/mod_coeff.csv')
 ```
 
-This document shows the observed versus modeled streamflow volume and center of mass with data through 2021 for each location and each months model. 
+This document shows the observed versus modeled streamflow volume and center of mass with data through 2022 for each location and each months model. 
 
 ### Data Inputs
 
@@ -44,23 +47,7 @@ vol_mods<-list.load(file.path(data_dir, 'feb_vol_vars.rdata'))
 
 ### Irrigation Season Volume Models
 ```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Big Wood Hailey Vol)~ ", paste(vol_mods$bwh$vars, collapse=" + "), sep = "")
-cat(form)
-```
-
-```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Big Wood Stanton Vol)~ ", paste(vol_mods$bws$vars, collapse=" + "), sep = "")
-cat(form)
-```
-
-```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Silver Creek Vol)~ ", paste(vol_mods$sc$vars, collapse=" + "), sep = "")
-cat(form)
-```
-
-```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Camas Creek Vol)~ ", paste(vol_mods$cc$vars, collapse=" + "), sep = "")
-cat(form)
+kable(feb_mod_coeff)
 ```
 
 ### Center of Mass Models
@@ -120,23 +107,7 @@ vol_mods<-list.load(file.path(data_dir, 'mar_vol_vars.rdata'))
 
 ### Irrigation Season Volume Models
 ```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Big Wood Hailey Vol)~ ", paste(vol_mods$bwh$vars, collapse=" + "), sep = "")
-cat(form)
-```
-
-```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Big Wood Stanton Vol)~ ", paste(vol_mods$bws$vars, collapse=" + "), sep = "")
-cat(form)
-```
-
-```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Silver Creek Vol)~ ", paste(vol_mods$sc$vars, collapse=" + "), sep = "")
-cat(form)
-```
-
-```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Camas Creek Vol)~ ", paste(vol_mods$cc$vars, collapse=" + "), sep = "")
-cat(form)
+kable(mar_mod_coeff)
 ```
 
 ### Center of Mass Models
@@ -194,23 +165,7 @@ vol_mods<-list.load(file.path(data_dir, 'apr_vol_vars.rdata'))
 
 ### Irrigation Season Volume Models
 ```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Big Wood Hailey Vol)~ ", paste(vol_mods$bwh$vars, collapse=" + "), sep = "")
-cat(form)
-```
-
-```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Big Wood Stanton Vol)~ ", paste(vol_mods$bws$vars, collapse=" + "), sep = "")
-cat(form)
-```
-
-```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Silver Creek Vol)~ ", paste(vol_mods$sc$vars, collapse=" + "), sep = "")
-cat(form)
-```
-
-```{r, echo=FALSE, results = 'asis'}
-form<- paste("log(Camas Creek Vol)~ ", paste(vol_mods$cc$vars, collapse=" + "), sep = "")
-cat(form)
+kable(april_mod_coeff)
 ```
 
 ### Center of Mass Models
