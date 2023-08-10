@@ -23,7 +23,6 @@ snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE qcstatus = 'TRUE';")
 #snodas<-read.csv(file.path(data_dir, 'allSnodasData.csv'))
 snotel<-read.csv(file.path(data_dir, 'snotel_data.csv'))
 streamflow<-read.csv(file.path(data_dir, 'streamflow_data.csv'))
-allDat<-read.csv(file.path(data_dir, 'all_dat_feb.csv')) ## will need to check the naming convention here and make sure automation with full script works
 
 ### Data Munging -----------------------------------------------------------###
 #modify df to subset and plot
@@ -57,8 +56,6 @@ runoffTemp<-sno.wide[,c(1,3,7,13,15, 18,19,21)]
 runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
 
-# UPDATE THIS SECTION TO RUN FOR EACH MONTH ------
-
 #function to sum data for a given range of months
 cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
   for (i in 1:length(n.yrs)){
@@ -69,16 +66,49 @@ cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
   return(out_array)
 }
 
+# modify THIS SECTION TO use a function
+
+##### FEB
+allDat<-read.csv(file.path(data_dir, 'all_dat_feb.csv')) ## will need to check the naming convention here and make sure automation with full script works
 #calculate seasonal totals 
 p.wint<- cuml.snodas(pTemp, p.wint, 10, 2)
 #p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
 runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 2)
 
-##### ----- COMPILE ALL NEW DATA for modeling ---------------
+##### ----- COMPILE February Data for modeling ---------------
 sno.wide.sub<- sno.wide[sno.wide$mo == 2 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
 allDat <- merge(allDat, sno.wide.sub[,c(1,3,5,7,9,10,13,15,18)], by= 'year')
 allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
 write.csv(allDat, file.path(data_dir, 'alldat_feb.csv'), row.names=FALSE)
+
+#### March 
+allDat<-read.csv(file.path(data_dir, 'all_dat_mar.csv')) ## will need to check the naming convention here and make sure automation with full script works
+#calculate seasonal totals 
+p.wint<- cuml.snodas(pTemp, p.wint, 10, 3)
+#p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
+runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 3)
+
+##### ----- COMPILE March Data for modeling ---------------
+sno.wide.sub<- sno.wide[sno.wide$mo == 3 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
+allDat <- merge(allDat, sno.wide.sub[,c(1,3,5,7,9,10,13,15,18)], by= 'year')
+allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
+write.csv(allDat, file.path(data_dir, 'alldat_mar.csv'), row.names=FALSE)
+
+### April
+allDat<-read.csv(file.path(data_dir, 'all_dat_apr.csv')) ## will need to check the naming convention here and make sure automation with full script works
+
+#calculate seasonal totals 
+p.wint<- cuml.snodas(pTemp, p.wint, 10, 4)
+#p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
+runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 4)
+
+##### ----- COMPILE April Data for modeling ---------------
+sno.wide.sub<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
+allDat <- merge(allDat, sno.wide.sub[,c(1,3,5,7,9,10,13,15,18)], by= 'year')
+allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
+write.csv(allDat, file.path(data_dir, 'alldat_apr.csv'), row.names=FALSE)
+
+
 
 ### ---------
 
