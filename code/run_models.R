@@ -16,12 +16,12 @@ cd <<- '~/Desktop/WRWC'
 # set prediction year
 pred.yr <<- 2023
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
-run_date <<- 'march1'
+run_date <<- 'april1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
 
-todays_date <<- "02/28/2023"
+todays_date <<- "04/01/2023"
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -29,7 +29,7 @@ input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 data_dir <<- file.path(cd, 'data') # local
 
 # set end date for AgriMet Data download
-end_date <<-as.Date("2023-02-28")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
+end_date <<-as.Date("2023-04-01")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
 # ---- Run Model code
 
