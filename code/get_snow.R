@@ -12,14 +12,16 @@ library(terra)
 library(RPostgres)
 
 
+
+
 # kek think about other snodas metrics to calculate; confirm IDs of relevant pourpoints; 
 
 #to run on sam's computer:
-#source(paste0(getwd(),"/code/SNODASR_functions.R"))
-#source(paste0(getwd(),"/code/dbIntakeTools.R"))
+source(paste0(getwd(),"/code/SNODASR_functions.R"))
+source(paste0(getwd(),"/code/dbIntakeTools.R"))
 
-source(paste0(git_dir,"/code/dbIntakeTools.R")) #tools to connect and write to database
-source(paste0(git_dir,"/code/SNODASR_functions.R")) 
+#source(paste0(git_dir,"/code/dbIntakeTools.R")) #tools to connect and write to database
+#source(paste0(git_dir,"/code/SNODASR_functions.R")) 
 conn=scdbConnect() #connect to database
 
 #all flow locations
@@ -178,11 +180,13 @@ grab_ws_snow_worker = function(ws_ids, d, metric, metricDefinitions=allMetrics){
   )
   if(is.null(dlWorked)){dlWorked=T}#above trycatch returns null (from downloas.SNODAS()) if it worked.  Reassign as T
   
+  ws_geoms=st_read(conn, query=paste0("SELECT outflowlocationid, geometry FROM watersheds WHERE outflowlocationid IN ('",
+                                      paste(ws_ids, collapse= "', '"),"');"))
+  
   if(dlWorked){# if the download worked, have a go with the processing and metric calculation.  If not, save the effort
     
     ## --- pull spatial geometry(s) from location ID and transform it to extent --- #
-    ws_geoms=st_read(conn, query=paste0("SELECT outflowlocationid, geometry FROM watersheds WHERE outflowlocationid IN ('",
-                                        paste(ws_ids, collapse= "', '"),"');"))
+    
     #since we have downloaded the SNODAS data, calculate all metrics regardless of what was asked for:
     for(addMetric in metricDefinitions$metric){
       
@@ -200,14 +204,29 @@ grab_ws_snow_worker = function(ws_ids, d, metric, metricDefinitions=allMetrics){
       #write new values to database
       dbWriteData(metric = addMetric, value = SNODAS_values, datetime = d, locationID = ws_ids, sourceName = "snodas", units = metricDefinitions$units[metricDefinitions$metric==addMetric],addMetric = T)
     }
+  } else { #download did not work, write placeholder data to db
+    if(Sys.Date()-d>7){  #only mark data as unavailable if it is more than a week 'old'.  Prevents marking data as qc=F when it may become available in the future
+      for(addMetric in metricDefinitions$metric){
+        
+        SNODAS_fail_value=-999
+        
+        #write new values to database
+        dbWriteData(metric = addMetric, value = SNODAS_fail_value, datetime = d, locationID = ws_ids, sourceName = "snodas", units = metricDefinitions$units[metricDefinitions$metric==addMetric],addMetric = T, qcStatus=F)
+      }
+    }
   }
   
   ###---------------- remove snodas source files directory ------------------###
   unlink("./SNODAS",recursive=T)
   
   #everything has been calculated an written to db. Return to the users dataframe
-  dbData=dbGetQuery(conn, paste0("SELECT metric, value, datetime, locationid FROM data WHERE data.locationid IN ('",paste(ws_ids,collapse="', '"),"') AND datetime::date = '",d,"' AND metric = '", metric,"';"))
-  return(dbData) #return the same values that were written to db
+  dbData=dbGetQuery(conn, paste0("SELECT metric, value, datetime, locationid, qcstatus FROM data WHERE data.locationid IN ('",paste(ws_ids,collapse="', '"),"') AND datetime::date = '",d,"' AND metric = '", metric,"';"))
+  dbData_bad=dbData[dbData$qcstatus=="FALSE",]
+  if(nrow(dbData_bad)>=1){
+    print("Data with qcstatus=F not returned:")
+    print(dbData_bad)
+  }
+  return(dbData[dbData$qcstatus=="TRUE",]) #return the same values that were written to db
 }
 
 ### ---------------- Grab and/or Process SNODAS Data ------------------------ ###
@@ -226,7 +245,7 @@ grab_ws_snow=function(ws_ids, dates, metric, allMetrics=snodasMetrics){
   
   
   #######main process - start by getting all relevant data:
-  dataInDb=dbGetQuery(conn, paste0("SELECT metric, value, datetime::date, locationid FROM data WHERE metric = '",metric,
+  dataInDb=dbGetQuery(conn, paste0("SELECT metric, value, datetime::date, locationid, qcstatus FROM data WHERE metric = '",metric,
                                    "' AND datetime::date IN ('",paste(dates,collapse="', '"),"') AND locationid IN ('",
                                    paste(ws_ids,collapse="', '"),"');"))
   
@@ -260,9 +279,24 @@ grab_ws_snow=function(ws_ids, dates, metric, allMetrics=snodasMetrics){
     
     allData=rbind(existingData,moreData)
     allData=allData[order(allData$datetime),]
-    return(allData)
+    
+    allData_bad=allData[allData$qcstatus=="FALSE",]
+    
+    if(nrow(allData_bad>=1)){
+      print("Data with qcstatus=F not returned:")
+      print(allData_bad)
+    }
+    return(allData[allData$qcstatus==TRUE,])
+    
   } else { ##### all data was retrieved from db query, no need to call worker function
-    return(dataInDb)
+    
+    dataInDb_bad=dataInDb[dataInDb$qcstatus=="FALSE",]
+    if(nrow(dataInDb_bad>=1)){
+      print("Data with qcstatus=F not returned:")
+      print(dataInDb_bad)
+    }
+    
+    return(dataInDb[dataInDb$qcstatus==TRUE,])
   }
   
 }
@@ -271,15 +305,15 @@ grab_ws_snow=function(ws_ids, dates, metric, allMetrics=snodasMetrics){
 
 
 #simple test:
-#runoff_totals=grab_ws_snow(ws_ids = 140, dates=as.Date("2023-04-12"),metric="runoff_total")
+grab_ws_snow(ws_ids = 140, dates=as.Date("2023-08-12"),metric="runoff_total")
 #date range
 #sca=grab_ws_snow(ws_ids = 140, dates=seq.Date(from=as.Date("2023-03-14"),to=as.Date("2023-05-05"),by="day"),metric="snow_covered_area")
 
 #multiple locations
-runoff_totals=grab_ws_snow(ws_ids = c(167,144), dates=as.Date("2023-01-1"),metric="runoff_total")
+grab_ws_snow(ws_ids = c(167,144), dates=as.Date("2023-01-1"),metric="runoff_total")
 
 #day w/ no data
-runoff_totals=grab_ws_snow(ws_ids = 140, dates=as.Date("1980-04-12"),metric="runoff_total")
+grab_ws_snow(ws_ids = 140, dates=as.Date("1980-04-12"),metric="runoff_total")
 
 #The masked files span 30 September 2003 to the present, and the unmasked files span 09
 #December 2009 to the present at a daily resolution

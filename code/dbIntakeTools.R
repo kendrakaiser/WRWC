@@ -52,7 +52,7 @@ dbWriteBatch=function(batch,notes=" ",include=T,dbHandle=conn){
   return(batchID)
 }
 
-dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPrediction=F,simnumber=0,addMetric=F,dbHandle=conn){
+dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPrediction=F,simnumber=0,addMetric=F,qcStatus=T,dbHandle=conn){
   if(is.data.frame(value)){value=value[,1]} #strip extra attributes
   
   #first check batches, locations, and metrics
@@ -142,6 +142,9 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
 
   if(nrow(notDups)>=1){
     writeMe=merge(notDups,writeMe)
+    if(qcStatus==F){
+      writeMe$qcstatus="false"
+    }
     dbAppendTable(conn, name="data", value=writeMe)
     
   }
