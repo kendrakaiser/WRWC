@@ -28,11 +28,12 @@ snodas_cols<- c(grep('wint', colnames(var)), grep('runoff', colnames(var)), grep
 
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
+nv_max=9
+
 #------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for April-Sept Volume Predictions
 #------------------------------------------------------------------------------ # 
-nv_max=9
-# decreased the max number of variables
+
 # Big Wood at Hailey
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, 
               all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
@@ -263,9 +264,11 @@ dev.off()
 # ------------------------------------------------------------------------------ # 
 
 # Big Wood at Hailey
+# TODO: data isn't going through 2022 -- why??
+# this doesn't like to run efficiently 
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.cm, bwb.wq, 
-                  all_of(swe_cols), all_of(t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
-
+                  all_of(swe_cols),  all_of(snodas_cols)) %>% filter(complete.cases(.)) 
+#all_of(t_cols),
 tryCatch({regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=nv_max, really.big=TRUE)}, 
          error= function(e) {print("Big Wood Hailey CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
