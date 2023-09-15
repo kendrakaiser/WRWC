@@ -41,7 +41,7 @@ writeLines(capture.output(sessionInfo()), file.path(cd, "sessionInfo.txt"))
 source(file.path(git_dir, 'code/data_scraping.R'))
 source(file.path(git_dir, 'code/download_agrimet.R'))
 source(file.path(git_dir, 'code/temperature_models.R')) #fix - fig_dir_mo
-source(file.path(git_dir, 'code/get_snow.R')) # download SNODAS from db
+source(file.path(git_dir, 'code/get_snow.R')) # TODO: change this; download SNODAS from db
 source(file.path(git_dir, 'code/snodas_exploration.R')) # make figures and compile snodas data
 source(file.path(git_dir, 'code/data_integration.R'))  # compiles data into one matrix TODO: modify to clean up above workflow
 
