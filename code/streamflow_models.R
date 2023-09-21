@@ -14,7 +14,7 @@ options(warn = -1)
 #------------------------------------------------------------------------------ # 
 # Import & Compile Data                                                        -# 
 #------------------------------------------------------------------------------ # 
-var<- read.csv(var, file.path(model_out,'all_vars.csv'), row.names = FALSE)
+var<- read.csv(file.path(model_out,'all_vars.csv'))
 
 swe_cols<-grep('swe', colnames(var))
 t_cols<-grep('.t.', colnames(var))
@@ -24,7 +24,6 @@ snodas_cols<- c(grep('wint', colnames(var)), grep('runoff', colnames(var)), grep
 
 #par(mar=c(1, 1, 1, 1))
 #pairs(c(var[swe_cols[1:8]], var[snodas_cols[1:10]]))
-#var[wint_t_cols]<- var[wint_t_cols]*var[wint_t_cols]
 
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
