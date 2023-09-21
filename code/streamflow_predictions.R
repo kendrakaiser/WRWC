@@ -17,6 +17,7 @@
 stream.id<-unique(as.character(usgs_sites$abv))
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 
+#TODO: why change naming conventions here? change for consistency?
 # Load the models and parameters from all the models 
 vol.params <<- list.load(file.path(data_dir, vol_params))
 vol.mods <<- list.load(file.path(data_dir, vol_mods))
@@ -502,16 +503,16 @@ dev.off()
 
 
 # Draw sample of years with similar volume for comparison -- 
-# these are too dependent on how the pmvnorm bounds are defined, need to come up with something else
-
+#TODO: these are too dependent on how the pmvnorm bounds are defined, need to come up with something else
+# of note - the bounds are +/- 1 in log scale
 vol.data = var[var$year >1996 & var$year < pred.yr,]%>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
 vol.data$prob<-NA
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
 for(i in 1:dim(vol.data)[1]){
   vec<-log(vol.data[i,2:5])
-  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec-1),  
-                            upper=as.numeric(vec+1), 
+  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec-.5),  
+                            upper=as.numeric(vec+.5), 
                             mean=pred.params.vol[,1],corr=cor.mat[1:4,1:4])[1]
 }
 
