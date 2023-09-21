@@ -297,7 +297,7 @@ dev.off()
 # -------------------------------------------------------------
 # Big Wood at Stanton
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.cm, bws.wq,
-                  all_of(swe_cols), all_of(t_cols), all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
+                  all_of(swe_cols), all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 #select Parameters
 tryCatch({regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
@@ -328,7 +328,7 @@ dev.off()
 # -------------------------------------------------------------
 # Silver Creek Center of Mass
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwb.wq, bws.wq, 
-         all_of(swe_cols), all_of(t_cols), all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
+         all_of(swe_cols),all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Select and Save Parameters
 tryCatch({regsubsets.out<- regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
@@ -357,7 +357,7 @@ dev.off()
 # -------------------------------------------------------------
 # Camas Creek Center of Mass
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.cm, cc.wq, all_of(swe_cols), 
-                                  all_of(t_cols), all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
+                                 all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Select and Save model parameters
 tryCatch({regsubsets.out<-regsubsets(hist$cc.cm~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
