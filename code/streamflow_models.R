@@ -19,6 +19,7 @@ var<- read.csv(file.path(model_out,'all_vars.csv'))
 swe_cols<-grep('swe', colnames(var))
 t_cols<-grep('.t.', colnames(var))
 wint_t_cols<-grep('nj.t', colnames(var))
+aj_t_cols<-grep('aj.t', colnames(var))
 vol_cols<- grep('vol', colnames(var))
 snodas_cols<- c(grep('wint', colnames(var)), grep('runoff', colnames(var)), grep('snow', colnames(var)), grep('swe_total', colnames(var)))
 
@@ -263,11 +264,11 @@ dev.off()
 # ------------------------------------------------------------------------------ # 
 
 # Big Wood at Hailey
-# TODO: data isn't going through 2022 -- why??
+# TODO: data isn't going through 2022 -- there is no runoff total for 140, 167, 144??
 # this doesn't like to run efficiently 
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.cm, bwb.wq, 
-                  all_of(swe_cols),  all_of(snodas_cols)) %>% filter(complete.cases(.)) 
-#all_of(t_cols),
+                  all_of(swe_cols),  all_of(snodas_cols), all_of(aj_t_cols)) %>% filter(complete.cases(.)) 
+
 tryCatch({regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=nv_max, really.big=TRUE)}, 
          error= function(e) {print("Big Wood Hailey CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
@@ -296,10 +297,10 @@ dev.off()
 # -------------------------------------------------------------
 # Big Wood at Stanton
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.cm, bws.wq,
-                  all_of(swe_cols), all_of(t_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
+                  all_of(swe_cols), all_of(t_cols), all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 #select Parameters
-tryCatch({regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=6)}, 
+tryCatch({regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
          error= function(e) {print("Big Wood Stanton CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -327,10 +328,10 @@ dev.off()
 # -------------------------------------------------------------
 # Silver Creek Center of Mass
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwb.wq, bws.wq, 
-         all_of(swe_cols), all_of(t_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
+         all_of(swe_cols), all_of(t_cols), all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Select and Save Parameters
-tryCatch({regsubsets.out<- regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=10)}, 
+tryCatch({regsubsets.out<- regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
          error= function(e) {print("Silver Creek CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 vars<-reg_sum$which[which.min(reg_sum$bic),]
@@ -356,10 +357,10 @@ dev.off()
 # -------------------------------------------------------------
 # Camas Creek Center of Mass
 hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.cm, cc.wq, all_of(swe_cols), 
-                                  all_of(t_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
+                                  all_of(t_cols), all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Select and Save model parameters
-tryCatch({regsubsets.out<-regsubsets(hist$cc.cm~., data=hist[,-1], nbest=1, nvmax=10)}, 
+tryCatch({regsubsets.out<-regsubsets(hist$cc.cm~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
          error= function(e) {print("Camas Creek CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
