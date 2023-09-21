@@ -65,7 +65,7 @@ cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
 # TODO: MODIFY THIS SECTION TO use a function and to only update mo. data when necessary
 
 ##### FEB
-allDat<-read.csv(file.path(data_dir, 'alldat_feb.csv')) ## TODO: check the naming convention here and make sure automation with full script works
+allDat<-read.csv(file.path(data_dir, 'alldat_feb.csv')) 
 vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
 vol<- vol[!is.na(vol$volume),]
 vol<- vol[vol$volume>0,]
@@ -82,7 +82,7 @@ allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') 
 write.csv(allDat, file.path(data_dir, 'alldat_feb.csv'), row.names=FALSE)
 
 #### March 
-allDat<-read.csv(file.path(data_dir, 'alldat_mar.csv')) ## TODO: check the naming convention here and make sure automation with full script works
+allDat<-read.csv(file.path(data_dir, 'alldat_mar.csv')) 
 vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
 vol<- vol[!is.na(vol$volume),]
 vol<- vol[vol$volume>0,]
