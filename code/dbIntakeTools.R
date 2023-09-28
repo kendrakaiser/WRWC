@@ -125,11 +125,11 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
   writeMe=writeMe[complete.cases(writeMe$value),]
   
   potentialDups=dbGetQuery(conn, paste0("SELECT metricid, metric, value, datetime, locationid, simnumber FROM data WHERE metricid = '",metricID,
-                          "' AND locationid IN ('",paste(locationID,collapse="', '"),"') AND  datetime IN ('",
-                          paste(datetime,collapse="', '"),"');"))
-
+                                        "' AND locationid IN ('",paste(locationID,collapse="', '"),"') AND  datetime IN ('",
+                                        paste(datetime,collapse="', '"),"');"))
+  
   potentialDups=rbind(potentialDups,writeMe[,c("metricid","metric","value","datetime","locationid","simnumber")])
-
+  
   moreDups=T
   while(moreDups){
     notDups=potentialDups[!duplicated(potentialDups) & !duplicated(potentialDups,fromLast = T),]
@@ -139,7 +139,7 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
       potentialDups=notDups
     }
   }
-
+  
   if(nrow(notDups)>=1){
     writeMe=merge(notDups,writeMe)
     if(qcStatus==F){
@@ -304,5 +304,66 @@ dbRemoveDuplicates=function(table, idCol, uniqueCols){
   }
   return(paste("Removed",length(rmID),"duplicate(s) from table: ", table))
   #return(rmID)
+}
+
+
+getUpdateDbData_byMetricLocation=function(metric,location,days,rebuildInvalidData=F){ #location can be locationID or locationName
+  ###test params for debug
+  metric="daily precip" #snotel sourced data
+  location="galena summit"
+  days=seq.Date(as.Date("2022-01-01"),as.Date("2024-01-02"),by="day")
+  rebuildInvalidData=F
+  ###
+  
+  days=as.Date(days)
+  
+  #metric check
+  if(is.na(suppressWarnings({ as.numeric(metric)}))){  #metric is not numeric
+    metricID = dbGetQuery(conn, paste0("SELECT metricid FROM metrics WHERE name = '",metric,"';"))$metricid
+    if(length(metricID)==0){  #metric is not found in db
+      print("Metrics in database:")
+      print(dbGetQuery(conn,"SELECT * FROM METRICS"),max=1000)
+      stop(message=paste0("metric `",metric,"` not found." )  )
+    }
+  } else{ #metric is or can be coerced to numeric
+    metricID=as.numeric(metric)
+    metric=dbGetQuery(conn,paste0("SELECT name FROM metrics WHERE metricID = '",metricID,"';"))$name
+  }
+  
+  #location check
+  if(is.na(suppressWarnings({ as.numeric(location)}))){  #location is not numeric
+    locationID = dbGetQuery(conn, paste0("SELECT locationid FROM locations WHERE name = '",location,"';"))$locationid
+    if(length(locationID)==0){  #location is not found in db
+      print(paste0("locations in database with metric `",metric,"`:"))
+      locs=dbGetQuery(conn, "SELECT locationid, name, metrics FROM locationattributes")
+      locs=locs[grep(metricName, locs$metrics),c(1,2)]
+      print(locs,max=1000)
+      stop(message=paste0("location `",location,"` not found.")  )
+    }
+  } else{ #location is or can be coerced to numeric
+    locationID=as.numeric(location)
+  }
+  
+  dataInDb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"');"))
+  
+  if(rebuildInvalidData){ #drop records w/ qc=F to trigger rebuild
+    dataInDb=dataInDb[dataInDb$qcstatus==TRUE,]
+  }
+  
+  if(!all(days %in% dataInDb$datetime)){ #data for some days is not in database
+    missingDays=days[!days %in% dataInDb$datetime] 
+    
+    #try to source the missing data
+    #dbSourceNewData(metric=metric,locationID=locationID,days=missingDays)
+    
+    #get dataset again after adding new data
+    dataInDb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"');"))
+  }
+  
+  if(!rebuildInvalidData){
+    dataInDb=dataInDb[dataInDb$qcstatus==TRUE,]
+  }
+  
+  return(dataInDb)
 }
 
