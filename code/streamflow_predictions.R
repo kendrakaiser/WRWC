@@ -471,29 +471,19 @@ cm.data = var[var$year >= 1997 & var$year < pred.yr,]
 cm.data = cm.data %>% dplyr::select(year, bwb.cm, bws.cm,cc.cm, sc.cm) 
 cm.data$prob<-NA
 
+samp.sd.cm<- c(sd(var$bwb.cm), sd(var$bws.cm), sd(var$cc.cm), sd(var$sc.cm))
+var.fore.cm<- pred.params.cm[,2] + samp.sd.cm
+
 # pmvnorm calculates the distribution function of the multivariate normal distribution
 for(i in 1:dim(cm.data)[1]){
   vec<-cm.data[i,2:5] # center of mass at each site for a given year
-  cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-pred.params.cm[,2], # use the mean or location specific
-                           upper=as.numeric(vec)+pred.params.cm[,2],mean=pred.params.cm[,1],sigma=cov.mat[5:8,5:8])[1] #need to adjust this to have the upper and lower limits be wider? e.g right now the upper and lowers are only one day off of the original??
-}
-cm.data$prob<-cm.data$prob/sum(cm.data$prob)
-# create normal distribution of years 
-CMyear.sample<-sample(cm.data$year,5000,replace=TRUE) 
-# Of the 5000 replicates show the percentage that each year represents
-cm_sum<-as.data.frame(summary(as.factor(CMyear.sample))/5000)
-colnames(cm_sum)<- c("% of sample")
-cm_sum<- cm_sum*100
-png(file.path(fig_dir_mo,"CM_summary.png"), height = 50*nrow(cm_sum), width = 200*ncol(cm_sum))
-grid.table(cm_sum)
-dev.off()
-CMyear.sample<-as.data.frame(CMyear.sample)
-#save the probabilities for use in the simulation
-write.csv(CMyear.sample, file.path(model_out, paste0("CMyear.sample-", end_date,".csv")),row.names=F)
+  cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-(var.fore.cm), # use the location specific std @ 95% CI
+                           upper=as.numeric(vec)+(var.fore.cm),mean=pred.params.cm[,1],sigma=cov.mat[5:8,5:8])[1] #need to adjust this to have the upper and lower limits be wider? e.g right now the upper and lowers are only one day off of the original??
+  }
 
-# this version makes the probabilities based on pvnorm distribution, 
-# this is not used in the simulations, but is useful for reference
+# create normal distribution of years 
 CMyear.sample.prob<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob) 
+# Of the 5000 replicates show the percentage that each year represents
 cm_prob<-as.data.frame(summary(as.factor(CMyear.sample.prob))/5000)
 colnames(cm_prob)<- c("% of sample")
 cm_prob<- cm_prob*100
@@ -501,36 +491,25 @@ png(file.path(fig_dir_mo,"CM_summary_prob.png"), height = 50*nrow(cm_prob), widt
 grid.table(cm_prob)
 dev.off()
 
+#save the probabilities for use in the simulation
+write.csv(CMyear.sample, file.path(model_out, paste0("CMyear.sample-", end_date,".csv")),row.names=F)
 
 # Draw sample of years with similar volume for comparison -- 
-#TODO: these are too dependent on how the pmvnorm bounds are defined, need to come up with something else
-# of note - the bounds are +/- 1 in log scale
 vol.data = var[var$year >1996 & var$year < pred.yr,]%>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
 vol.data$prob<-NA
 
-b = seq(0.20, 1.05, .05) 
-std.bwh<- matrix()
-s.means<-matrix(0,1,4)
+samp.sd<- c(sd(log(var$bwb.vol)), sd(log(var$bws.vol)), sd(log(var$cc.vol)), sd(log(var$sc.vol)))
+var.fore<- pred.params.vol[,2] + samp.sd
 # pmvnorm calculates the distribution function of the multivariate normal distribution
-for(j in b){
-  vol.diff<-matrix(0,1,4)
-  for(i in 1:dim(vol.data)[1]){
+for(i in 1:dim(vol.data)[1]){
     vec<-log(vol.data[i,2:5])
-    vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec-j),  # +/- standard error (pred.params.vol$sigma) would return effectively one year
-                              upper=as.numeric(vec+j), 
+    
+    vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec-var.fore),  # pred.params.vol[,2] +/- standard error (pred.params.vol$sigma) would return effectively one year
+                              upper=as.numeric(vec+var.fore), #
                               mean=pred.params.vol[,1],corr=cor.mat[1:4,1:4])[1]
-    vol.diff<- rbind(vol.diff, exp(as.numeric(vec+j)) - exp(as.numeric(vec-j)))
-  }
-  s.means<- rbind(s.means, colMeans(vol.diff[2:19,]))
-  vol.sample.prob<-sample(vol.data$year, 5000, replace=TRUE, prob=vol.data$prob) 
-  year.samp<- as.data.frame(vol.sample.prob) %>% `colnames<-`('year')
-  vol.sampl<-left_join(year.samp, vol.data)
-  std.bwh<- rbind(std.bwh, sd(vol.sampl$bwb.vol))
+    vol.diff<- rbind(vol.diff, exp(as.numeric(vec+var.fore)) - exp(as.numeric(vec-j)))
 }
-s.means<-s.means[2:19,]
-std.bwh<-std.bwh[2:19]
-plot(b, std.bwh)
-plot(std.bwh, s.means[,1]/1000)
+
 
 vol_prob<-as.data.frame(summary(as.factor(vol.sample.prob))/5000)*100
 colnames(vol_prob)<- c("% of sample")
@@ -539,6 +518,6 @@ png(file.path(fig_dir_mo,"vol_prob.png"), height = 50*nrow(vol_prob), width = 20
 grid.table(vol_prob)
 dev.off()
 
-# do a sensitivity analysis on the value (0.5) in pmvnorm
-
-
+#TODO: fix this to save properly
+#save the probabilities for use in the simulation
+#write.csv(CMyear.sample, file.path(model_out, paste0("CMyear.sample-", end_date,".csv")),row.names=F)
