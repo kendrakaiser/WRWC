@@ -1,64 +1,11 @@
 # ------------------------------------------------------------------------------
 # Download and aggregate all available data for the Wood River Predictive Model
 # Kendra Kaiser
-# June, 19, 2020
+# June 19, 2020
 # ------------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------------     
-# import and manage diversion data
 # ------------------------------------------------------------------------------
-cfs_to_AF<- 1.983
-
-bw.div <- read.csv(file.path(input_dir, 'bwr_diversion_data_1987_2019_111620.csv'))
-names(bw.div)[1]<- 'Date'
-bw.div$Date <- as.Date(bw.div$Date, format = "%m/%d/%y")
-bw.div$year<- format(bw.div$Date, "%Y")
-bw.div[is.na(bw.div)] <- 0
-bw.div$Osborn.24 <- as.numeric(bw.div$Osborn.24) #something is making this a character
-
-sc.div <- read.csv(file.path(input_dir, 'sc_diversiondata_1987_2019_121620.csv'))
-names(sc.div)[1]<- 'Date'
-sc.div$Date <- as.Date(sc.div$Date, format = "%m/%d/%y")
-sc.div$year<- format(sc.div$Date, "%Y")
-sc.div$sc.div<- rowSums(sc.div[,2:11], na.rm = TRUE)
-
-sc.div.daily<- sc.div %>% dplyr::select(c(Date, sc.div))
-sc.div.sum<- sc.div %>% dplyr::select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
-sc.div.tot <- data.frame(matrix(nrow=dim(sc.div.sum)[1], ncol =2))
-
-colnames(sc.div.tot)<- c("year", "sc.div")
-sc.div.tot$year <- as.integer(sc.div.sum$year)
-sc.div.tot$sc.div <- rowSums(sc.div.sum[,2:11], na.rm = TRUE)
-
-#summarize by location
-bw.div$abv.h <-rowSums(cbind(bw.div$Tom.P2, bw.div$Lewis.1, bw.div$Ketchum.2, 
-                                 bw.div$McCoy.3, bw.div$Peters.17C, bw.div$Hiawatha.22,
-                                 bw.div$Osborn.24, bw.div$Cove.33), na.rm = TRUE)
-#everything other than HICE
-bw.div$abv.s <-rowSums(cbind(bw.div$WRVID.45, bw.div$Bannon.49, 
-                                 bw.div$Glendale.50, bw.div$Baseline.55, bw.div$Brown.57F1, 
-                                 bw.div$Brown.57F2, bw.div$Black.61, bw.div$Graf.62,
-                                 bw.div$Uhrig.63, bw.div$Flood.64), na.rm=TRUE)
-bw.div.gage<- bw.div %>% dplyr::select(c(Date, abv.h, abv.s))
-#summarize by year
-bw.div.sum<- bw.div %>% dplyr::select(-c(Date)) %>% group_by(year) %>% dplyr::summarise(across(everything(), sum))
-bw.div.tot<- bw.div.sum %>% dplyr::select(c(year, abv.h, abv.s)) %>% as.data.frame()
-
-bw.div.tot.AF<- as.numeric(bw.div.tot$year) %>% as.data.frame()
-bw.div.tot.AF$abv.h <- bw.div.tot$abv.h*cfs_to_AF
-bw.div.tot.AF$abv.s <- bw.div.tot$abv.s*cfs_to_AF
-#
-
-priorities <- read.csv(file.path(input_dir, 'ABV_PRIORITY_2020.csv'))
-priorities$wr.vol.af<- priorities$TOTAL * cfs_to_AF
-priorities$wr.date<- as.Date(paste(priorities$year_prior, priorities$mo, priorities$date, sep="-"))
-
-wr <- read.csv(file.path(input_dir, 'WD37_Irrigation rights Big Wood Above Magic.csv'))
-total_af<-  sum(wr$Overall.Max.Diversion.Volume.af., na.rm = TRUE)
-
-
-# ------------------------------------------------------------------------------
-# USGS Gages
+# USGS Gage
 # ------------------------------------------------------------------------------
 bwb = 13139510  #  Bullion Bridge, Big Wood at Hailey
 bws = 13140800  #  Stanton Crossing, Big Wood
@@ -89,22 +36,6 @@ streamflow_data$day <- day(streamflow_data$Date)
 # Cleanup Streamflow data frame and join relevant site information
 streamflow_data <- streamflow_data %>% dplyr::select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
 
-# add diversion data to streamflow dataframe
-streamflow_data <- full_join(streamflow_data, bw.div.gage, by = 'Date')
-streamflow_data <- full_join(streamflow_data, sc.div.daily, by = 'Date')
-#streamflow_data <- streamflow_data[-c(58886:61156), ]
-#make NAs equal to zero 
-streamflow_data[,17:19][is.na(streamflow_data[,17:19])] <- 0 
-
-streamflow_data$bwb.nat.q[streamflow_data$abv == 'bwb'] <- streamflow_data$Flow[streamflow_data$abv == 'bwb'] + streamflow_data$abv.h[streamflow_data$abv == 'bwb']
-streamflow_data$bws.nat.q[streamflow_data$abv == 'bws'] <- streamflow_data$Flow[streamflow_data$abv == 'bws'] + streamflow_data$abv.s[streamflow_data$abv == 'bws'] + streamflow_data$abv.h[streamflow_data$abv == 'bws']
-streamflow_data$bw.div[streamflow_data$abv == 'bws'] <- streamflow_data$abv.s[streamflow_data$abv == 'bws'] + streamflow_data$abv.h[streamflow_data$abv == 'bws']
-streamflow_data$sc.nat[streamflow_data$abv == 'sc'] <- streamflow_data$Flow[streamflow_data$abv == 'sc'] + streamflow_data$sc.div[streamflow_data$abv == 'sc']
-
-#Download reservoir data and site information
-#res_info <- whatNWISdata(sites= mr, parameterCd = sCode)
-#res_data <- readNWISuv(siteNumbers = mr, parameterCd = sCode, startDate = res_info$begin_date[2], endDate = res_info$end_date[2]) %>% renameNWISColumns() %>% data.frame
-
 # ----------------------------------------------------------------------------------
 # calculate hydrologic metrics for each year for each station
 # winter "baseflow" (wb), Apr - Sept total Volume (vol), and center of mass (cm)
@@ -114,10 +45,6 @@ years = min(streamflow_data$wy):max(streamflow_data$wy)
 metrics<-data.frame(matrix(ncol = 13, nrow= length(years)))
 names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm","bws.wq", "bws.vol","bws.cm","cc.wq","cc.vol","cc.cm", "sc.wq","sc.vol", "sc.cm")
 metrics$year<- years
-
-nat.cm<-data.frame(matrix(ncol = 1, nrow= length(years)))
-names(nat.cm)<-c("year")
-nat.cm$year<- years
 
 # calculate winter baseflow, annual irrigation season volume and center of mass
 for(i in 1:length(stream.id)){
@@ -142,27 +69,6 @@ for(i in 1:length(stream.id)){
     metrics[y,(((i-1)*3)+4)]<- cm
   }
 }
-
-# calculate center of mass for "natural flow"
-for(i in 1:length(stream.id)){
-  sub <- streamflow_data %>% filter(abv == unique(abv)[i]) %>% filter(wy < 2020)
-  
-  if(unique(sub$abv) == 'bwb'){
-    sub$nat.flow <- sub$Flow + sub$abv.h
-  } else if (unique(sub$abv) == 'bws'){
-    sub$nat.flow = sub$Flow + sub$abv.s + sub$abv.h
-  } else {next}
-  
-  cm = matrix(ncol = 1, nrow= length(years))
-  for (y in 1: length(years)){
-  #center of mass between April 1 and July 31
-  sub3<- sub %>% filter(wy == years[y] & between(mo, 4, 7)) 
-  sub3$doy <- yday(as.Date(sub3$Date))
-  cm[y] <- sum(sub3$doy * sub3$nat.flow)/sum(sub3$nat.flow)
-  }
-  nat.cm<- cbind(nat.cm, cm)
-}
-colnames(nat.cm)<- c('year', 'bwb.cm.nat', 'bws.cm.nat')
 
 # ------------------------------------------------------------------------------
 # Retrieve Snotel Data 
@@ -321,6 +227,7 @@ write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
 
 wq<- alldat %>% select("year", "bwb.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
 
+# Boxplots of Historic Conditions
 sitelabs<- c( "Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")
 wq_box<- ggplot(wq %>% filter(year < pred.yr), aes(x=factor(site), y=winterFlow))+
   geom_boxplot(alpha=0.8)+
@@ -335,8 +242,3 @@ png(filename = file.path(fig_dir,"wq_box.png"),
     bg = "white", res = 600) 
 print(wq_box)
 dev.off()
-
-# Additional Data Sources ----
-# National Operational Hydrologic Remote Sensing Center data - max SWE at 17 locations?
-# Reservoir Data
-# Groundwater Data
