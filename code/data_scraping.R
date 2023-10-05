@@ -26,29 +26,29 @@ site_info$abv <- c("bwb", "bws", "cc", "bwr", 'sc')
 site_info <- site_info %>% dplyr::select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abv)
 
 # Dowload data from all sites into one dataframe
-streamflow_data <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = max(site_info$end_date)) %>% renameNWISColumns() %>% data.frame
+streamflow <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = max(site_info$end_date)) %>% renameNWISColumns() %>% data.frame
 
 #Re-format dates and pull out month /day/ water year
-streamflow_data$Date <- as.Date(streamflow_data$Date, format = "%Y-%m-%d")
-streamflow_data$mo <- month(streamflow_data$Date)
-streamflow_data$wy <- as.numeric(as.character(waterYear(streamflow_data$Date, numeric=TRUE)))
-streamflow_data$day <- day(streamflow_data$Date)
+streamflow$Date <- as.Date(streamflow$Date, format = "%Y-%m-%d")
+streamflow$mo <- month(streamflow$Date)
+streamflow$wy <- as.numeric(as.character(waterYear(streamflow$Date, numeric=TRUE)))
+streamflow$day <- day(streamflow$Date)
 # Cleanup Streamflow data frame and join relevant site information
-streamflow_data <- streamflow_data %>% dplyr::select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
+streamflow <- streamflow %>% dplyr::select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
 
 # ----------------------------------------------------------------------------------
 # calculate hydrologic metrics for each year for each station
 # winter "baseflow" (wb), Apr - Sept total Volume (vol), and center of mass (cm)
 # ------------------------------------------------------------------------------
 stream.id<-c("bwb","bws","cc","sc")
-years = min(streamflow_data$wy):max(streamflow_data$wy)
+years = min(streamflow$wy):max(streamflow$wy)
 metrics<-data.frame(matrix(ncol = 13, nrow= length(years)))
 names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm","bws.wq", "bws.vol","bws.cm","cc.wq","cc.vol","cc.cm", "sc.wq","sc.vol", "sc.cm")
 metrics$year<- years
 
 # calculate winter baseflow, annual irrigation season volume and center of mass
 for(i in 1:length(stream.id)){
-  sub <- streamflow_data %>% filter(abv == stream.id[i])
+  sub <- streamflow %>% filter(abv == stream.id[i])
   
   for (y in 1: length(years)){
     #average winter flow
@@ -73,7 +73,7 @@ for(i in 1:length(stream.id)){
 # ------------------------------------------------------------------------------
 # Retrieve Snotel Data 
 # ------------------------------------------------------------------------------
-# SNOTEL Sites 
+# SNOTEL Sites ----
 cg = 895 #  Chocolate Gulch (0301)
 g  = 489 #  Galena (0101)
 gs = 490 #  Galena Summit (0101)
@@ -91,7 +91,6 @@ snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "cc
 
 # Download Snotel data ----
 snotel_data = snotel_download(snotel_sites, path = data_dir, internal = TRUE )
-
 # Pull out Snotel site information ----
 snotel_site_info<-data.frame('id'=NA, 'start'=NA, 'end'=NA, 'lat'=NA, 'long'=NA, 'elev'=NA, 'description'=NA, 'site_name'=NA, 'huc8'=NA)
 snotel_site_info$start <-as.Date(NA)
@@ -109,15 +108,17 @@ snotel_site_info$site_name <- c('chocolate gulch', 'galena', 'galena summit', 'h
 snotel_site_info$abv<- snotel_abrv
 snotel_site_info$huc8 <- c(219,219,219,219,219,219,220,220,221,221,303,101)
 # remove unnecessary columns from Snotel data frame
-snotel_data_out = subset(snotel_data, select = -c(network, state, start, end, latitude, longitude, elev, county, description))
-snotel_data_out$site_name<-trimws(snotel_data_out$site_name)
-snotel_data_out$date <- as.Date(snotel_data_out$date, format = "%Y-%m-%d")
-snotel_data_out$mo <- month(snotel_data_out$date)
-snotel_data_out$wy <- as.numeric(as.character(waterYear(snotel_data_out$date, numeric=TRUE)))
-snotel_data_out$day <- day(snotel_data_out$date)
+snotel = subset(snotel_data, select = -c(network, state, start, end, latitude, longitude, elev, county, description))
+snotel$site_name<-trimws(snotel$site_name)
+snotel$date <- as.Date(snotel$date, format = "%Y-%m-%d")
+snotel$mo <- month(snotel$date)
+snotel$wy <- as.numeric(as.character(waterYear(snotel$date, numeric=TRUE)))
+snotel$day <- day(snotel$date)
 
-# subset April 1 data for model 
+# subset SWE data by month for model ----
 wy<- seq(1979, year(end_date))
+
+#--- subset April 1 data for model
 april1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
 colnames(april1swe)<- c('year', snotel_abrv)
 april1swe[,1]<- wy
@@ -127,38 +128,36 @@ today_swe<- matrix(data=NA, nrow=1, ncol=length(snotel_sites))
 colnames(today_swe)<- c(snotel_abrv)
 
 for (i in 1:length(snotel_sites)) {
-  sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 4 & snotel_data_out$day ==1,]
+  sub<- snotel[snotel$site_name == snotel_site_info$site_name[i] & snotel$mo == 4 & snotel$day ==1,]
   april1swe[which(april1swe$year == min(sub$wy)) : which(april1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
-  sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
+  sub2<- snotel[snotel$site_name == snotel_site_info$site_name[i],]
   if (month(end_date) < 5){
   today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
   } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 4 & sub2$day ==30 & sub2$wy == (pred.yr-1)]}
 }
-
+# Update the April 1 SWE with the current swe
 april1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
 
-# subset March 1 data for model 
+#--- subset March 1 data for model 
 mar1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
 colnames(mar1swe)<- c('year', snotel_abrv)
 mar1swe[,1]<- wy
 mar1swe<-as.data.frame(mar1swe)
-
 today_swe<- matrix(data=NA, nrow=1, ncol=length(snotel_sites))
 colnames(today_swe)<- c(snotel_abrv)
 
 for (i in 1:length(snotel_sites)) {
-  sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 3 & snotel_data_out$day ==1,]
+  sub<- snotel[snotel$site_name == snotel_site_info$site_name[i] & snotel$mo == 3 & snotel$day ==1,]
   mar1swe[which(mar1swe$year == min(sub$wy)) : which(mar1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
-  sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
+  sub2<- snotel[snotel$site_name == snotel_site_info$site_name[i],]
   if (month(end_date) < 4){
     today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
   } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 3 & sub2$day ==31 & sub2$wy == (pred.yr-1)]}
   }
-
 # Update the March 1 SWE with the current swe
 mar1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
 
-# subset February 1 data for model 
+#--- subset February 1 data for model 
 feb1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
 colnames(feb1swe)<- c('year', snotel_abrv)
 feb1swe[,1]<- wy
@@ -168,16 +167,16 @@ today_swe<- matrix(data=NA, nrow=1, ncol=length(snotel_sites))
 colnames(today_swe)<- c(snotel_abrv)
 
 for (i in 1:length(snotel_sites)) {
-  sub<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$mo == 2 & snotel_data_out$day ==1,]
+  sub<- snotel[snotel$site_name == snotel_site_info$site_name[i] & snotel$mo == 2 & snotel$day ==1,]
   feb1swe[which(feb1swe$year == min(sub$wy)) : which(feb1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
-  sub2<- snotel_data_out[snotel_data_out$site_name == snotel_site_info$site_name[i],]
+  sub2<- snotel[snotel$site_name == snotel_site_info$site_name[i],]
   if (month(end_date) < 3){
     today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
   } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 2 & sub2$day ==28 & sub2$wy == (pred.yr-1)]}
-  #today_swe[i]<-snotel_data_out$snow_water_equivalent[snotel_data_out$site_name == snotel_site_info$site_name[i] & snotel_data_out$date == max(snotel_data_out$date)-1]
 }
 # Update the Feb 1 SWE with the current swe
 feb1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
+
 
 # ------------------------------------------------------------------------------
 # Save Data
@@ -188,43 +187,15 @@ write.csv(april1swe, file.path(data_dir, 'april1swe.csv'), row.names=FALSE)
 write.csv(mar1swe, file.path(data_dir, 'mar1swe.csv'), row.names=FALSE)
 write.csv(feb1swe, file.path(data_dir, 'feb1swe.csv'), row.names=FALSE)
 
-write.csv(snotel_data_out, file.path(data_dir,'snotel_data.csv'), row.names=FALSE)
+write.csv(snotel, file.path(data_dir,'snotel_data.csv'), row.names=FALSE)
 write.csv(snotel_site_info, file.path(data_dir,'snotel_sites.csv'), row.names=FALSE)
 
 # Save flow data as csvs ------
-metrics <- metrics %>% full_join(nat.cm, by= "year")
-
-write.csv(streamflow_data, file.path(data_dir,'streamflow_data.csv'), row.names=FALSE)
+write.csv(streamflow, file.path(data_dir,'streamflow_data.csv'), row.names=FALSE)
 write.csv(metrics, file.path(data_dir,'metrics.csv'), row.names=FALSE)
 write.csv(site_info, file.path(data_dir,'usgs_sites.csv'), row.names=FALSE)
 
-# Merge April 1 SWE and streamflow metrics & diversion data ----
-bw.div.tot$year<- as.integer(bw.div.tot$year)
-
-if (run_date == 'feb1'){
-  alldat<- feb1swe %>% full_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
-} else if (run_date == 'march1'){
-  alldat<- mar1swe %>% full_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
-} else if (run_date == 'april1'){
-  alldat<- april1swe %>% full_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
-}
-
-# 'natural' flow is the volume at the gage plus the volume from upstream diversions
-alldat$bwb.vol.nat <- alldat$bwb.vol + alldat$abv.h
-alldat$bws.vol.nat <- alldat$bws.vol + alldat$abv.s + alldat$abv.h
-alldat$bws.loss <- alldat$bws.vol.nat - alldat$bwb.vol
-alldat$sc.vol.nat<- alldat$sc.vol + alldat$sc.div
-
-if (run_date == 'feb1'){
-  filename = 'alldat_feb.csv'
-} else if (run_date == 'march1'){
-  filename = 'alldat_mar.csv'
-} else if (run_date == 'april1'){
-  filename = 'alldat_apr.csv'
-}
-
-write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
-
+#------------------------------------------------------------------------------
 wq<- alldat %>% select("year", "bwb.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
 
 # Boxplots of Historic Conditions
@@ -242,3 +213,124 @@ png(filename = file.path(fig_dir,"wq_box.png"),
     bg = "white", res = 600) 
 print(wq_box)
 dev.off()
+
+#------------------------------------------------------------------------------
+# Get SNODAS from Database and integrate with above dataframe
+
+#tools to connect and write to database
+library(RPostgres)
+source(paste0(git_dir,"/code/dbIntakeTools.R")) 
+source(paste0(git_dir,"/code/SNODASR_functions.R")) 
+#connect to database
+conn=scdbConnect() 
+#update the snodas data when necessary
+dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
+
+### SNODAS Data Import ------------------------------------------------------###
+snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE qcstatus = 'TRUE';")
+
+#-- Data Munging----------------------------------------------------------------
+# modify df to subset and plot
+snodas$year <- year(snodas$datetime)
+snodas$mo<- month(snodas$datetime)
+snodas$day<- day(snodas$datetime)
+siteIDs<-t(matrix(c(140, 'BIG WOOD RIVER AT HAILEY', 'bwb.vol', 'bwb', 167,'CAMAS CREEK NR BLAINE ID', 'cc.vol', 'cc', 144, 'SILVER CREEK AT SPORTSMAN ACCESS', 'sc.vol', 'sc', 141, 'BIG WOOD RIVER AT STANTON CROSSING', 'bws.vol', 'bws'), nrow=4, ncol=4))
+colnames(siteIDs)<-c('locationid', 'name', 'site', 'site.s')
+
+# PIVOT snodas data to merge into the allDat frame
+sno.wide<- snodas[,c(1:3,5)] %>% pivot_wider(names_from = c(metric, locationid), names_glue = "{metric}.{locationid}", values_from = value) 
+# modify df to merge
+sno.wide$yearog <- year(sno.wide$datetime)
+sno.wide$mo<- month(sno.wide$datetime)
+sno.wide$day<- day(sno.wide$datetime)
+sno.wide$year<- as.numeric(as.character(waterYear(sno.wide$datetime, numeric=TRUE)))
+n.yrs<- unique(sno.wide$year)
+
+# subset snodas data to calculate cumulative values
+pTemp<-sno.wide[,c(1,5,9,12,16,18,19,21)] #TODO need to use reg expressions to do this correctly
+p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
+colnames(p.wint) <- c('year', "liquid_precip.140.wint", "liquid_precip.167.wint", "liquid_precip.144.wint", "liquid_precip.141.wint")
+p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
+colnames(p.spring) <- c('year', "liquid_precip.140.spr", "liquid_precip.167.spr", "liquid_precip.144.spr", "liquid_precip.141.spr")
+runoffTemp<-sno.wide[,c(1,3,7,13,14,18,19,21)] #prob need to change this subsetting
+runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
+colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
+
+#function to sum data for a given range of months
+cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
+  for (i in 1:length(n.yrs)){
+    sub1<- in_array %>% filter(year == n.yrs[i] & (mo >= start_mo | mo < end_mo)) %>% as.data.frame() 
+    out_array$year[i] <-n.yrs[i]
+    out_array[i,2:5]<- sub1 %>% dplyr::select(c(2:5)) %>% colSums() %>% t()  %>% as.data.frame() 
+  }
+  return(out_array)
+}
+
+# TODO: MODIFY THIS SECTION TO use a function and to only update mo. data when necessary
+# Calculate monthly values ----
+vol <- metrics %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
+vol<- vol[!is.na(vol$volume),]
+vol<- vol[vol$volume>0,]
+vol<-merge(vol, siteIDs, by='site')
+
+if (run_date == 'feb1'){
+  #calculate seasonal totals 
+  p.wint<- cuml.snodas(pTemp, p.wint, 10, 2)
+  runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 2)
+  #TODO: this could be changed to doy in $day
+  sno.wide.sub<- sno.wide[sno.wide$mo == 2 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
+  #compile all Feb data for modeling
+  allDat <- feb1swe %>% full_join(metrics, by ="year") %>% 
+    merge(sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year') %>% 
+    merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
+  
+  filename = 'alldat_feb.csv'
+} else if (run_date == 'march1'){
+  alldat<- mar1swe %>% full_join(metrics, by ="year") 
+  filename = 'alldat_mar.csv'
+} else if (run_date == 'april1'){
+  alldat<- april1swe %>% full_join(metrics, by ="year")
+  filename = 'alldat_apr.csv'
+}
+
+
+
+
+
+#### March 
+allDat<-read.csv(file.path(data_dir, 'alldat_mar.csv')) 
+vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
+vol<- vol[!is.na(vol$volume),]
+vol<- vol[vol$volume>0,]
+vol<-merge(vol, siteIDs, by='site')
+#calculate seasonal totals 
+p.wint<- cuml.snodas(pTemp, p.wint, 10, 3)
+#p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
+runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 3)
+
+##### ----- COMPILE March Data for modeling ---------------
+sno.wide.sub<- sno.wide[sno.wide$mo == 3 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
+allDat <- merge(allDat[,c(1:25)], sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year')
+allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
+write.csv(allDat, file.path(data_dir, 'alldat_mar.csv'), row.names=FALSE)
+
+### April
+allDat<-read.csv(file.path(data_dir, 'alldat_apr.csv')) 
+vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
+vol<- vol[!is.na(vol$volume),]
+vol<- vol[vol$volume>0,]
+vol<-merge(vol, siteIDs, by='site')
+#calculate seasonal totals 
+p.wint<- cuml.snodas(pTemp, p.wint, 10, 4)
+#p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
+runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 4)
+
+##### ----- COMPILE April Data for modeling ---------------
+sno.wide.sub<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
+allDat <- merge(allDat[,c(1:25)], sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year')
+allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
+write.csv(allDat, file.path(data_dir, 'alldat_apr.csv'), row.names=FALSE)
+
+
+# Merge SWE and streamflow metrics ----
+write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
