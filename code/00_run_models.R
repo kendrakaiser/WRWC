@@ -97,15 +97,10 @@ source(file.path(git_dir, 'code/04_data_integration.R'))
 
 # Create Streamflow Models 
 #-------------------------------------------------------------------------------
-suppressWarnings(source(file.path(git_dir, 'code/streamflow_models.R')))# warning messages are expected and okay
+suppressWarnings(source(file.path(git_dir, 'code/05_streamflow_models.R')))# warning messages are expected and okay
 
 # Make the Irrigation Season Streamflow Predictions
-source(file.path(git_dir, 'code/streamflow_predictions.R'))
-
-# Develop curtailment models and make curtailment date predictions
-suppressWarnings(source(file.path(git_dir, 'code/curtailment_model.R')))
-#curtailment predictions needs to be here because the data is necessary for the wr cutoff figure that is in the simulation script -- this should be re-organized
-source(file.path(git_dir, 'code/curtailment_predictions.R'))
+source(file.path(git_dir, 'code/06_streamflow_predictions.R'))
 
 # Remove unnecessary variables in the environment
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
@@ -113,7 +108,12 @@ rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir",
              "model_out", "streamflow_data_out"))
 
 # Simulate the Irrigation Season Hydrograph
-source(file.path(git_dir, 'code/streamflow_simulation.R'))
+source(file.path(git_dir, 'code/07_streamflow_simulation.R'))
+
+# Develop curtailment models and make curtailment date predictions
+# Retiring this 'code/curtailment_model.R')))
+source(file.path(git_dir, 'code/08_curtailment_predictions.R'))
+
 
 # knit Model Results PDF
 detach(package:plyr) #plyr interferes with a grouping function needed for plotting
