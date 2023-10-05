@@ -130,3 +130,21 @@ for(i in 1:length(stream.id)){
   nat.cm<- cbind(nat.cm, cm)
 }
 colnames(nat.cm)<- c('year', 'bwb.cm.nat', 'bws.cm.nat')
+metrics <- metrics %>% full_join(nat.cm, by= "year")
+
+# Merge April 1 SWE and streamflow metrics ----
+bw.div.tot$year<- as.integer(bw.div.tot$year)
+
+if (run_date == 'feb1'){
+  alldat<- feb1swe %>% full_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
+} else if (run_date == 'march1'){
+  alldat<- mar1swe %>% full_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
+} else if (run_date == 'april1'){
+  alldat<- april1swe %>% full_join(metrics, by ="year") %>% full_join(bw.div.tot, by ="year") %>% full_join(sc.div.tot, by="year")
+}
+
+# 'natural' flow is the volume at the gage plus the volume from upstream diversions
+alldat$bwb.vol.nat <- alldat$bwb.vol + alldat$abv.h
+alldat$bws.vol.nat <- alldat$bws.vol + alldat$abv.s + alldat$abv.h
+alldat$bws.loss <- alldat$bws.vol.nat - alldat$bwb.vol
+alldat$sc.vol.nat<- alldat$sc.vol + alldat$sc.div
