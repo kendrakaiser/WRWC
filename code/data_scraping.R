@@ -256,6 +256,12 @@ runoffTemp<-sno.wide[,c(1,3,7,13,14,18,19,21)] #prob need to change this subsett
 runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
 
+
+
+#TODO: MODIFY THIS SECTION TO use a function for the snodas cuml totals
+#TODO: change sno wide sub to use doy in $day
+# Calculate monthly values ----
+
 #function to sum data for a given range of months
 cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
   for (i in 1:length(n.yrs)){
@@ -266,71 +272,41 @@ cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
   return(out_array)
 }
 
-# TODO: MODIFY THIS SECTION TO use a function and to only update mo. data when necessary
-# Calculate monthly values ----
-vol <- metrics %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
-vol<- vol[!is.na(vol$volume),]
-vol<- vol[vol$volume>0,]
-vol<-merge(vol, siteIDs, by='site')
-
 if (run_date == 'feb1'){
   #calculate seasonal totals 
   p.wint<- cuml.snodas(pTemp, p.wint, 10, 2)
   runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 2)
-  #TODO: this could be changed to doy in $day
   sno.wide.sub<- sno.wide[sno.wide$mo == 2 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
   #compile all Feb data for modeling
-  allDat <- feb1swe %>% full_join(metrics, by ="year") %>% 
+  alldat <- feb1swe %>% full_join(metrics, by ="year") %>% 
     merge(sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year') %>% 
     merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
   
   filename = 'alldat_feb.csv'
 } else if (run_date == 'march1'){
-  alldat<- mar1swe %>% full_join(metrics, by ="year") 
+  #calculate seasonal totals 
+  p.wint<- cuml.snodas(pTemp, p.wint, 10, 3)
+  runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 3)
+  sno.wide.sub<- sno.wide[sno.wide$mo == 3 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
+  #compile all March data for modeling
+  alldat <- mar1swe %>% full_join(metrics, by ="year") %>% 
+    merge(sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year') %>% 
+    merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
+  
   filename = 'alldat_mar.csv'
 } else if (run_date == 'april1'){
-  alldat<- april1swe %>% full_join(metrics, by ="year")
+  #calculate seasonal totals 
+  p.wint<- cuml.snodas(pTemp, p.wint, 10, 4)
+  runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 4)
+  sno.wide.sub<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
+  
+  #compile all April data for modeling
+  alldat <- april1swe %>% full_join(metrics, by ="year") %>% 
+    merge(sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year') %>% 
+    merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
+  
   filename = 'alldat_apr.csv'
 }
 
-
-
-
-
-#### March 
-allDat<-read.csv(file.path(data_dir, 'alldat_mar.csv')) 
-vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
-vol<- vol[!is.na(vol$volume),]
-vol<- vol[vol$volume>0,]
-vol<-merge(vol, siteIDs, by='site')
-#calculate seasonal totals 
-p.wint<- cuml.snodas(pTemp, p.wint, 10, 3)
-#p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
-runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 3)
-
-##### ----- COMPILE March Data for modeling ---------------
-sno.wide.sub<- sno.wide[sno.wide$mo == 3 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-allDat <- merge(allDat[,c(1:25)], sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year')
-allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
-write.csv(allDat, file.path(data_dir, 'alldat_mar.csv'), row.names=FALSE)
-
-### April
-allDat<-read.csv(file.path(data_dir, 'alldat_apr.csv')) 
-vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
-vol<- vol[!is.na(vol$volume),]
-vol<- vol[vol$volume>0,]
-vol<-merge(vol, siteIDs, by='site')
-#calculate seasonal totals 
-p.wint<- cuml.snodas(pTemp, p.wint, 10, 4)
-#p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
-runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 4)
-
-##### ----- COMPILE April Data for modeling ---------------
-sno.wide.sub<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-allDat <- merge(allDat[,c(1:25)], sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year')
-allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
-write.csv(allDat, file.path(data_dir, 'alldat_apr.csv'), row.names=FALSE)
-
-
-# Merge SWE and streamflow metrics ----
+# Merge SWE and streamflow metrics to export
 write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
