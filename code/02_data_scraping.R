@@ -177,7 +177,6 @@ for (i in 1:length(snotel_sites)) {
 # Update the Feb 1 SWE with the current swe
 feb1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
 
-
 # ------------------------------------------------------------------------------
 # Save Data
 # ------------------------------------------------------------------------------
@@ -195,6 +194,7 @@ write.csv(streamflow, file.path(data_dir,'streamflow_data.csv'), row.names=FALSE
 write.csv(metrics, file.path(data_dir,'metrics.csv'), row.names=FALSE)
 write.csv(site_info, file.path(data_dir,'usgs_sites.csv'), row.names=FALSE)
 
+print('Streamflow Data Saved')
 #------------------------------------------------------------------------------
 #TODO: move these figures to seperate script
 wq<- alldat %>% select("year", "bwb.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
@@ -220,8 +220,8 @@ dev.off()
 
 #tools to connect and write to database
 library(RPostgres)
-source(paste0(git_dir,"/code/dbIntakeTools.R")) 
-source(paste0(git_dir,"/code/SNODASR_functions.R")) 
+source(paste0(git_dir,"/code/fxn_dbIntakeTools.R")) 
+source(paste0(git_dir,"/code/fxn_SNODASR_functions.R")) 
 #connect to database
 conn=scdbConnect() 
 #update the snodas data when necessary
@@ -256,8 +256,6 @@ colnames(p.spring) <- c('year', "liquid_precip.140.spr", "liquid_precip.167.spr"
 runoffTemp<-sno.wide[,c(1,3,7,13,14,18,19,21)] #prob need to change this subsetting
 runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
-
-
 
 #TODO: MODIFY THIS SECTION TO use a function for the snodas cuml totals
 #TODO: change sno wide sub to use doy in $day
@@ -314,11 +312,11 @@ if (run_date == 'feb1'){
 # EXPORT Streamflow, Snotel, and Snodas Data
 # -----------------------------------------------------------------------------
 write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
-
+print("All streamflow and snow data saved")
 
 # AGRIMET DATA
 # -----------------------------------------------------------------------------
-source(file.path(git_dir, 'code/grabAgriMetData.R'))
+source(file.path(git_dir, 'code/fxn_grabAgriMetData.R'))
 
 # Download NRCS ET Agrimet data ----
 # OB = Air temperature
