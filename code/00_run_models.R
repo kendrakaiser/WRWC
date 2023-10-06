@@ -33,19 +33,16 @@ end_date <<-as.Date("2023-04-01")# Sys.Date() #as.Date("2021-02-01") replace whe
 
 # ---- Run Model code
 
-source(file.path(git_dir, 'code/packages.R'))
+source(file.path(git_dir, 'code/01_packages.R'))
 
 run_info<- sessionInfo()
 writeLines(capture.output(sessionInfo()), file.path(cd, "sessionInfo.txt"))
 
-source(file.path(git_dir, 'code/data_scraping.R'))
-source(file.path(git_dir, 'code/download_agrimet.R'))
-source(file.path(git_dir, 'code/temperature_models.R')) #fix - fig_dir_mo
-source(file.path(git_dir, 'code/get_snow.R')) # TODO: change this; download SNODAS from db
-source(file.path(git_dir, 'code/snodas_exploration.R')) # make figures and compile snodas data
-source(file.path(git_dir, 'code/data_integration.R'))  # compiles data into one matrix TODO: modify to clean up above workflow
+source(file.path(git_dir, 'code/02_data_scraping.R'))
+source(file.path(git_dir, 'code/03_temperature_models.R')) 
 
 # sets input/output file directories and selects model params and models depending on model run date 
+# ------------------------------------------------------------------------------
 if (run_date == 'feb1'){
   input_data <<- 'alldat_feb.csv'
   fig_dir_mo <<- file.path(fig_dir,'February')
@@ -92,24 +89,31 @@ if (run_date == 'feb1'){
   wr_params <<- 'apr_wr_vars.rdata'
 }
 
-# Develop the streamflow Models & Compile Data Sources
-suppressWarnings(source(file.path(git_dir, 'code/streamflow_models.R')))# warning messages are expected and okay
+
+# ------------------------------------------------------------------------------
+# Compile Data Based on Run Date
+# ------------------------------------------------------------------------------
+source(file.path(git_dir, 'code/04_data_integration.R'))  
+
+# Create Streamflow Models 
+#-------------------------------------------------------------------------------
+suppressWarnings(source(file.path(git_dir, 'code/05_streamflow_models.R')))# warning messages are expected and okay
 
 # Make the Irrigation Season Streamflow Predictions
-source(file.path(git_dir, 'code/streamflow_predictions.R'))
+source(file.path(git_dir, 'code/06_streamflow_predictions.R'))
 
-# Develop curtailment models and make curtailment date predictions
-suppressWarnings(source(file.path(git_dir, 'code/curtailment_model.R')))
-#curtailment predictions needs to be here because the data is necessary for the wr cutoff figure that is in the simulation script -- this should be re-organized
-source(file.path(git_dir, 'code/curtailment_predictions.R'))
-
-# Remove unesseary variables in the environment
+# Remove unnecessary variables in the environment
 rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
              "data_dir", "input_data", "fig_dir_mo_rmd", "fig_dir_mo",  "author",  "todays_date", "end_date", 
              "model_out", "streamflow_data_out"))
 
 # Simulate the Irrigation Season Hydrograph
-source(file.path(git_dir, 'code/streamflow_simulation.R'))
+source(file.path(git_dir, 'code/07_streamflow_simulation.R'))
+
+# Develop curtailment models and make curtailment date predictions
+# Retiring this 'code/curtailment_model.R')))
+source(file.path(git_dir, 'code/08_curtailment_predictions.R'))
+
 
 # knit Model Results PDF
 detach(package:plyr) #plyr interferes with a grouping function needed for plotting

@@ -1,122 +1,13 @@
-#explore snow data and relationships 
+#Data analysis and management on snow data and relationships 
+# Need to modify now that SNODAS is incorp into data_scraping
 
-#tools to connect and write to database
-library(RPostgres)
-# GitHub File Path
-git_dir <<- '~/github/WRWC'
-# Local File Path
-cd <<- '~/Desktop/WRWC'
-data_dir <<- file.path(cd, 'data') # local
-
-source(paste0(git_dir,"/code/dbIntakeTools.R")) 
-source(paste0(git_dir,"/code/SNODASR_functions.R")) 
-source(file.path(git_dir, 'code/packages.R'))
-
-#connect to database
-conn=scdbConnect() 
-#update the snodas data when necessary
-dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
-
-### Data Import -----------------------------------------------------------###
-#import relevant data
-snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE qcstatus = 'TRUE';")
-#snodas<-read.csv(file.path(data_dir, 'allSnodasData.csv'))
-snotel<-read.csv(file.path(data_dir, 'snotel_data.csv'))
-streamflow<-read.csv(file.path(data_dir, 'streamflow_data.csv'))
-
-### Data Munging -----------------------------------------------------------###
-#modify df to subset and plot
-snodas$year <- year(snodas$datetime)
-snodas$mo<- month(snodas$datetime)
-snodas$day<- day(snodas$datetime)
-siteIDs<-t(matrix(c(140, 'BIG WOOD RIVER AT HAILEY', 'bwb.vol', 'bwb', 167,'CAMAS CREEK NR BLAINE ID', 'cc.vol', 'cc', 144, 'SILVER CREEK AT SPORTSMAN ACCESS', 'sc.vol', 'sc', 141, 'BIG WOOD RIVER AT STANTON CROSSING', 'bws.vol', 'bws'), nrow=4, ncol=4))
-colnames(siteIDs)<-c('locationid', 'name', 'site', 'site.s')
-
-
-# PIVOT snodas data to merge into the allDat frame
-sno.wide<- snodas[,c(1:3,5)] %>% pivot_wider(names_from = c(metric, locationid), names_glue = "{metric}.{locationid}", values_from = value) 
-#modify df to merge
-sno.wide$yearog <- year(sno.wide$datetime)
-sno.wide$mo<- month(sno.wide$datetime)
-sno.wide$day<- day(sno.wide$datetime)
-sno.wide$year<- as.numeric(as.character(waterYear(sno.wide$datetime, numeric=TRUE)))
-n.yrs<- unique(sno.wide$year)
-
-#subset snodas data to calculate cumulative values
-pTemp<-sno.wide[,c(1,5,9,12,16,18,19,21)] # need to use reg expressions to do this correctly
-p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
-colnames(p.wint) <- c('year', "liquid_precip.140.wint", "liquid_precip.167.wint", "liquid_precip.144.wint", "liquid_precip.141.wint")
-p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
-colnames(p.spring) <- c('year', "liquid_precip.140.spr", "liquid_precip.167.spr", "liquid_precip.144.spr", "liquid_precip.141.spr")
-runoffTemp<-sno.wide[,c(1,3,7,13,14,18,19,21)] #prob need to change this subsetting
-runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
-colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
-
-#function to sum data for a given range of months
-cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
-  for (i in 1:length(n.yrs)){
-    sub1<- in_array %>% filter(year == n.yrs[i] & (mo >= start_mo | mo < end_mo)) %>% as.data.frame() 
-    out_array$year[i] <-n.yrs[i]
-    out_array[i,2:5]<- sub1 %>% dplyr::select(c(2:5)) %>% colSums() %>% t()  %>% as.data.frame() 
-  }
-  return(out_array)
-}
-
-# TODO: MODIFY THIS SECTION TO use a function and to only update mo. data when necessary
-
-##### FEB
-allDat<-read.csv(file.path(data_dir, 'alldat_feb.csv')) 
-vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
+### ---------------------------------------------------------------------------------
+# Plotting for data exploration
+### ---------------------------------------------------------------------------------
+vol <- alldat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
 vol<- vol[!is.na(vol$volume),]
 vol<- vol[vol$volume>0,]
 vol<-merge(vol, siteIDs, by='site')
-#calculate seasonal totals 
-p.wint<- cuml.snodas(pTemp, p.wint, 10, 2)
-#p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
-runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 2)
-
-##### ----- COMPILE February Data for modeling ---------------
-sno.wide.sub<- sno.wide[sno.wide$mo == 2 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-allDat <- merge(allDat[,c(1:25)], sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year')
-allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
-write.csv(allDat, file.path(data_dir, 'alldat_feb.csv'), row.names=FALSE)
-
-#### March 
-allDat<-read.csv(file.path(data_dir, 'alldat_mar.csv')) 
-vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
-vol<- vol[!is.na(vol$volume),]
-vol<- vol[vol$volume>0,]
-vol<-merge(vol, siteIDs, by='site')
-#calculate seasonal totals 
-p.wint<- cuml.snodas(pTemp, p.wint, 10, 3)
-#p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
-runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 3)
-
-##### ----- COMPILE March Data for modeling ---------------
-sno.wide.sub<- sno.wide[sno.wide$mo == 3 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-allDat <- merge(allDat[,c(1:25)], sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year')
-allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
-write.csv(allDat, file.path(data_dir, 'alldat_mar.csv'), row.names=FALSE)
-
-### April
-allDat<-read.csv(file.path(data_dir, 'alldat_apr.csv')) 
-vol <- allDat %>% dplyr ::select (year, bwb.vol, bws.vol, cc.vol, sc.vol) %>% pivot_longer(cols=c('bwb.vol', 'bws.vol', 'cc.vol', 'sc.vol'), names_to = 'site', values_to = 'volume')
-vol<- vol[!is.na(vol$volume),]
-vol<- vol[vol$volume>0,]
-vol<-merge(vol, siteIDs, by='site')
-#calculate seasonal totals 
-p.wint<- cuml.snodas(pTemp, p.wint, 10, 4)
-#p.spring<- cuml.snodas(pTemp, p.spring, 4, 7)
-runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 4)
-
-##### ----- COMPILE April Data for modeling ---------------
-sno.wide.sub<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-allDat <- merge(allDat[,c(1:25)], sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year')
-allDat <- allDat %>% merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
-write.csv(allDat, file.path(data_dir, 'alldat_apr.csv'), row.names=FALSE)
-
-### ---------
-#### Plotting for data exploration
 
 #subset and merge timeseries data to plot 
 sno_april1<- snodas[snodas$mo == 4 & snodas$day ==1,] %>% dplyr::select (metric, value, locationid,year)
@@ -142,7 +33,6 @@ p.wint.long<- p.wint %>% pivot_longer(!wy, names_to = c("metric", "locationid"),
 p.wint.long$metric<- "liquid_precip_wint"
 runoff.long<- runoff.apr %>% pivot_longer(!wy, names_to = c("metric", "locationid"), names_sep="\\.", values_to = "value")
 p.run<- rbind(p.spr.long, p.wint.long, runoff.long) %>% subset(wy >2003)
-
 
 # --- Precip and runoff 
 snop<- merge(vol, p.run, by=c('year', 'locationid'))
