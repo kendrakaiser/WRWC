@@ -195,25 +195,6 @@ write.csv(metrics, file.path(data_dir,'metrics.csv'), row.names=FALSE)
 write.csv(site_info, file.path(data_dir,'usgs_sites.csv'), row.names=FALSE)
 
 print('Streamflow Data Saved')
-#------------------------------------------------------------------------------
-#TODO: move these figures to seperate script
-wq<- alldat %>% select("year", "bwb.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
-
-# Boxplots of Historic Conditions
-sitelabs<- c( "Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")
-wq_box<- ggplot(wq %>% filter(year < pred.yr), aes(x=factor(site), y=winterFlow))+
-  geom_boxplot(alpha=0.8)+
-  theme_bw()+
-  xlab("USGS Site")+
-  ylab("Average Nov-Jan Winter Flow (cfs)")+
-  geom_point(data = wq %>% filter(year == pred.yr),  aes(x=factor(site), y=winterFlow), color="blue", size=3, shape=15)+
-  scale_x_discrete(labels= sitelabs)
-
-png(filename = file.path(fig_dir,"wq_box.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-print(wq_box)
-dev.off()
 
 #------------------------------------------------------------------------------
 # Get SNODAS from Database and integrate with above dataframe
@@ -224,6 +205,7 @@ source(paste0(git_dir,"/code/fxn_dbIntakeTools.R"))
 source(paste0(git_dir,"/code/fxn_SNODASR_functions.R")) 
 #connect to database
 conn=scdbConnect() 
+#TODO: set this so that the following line only runs when it needs to?
 #update the snodas data when necessary
 dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
 
@@ -314,6 +296,26 @@ if (run_date == 'feb1'){
 write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
 print("All streamflow and snow data saved")
 
+#------------------------------------------------------------------------------
+#TODO: move these figures to seperate script
+wq<- alldat %>% select("year", "bwb.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
+
+# Boxplots of Historic Conditions
+sitelabs<- c( "Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")
+wq_box<- ggplot(wq %>% filter(year < pred.yr), aes(x=factor(site), y=winterFlow))+
+  geom_boxplot(alpha=0.8)+
+  theme_bw()+
+  xlab("USGS Site")+
+  ylab("Average Nov-Jan Winter Flow (cfs)")+
+  geom_point(data = wq %>% filter(year == pred.yr),  aes(x=factor(site), y=winterFlow), color="blue", size=3, shape=15)+
+  scale_x_discrete(labels= sitelabs)
+
+png(filename = file.path(fig_dir,"wq_box.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+print(wq_box)
+dev.off()
+
 # AGRIMET DATA
 # -----------------------------------------------------------------------------
 source(file.path(git_dir, 'code/fxn_grabAgriMetData.R'))
@@ -386,9 +388,9 @@ colnames(piciT)<- c("date_time","t", "site_name", 'month', 'y')
 # ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", DayEnd="2020-02-01", pCodes=c("OB", "PC"))
 
 # Merge & save AgriMet Data ---------------------------------
-agrimet <- rbind(piciT, fafiT)
+agrimet <- rbind(piciT, fafiT) #long form agrimet data for database
 agrimet$wy[!is.na(agrimet$date_time)]<- as.numeric(as.character(waterYear(agrimet$date_time[!is.na(agrimet$date_time)], numeric=TRUE)))
-agri_met<- full_join(pici, fafi, by='date_time')
+agri_met<- merge(pici[,1:3], fafi, by='date_time') #wide for modeling
 agri_met$wy[!is.na(agri_met$date_time)]<- as.numeric(as.character(waterYear(agri_met$date_time[!is.na(agri_met$date_time)], numeric=TRUE)))
 
 # saving to local directory
