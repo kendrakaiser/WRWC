@@ -17,11 +17,11 @@ library(RPostgres)
 # kek think about other snodas metrics to calculate; confirm IDs of relevant pourpoints; 
 
 #to run on sam's computer:
-source(paste0(getwd(),"/code/SNODASR_functions.R"))
-source(paste0(getwd(),"/code/dbIntakeTools.R"))
+#source(paste0(getwd(),"/code/SNODASR_functions.R"))
+#source(paste0(getwd(),"/code/dbIntakeTools.R"))
 
-#source(paste0(git_dir,"/code/dbIntakeTools.R")) #tools to connect and write to database
-#source(paste0(git_dir,"/code/SNODASR_functions.R")) 
+source(paste0(git_dir,"/code/dbIntakeTools.R")) #tools to connect and write to database
+source(paste0(git_dir,"/code/SNODASR_functions.R")) 
 conn=scdbConnect() #connect to database
 
 #all flow locations
