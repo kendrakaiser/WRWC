@@ -70,6 +70,10 @@ for(i in 1:length(stream.id)){
   }
 }
 
+# add variable for last years streamflow -- should change to total water year flow rather than irrigation season
+metrics$bwb.ly.vol[2:length(years)]<- metrics$bwb.vol[1:length(years)-1]
+metrics$cc.ly.vol[2:length(years)]<- metrics$cc.vol[1:length(years)-1]
+
 # ------------------------------------------------------------------------------
 # Retrieve Snotel Data 
 # ------------------------------------------------------------------------------
