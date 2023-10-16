@@ -42,8 +42,8 @@ streamflow <- streamflow %>% dplyr::select(-agency_cd) %>% inner_join(site_info,
 # ------------------------------------------------------------------------------
 stream.id<-c("bwb","bws","cc","sc")
 years = min(streamflow$wy):max(streamflow$wy)
-metrics<-data.frame(matrix(ncol = 13, nrow= length(years)))
-names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm","bws.wq", "bws.vol","bws.cm","cc.wq","cc.vol","cc.cm", "sc.wq","sc.vol", "sc.cm")
+metrics<-data.frame(matrix(ncol = 17, nrow= length(years)))
+names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm", "bwb.tot.vol", "bws.wq", "bws.vol","bws.cm","bws.tot.vol","cc.wq","cc.vol","cc.cm", "cc.tot.vol", "sc.wq","sc.vol", "sc.cm","sc.tot.vol")
 metrics$year<- years
 
 # calculate winter baseflow, annual irrigation season volume and center of mass
@@ -59,20 +59,26 @@ for(i in 1:length(stream.id)){
     sub2<- sub %>% filter(wy == years[y] & between(mo, 4, 9)) 
     vol<- sum(sub2$Flow)*1.98 #convert from cfs to ac-ft
     
+    #total april-september flow in AF
+    subv2<- sub %>% filter(wy == years[y])
+    tot.vol<- sum(subv2$Flow)*1.98 #convert from cfs to ac-ft
+    
     #center of mass between April 1 and July 31
     sub3<- sub %>% filter(wy == years[y] & between(mo, 4, 7)) 
     sub3$doy <- yday(as.Date(sub3$Date))
     cm <- sum(sub3$doy * sub3$Flow)/sum(sub3$Flow)
     
-    metrics[y,(((i-1)*3)+2)]<- wq
-    metrics[y,(((i-1)*3)+3)]<- vol
-    metrics[y,(((i-1)*3)+4)]<- cm
+    metrics[y,(((i-1)*4)+2)]<- wq
+    metrics[y,(((i-1)*4)+3)]<- vol
+    metrics[y,(((i-1)*4)+4)]<- cm
+    metrics[y,(((i-1)*4)+5)]<- tot.vol
   }
 }
 
-# add variable for last years streamflow -- should change to total water year flow rather than irrigation season
-metrics$bwb.ly.vol[2:length(years)]<- metrics$bwb.vol[1:length(years)-1]
-metrics$cc.ly.vol[2:length(years)]<- metrics$cc.vol[1:length(years)-1]
+# add variable for last years streamflow -- total water year flow 
+metrics$bwb.ly.vol[2:length(years)]<- metrics$bwb.tot.vol[1:length(years)-1]
+metrics$cc.ly.vol[2:length(years)]<- metrics$cc.tot.vol[1:length(years)-1]
+metrics$sc.ly.vol[2:length(years)]<- metrics$sc.tot.vol[1:length(years)-1]
 
 # ------------------------------------------------------------------------------
 # Retrieve Snotel Data 

@@ -8,7 +8,7 @@
  #'knitr', 'fasstr', 'stringr','kableExtra', 'leaps', 'rlist', 'caret', 'erer', 
  #'ggcorrplot', 'scales'))
 
-remotes::install_github("USGS-R/smwrBase") 
+#remotes::install_github("USGS-R/smwrBase") 
 # load packages
 library(MASS)
 library(plotrix)
