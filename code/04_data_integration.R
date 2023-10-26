@@ -1,6 +1,5 @@
-# data integration
-# merge data from data scraping, agrimet, temp models, snodas etc all together
-#
+# Data Integration
+# merge data from data scraping and temp models
 # Kendra Kaiser
 # 09-15-2023
 
