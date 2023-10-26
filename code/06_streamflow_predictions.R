@@ -8,7 +8,6 @@
 # 
 # This model was informed by the statistical tools developed for the Henry's Fork 
 # Foundation by Rob VanKirk
-# TODO: NEED TO ERROR CHECK THAT pred.params.vol are NOT NA
 # -----------------------------------------------------------------------------  
 
 # Import Data ------------------------------------------------------------------  
@@ -87,7 +86,6 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   pred.params.vol[1,1]<-predictions$fit[1] #mean prediction 
   pred.params.vol[1,3]<-predictions$fit[2] #lower prediction interval
   pred.params.vol[1,4]<-predictions$fit[3] #upper prediction interval
-  #ADD ERROR CHECK HERE IF NA then STOP
   
   #This years percent of mean winter flow
   output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,0)
@@ -158,7 +156,13 @@ mod_out<- modOut(vol.mods$cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], var$
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
+#error catch for NA in pred params
+#TODO: Move this into the fucntion and add model name into error
+try(if(any(is.na(pred.params.vol))) stop("NA in Predicted Parameters"))
 
+tryCatch({is.integer(pred.params.vol)}, error = function(e) {message("error:\n", "NA in Predicted Parameters")})
+
+any(is.na(pred.params.vol))
 # ------------------------------------------------------------------------------  
 #
 # Center of Mass Predictions
