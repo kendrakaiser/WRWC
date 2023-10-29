@@ -122,6 +122,9 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
   
   writeMe=data.frame(metric=metricName,value=value,datetime=datetime,metricid=metricID,locationid=locationID,batchid=batchID,simnumber=simnumber)
   writeMe$value=as.numeric(writeMe$value)
+  writeMe$qcstatus[qcStatus]="true"
+  writeMe$qcstatus[!qcStatus]="false"
+  
   writeMe=writeMe[complete.cases(writeMe$value),]
   
   potentialDups=dbGetQuery(conn, paste0("SELECT metricid, metric, value, datetime, locationid, simnumber FROM data WHERE metricid = '",metricID,
@@ -142,9 +145,10 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
   
   if(nrow(notDups)>=1){
     writeMe=merge(notDups,writeMe)
-    if(qcStatus==F){
-      writeMe$qcstatus="false"
-    }
+    
+    # if(qcStatus==F){
+    #   writeMe$qcstatus="false"
+    # }
     dbAppendTable(conn, name="data", value=writeMe)
     
   }
@@ -307,13 +311,16 @@ dbRemoveDuplicates=function(table, idCol, uniqueCols){
 }
 
 
-getUpdateDbData_byMetricLocation=function(metric,location,days,rebuildInvalidData=F){ #location can be locationID or locationName
-  ###test params for debug
-  metric="daily precip" #snotel sourced data
-  location="galena summit"
-  days=seq.Date(as.Date("2022-01-01"),as.Date("2024-01-02"),by="day")
-  rebuildInvalidData=F
+getWriteData=function(metric,location,days,sourceName=NULL,rebuildInvalidData=F){ #location can be locationID or locationName
+  
+  ###test args for debug
+  # metric="streamflow"
+  # location="BIG WOOD RIVER AT HAILEY"
+  # days=seq.Date(as.Date("2021-01-01"),as.Date("2024-01-02"),by="day")
+  # sourceName="USGS"
+  # rebuildInvalidData=F
   ###
+  
   
   days=as.Date(days)
   
@@ -344,15 +351,68 @@ getUpdateDbData_byMetricLocation=function(metric,location,days,rebuildInvalidDat
     locationID=as.numeric(location)
   }
   
+  #get existing data from db:
   dataInDb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"');"))
   
+  #if rebuild:
   if(rebuildInvalidData){ #drop records w/ qc=F to trigger rebuild
     dataInDb=dataInDb[dataInDb$qcstatus==TRUE,]
   }
   
-  if(!all(days %in% dataInDb$datetime)){ #data for some days is not in database
+  #check for complete dataset
+  if(!all(days %in% dataInDb$datetime)){ #data for some days is not in database    
     missingDays=days[!days %in% dataInDb$datetime] 
     
+    
+    ###################--------------- data sourcing functions -------------------------
+    
+    sourceUSGS=function(metricID, locationID, days){
+      print("sourcing USGS data...")
+      
+      ##db knows about these as source_site_id
+      # bwb = 13139510  #  Bullion Bridge, Big Wood at Hailey
+      # bws = 13140800  #  Stanton Crossing, Big Wood
+      # cc  = 13141500  #  Camas Creek near Blaine
+      # sc  = 13150430  #  Silver Creek near Picabo
+      # bwr = 13142500  #  Big Wood below Magic near Richfield
+      # mr  = 13142000  #  Magic Reservoir storage in acre - feet, impt for carry-over
+      # bwbr = 13140335 # Big Wood at S Broadford Bridge Nr Bellevue, data only goes back to 2017
+      # bwk = 13135500  #  Big Wood nr Ketchum, goes to 2011
+      # usgs_sites = c(bwb, bws, cc, sc, bwr) #  put all sites in one vector
+      
+      thisLocation_sourceID=dbGetQuery(conn,paste0("SELECT source_site_id FROM locations WHERE locationid = '",locationID,"';"))
+      
+      pCode = "00060" # USGS code for streamflow
+#     sCode = "00054" # USGS code for reservoir storage (acre-feet) -- not currently used?
+      
+      # Dataframe with information about sites and period of record, uv = instantaneous value
+      site_info<- whatNWISdata(sites= thisLocation_sourceID, parameterCd = pCode, outputDataTypeCd ='uv') 
+      min_date=site_info$begin_date
+      max_date=site_info$end_date
+      
+
+      # Dowload data from this location
+      streamflow <- readNWISdv(siteNumbers = thisLocation_sourceID, parameterCd = pCode, startDate = max(min_date,min(days)), endDate = min(max_date,max(days)) ) %>% renameNWISColumns() %>% data.frame
+      if(nrow(streamflow)==0){
+        streamflow=rbind(streamflow,data.frame(agency_cd="USGS",site_no=thisLocation_sourceID,Date=days,Flow=NA,Flow_cd="bad"))
+      }
+      
+      streamflow$qcStatus=T
+      streamflow$qcStatus[is.na(streamflow$Flow)]=F
+      streamflow$Flow[streamflow$qcStatus==F]=-999
+      
+      
+      #write to db
+      dbWriteData(metric="streamflow",value=streamflow$Flow,datetime=streamflow$Date,locationID=locationID,sourceName="USGS",qcStatus=streamflow$qcStatus)
+      
+    }
+    
+    
+    #call appropriate source function:
+    if(metric == "streamflow"){
+      sourceUSGS(metricID,locationID,missingDays)
+    }
+
     #try to source the missing data
     #dbSourceNewData(metric=metric,locationID=locationID,days=missingDays)
     
@@ -360,7 +420,7 @@ getUpdateDbData_byMetricLocation=function(metric,location,days,rebuildInvalidDat
     dataInDb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"');"))
   }
   
-  if(!rebuildInvalidData){
+  if(!rebuildInvalidData){  #strip qc=F data out of returned dataset
     dataInDb=dataInDb[dataInDb$qcstatus==TRUE,]
   }
   
