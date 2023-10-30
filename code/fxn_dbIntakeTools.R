@@ -311,7 +311,9 @@ dbRemoveDuplicates=function(table, idCol, uniqueCols){
 }
 
 
-getWriteData=function(metric,location,days,sourceName=NULL,rebuildInvalidData=F){ #location can be locationID or locationName
+getWriteData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #location can be locationID or locationName
+  
+  #if rebuildInvalidData=T, returned dataset will include invalid data
   
   ###test args for debug
   # metric="streamflow"
@@ -351,13 +353,19 @@ getWriteData=function(metric,location,days,sourceName=NULL,rebuildInvalidData=F)
     locationID=as.numeric(location)
   }
   
+  
+  #if rebuild
+  if(rebuildInvalidData){
+    dbExecute(conn,paste0("DELETE FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"') AND qcstatus = 'false';"))
+  }
+  
   #get existing data from db:
-  dataInDb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"');"))
+  dataInDb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"') ORDER BY datetime;"))
   
   #if rebuild:
-  if(rebuildInvalidData){ #drop records w/ qc=F to trigger rebuild
-    dataInDb=dataInDb[dataInDb$qcstatus==TRUE,]
-  }
+  # if(rebuildInvalidData){ #drop records w/ qc=F to trigger rebuild
+  #   dataInDb=dataInDb[dataInDb$qcstatus==TRUE,]
+  # }
   
   #check for complete dataset
   if(!all(days %in% dataInDb$datetime)){ #data for some days is not in database    
@@ -380,21 +388,29 @@ getWriteData=function(metric,location,days,sourceName=NULL,rebuildInvalidData=F)
       # bwk = 13135500  #  Big Wood nr Ketchum, goes to 2011
       # usgs_sites = c(bwb, bws, cc, sc, bwr) #  put all sites in one vector
       
-      thisLocation_sourceID=dbGetQuery(conn,paste0("SELECT source_site_id FROM locations WHERE locationid = '",locationID,"';"))
+      thisLocation_sourceID=dbGetQuery(conn,paste0("SELECT source_site_id FROM locations WHERE locationid = '",locationID,"';"))$source_site_id
       
       pCode = "00060" # USGS code for streamflow
 #     sCode = "00054" # USGS code for reservoir storage (acre-feet) -- not currently used?
       
       # Dataframe with information about sites and period of record, uv = instantaneous value
-      site_info<- whatNWISdata(sites= thisLocation_sourceID, parameterCd = pCode, outputDataTypeCd ='uv') 
-      min_date=site_info$begin_date
-      max_date=site_info$end_date
+      # site_info<- whatNWISdata(sites= thisLocation_sourceID, parameterCd = pCode, outputDataTypeCd ='uv') 
+      # min_date=site_info$begin_date
+      # max_date=site_info$end_date
+      # startDate = max(min_date,min(days))
+      # endDate = min(max_date,max(days))
+      # if(endDate<startDate){
+      #   endDate=startDate
+      # }
       
 
       # Dowload data from this location
-      streamflow <- readNWISdv(siteNumbers = thisLocation_sourceID, parameterCd = pCode, startDate = max(min_date,min(days)), endDate = min(max_date,max(days)) ) %>% renameNWISColumns() %>% data.frame
-      if(nrow(streamflow)==0){
-        streamflow=rbind(streamflow,data.frame(agency_cd="USGS",site_no=thisLocation_sourceID,Date=days,Flow=NA,Flow_cd="bad"))
+      streamflow <- readNWISdv(siteNumbers = thisLocation_sourceID, parameterCd = pCode, startDate = min(days), endDate = max(days) ) %>% renameNWISColumns() %>% data.frame
+      
+      
+      if(!all(days %in% streamflow$Date)){
+        addDays=days[!days %in% streamflow$Date]
+        streamflow=rbind(streamflow,data.frame(agency_cd="USGS",site_no=thisLocation_sourceID,Date=addDays,Flow=NA,Flow_cd="bad"))
       }
       
       streamflow$qcStatus=T
@@ -409,14 +425,14 @@ getWriteData=function(metric,location,days,sourceName=NULL,rebuildInvalidData=F)
     
     sourceSnotel=function(metricID, locationID, days){
       #db knows internal snotel source location ids:
-      thisLocation_sourceID=dbGetQuery(conn,paste0("SELECT source_site_id FROM locations WHERE locationid = '",locationID,"';"))
+      thisLocation_sourceID=dbGetQuery(conn,paste0("SELECT source_site_id FROM locations WHERE locationid = '",locationID,"';"))$source_site_id
     }
     
     #call appropriate source function:
-    if(source == "USGS"){
+    if(sourceName == "USGS"){
       sourceUSGS(metricID,locationID,missingDays)
     }
-    if(source == "snotel"){
+    if(sourceName == "snotel"){
       sourceSnotel(metricID,locationID,missingDays)
     }
 
@@ -424,7 +440,7 @@ getWriteData=function(metric,location,days,sourceName=NULL,rebuildInvalidData=F)
     #dbSourceNewData(metric=metric,locationID=locationID,days=missingDays)
     
     #get dataset again after adding new data
-    dataInDb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"');"))
+    dataInDb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"') ORDER BY datetime;"))
   }
   
   if(!rebuildInvalidData){  #strip qc=F data out of returned dataset
@@ -434,4 +450,4 @@ getWriteData=function(metric,location,days,sourceName=NULL,rebuildInvalidData=F)
   return(dataInDb)
 }
 
-sd=getWriteData(metric="streamflow", location=140, days=seq.Date(as.Date("2021-01-01"),as.Date("2023-01-02"),by="day"),source="USGS")
+sd=getWriteData(metric="streamflow", location="BIG WOOD RIVER AT HAILEY", days=seq.Date(as.Date("1996-01-01"),as.Date("2023-10-02"),by="day"),sourceName="USGS")
