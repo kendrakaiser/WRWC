@@ -35,7 +35,7 @@ nv_max=9
 #------------------------------------------------------------------------------ # 
 
 # Big Wood at Hailey
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwh.vol, bwh.wq, 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwh.vol, bwh.wq, bwh.ly.vol, 
               all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to assess the results
@@ -88,7 +88,7 @@ r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
 
 # -------------------------------------------------------------
 # Big Wood at Stanton
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.vol, bws.wq, 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.vol, bws.wq, bws.ly.vol,
                   all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to explore models
@@ -136,7 +136,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Silver Creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, bwh.wq, 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, sc.ly.vol, bwh.wq, bwh.wq, bwh.ly.vol,
              all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Silver Creek regsubsets 
@@ -183,7 +183,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Camas creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, bwh.wq,
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, cc.ly.vol,
             all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 #select parameters
