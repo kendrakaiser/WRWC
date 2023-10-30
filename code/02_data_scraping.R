@@ -7,42 +7,49 @@
 # ------------------------------------------------------------------------------
 # USGS Gage
 # ------------------------------------------------------------------------------
-bwh = 13139510  #  Bullion Bridge, Big Wood at Hailey
-bws = 13140800  #  Stanton Crossing, Big Wood
-cc  = 13141500  #  Camas Creek near Blaine
-sc  = 13150430  #  Silver Creek near Picabo
-bwr = 13142500  #  Big Wood below Magic near Richfield
-mr  = 13142000  #  Magic Reservoir storage in acre - feet, impt for carry-over
-bwbr = 13140335 # Big Wood at S Broadford Bridge Nr Bellevue, data only goes back to 2017
-bwk = 13135500  #  Big Wood nr Ketchum, goes to 2011
-usgs_sites = c(bwh, bws, cc, sc, bwr) #  put all sites in one vector
-
-pCode = "00060" # USGS code for streamflow
-sCode = "00054" # USGS code for reservoir storage (acre-feet)
-
-# Dataframe with information about sites and period of record, uv = instantaneous value
-site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeCd ='uv') 
-site_info$abv <- c("bwh", "bws", "cc", "bwr", 'sc')
-site_info <- site_info %>% dplyr::select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abv)
-
-# Dowload data from all sites into one dataframe
-streamflow <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = max(site_info$end_date)) %>% renameNWISColumns() %>% data.frame
-
-#Re-format dates and pull out month /day/ water year
-streamflow$Date <- as.Date(streamflow$Date, format = "%Y-%m-%d")
-streamflow$mo <- month(streamflow$Date)
-streamflow$wy <- as.numeric(as.character(waterYear(streamflow$Date, numeric=TRUE)))
-streamflow$day <- day(streamflow$Date)
-# Cleanup Streamflow data frame and join relevant site information
-streamflow <- streamflow %>% dplyr::select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
-
-
+# bwh = 13139510  #  Bullion Bridge, Big Wood at Hailey
+# bws = 13140800  #  Stanton Crossing, Big Wood
+# cc  = 13141500  #  Camas Creek near Blaine
+# sc  = 13150430  #  Silver Creek near Picabo
+# bwr = 13142500  #  Big Wood below Magic near Richfield
+# mr  = 13142000  #  Magic Reservoir storage in acre - feet, impt for carry-over
+# bwbr = 13140335 # Big Wood at S Broadford Bridge Nr Bellevue, data only goes back to 2017
+# bwk = 13135500  #  Big Wood nr Ketchum, goes to 2011
+# usgs_sites = c(bwh, bws, cc, sc, bwr) #  put all sites in one vector
+# 
+# pCode = "00060" # USGS code for streamflow
+# sCode = "00054" # USGS code for reservoir storage (acre-feet)
+# 
+# # Dataframe with information about sites and period of record, uv = instantaneous value
+# site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeCd ='uv') 
+# site_info$abv <- c("bwh", "bws", "cc", "bwr", 'sc')
+# site_info <- site_info %>% dplyr::select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abv)
+# 
+# # Dowload data from all sites into one dataframe
+# streamflow <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = max(site_info$end_date)) %>% renameNWISColumns() %>% data.frame
+# 
+# #Re-format dates and pull out month /day/ water year
+# streamflow$Date <- as.Date(streamflow$Date, format = "%Y-%m-%d")
+# streamflow$mo <- month(streamflow$Date)
+# streamflow$wy <- as.numeric(as.character(waterYear(streamflow$Date, numeric=TRUE)))
+# streamflow$day <- day(streamflow$Date)
+# # Cleanup Streamflow data frame and join relevant site information
+# streamflow <- streamflow %>% dplyr::select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
+# 
 
 streamflow_db=rbind(getWriteData(metric="streamflow", location="BIG WOOD RIVER AT HAILEY", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS"),
                     getWriteData(metric="streamflow", location="BIG WOOD RIVER AT STANTON CROSSING", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS"),
                     getWriteData(metric="streamflow", location="SILVER CREEK AT SPORTSMAN ACCESS", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS"),
                     getWriteData(metric="streamflow", location="CAMAS CREEK NR BLAINE ID", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
 )
+streamflow_db=streamflow_db[,c("locationid","value","datetime")]
+
+streamflow_db = merge(streamflow_db,
+                      dbGetQuery(conn, paste0("SELECT locationid, sitenote AS abv FROM locations WHERE locationid IN ('",paste(unique(streamflow_db$locationid),collapse="', '"),"');"))
+)
+
+streamflow_db$wy=as.numeric(as.character(waterYear(streamflow_db$datetime, numeric=TRUE)))
+streamflow_db$mo=month(streamflow_db$datetime)
 
 
 # ----------------------------------------------------------------------------------
@@ -50,32 +57,32 @@ streamflow_db=rbind(getWriteData(metric="streamflow", location="BIG WOOD RIVER A
 # winter "baseflow" (wb), Apr - Sept total Volume (vol), and center of mass (cm)
 # ------------------------------------------------------------------------------
 stream.id<-c("bwh","bws","cc","sc")
-years = min(streamflow$wy):max(streamflow$wy)
+years = min(streamflow_db$wy):max(streamflow_db$wy)
 metrics<-data.frame(matrix(ncol = 17, nrow= length(years)))
 names(metrics)<-c("year","bwh.wq","bwh.vol","bwh.cm", "bwh.tot.vol", "bws.wq", "bws.vol","bws.cm","bws.tot.vol","cc.wq","cc.vol","cc.cm", "cc.tot.vol", "sc.wq","sc.vol", "sc.cm","sc.tot.vol")
 metrics$year<- years
 
 # calculate winter baseflow, annual irrigation season volume and center of mass
 for(i in 1:length(stream.id)){
-  sub <- streamflow %>% filter(abv == stream.id[i])
+  sub <- streamflow_db %>% filter(abv == stream.id[i])
   
   for (y in 1: length(years)){
     #average winter flow
     sub1<- sub %>% filter(wy == years[y] & (mo >= 10 | mo < 2))
-    wq <- mean(sub1$Flow, na.rm = TRUE)
+    wq <- mean(sub1$value, na.rm = TRUE)
     
     #total april-september flow in AF
     sub2<- sub %>% filter(wy == years[y] & between(mo, 4, 9)) 
-    vol<- sum(sub2$Flow)*1.98 #convert from cfs to ac-ft
+    vol<- sum(sub2$value)*1.98 #convert from cfs to ac-ft
     
     #total april-september flow in AF
     subv2<- sub %>% filter(wy == years[y])
-    tot.vol<- sum(subv2$Flow)*1.98 #convert from cfs to ac-ft
+    tot.vol<- sum(subv2$value)*1.98 #convert from cfs to ac-ft
     
     #center of mass between April 1 and July 31
     sub3<- sub %>% filter(wy == years[y] & between(mo, 4, 7)) 
-    sub3$doy <- yday(as.Date(sub3$Date))
-    cm <- sum(sub3$doy * sub3$Flow)/sum(sub3$Flow)
+    sub3$doy <- yday(as.Date(sub3$datetime))
+    cm <- sum(sub3$doy * sub3$value)/sum(sub3$value)
     
     metrics[y,(((i-1)*4)+2)]<- wq
     metrics[y,(((i-1)*4)+3)]<- vol
