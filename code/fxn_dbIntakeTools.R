@@ -407,10 +407,17 @@ getWriteData=function(metric,location,days,sourceName=NULL,rebuildInvalidData=F)
       
     }
     
+    sourceSnotel=function(metricID, locationID, days){
+      #db knows internal snotel source location ids:
+      thisLocation_sourceID=dbGetQuery(conn,paste0("SELECT source_site_id FROM locations WHERE locationid = '",locationID,"';"))
+    }
     
     #call appropriate source function:
-    if(metric == "streamflow"){
+    if(source == "USGS"){
       sourceUSGS(metricID,locationID,missingDays)
+    }
+    if(source == "snotel"){
+      sourceSnotel(metricID,locationID,missingDays)
     }
 
     #try to source the missing data
@@ -427,3 +434,4 @@ getWriteData=function(metric,location,days,sourceName=NULL,rebuildInvalidData=F)
   return(dataInDb)
 }
 
+sd=getWriteData(metric="streamflow", location=140, days=seq.Date(as.Date("2021-01-01"),as.Date("2023-01-02"),by="day"),source="USGS")
