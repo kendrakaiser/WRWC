@@ -36,6 +36,15 @@ streamflow$day <- day(streamflow$Date)
 # Cleanup Streamflow data frame and join relevant site information
 streamflow <- streamflow %>% dplyr::select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
 
+
+
+streamflow_db=rbind(getWriteData(metric="streamflow", location="BIG WOOD RIVER AT HAILEY", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS"),
+                    getWriteData(metric="streamflow", location="BIG WOOD RIVER AT STANTON CROSSING", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS"),
+                    getWriteData(metric="streamflow", location="SILVER CREEK AT SPORTSMAN ACCESS", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS"),
+                    getWriteData(metric="streamflow", location="CAMAS CREEK NR BLAINE ID", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
+)
+
+
 # ----------------------------------------------------------------------------------
 # calculate hydrologic metrics for each year for each station
 # winter "baseflow" (wb), Apr - Sept total Volume (vol), and center of mass (cm)
