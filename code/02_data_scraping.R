@@ -77,6 +77,7 @@ for(i in 1:length(stream.id)){
 
 # add variable for last years streamflow -- total water year flow 
 metrics$bwh.ly.vol[2:length(years)]<- metrics$bwh.tot.vol[1:length(years)-1]
+metrics$bws.ly.vol[2:length(years)]<- metrics$bws.tot.vol[1:length(years)-1]
 metrics$cc.ly.vol[2:length(years)]<- metrics$cc.tot.vol[1:length(years)-1]
 metrics$sc.ly.vol[2:length(years)]<- metrics$sc.tot.vol[1:length(years)-1]
 
@@ -249,7 +250,6 @@ runoffTemp<-sno.wide[,c(1,3,7,13,14,18,19,21)] #prob need to change this subsett
 runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
 
-#TODO: MODIFY THIS SECTION TO use a function for the snodas cuml totals
 #TODO: change sno wide sub to use doy in $day
 
 # Calculate SNODAS monthly values and merge with streamflow and snotel data
