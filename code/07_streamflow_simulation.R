@@ -17,31 +17,31 @@ dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30
 streamflow_data<-read.csv(file.path(data_dir,"streamflow_data.csv"))
 streamflow_data$year <- year(streamflow_data$Date)
 
-bwb.wy<-streamflow_data[streamflow_data$abv == 'bwb',]
+bwh.wy<-streamflow_data[streamflow_data$abv == 'bwh',]
 bws.wy<-streamflow_data[streamflow_data$abv == 'bws',]
 cc.wy<-streamflow_data[streamflow_data$abv == 'cc',]
 sc.wy<-streamflow_data[streamflow_data$abv == 'sc',]
 
 # distributions and diversion hydrographs 
 #vol.sample<-read.csv(file.path(model_out,"vol.sample.csv")) #ac-ft
-colnames(vol.sample)<-c("bwb.vol", "bws.vol","cc.vol", "sc.vol")
+colnames(vol.sample)<-c("bwh.vol", "bws.vol","cc.vol", "sc.vol")
 #Example figures for presentation
-#plot(dates, bwb.wy$Flow[bwb.wy$wy == 2006][183:365], xlab="Date", ylab ="Flow (cfs)", type='l', col="black", ylim=c(0,6650))
-#lines(dates,bwb.wy$Flow[bwb.wy$wy == 2014][183:365], lwd=1, col="black")
-#lines(dates,bwb.wy$Flow[bwb.wy$wy == 2013][183:365], lwd=1, col="black")
-#lines(dates,bwb.wy$Flow[bwb.wy$wy == 2019][183:365], lwd=1, col="blue")
-#lines(dates,bwb.wy$Flow[bwb.wy$wy == 1998][183:365], lwd=1, col="red")
-#tst=cumsum(bwb.wy$Flow[bwb.wy$wy == 2019][183:365])
+#plot(dates, bwh.wy$Flow[bwh.wy$wy == 2006][183:365], xlab="Date", ylab ="Flow (cfs)", type='l', col="black", ylim=c(0,6650))
+#lines(dates,bwh.wy$Flow[bwh.wy$wy == 2014][183:365], lwd=1, col="black")
+#lines(dates,bwh.wy$Flow[bwh.wy$wy == 2013][183:365], lwd=1, col="black")
+#lines(dates,bwh.wy$Flow[bwh.wy$wy == 2019][183:365], lwd=1, col="blue")
+#lines(dates,bwh.wy$Flow[bwh.wy$wy == 1998][183:365], lwd=1, col="red")
+#tst=cumsum(bwh.wy$Flow[bwh.wy$wy == 2019][183:365])
 #plot(dates, tst, xlab="Date", ylab ="Cumulative Flow (cfs)", type='l')
 
 # ------------------------------------------------------------------------------
 # Create arrays to store outputs of stochastic simulations
 #
 
-cc.flow.s<-bwb.flow.s<-bws.flow.s<-sc.flow.s<-
+cc.flow.s<-bwh.flow.s<-bws.flow.s<-sc.flow.s<-
   data.frame(array(NA,c(183,ns)))
 
-rownames(cc.flow.s)<-rownames(bwb.flow.s)<-rownames(bws.flow.s)<-
+rownames(cc.flow.s)<-rownames(bwh.flow.s)<-rownames(bws.flow.s)<-
   rownames(sc.flow.s)<-dates
 
 # ------------------------------------------------------------------------------
@@ -61,18 +61,18 @@ for(k in 1:ns){
   year<-CMyear.sample[k,1] # year sample
   vol<-vol.sample[k,] # volume sample
 
-  bwb<- bwb.wy[bwb.wy$wy == year, "Flow"][183:365]
+  bwh<- bwh.wy[bwh.wy$wy == year, "Flow"][183:365]
   bws<- bws.wy[bws.wy$wy == year, "Flow"][183:365]
   sc<- sc.wy[sc.wy$wy == year, "Flow"][183:365]
   cc <- cc.wy[cc.wy$wy == year, "Flow"][183:365]
   
-  bwb.flow.s[,k]<-sim.flow(bwb, exp(vol$bwb.vol))
+  bwh.flow.s[,k]<-sim.flow(bwh, exp(vol$bwh.vol))
   bws.flow.s[,k]<-sim.flow(bws, exp(vol$bws.vol))
   sc.flow.s[,k]<-sim.flow(sc, exp(vol$sc.vol))
   cc.flow.s[,k]<-sim.flow(cc, exp(vol$cc.vol))
 }
 
-#matplot(bwb.flow.s, type='l',col = "gray90" )
+#matplot(bwh.flow.s, type='l',col = "gray90" )
 #matplot(sc.flow.s, type='l',col = "gray90" )
 
 # ------------------------------------------------------------------------------
@@ -91,9 +91,9 @@ pred.int<-function(location){
   return(cbind(lo, hi, meanQ, medQ))
 }
 
-colnames(pi)<- c("bwb.low", "bwb.hi", "bwb.mean", "bwb.med","bws.low", "bws.hi", "bws.mean", "bws.med", 
+colnames(pi)<- c("bwh.low", "bwh.hi", "bwh.mean", "bwh.med","bws.low", "bws.hi", "bws.mean", "bws.med", 
                   "sc.low", "sc.hi", "sc.mean", "sc.med","cc.low", "cc.hi", "cc.mean", "cc.med")
-pi[,1:4] <-as.data.frame(pred.int(bwb.flow.s))
+pi[,1:4] <-as.data.frame(pred.int(bwh.flow.s))
 pi[,5:8] <-as.data.frame(pred.int(bws.flow.s))
 pi[,9:12]<-as.data.frame(pred.int(sc.flow.s))
 pi[,13:16]<-as.data.frame(pred.int(cc.flow.s))
@@ -110,12 +110,12 @@ water_year_begin <- ymd('1987-10-01')-1
 q$doWY<- ((q$doy - yday(water_year_begin)) %% ifelse(leap_year(year(q$Date)), 366, 365)) +1
 
 
-data <- q %>% filter(abv == 'bwb') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(Flow, na.rm=TRUE))
+data <- q %>% filter(abv == 'bwh') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(Flow, na.rm=TRUE))
 
 minBW=min(pi[,1], pi[,5],data$meanQ[457:639])
 maxBW=max(pi[,2], pi[,6],data$meanQ[457:639])
 # Big Wood @ Hailey
-png(filename = file.path(fig_dir_mo, "BWB_Simulation.png"),
+png(filename = file.path(fig_dir_mo, "bwh_Simulation.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 plot(dates, pi[,3], type="n", xlab="Date", ylab ="Flow (cfs)",
@@ -126,7 +126,7 @@ lines(dates,data$meanQ[457:639],lwd=1.5,col="black")
 lines(dates,pi[,3],lwd=2.5,col="blue")
 legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
-#flow= bwb.wy[bwb.wy$wy == pred.yr, "bwb.nat.q"]
+#flow= bwh.wy[bwh.wy$wy == pred.yr, "bwh.nat.q"]
 #lines(dates,flow[183:365], lwd=2, col="green")
 dev.off()
 
@@ -191,7 +191,7 @@ dev.off()
 
 paste0("ModelOutput-", end_date, ".pdf")
 
-write.csv(bwb.flow.s, file.path(model_out, paste0("BWB.sim-",end_date,".csv")), row.names=dates, col.names = TRUE)
+write.csv(bwh.flow.s, file.path(model_out, paste0("BWH.sim-",end_date,".csv")), row.names=dates, col.names = TRUE)
 write.csv(bws.flow.s, file.path(model_out, paste0("BWS.sim-",end_date,".csv")), row.names=dates, col.names = TRUE)
 write.csv(cc.flow.s, file.path(model_out, paste0("CC.sim-", end_date,".csv")), row.names=dates, col.names = TRUE)
 write.csv(sc.flow.s, file.path(model_out, paste0("SC.sim-", end_date,".csv")), row.names=dates, col.names = TRUE)

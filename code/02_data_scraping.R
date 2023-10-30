@@ -7,7 +7,7 @@
 # ------------------------------------------------------------------------------
 # USGS Gage
 # ------------------------------------------------------------------------------
-bwb = 13139510  #  Bullion Bridge, Big Wood at Hailey
+bwh = 13139510  #  Bullion Bridge, Big Wood at Hailey
 bws = 13140800  #  Stanton Crossing, Big Wood
 cc  = 13141500  #  Camas Creek near Blaine
 sc  = 13150430  #  Silver Creek near Picabo
@@ -15,14 +15,14 @@ bwr = 13142500  #  Big Wood below Magic near Richfield
 mr  = 13142000  #  Magic Reservoir storage in acre - feet, impt for carry-over
 bwbr = 13140335 # Big Wood at S Broadford Bridge Nr Bellevue, data only goes back to 2017
 bwk = 13135500  #  Big Wood nr Ketchum, goes to 2011
-usgs_sites = c(bwb, bws, cc, sc, bwr) #  put all sites in one vector
+usgs_sites = c(bwh, bws, cc, sc, bwr) #  put all sites in one vector
 
 pCode = "00060" # USGS code for streamflow
 sCode = "00054" # USGS code for reservoir storage (acre-feet)
 
 # Dataframe with information about sites and period of record, uv = instantaneous value
 site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeCd ='uv') 
-site_info$abv <- c("bwb", "bws", "cc", "bwr", 'sc')
+site_info$abv <- c("bwh", "bws", "cc", "bwr", 'sc')
 site_info <- site_info %>% dplyr::select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abv)
 
 # Dowload data from all sites into one dataframe
@@ -40,10 +40,10 @@ streamflow <- streamflow %>% dplyr::select(-agency_cd) %>% inner_join(site_info,
 # calculate hydrologic metrics for each year for each station
 # winter "baseflow" (wb), Apr - Sept total Volume (vol), and center of mass (cm)
 # ------------------------------------------------------------------------------
-stream.id<-c("bwb","bws","cc","sc")
+stream.id<-c("bwh","bws","cc","sc")
 years = min(streamflow$wy):max(streamflow$wy)
 metrics<-data.frame(matrix(ncol = 17, nrow= length(years)))
-names(metrics)<-c("year","bwb.wq","bwb.vol","bwb.cm", "bwb.tot.vol", "bws.wq", "bws.vol","bws.cm","bws.tot.vol","cc.wq","cc.vol","cc.cm", "cc.tot.vol", "sc.wq","sc.vol", "sc.cm","sc.tot.vol")
+names(metrics)<-c("year","bwh.wq","bwh.vol","bwh.cm", "bwh.tot.vol", "bws.wq", "bws.vol","bws.cm","bws.tot.vol","cc.wq","cc.vol","cc.cm", "cc.tot.vol", "sc.wq","sc.vol", "sc.cm","sc.tot.vol")
 metrics$year<- years
 
 # calculate winter baseflow, annual irrigation season volume and center of mass
@@ -76,7 +76,8 @@ for(i in 1:length(stream.id)){
 }
 
 # add variable for last years streamflow -- total water year flow 
-metrics$bwb.ly.vol[2:length(years)]<- metrics$bwb.tot.vol[1:length(years)-1]
+metrics$bwh.ly.vol[2:length(years)]<- metrics$bwh.tot.vol[1:length(years)-1]
+metrics$bws.ly.vol[2:length(years)]<- metrics$bws.tot.vol[1:length(years)-1]
 metrics$cc.ly.vol[2:length(years)]<- metrics$cc.tot.vol[1:length(years)-1]
 metrics$sc.ly.vol[2:length(years)]<- metrics$sc.tot.vol[1:length(years)-1]
 
@@ -227,7 +228,7 @@ snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE qcstatus = 'TRUE';")
 snodas$year <- year(snodas$datetime)
 snodas$mo<- month(snodas$datetime)
 snodas$day<- day(snodas$datetime)
-siteIDs<-t(matrix(c(140, 'BIG WOOD RIVER AT HAILEY', 'bwb.vol', 'bwb', 167,'CAMAS CREEK NR BLAINE ID', 'cc.vol', 'cc', 144, 'SILVER CREEK AT SPORTSMAN ACCESS', 'sc.vol', 'sc', 141, 'BIG WOOD RIVER AT STANTON CROSSING', 'bws.vol', 'bws'), nrow=4, ncol=4))
+siteIDs<-t(matrix(c(140, 'BIG WOOD RIVER AT HAILEY', 'bwh.vol', 'bwh', 167,'CAMAS CREEK NR BLAINE ID', 'cc.vol', 'cc', 144, 'SILVER CREEK AT SPORTSMAN ACCESS', 'sc.vol', 'sc', 141, 'BIG WOOD RIVER AT STANTON CROSSING', 'bws.vol', 'bws'), nrow=4, ncol=4))
 colnames(siteIDs)<-c('locationid', 'name', 'site', 'site.s')
 
 # PIVOT snodas data to merge into the allDat frame
@@ -249,7 +250,6 @@ runoffTemp<-sno.wide[,c(1,3,7,13,14,18,19,21)] #prob need to change this subsett
 runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
 
-#TODO: MODIFY THIS SECTION TO use a function for the snodas cuml totals
 #TODO: change sno wide sub to use doy in $day
 
 # Calculate SNODAS monthly values and merge with streamflow and snotel data
@@ -308,7 +308,7 @@ print("All streamflow and snow data saved")
 
 #------------------------------------------------------------------------------
 #TODO: move these figures to seperate script
-wq<- alldat %>% select("year", "bwb.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
+wq<- alldat %>% select("year", "bwh.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
 
 # Boxplots of Historic Conditions
 sitelabs<- c( "Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")

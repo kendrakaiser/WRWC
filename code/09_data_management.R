@@ -17,7 +17,7 @@ all_vars_long <- var %>% pivot_longer(cols = -c('year'), names_to = "variable", 
 write.csv(all_vars_long, file.path(data_dir,'all_vars_long.csv'), row.names=FALSE)
 
 
-bwh.flow.simLong<- read.csv(file.path(model_out, "BWB.sim.csv")) %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+bwh.flow.simLong<- read.csv(file.path(model_out, "BWH.sim.csv")) %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
 bws.flow.simLong<- read.csv(file.path(model_out, "BWS.sim.csv")) %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
 cc.flow.simLong<- read.csv(file.path(model_out, "CC.sim.csv")) %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
 sc.flow.simLong <- read.csv(file.path(model_out, "SC.sim.csv")) %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
@@ -29,7 +29,7 @@ write.csv(sc.flow.simLong, file.path(data_dir,'sc.flow.simLong.csv'), row.names=
 
 
 volumes<-read.csv(file.path(model_out,"vol.sample.csv"))
-colnames(volumes)<-c("bwb.vol", "bws.vol","cc.vol", "sc.vol") #this has already been read in via the streamflow simulation script; re-consider re-reading it in
+colnames(volumes)<-c("bwh.vol", "bws.vol","cc.vol", "sc.vol") #this has already been read in via the streamflow simulation script; re-consider re-reading it in
 volumes.sampleLong<- volumes %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
 write.csv(volumes.sampleLong, file.path(data_dir,'volumes.sampleLong.csv'), row.names=FALSE)
 

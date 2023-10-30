@@ -35,11 +35,11 @@ nv_max=9
 #------------------------------------------------------------------------------ # 
 
 # Big Wood at Hailey
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.vol, bwb.wq, 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwh.vol, bwh.wq, bwh.ly.vol, 
               all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to assess the results
-tryCatch({regsubsets.out<-regsubsets(log(hist$bwb.vol)~., data=hist[,-c(1)], nbest=1, nvmax=nv_max)}, 
+tryCatch({regsubsets.out<-regsubsets(log(hist$bwh.vol)~., data=hist[,-c(1)], nbest=1, nvmax=nv_max)}, 
          error= function(e) {print("Big Wood Hailey Vol model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -49,7 +49,7 @@ vars<-reg_sum$which[which.min(reg_sum$bic),]
 bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit the regression model and use LOOCV to evaluate performance
-form<- paste("log(bwb.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
+form<- paste("log(bwh.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
 #pairs(var[bwh_sum$vars])
 bwh_mod<-lm(form, data=hist)
 bwh_sum$lm<-summary(bwh_mod)$adj.r.squared
@@ -88,7 +88,7 @@ r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
 
 # -------------------------------------------------------------
 # Big Wood at Stanton
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.vol, bws.wq, 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.vol, bws.wq, bws.ly.vol,
                   all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
 
 #use regsubsets to explore models
@@ -136,7 +136,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Silver Creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, bwb.wq, 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, sc.ly.vol, bwh.wq, bwh.wq, bwh.ly.vol,
              all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Silver Creek regsubsets 
@@ -183,7 +183,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Camas creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, bwb.wq,
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, cc.ly.vol,
             all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 #select parameters
@@ -266,10 +266,10 @@ dev.off()
 # Big Wood at Hailey
 # TODO: data isn't going through 2022 -- there is no runoff total for 140, 167, 144??
 # this doesn't like to run efficiently 
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwb.cm, bwb.wq, 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwh.cm, bwh.wq, 
                   all_of(swe_cols),  all_of(snodas_cols), all_of(aj_t_cols)) %>% filter(complete.cases(.)) 
 
-tryCatch({regsubsets.out<-regsubsets(hist$bwb.cm~., data=hist[,-1], nbest=1, nvmax=nv_max, really.big=TRUE)}, 
+tryCatch({regsubsets.out<-regsubsets(hist$bwh.cm~., data=hist[,-1], nbest=1, nvmax=nv_max, really.big=TRUE)}, 
          error= function(e) {print("Big Wood Hailey CM model did not work")}) #error catch
 reg_sum<- summary(regsubsets.out)
 rm(regsubsets.out)
@@ -278,7 +278,7 @@ vars<-reg_sum$which[which.min(reg_sum$bic),]
 bwh.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
 
 #fit a regression model and use LOOCV to evaluate performance
-form<- paste("bwb.cm~ ", paste(bwh.cm_sum$vars, collapse=" + "), sep = "")
+form<- paste("bwh.cm~ ", paste(bwh.cm_sum$vars, collapse=" + "), sep = "")
 bwh_cm.mod<-lm(form, data=hist) 
 bwh.cm_sum$lm<-summary(bwh_cm.mod)$adj.r.squared
 #Save summary of LOOCV
@@ -327,7 +327,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Silver Creek Center of Mass
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwb.wq, bws.wq, 
+hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwh.wq, bws.wq, 
          all_of(swe_cols),all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Select and Save Parameters
@@ -413,9 +413,9 @@ options(warn = defaultW)
 # Evaluation of residuals 
 #https://drsimonj.svbtle.com/visualising-residuals
 #library(broom)
-#bwb.m<- model %>% augment()
+#bwh.m<- model %>% augment()
 
-#ggplot(bwb.m, aes(x = "hc.swe", y = "log(bwb.vol)")) +
+#ggplot(bwh.m, aes(x = "hc.swe", y = "log(bwh.vol)")) +
  #   geom_smooth(method = "lm", se = FALSE, color = "lightgrey") +
   #  geom_segment(aes(xend = hc.swe, yend = .fitted), alpha = .2) +  # Note `.fitted`
    # geom_point(aes(alpha = abs(.std.resid))) +  # Note `.resid`

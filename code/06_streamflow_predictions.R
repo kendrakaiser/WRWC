@@ -41,7 +41,7 @@ colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol (KAF)", "Pred. Vol \
 rownames(output.vol)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
 pred.params.vol<-array(NA,c(4,4))
-rownames(pred.params.vol)<-c("bwb.vol","bws.vol","cc.vol","sc.vol")
+rownames(pred.params.vol)<-c("bwh.vol","bws.vol","cc.vol","sc.vol")
 colnames(pred.params.vol)<-c("log.vol","sigma", "low.log.vol", "upp.log.vol")
 
 # center of mass
@@ -51,13 +51,13 @@ output.cm<-output.cm[-4,]
 colnames(output.cm)<-c("SWE % of mean","cm","cm-mean","cm.date") #"Hist Nov-Jan Temp","Nov-Jan Temps",
 
 pred.params.cm<-array(NA,c(4,2))
-rownames(pred.params.cm)<-c("bwb.cm","bws.cm","cc.cm","sc.cm")
+rownames(pred.params.cm)<-c("bwh.cm","bws.cm","cc.cm","sc.cm")
 colnames(pred.params.cm)<-c("cm","sigma")
 
 # summary stats
 mod_sum<-data.frame(array(NA,c(6,2)))
 colnames(mod_sum)<-c("Vol Adj-R2", "CM Adj-R2")
-rownames(mod_sum)<-c("bwb","bws","cc","sc", "bw.div", "sc.div")
+rownames(mod_sum)<-c("bwh","bws","cc","sc", "bw.div", "sc.div")
 
 # ------------------------------------------------------------------------------  
 #
@@ -100,7 +100,7 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
 
 # --------------------------------------------------
 # Subset Big Wood Variables
-hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bwb.vol, vol.params$bwh$vars)) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bwh.vol, vol.params$bwh$vars)) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #Prediction Data
@@ -108,7 +108,7 @@ pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$bwh$vars)
 
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol.mods$bwh_mod)$adj.r.squared
-mod_out<- modOut(vol.mods$bwh_mod, pred.dat, var$bwb.wq[var$year == pred.yr], var$bwb.wq[var$year < pred.yr], hist$bwb.vol, mean(colMeans(swe_cols, na.rm=T)), var$bwb.vol[var$year == pred.yr-1])
+mod_out<- modOut(vol.mods$bwh_mod, pred.dat, var$bwh.wq[var$year == pred.yr], var$bwh.wq[var$year < pred.yr], hist$bwh.vol, mean(colMeans(swe_cols, na.rm=T)), var$bwh.vol[var$year == pred.yr-1])
 #these could be formatted differently to be saved to the gloabl env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
@@ -205,7 +205,7 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, 
 # Big Wood at Hailey center of mass
 sub_params<- cm.params$bwh$vars[-grep('aj', cm.params$bwh$vars)]
 aj_params<-cm.params$bwh$vars[grep('aj', cm.params$bwh$vars)]
-hist <- var[var$year < pred.yr,] %>% dplyr::select(bwb.cm, cm.params$bwh$vars) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(bwh.cm, cm.params$bwh$vars) %>% filter(complete.cases(.))
 
 # Prediction Data with modeled temperature data
 pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::slice(rep(1:n(), 5000))
@@ -215,7 +215,7 @@ pred.data[aj_params] <- temp.ran[aj_params]
 mod_sum[1,2]<-summary(cm.mods$bwh_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm.mods$bwh_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
                    (var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$bwb.cm, var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
+                   hist$bwh.cm, var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
                    hist%>% dplyr::select(contains('swe')))
 output.cm[1,] <- mod_out[[1]]
 pred.params.cm[1,] <- mod_out[[2]]
@@ -309,8 +309,8 @@ write.csv(pred.params.cm, file.path(model_out,"pred.params.cm.csv"),row.names=T)
 # between each gage
 
 # calculate correlations between flow conditions across the basins
-flow.data = var[var$year >= 1997 & var$year < 2022,] %>% dplyr::select(bwb.vol, 
-      bwb.cm, bws.vol, bws.cm, cc.vol, cc.cm, sc.vol, sc.cm) 
+flow.data = var[var$year >= 1997 & var$year < 2022,] %>% dplyr::select(bwh.vol, 
+      bwh.cm, bws.vol, bws.cm, cc.vol, cc.cm, sc.vol, sc.cm) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
 cor.mat<-cor(cbind(flow.data[c(1,3,5,7)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
@@ -375,7 +375,7 @@ ex.vols3$t<- "Predicted"
 # Plot boxplots of total annual flow from each model
 # ------------------------------------------------------------------------------
 # Subset for plotting
-vol.hist<- as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(bwb.vol, bws.vol, cc.vol)) %>% `colnames<-`(c("Big Wood Hailey Hist", "Big Wood Stanton Hist","Camas Creek Hist")) %>%pivot_longer(everything(),  names_to = "site", values_to = "value") )
+vol.hist<- as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(bwh.vol, bws.vol, cc.vol)) %>% `colnames<-`(c("Big Wood Hailey Hist", "Big Wood Stanton Hist","Camas Creek Hist")) %>%pivot_longer(everything(),  names_to = "site", values_to = "value") )
 vol.hist$value<-vol.hist$value/1000
 vol.hist$t<- "Historic"
 vol.hist.sm<-as.data.frame(var[var$year < 2020,] %>% dplyr::select(c(sc.vol)) %>% `colnames<-`(c("Silver Creek Hist")) %>% pivot_longer(everything(),  names_to = "site", values_to = "value") )
@@ -472,10 +472,10 @@ dev.off()
 # ------------------------------------------------------------------------------
 # Draw sample of years with similar center of mass (timing)
 cm.data = var[var$year >= 1997 & var$year < pred.yr,]
-cm.data = cm.data %>% dplyr::select(year, bwb.cm, bws.cm,cc.cm, sc.cm) 
+cm.data = cm.data %>% dplyr::select(year, bwh.cm, bws.cm,cc.cm, sc.cm) 
 cm.data$prob<-NA
 
-samp.sd.cm<- c(sd(var$bwb.cm), sd(var$bws.cm), sd(var$cc.cm), sd(var$sc.cm))
+samp.sd.cm<- c(sd(var$bwh.cm), sd(var$bws.cm), sd(var$cc.cm), sd(var$sc.cm))
 var.fore.cm<- pred.params.cm[,2] + samp.sd.cm
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
@@ -499,10 +499,11 @@ dev.off()
 write.csv(CMyear.sample, file.path(model_out, paste0("CMyear.sample-", end_date,".csv")),row.names=F)
 
 # Draw sample of years with similar volume for comparison -- 
-vol.data = var[var$year >1996 & var$year < pred.yr,]%>% dplyr::select(year, bwb.vol, bws.vol, cc.vol, sc.vol) 
+vol.data = var[var$year >1996 & var$year < pred.yr,]%>% dplyr::select(year, bwh.vol, bws.vol, cc.vol, sc.vol) 
 vol.data$prob<-NA
 
-samp.sd<- c(sd(log(var$bwb.vol)), sd(log(var$bws.vol)), sd(log(var$cc.vol)), sd(log(var$sc.vol)))
+#TODO: Write this up in a methods section
+samp.sd<- c(sd(log(var$bwh.vol)), sd(log(var$bws.vol)), sd(log(var$cc.vol)), sd(log(var$sc.vol)))
 var.fore<- pred.params.vol[,2] + samp.sd
 # pmvnorm calculates the distribution function of the multivariate normal distribution
 for(i in 1:dim(vol.data)[1]){

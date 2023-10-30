@@ -39,10 +39,10 @@ wr.cutoffs<- data.frame("date" = array(NA,c(183)))
 wr.cutoffs$date<- dates
 wr.cutoffs$doy<- yday(dates)
 
-wr.cutoffs$bwb.meanQ<-pi[,"bwb.mean"]
-wr.cutoffs$bwb.medQ<-pi[,"bwb.med"]
-wr.cutoffs$bwb.hiQ<-pi[,"bwb.hi"]
-wr.cutoffs$bwb.lowQ<-pi[,"bwb.low"]
+wr.cutoffs$bwh.meanQ<-pi[,"bwh.mean"]
+wr.cutoffs$bwh.medQ<-pi[,"bwh.med"]
+wr.cutoffs$bwh.hiQ<-pi[,"bwh.hi"]
+wr.cutoffs$bwh.lowQ<-pi[,"bwh.low"]
 
 # find the date of the most senior wr that is above the "current" flow
 cutoff<- function(flow, wr_array){
@@ -51,14 +51,14 @@ cutoff<- function(flow, wr_array){
 }
 
 #clean this up to shorten this 
-wr.cutoffs$cut.wr.hi<-Reduce(c, lapply(wr.cutoffs$bwb.hiQ, cutoff, wr.sub))
-#wr.cutoffs$cut.wr.hi[1:which(wr.cutoffs$bwb.hiQ == max(wr.cutoffs$bwb.hiQ))]<-NA #ignore cutoffs before peak
+wr.cutoffs$cut.wr.hi<-Reduce(c, lapply(wr.cutoffs$bwh.hiQ, cutoff, wr.sub))
+#wr.cutoffs$cut.wr.hi[1:which(wr.cutoffs$bwh.hiQ == max(wr.cutoffs$bwh.hiQ))]<-NA #ignore cutoffs before peak
 
-wr.cutoffs$cut.wr.med<-Reduce(c, lapply(wr.cutoffs$bwb.medQ, cutoff, wr.sub))
-#wr.cutoffs$cut.wr.med[1:which(wr.cutoffs$bwb.medQ == max(wr.cutoffs$bwb.medQ))]<-NA #ignore cutoffs before peak
+wr.cutoffs$cut.wr.med<-Reduce(c, lapply(wr.cutoffs$bwh.medQ, cutoff, wr.sub))
+#wr.cutoffs$cut.wr.med[1:which(wr.cutoffs$bwh.medQ == max(wr.cutoffs$bwh.medQ))]<-NA #ignore cutoffs before peak
 
-wr.cutoffs$cut.wr.low<-Reduce(c, lapply(wr.cutoffs$bwb.lowQ, cutoff, wr.sub))
-#wr.cutoffs$cut.wr.low[1:which(wr.cutoffs$bwb.lowQ == max(wr.cutoffs$bwb.lowQ))]<-NA #ignore cutoffs before peak
+wr.cutoffs$cut.wr.low<-Reduce(c, lapply(wr.cutoffs$bwh.lowQ, cutoff, wr.sub))
+#wr.cutoffs$cut.wr.low[1:which(wr.cutoffs$bwh.lowQ == max(wr.cutoffs$bwh.lowQ))]<-NA #ignore cutoffs before peak
 
 wr.cutoffs$ymo.hi<- zoo::as.yearmon(wr.cutoffs$cut.wr.hi)
 wr.cutoffs$ymo.med<- zoo::as.yearmon(wr.cutoffs$cut.wr.med)
@@ -78,17 +78,17 @@ wr.ts<- function(wr.co, flow, sitename="name"){
   
   return(wr.co)
 }
-#wr.cutoffs<- wr.ts(wr.cutoffs, pi[,"bwb.med"], sitename = "bws.medQ")
+#wr.cutoffs<- wr.ts(wr.cutoffs, pi[,"bwh.med"], sitename = "bws.medQ")
 
 
 ggplot(data=wr.cutoffs) + 
-  geom_point(aes(x=date, y=bwb.hiQ, color= as.factor(ymo.hi)), show.legend = FALSE)+
+  geom_point(aes(x=date, y=bwh.hiQ, color= as.factor(ymo.hi)), show.legend = FALSE)+
   scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(ymo.list))+ 
   new_scale_colour() +
-  geom_point(aes(x=date, y=bwb.medQ, color= as.factor(ymo.med)), show.legend = FALSE)+
+  geom_point(aes(x=date, y=bwh.medQ, color= as.factor(ymo.med)), show.legend = FALSE)+
   scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(ymo.list))+  
   new_scale_colour() +
-  geom_point(aes(x=date, y=bwb.lowQ, color= as.factor(ymo.low)))+
+  geom_point(aes(x=date, y=bwh.lowQ, color= as.factor(ymo.low)))+
   scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(ymo.list))+  
   theme_bw()+
   scale_y_continuous(n.breaks=8)+
