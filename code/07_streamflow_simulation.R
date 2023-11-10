@@ -15,7 +15,6 @@ dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30
 # volume & bootstraps for each gage
 # natural flow and diversion records from which we will select the runoff timing
 streamflow_data<-read.csv(file.path(data_dir,"streamflow_data.csv"))
-streamflow_data$year <- year(streamflow_data$Date)
 
 bwh.wy<-streamflow_data[streamflow_data$abv == 'bwh',]
 bws.wy<-streamflow_data[streamflow_data$abv == 'bws',]
@@ -47,24 +46,24 @@ rownames(cc.flow.s)<-rownames(bwh.flow.s)<-rownames(bws.flow.s)<-
 # ------------------------------------------------------------------------------
 # Simulations
 #
-sim.flow <- function(nat.wy, vol){
+sim.flow <- function(irr.seas.flow, vol){
   "
-  nat.wy: natural flow (or regulated flow depending on location) (cfs)
+  irr.seas.flow: streamflow from irrigation season of analog water year
   vol: total volume from bootstrap sample (ac-ft)
   "
-  pred <- nat.wy*vol/(sum(nat.wy)*1.98)
+  pred <- irr.seas.flow*vol/(sum(irr.seas.flow)*1.98)
   return (pred)
 }
 
 for(k in 1:ns){ 
   # Simulate flow supply at the four gages
-  year<-CMyear.sample[k,1] # year sample
+  year<-CMyear.sample[k] # year sample
   vol<-vol.sample[k,] # volume sample
 
-  bwh<- bwh.wy[bwh.wy$wy == year, "Flow"][183:365]
-  bws<- bws.wy[bws.wy$wy == year, "Flow"][183:365]
-  sc<- sc.wy[sc.wy$wy == year, "Flow"][183:365]
-  cc <- cc.wy[cc.wy$wy == year, "Flow"][183:365]
+  bwh<- bwh.wy[bwh.wy$wy == year, "value"][183:365]
+  bws<- bws.wy[bws.wy$wy == year, "value"][183:365]
+  sc<- sc.wy[sc.wy$wy == year, "value"][183:365]
+  cc <- cc.wy[cc.wy$wy == year, "value"][183:365]
   
   bwh.flow.s[,k]<-sim.flow(bwh, exp(vol$bwh.vol))
   bws.flow.s[,k]<-sim.flow(bws, exp(vol$bws.vol))
