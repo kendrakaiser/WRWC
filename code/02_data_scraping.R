@@ -6,6 +6,7 @@
 #tools to connect and write to database
 source(file.path(git_dir, 'code/init_db.R'))
 source(paste0(git_dir,"/code/fxn_dbIntakeTools.R")) 
+source(paste0(git_dir,"/code/fxn_get_snow.R")) 
 source(paste0(git_dir,"/code/fxn_SNODASR_functions.R")) 
 #connect to database
 conn=scdbConnect() 
@@ -235,6 +236,7 @@ print('Streamflow Data Saved')
 #TODO: set this so that the following line only runs when it needs to?
 #update the snodas data when necessary
 dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
+#grab_ws_snow(ws_ids = c(140,141,144,167), dates = seq.Date(as.Date('2003-10-01'), Sys.Date(), by='day'), metric='runoff_total')
 
 ### SNODAS Data Import ------------------------------------------------------###
 snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE qcstatus = 'TRUE';")
