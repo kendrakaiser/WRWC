@@ -42,6 +42,8 @@ sim.flow <- function(irr.seas.flow, vol){
   return (pred)
 }
 
+# select water years from CM sample and normalize by vol samples, 
+
 for(k in 1:ns){ 
   # Simulate flow supply at the four gages
   year<-CMyear.sample[k] # year sample
