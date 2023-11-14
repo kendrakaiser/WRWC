@@ -3,9 +3,16 @@
 # Kendra Kaiser
 # June 19, 2020
 # ------------------------------------------------------------------------------
+#tools to connect and write to database
+source(file.path(git_dir, 'code/init_db.R'))
+source(paste0(git_dir,"/code/fxn_dbIntakeTools.R")) 
+source(paste0(git_dir,"/code/fxn_get_snow.R")) 
+source(paste0(git_dir,"/code/fxn_SNODASR_functions.R")) 
+#connect to database
+conn=scdbConnect() 
 
 # ------------------------------------------------------------------------------
-# USGS Gage
+# USGS Gages
 # ------------------------------------------------------------------------------
 # bwh = 13139510  #  Bullion Bridge, Big Wood at Hailey
 # bws = 13140800  #  Stanton Crossing, Big Wood
@@ -217,24 +224,19 @@ write.csv(snotel, file.path(data_dir,'snotel_data.csv'), row.names=FALSE)
 write.csv(snotel_site_info, file.path(data_dir,'snotel_sites.csv'), row.names=FALSE)
 
 # Save flow data as csvs ------
-write.csv(streamflow, file.path(data_dir,'streamflow_data.csv'), row.names=FALSE)
+write.csv(streamflow_db, file.path(data_dir,'streamflow_data.csv'), row.names=FALSE) # should we remove this now that it is all in the db?
 write.csv(metrics, file.path(data_dir,'metrics.csv'), row.names=FALSE)
-write.csv(site_info, file.path(data_dir,'usgs_sites.csv'), row.names=FALSE)
+#write.csv(site_info, file.path(data_dir,'usgs_sites.csv'), row.names=FALSE)
 
 print('Streamflow Data Saved')
 
 #------------------------------------------------------------------------------
 # Get SNODAS from Database and integrate with above dataframe
 
-#tools to connect and write to database
-library(RPostgres)
-source(paste0(git_dir,"/code/fxn_dbIntakeTools.R")) 
-source(paste0(git_dir,"/code/fxn_SNODASR_functions.R")) 
-#connect to database
-conn=scdbConnect() 
 #TODO: set this so that the following line only runs when it needs to?
 #update the snodas data when necessary
 dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
+#grab_ws_snow(ws_ids = c(140,141,144,167), dates = seq.Date(as.Date('2003-10-01'), Sys.Date(), by='day'), metric='runoff_total')
 
 ### SNODAS Data Import ------------------------------------------------------###
 snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE qcstatus = 'TRUE';")

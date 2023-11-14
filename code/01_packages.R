@@ -42,7 +42,7 @@ library(ggcorrplot) # colored correlation plot, not in use
 library(scales) # wrap text of figure labels
 #library(smwrBase)
 library(ggnewscale) # plot two scatter plots with different scales on the same plot
-
+library(RPostgres) #connect to db
 
 #'Water Year
 #'
