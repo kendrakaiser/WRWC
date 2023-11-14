@@ -233,12 +233,15 @@ print('Streamflow Data Saved')
 #------------------------------------------------------------------------------
 # Get SNODAS from Database and integrate with above dataframe
 
-#TODO: set this so that the following line only runs when it needs to?
-#update the snodas data when necessary
-dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
-#grab_ws_snow(ws_ids = c(140,141,144,167), dates = seq.Date(as.Date('2003-10-01'), Sys.Date(), by='day'), metric='runoff_total')
+#get all snodas data using grab_ws_snow function
+# snodas=rbind(grab_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="snow_covered_area"),
+#              grab_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="liquid_precip"),
+#              grab_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="swe_total"),
+#              grab_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="runoff_total")
+# )
 
-### SNODAS Data Import ------------------------------------------------------###
+#old:
+dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
 snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE qcstatus = 'TRUE';")
 
 #-- Data Munging----------------------------------------------------------------
@@ -250,6 +253,7 @@ siteIDs<-t(matrix(c(140, 'BIG WOOD RIVER AT HAILEY', 'bwh.vol', 'bwh', 167,'CAMA
 colnames(siteIDs)<-c('locationid', 'name', 'site', 'site.s')
 
 # PIVOT snodas data to merge into the allDat frame
+#change to snodas[,c(1:4)] w/ new data source?
 sno.wide<- snodas[,c(1:3,5)] %>% pivot_wider(names_from = c(metric, locationid), names_glue = "{metric}.{locationid}", values_from = value) 
 # modify df to merge
 sno.wide$yearog <- year(sno.wide$datetime)

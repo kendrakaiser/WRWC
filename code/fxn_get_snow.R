@@ -323,10 +323,9 @@ grab_ws_snow=function(ws_ids, dates, metric, allMetrics=snodasMetrics, rebuildAl
 #The masked files span 30 September 2003 to the present, and the unmasked files span 09
 #December 2009 to the present at a daily resolution
 
-date_seq=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day")
-grab_ws_snow(ws_ids=c(140,167,144,141),dates=date_seq,metric="runoff_total")
+# date_seq=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day")
+# grab_ws_snow(ws_ids=c(140,167,144,141),dates=date_seq,metric="runoff_total")
 
-grab_ws_snow(ws_ids=c(140,167,144,141),dates=as.Date("2005-08-02"),metric="runoff_total")
 
 
 #slow query, but should return all snodas-sourced data
