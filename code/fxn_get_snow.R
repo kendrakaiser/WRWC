@@ -15,8 +15,7 @@ library(RPostgres)
 # kek think about other snodas metrics to calculate; confirm IDs of relevant pourpoints; 
 
 #to run on sam's computer:
-#source(paste0(getwd(),"/code/SNODASR_functions.R"))
-#source(paste0(getwd(),"/code/dbIntakeTools.R"))
+#git_dir=getwd()
 
 source(paste0(git_dir,"/code/fxn_dbIntakeTools.R")) #tools to connect and write to database
 source(paste0(git_dir,"/code/fxn_SNODASR_functions.R")) 
@@ -169,14 +168,14 @@ grab_ws_snow_worker = function(ws_ids, d, metric, metricDefinitions=allMetrics){
   ##--------------------------------------------------------------------------#
   ## --- Download the full SNODAS dataset
   dlWorked=tryCatch(
-    download.SNODAS(d, parallel = FALSE, overwrite=TRUE),
+    download.SNODAS(d, parallel = FALSE, overwrite=TRUE, masked=TRUE),
     error=function(e){
       print(e)
       print("snodas download failed, proceeding to next date...")
       return(F)
     }
   )
-  if(is.null(dlWorked)){dlWorked=T}#above trycatch returns null (from downloas.SNODAS()) if it worked.  Reassign as T
+  if(is.null(dlWorked)){dlWorked=T} #above trycatch returns null (from downloas.SNODAS()) if it worked.  Reassign as T
   
   ws_geoms=st_read(conn, query=paste0("SELECT outflowlocationid, geometry FROM watersheds WHERE outflowlocationid IN ('",
                                       paste(ws_ids, collapse= "', '"),"');"))
@@ -230,7 +229,11 @@ grab_ws_snow_worker = function(ws_ids, d, metric, metricDefinitions=allMetrics){
 ### ---------------- Grab and/or Process SNODAS Data ------------------------ ###
 # Wrapper function that pulls data from db if it exists or downloads and processes SNODAS data
 
-grab_ws_snow=function(ws_ids, dates, metric, allMetrics=snodasMetrics){
+grab_ws_snow=function(ws_ids, dates, metric, allMetrics=snodasMetrics, rebuildAllMissingData=F){
+  
+  if(rebuildAllMissingData){
+    dbExecute(conn,"DELETE FROM data WHERE dataid IN (SELECT dataid FROM data LEFT JOIN batches ON data.batchid = batches.batchid WHERE batches.source = 'snodas' AND data.qcstatus = FALSE);")
+  }
   dates=as.Date(dates)
   
   
@@ -250,21 +253,24 @@ grab_ws_snow=function(ws_ids, dates, metric, allMetrics=snodasMetrics){
   
   
   if(nrow(dataInDb) < length(dates)*length(ws_ids) ){ #if not all data is in database, identify days with incomplete data (days without all locationids)
+    
     if(nrow(dataInDb)>=1){# at least some existing data found, grab days with complete data
       dateLocationCount=aggregate(dataInDb$locationid~dataInDb$datetime,FUN=length)  # get count of locations per day in existing data
       datesToRun=dates[!dates %in% dateLocationCount$`dataInDb$datetime`]   #identify days not in database at all
       datesToRun=c(datesToRun,dateLocationCount$`dataInDb$datetime`[dateLocationCount$`dataInDb$locationid`<length(ws_ids)])  #also identify days w/o all locations for each day
       existingData=dataInDb[dataInDb$datetime %in% dateLocationCount$`dataInDb$datetime`[dateLocationCount$`dataInDb$locationid`==length(ws_ids)],]  #data frame for all days with complete data (1 record for each day*locationid)
+      
     } else{  # no existing data, define dates to run
       datesToRun=dates
       existingData=data.frame(metric=character(0),value=numeric(0),datetime=as.Date(character(0)),locationid=numeric(0)) #placeholder empty data frame
     }
     
-    moreData=data.frame(metric=character(0),value=numeric(0),datetime=as.Date(character(0)),locationid=numeric(0))#data frame for holding newly generated data
+    moreData=data.frame(metric=character(0),value=numeric(0),datetime=as.Date(character(0)),locationid=numeric(0)) #data frame for holding newly generated data
     
     datesToRun=datesToRun[order(datesToRun)]
     pb=txtProgressBar(max=length(datesToRun),style=3) 
     i=1
+    
     for(d in as.list(datesToRun)){  #run snodas worker function for days without complete data
       print(d)
       moreData=rbind(moreData,grab_ws_snow_worker(ws_ids=ws_ids, d=d, metric=metric, metricDefinitions = allMetrics))
@@ -301,25 +307,31 @@ grab_ws_snow=function(ws_ids, dates, metric, allMetrics=snodasMetrics){
 
 
 #simple test:
-grab_ws_snow(ws_ids = 140, dates=as.Date("2023-08-12"),metric="runoff_total")
+#grab_ws_snow(ws_ids = 140, dates=as.Date("2023-08-12"),metric="runoff_total")
 #date range
-#sca=grab_ws_snow(ws_ids = 140, dates=seq.Date(from=as.Date("2023-03-14"),to=as.Date("2023-05-05"),by="day"),metric="snow_covered_area")
+#rt=grab_ws_snow(ws_ids = 140, dates=seq.Date(from=as.Date("2021-01-01"),to=as.Date("2021-07-01"),by="day"),metric="runoff_total")
 
 #multiple locations
-grab_ws_snow(ws_ids = c(167,144), dates=as.Date("2023-01-1"),metric="runoff_total")
+#grab_ws_snow(ws_ids = c(167,144), dates=as.Date("2023-01-1"),metric="runoff_total")
 
-#day w/ no data
-grab_ws_snow(ws_ids = 140, dates=as.Date("1980-04-12"),metric="runoff_total")
+#day seq
+#grab_ws_snow(ws_ids = 140, dates=seq.Date(from=as.Date("2021-08-01"),to=as.Date("2021-08-05"),by="day"),metric="runoff_total")
+
+#day w/ missing data:
+#grab_ws_snow(ws_ids = 140, dates=as.Date("1980-08-04"),metric="runoff_total")
 
 #The masked files span 30 September 2003 to the present, and the unmasked files span 09
 #December 2009 to the present at a daily resolution
 
-date_seq=seq.Date(from=as.Date("2013-09-30"),to=Sys.Date(),by="day")
-grab_ws_snow(ws_ids=c(140,167,144,141),dates=date_seq,metric="swe_total")
+date_seq=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day")
+grab_ws_snow(ws_ids=c(140,167,144,141),dates=date_seq,metric="runoff_total")
+
+grab_ws_snow(ws_ids=c(140,167,144,141),dates=as.Date("2005-08-02"),metric="runoff_total")
+
 
 #slow query, but should return all snodas-sourced data
-allSnodasData=dbGetQuery(conn,"SELECT * FROM data LEFT JOIN batches ON data.batchid = batches.batchid WHERE batches.source = 'snodas';")
-unique(allSnodasData$datetime)
+#allSnodasData=dbGetQuery(conn,"SELECT * FROM data LEFT JOIN batches ON data.batchid = batches.batchid WHERE batches.source = 'snodas';")
+#unique(allSnodasData$datetime)
 
 #save locally for data exploration, likely remove later
-write.csv(allSnodasData, file.path(data_dir, 'allSnodasData.csv'), row.names=FALSE)
+#write.csv(allSnodasData, file.path(data_dir, 'allSnodasData.csv'), row.names=FALSE)

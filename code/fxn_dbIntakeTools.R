@@ -426,6 +426,10 @@ getWriteData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
     sourceSnotel=function(metricID, locationID, days){
       #db knows internal snotel source location ids:
       thisLocation_sourceID=dbGetQuery(conn,paste0("SELECT source_site_id FROM locations WHERE locationid = '",locationID,"';"))$source_site_id
+      
+      snotel_data = snotel_download(thisLocation_sourceID, path = tempdir(), internal = TRUE)
+      #or all locations?  Test time...
+      
     }
     
     #call appropriate source function:
