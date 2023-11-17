@@ -1,5 +1,16 @@
 # Figures and tables for data analysis and model output from wood river streamflow forecasting
+#model output version
+vol.sample<-read.csv(file.path(model_out,"vol.sample.csv"))
+#database input version
+volumes<-vol.sample
+colnames(volumes)<-c("bwh.vol", "bws.vol","cc.vol", "sc.vol") #this has already been read in via the streamflow simulation script; re-consider re-reading it in
+volumes.sampleLong<- volumes %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
 
+#model output
+var<-read.csv(file.path(model_out,'all_vars.csv'))
+#database input
+all_vars_long <- var %>% pivot_longer(cols = -c('year'), names_to = "variable", values_to = "value")
+write.csv(all_vars_long, file.path(data_dir,'all_vars_long.csv'), row.names=FALSE)
 # ------------------------------------------------------------------------------
 # Calculate Exceedance Probabilities
 # ------------------------------------------------------------------------------
@@ -16,8 +27,8 @@ exceed.probs<- function(vols, probs){
   ranks<- rank(vols)
   # find the index of which volume goes with each exceedance
   ix=match(m, ranks)
-  # find the actual volume of each exceedance
-  ex.vols=exp(vols[ix])
+  # find the volume of each exceedance
+  ex.vols=vols[ix]
   return(ex.vols)
 }
 
@@ -48,7 +59,8 @@ vol.hist.sm<-as.data.frame(var[var$year < pred.yr,] %>% dplyr::select(c(sc.vol))
 vol.hist.sm$value<-vol.hist.sm$value/1000
 vol.hist.sm$t<- "Historic"
 
-vol.pred <-as.data.frame(exp(vol.sample)/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+vol.pred <-as.data.frame(vol.sample/1000) %>% pivot_longer(everything(),  names_to = "site", values_to = "value")
+vol.pred <- volumes.sampleLong/1000 # site_name vol_af
 vol.pred$t<- "Predicted"
 
 vol.big<- rbind(vol.hist, vol.pred[vol.pred$site != "Silver Creek",])
