@@ -31,7 +31,7 @@ var$log.hc.swe <- log(var$hc.swe)
 var$log.lwd.swe <- log(var$lwd.swe)
 var$log.ga.swe <- log(var$ga.swe)
 var$log.bc.swe <- log(var$bc.swe)
-var<-var[,!(names(var) %in% c('cg.swe', 'g.swe','gs.swe','hc.swe', 'lwd.swe','ga.swe','bc.swe', 'nj.t.sr', 'aj.t.sr'))]
+var<-var[,!(names(var) %in% c('cg.swe', 'g.swe','gs.swe','hc.swe', 'lwd.swe','ga.swe','bc.swe', 'nj_t.sr', 'aj_t.sr'))]
 
 #save variables for use in other scripts
 #TODO: change folder structure so that they are either pre-defined or created
