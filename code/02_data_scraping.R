@@ -261,9 +261,9 @@ n.yrs<- unique(sno.wide$year)
 # subset snodas data to calculate cumulative values
 pTemp<-sno.wide[,c(1,6,7,8,9,18,19,21)] #TODO need to use reg expressions to do this correctly
 p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
-colnames(p.wint) <- c('year', "liquid_precip.140.wint", "liquid_precip.167.wint", "liquid_precip.144.wint", "liquid_precip.141.wint")
+colnames(p.wint) <- c('year', "liquid_precip_wint.140", "liquid_precip_wint.167", "liquid_precip_wint.144", "liquid_precip_wint.141")
 p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
-colnames(p.spring) <- c('year', "liquid_precip.140.spr", "liquid_precip.167.spr", "liquid_precip.144.spr", "liquid_precip.141.spr")
+colnames(p.spring) <- c('year', "liquid_precip_spr.140", "liquid_precip_spr.167", "liquid_precip_spr.144", "liquid_precip_spr.141")
 runoffTemp<-sno.wide[,c(1,14, 15, 16, 17,18,19,21)] #prob need to change this subsetting
 runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
@@ -324,7 +324,7 @@ if (run_date == 'feb1'){
   
   #compile all April data for modeling
   alldat <- april1swe %>% full_join(metrics, by ="year") %>% 
-    merge(sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year') %>% 
+    merge(sno.wide.sub[,c(1,2,3,4,9,10,11,12,18)], by= 'year') %>% 
     merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
   
   filename = 'alldat_apr.csv'
