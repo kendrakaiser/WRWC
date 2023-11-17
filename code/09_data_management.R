@@ -13,7 +13,7 @@ aj_pred.temps.long <- aj_pred.temps %>% pivot_longer(cols = everything(), names_
 write.csv(aj_pred.temps.long, file.path(data_dir,'aj_pred_temps_long.csv'), row.names=FALSE)
 
 var<-read.csv(file.path(model_out,'all_vars.csv'))
-all_vars_long <- var %>% pivot_longer(cols = -c('year'), names_to = "variable", values_to = "value")
+all_vars_long <- var %>% pivot_longer(cols = -c('wateryear'), names_to = c("site", "variable"), names_sep="[.]", values_to = "value")
 write.csv(all_vars_long, file.path(data_dir,'all_vars_long.csv'), row.names=FALSE)
 
 
