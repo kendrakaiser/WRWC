@@ -166,7 +166,7 @@ for (i in 1:length(snotel_sites)) {
   april1swe[which(april1swe$year == min(sub$wy)) : which(april1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
   sub2<- snotel[snotel$site_name == snotel_site_info$site_name[i],]
   if (month(end_date) < 5){
-  today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
+    today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
   } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 4 & sub2$day ==30 & sub2$wy == (pred.yr-1)]}
 }
 # Update the April 1 SWE with the current swe
@@ -187,7 +187,7 @@ for (i in 1:length(snotel_sites)) {
   if (month(end_date) < 4){
     today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
   } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 3 & sub2$day ==31 & sub2$wy == (pred.yr-1)]}
-  }
+}
 # Update the March 1 SWE with the current swe
 mar1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
 
@@ -234,15 +234,11 @@ print('Streamflow Data Saved')
 # Get SNODAS from Database and integrate with above dataframe
 
 #get all snodas data using grab_ws_snow function
-# snodas=rbind(grab_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="snow_covered_area"),
-#              grab_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="liquid_precip"),
-#              grab_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="swe_total"),
-#              grab_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="runoff_total")
-# )
+
 
 #old:
 dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
-snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE qcstatus = 'TRUE';")
+snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE;")
 
 #-- Data Munging----------------------------------------------------------------
 # modify df to subset and plot
@@ -271,6 +267,17 @@ colnames(p.spring) <- c('year', "liquid_precip.140.spr", "liquid_precip.167.spr"
 runoffTemp<-sno.wide[,c(1,3,7,13,14,18,19,21)] #prob need to change this subsetting
 runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
+
+
+
+winterSums_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, locationid, metric, sum(value) AS winterSum 
+           FROM snodasdata WHERE EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3
+           GROUP BY(wateryear, locationid, metric) ORDER BY wateryear;")
+
+pivot_wider(data=winterSums_apr,names_from = c(metric,locationid),values_from = c(wintersum),names_sep=".")
+
+
+
 
 #TODO: change sno wide sub to use doy in $day
 
