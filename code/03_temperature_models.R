@@ -29,7 +29,7 @@ elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,7)))
 
 #summer temp july-sept, winter temp NDJFM
-colnames(tdata)<-c("wateryear","site","spring.tempF", "sum.tempF", "wint.tempF", "nj.tempF", "nf.tempF")
+colnames(tdata)<-c("wateryear","site","spring_tempF", "sum_tempF", "wint_tempF", "nj_tempF", "nf_tempF")
 tdata$wateryear<-rep(first.yr:last.yr,length(site.key))
 tdata$site<-rep(site.key, each=nyrs)
 tdata$elev<-rep(elev, each=nyrs)
@@ -69,12 +69,12 @@ for(i in 1:14){ #hard coded this in after adding agrimet sites to site.key list
       } else (fm.mean.temp <- NA)
     
     #save to tdata table
-    tdata$spring.tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- aj.mean.temp #april-june
-    tdata$sum.tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- sum.mean.temp
-    tdata$wint.tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- wint.mean.temp
-    tdata$nj.tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- nj.mean.temp
-    tdata$nf.tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- nf.mean.temp
-    tdata$fm.tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- fm.mean.temp
+    tdata$spring_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- aj.mean.temp #april-june
+    tdata$sum_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- sum.mean.temp
+    tdata$wint_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- wint.mean.temp
+    tdata$nj_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- nj.mean.temp
+    tdata$nf_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- nf.mean.temp
+    tdata$fm_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- fm.mean.temp
   }
 }
 
@@ -86,11 +86,13 @@ nj.tdata<-pivot_wider(tdata[,c(1,2,6)], names_from = site, values_from = nj.temp
 nf.tdata<-pivot_wider(tdata[,c(1,2,7)], names_from = site, values_from = nf.tempF)
 fm.tdata<-pivot_wider(tdata[,c(1,2,9)], names_from = site, values_from = fm.tempF)
 
-#figure out a cleaner way to assign these
-colnames(spring.tdata)<-c("wateryear", "aj_t.cg","aj_t.ccd", "aj_t.sr", "aj_t.bc","aj_t.ds","aj_t.g","aj_t.ga", "aj_t.hc", "aj_t.lw", "aj_t.sm", "aj_t.gs", "aj_t.sp","aj_t.p", "aj_t.f")
+#TODO - rename above output so that names can be merged from metric and site
+colnames(spring.tdata)<-c("wateryear", "cg.aj_t","ccd.aj_t", "sr.aj_t", "bc.aj_t","ds.aj_t","g.aj_t","ga.aj_t", "hc.aj_t", "lw.aj_t", "sm.aj_t", "gs.aj_t", "sp.aj_t","p.aj_t", "f.aj_t")
+colnames(nj.tdata)<-c("wateryear", "cg.nj_t","ccd.nj_t", "sr.nj_t", "bc.nj_t","ds.nj_t","g.nj_t","ga.nj_t", "hc.nj_t", "lw.nj_t", "sm.nj_t", "gs.nj_t", "sp.nj_t","p.nj_t", "f.nj_t")
+
+# these dont get used
 colnames(sum.tdata)<-c("wateryear", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 colnames(wint.tdata)<-c("wateryear", "wint_t.cg","wint_t.ccd", "wint_t.sr", "wint_t.bc","wint_t.ds","wint_t.g","wint_t.ga", "wint_t.hc", "wint_t.lw", "wint_t.sm", "wint_t.gs", "wint_t.sp","wint_t.p", "wint_t.f")
-colnames(nj.tdata)<-c("wateryear", "nj_t.cg","nj_t.ccd", "nj_t.sr", "nj_t.bc","nj_t.ds","nj_t.g","nj_t.ga", "nj_t.hc", "nj_t.lw", "nj_t.sm", "nj_t.gs", "nj_t.sp","nj_t.p", "nj_t.f")
 colnames(nf.tdata)<-c("wateryear", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 colnames(fm.tdata)<-c("wateryear", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 
@@ -147,11 +149,11 @@ png(filename = file.path(fig_dir,"NovJanT_box.png"),
 print(wt_box)
 dev.off()
 
-
+# TODO: REMOVE I dont think we need this anymore -- spring temps never get used in the model
 # have 500 predictions of the upcoming years temperature for each site -- make sure that the notation (aj.site) is consitent with the model selection
 # linear regression using elevation alone
 input <- tdata[tdata$site != "fairfield" & tdata$site != "picabo",] %>% filter(complete.cases(.))
-lr.elev<- lm(spring.tempF~  elev+year, data=input)
+lr.elev<- lm(spring.tempF~  elev+wateryear, data=input)
 #lr.elev<- lm(spring.tempF~  poly(elev,2) +year, data=input)
 input$fitted<- predict(lr.elev)
 #el <- as.data.frame(seq(from=1700, to=2700, by=30))
