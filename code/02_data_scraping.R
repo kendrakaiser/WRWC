@@ -66,7 +66,7 @@ streamflow_db$mo=month(streamflow_db$datetime)
 stream.id<-c("bwh","bws","cc","sc")
 years = min(streamflow_db$wy):max(streamflow_db$wy)
 metrics<-data.frame(matrix(ncol = 17, nrow= length(years)))
-names(metrics)<-c("year","bwh.wq","bwh.vol","bwh.cm", "bwh.tot.vol", "bws.wq", "bws.vol","bws.cm","bws.tot.vol","cc.wq","cc.vol","cc.cm", "cc.tot.vol", "sc.wq","sc.vol", "sc.cm","sc.tot.vol")
+names(metrics)<-c("year","bwh.wq","bwh.vol","bwh.cm", "bwh.tot_vol", "bws.wq", "bws.vol","bws.cm","bws.tot_vol","cc.wq","cc.vol","cc.cm", "cc.tot_vol", "sc.wq","sc.vol", "sc.cm","sc.tot_vol")
 metrics$year<- years
 
 # calculate winter baseflow, annual irrigation season volume and center of mass
@@ -99,10 +99,10 @@ for(i in 1:length(stream.id)){
 }
 
 # add variable for last years streamflow -- total water year flow 
-metrics$bwh.ly.vol[2:length(years)]<- metrics$bwh.tot.vol[1:length(years)-1]
-metrics$bws.ly.vol[2:length(years)]<- metrics$bws.tot.vol[1:length(years)-1]
-metrics$cc.ly.vol[2:length(years)]<- metrics$cc.tot.vol[1:length(years)-1]
-metrics$sc.ly.vol[2:length(years)]<- metrics$sc.tot.vol[1:length(years)-1]
+metrics$bwh.ly_vol[2:length(years)]<- metrics$bwh.tot_vol[1:length(years)-1]
+metrics$bws.ly_vol[2:length(years)]<- metrics$bws.tot_vol[1:length(years)-1]
+metrics$cc.ly_vol[2:length(years)]<- metrics$cc.tot_vol[1:length(years)-1]
+metrics$sc.ly_vol[2:length(years)]<- metrics$sc.tot_vol[1:length(years)-1]
 
 # ------------------------------------------------------------------------------
 # Retrieve Snotel Data 
@@ -263,12 +263,12 @@ sno.wide$year<- as.numeric(as.character(waterYear(sno.wide$datetime, numeric=TRU
 n.yrs<- unique(sno.wide$year)
 
 # subset snodas data to calculate cumulative values
-pTemp<-sno.wide[,c(1,5,9,12,16,18,19,21)] #TODO need to use reg expressions to do this correctly
+pTemp<-sno.wide[,c(1,6,7,8,9,18,19,21)] #TODO need to use reg expressions to do this correctly
 p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(p.wint) <- c('year', "liquid_precip.140.wint", "liquid_precip.167.wint", "liquid_precip.144.wint", "liquid_precip.141.wint")
 p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(p.spring) <- c('year', "liquid_precip.140.spr", "liquid_precip.167.spr", "liquid_precip.144.spr", "liquid_precip.141.spr")
-runoffTemp<-sno.wide[,c(1,3,7,13,14,18,19,21)] #prob need to change this subsetting
+runoffTemp<-sno.wide[,c(1,14, 15, 16, 17,18,19,21)] #prob need to change this subsetting
 runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
 
@@ -294,7 +294,7 @@ if (run_date == 'feb1'){
   sno.wide.sub<- sno.wide[sno.wide$mo == 2 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
   #compile all Feb data for modeling
   alldat <- feb1swe %>% full_join(metrics, by ="year") %>% 
-    merge(sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year') %>% 
+    #merge(sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year') %>% 
     merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
   
   filename = 'alldat_feb.csv'
