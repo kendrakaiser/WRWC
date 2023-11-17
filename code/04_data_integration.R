@@ -24,13 +24,13 @@ var = swe_q %>% inner_join(spring.temps, by ="year") %>% inner_join(nj.temps, by
 # sp.test<-apply(var, MARGIN=2, shapiro.test) 
 #TODO : automate this step (e.g. if p < 0.05 log it and remove the og)
 # normailze parameters that have a shapiro.test() < 0.05
-var$log.cg.swe <- log(var$cg.swe)
-var$log.g.swe <- log(var$g.swe)
-var$log.gs.swe <- log(var$gs.swe)
-var$log.hc.swe <- log(var$hc.swe)
-var$log.lwd.swe <- log(var$lwd.swe)
-var$log.ga.swe <- log(var$ga.swe)
-var$log.bc.swe <- log(var$bc.swe)
+var$cg.log_swe <- log(var$cg.swe)
+var$g.log_swe <- log(var$g.swe)
+var$gs.log_swe <- log(var$gs.swe)
+var$hc.log_swe <- log(var$hc.swe)
+var$lwd.log_swe <- log(var$lwd.swe)
+var$ga.log_swe <- log(var$ga.swe)
+var$bc.log_swe <- log(var$bc.swe)
 var<-var[,!(names(var) %in% c('cg.swe', 'g.swe','gs.swe','hc.swe', 'lwd.swe','ga.swe','bc.swe', 'nj_t.sr', 'aj_t.sr'))]
 
 #save variables for use in other scripts
