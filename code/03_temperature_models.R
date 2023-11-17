@@ -87,10 +87,10 @@ nf.tdata<-pivot_wider(tdata[,c(1,2,7)], names_from = site, values_from = nf.temp
 fm.tdata<-pivot_wider(tdata[,c(1,2,9)], names_from = site, values_from = fm.tempF)
 
 #figure out a cleaner way to assign these
-colnames(spring.tdata)<-c("year", "aj.t.cg","aj.t.ccd", "aj.t.sr", "aj.t.bc","aj.t.ds","aj.t.g","aj.t.ga", "aj.t.hc", "aj.t.lw", "aj.t.sm", "aj.t.gs", "aj.t.sp","aj.t.p", "aj.t.f")
+colnames(spring.tdata)<-c("year", "aj_t.cg","aj_t.ccd", "aj_t.sr", "aj_t.bc","aj_t.ds","aj_t.g","aj_t.ga", "aj_t.hc", "aj_t.lw", "aj_t.sm", "aj_t.gs", "aj_t.sp","aj_t.p", "aj_t.f")
 colnames(sum.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
-colnames(wint.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
-colnames(nj.tdata)<-c("year", "nj.t.cg","nj.t.ccd", "nj.t.sr", "nj.t.bc","nj.t.ds","nj.t.g","nj.t.ga", "nj.t.hc", "nj.t.lw", "nj.t.sm", "nj.t.gs", "nj.t.sp","nj.t.p", "nj.t.f")
+colnames(wint.tdata)<-c("year", "wint_t.cg","wint_t.ccd", "wint_t.sr", "wint_t.bc","wint_t.ds","wint_t.g","wint_t.ga", "wint_t.hc", "wint_t.lw", "wint_t.sm", "wint_t.gs", "wint_t.sp","wint_t.p", "wint_t.f")
+colnames(nj.tdata)<-c("year", "nj_t.cg","nj_t.ccd", "nj_t.sr", "nj_t.bc","nj_t.ds","nj_t.g","nj_t.ga", "nj_t.hc", "nj_t.lw", "nj_t.sm", "nj_t.gs", "nj_t.sp","nj_t.p", "nj_t.f")
 colnames(nf.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 colnames(fm.tdata)<-c("year", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
 
