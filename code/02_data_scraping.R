@@ -55,19 +55,20 @@ streamflow_db = merge(streamflow_db,
                       dbGetQuery(conn, paste0("SELECT locationid, sitenote AS abv FROM locations WHERE locationid IN ('",paste(unique(streamflow_db$locationid),collapse="', '"),"');"))
 )
 
-streamflow_db$wy=as.numeric(as.character(waterYear(streamflow_db$datetime, numeric=TRUE)))
+streamflow_db$wateryear=as.numeric(as.character(waterYear(streamflow_db$datetime, numeric=TRUE)))
 streamflow_db$mo=month(streamflow_db$datetime)
 
 
 # ----------------------------------------------------------------------------------
-# calculate hydrologic metrics for each year for each station
+# THESE METRICS will be replaced with SQL queries!
+#calculate hydrologic metrics for each year for each station 
 # winter "baseflow" (wb), Apr - Sept total Volume (vol), and center of mass (cm)
 # ------------------------------------------------------------------------------
 stream.id<-c("bwh","bws","cc","sc")
-years = min(streamflow_db$wy):max(streamflow_db$wy)
+years = min(streamflow_db$wateryear):max(streamflow_db$wateryear)
 metrics<-data.frame(matrix(ncol = 17, nrow= length(years)))
-names(metrics)<-c("year","bwh.wq","bwh.vol","bwh.cm", "bwh.tot_vol", "bws.wq", "bws.vol","bws.cm","bws.tot_vol","cc.wq","cc.vol","cc.cm", "cc.tot_vol", "sc.wq","sc.vol", "sc.cm","sc.tot_vol")
-metrics$year<- years
+names(metrics)<-c("wateryear","bwh.wq","bwh.vol","bwh.cm", "bwh.tot_vol", "bws.wq", "bws.vol","bws.cm","bws.tot_vol","cc.wq","cc.vol","cc.cm", "cc.tot_vol", "sc.wq","sc.vol", "sc.cm","sc.tot_vol")
+metrics$wateryear<- years
 
 # calculate winter baseflow, annual irrigation season volume and center of mass
 for(i in 1:length(stream.id)){
@@ -75,19 +76,19 @@ for(i in 1:length(stream.id)){
   
   for (y in 1: length(years)){
     #average winter flow
-    sub1<- sub %>% filter(wy == years[y] & (mo >= 10 | mo < 2))
+    sub1<- sub %>% filter(wateryear == years[y] & (mo >= 10 | mo < 2))
     wq <- mean(sub1$value, na.rm = TRUE)
     
     #total april-september flow in AF
-    sub2<- sub %>% filter(wy == years[y] & between(mo, 4, 9)) 
+    sub2<- sub %>% filter(wateryear == years[y] & between(mo, 4, 9)) 
     vol<- sum(sub2$value)*1.98 #convert from cfs to ac-ft
     
     #total april-september flow in AF
-    subv2<- sub %>% filter(wy == years[y])
+    subv2<- sub %>% filter(wateryear == years[y])
     tot.vol<- sum(subv2$value)*1.98 #convert from cfs to ac-ft
     
     #center of mass between April 1 and July 31
-    sub3<- sub %>% filter(wy == years[y] & between(mo, 4, 7)) 
+    sub3<- sub %>% filter(wateryear == years[y] & between(mo, 4, 7)) 
     sub3$doy <- yday(as.Date(sub3$datetime))
     cm <- sum(sub3$doy * sub3$value)/sum(sub3$value)
     
@@ -154,7 +155,7 @@ wy<- seq(1979, year(end_date))
 
 #--- subset April 1 data for model
 april1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
-colnames(april1swe)<- c('year', snotel_abrv)
+colnames(april1swe)<- c('wateryear', snotel_abrv)
 april1swe[,1]<- wy
 april1swe<-as.data.frame(april1swe)
 
@@ -245,12 +246,11 @@ snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE;")
 snodas$year <- year(snodas$datetime)
 snodas$mo<- month(snodas$datetime)
 snodas$day<- day(snodas$datetime)
-siteIDs<-t(matrix(c(140, 'BIG WOOD RIVER AT HAILEY', 'bwh.vol', 'bwh', 167,'CAMAS CREEK NR BLAINE ID', 'cc.vol', 'cc', 144, 'SILVER CREEK AT SPORTSMAN ACCESS', 'sc.vol', 'sc', 141, 'BIG WOOD RIVER AT STANTON CROSSING', 'bws.vol', 'bws'), nrow=4, ncol=4))
-colnames(siteIDs)<-c('locationid', 'name', 'site', 'site.s')
+
 
 # PIVOT snodas data to merge into the allDat frame
 #change to snodas[,c(1:4)] w/ new data source?
-sno.wide<- snodas[,c(1:3,5)] %>% pivot_wider(names_from = c(metric, locationid), names_glue = "{metric}.{locationid}", values_from = value) 
+sno.wide<- snodas[,c(2:4,12)] %>% pivot_wider(names_from = c(metric, site), names_glue = "{site}.{metric}", values_from = value) 
 # modify df to merge
 sno.wide$yearog <- year(sno.wide$datetime)
 sno.wide$mo<- month(sno.wide$datetime)
@@ -268,15 +268,34 @@ runoffTemp<-sno.wide[,c(1,14, 15, 16, 17,18,19,21)] #prob need to change this su
 runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
 colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
 
+# -------------------------------
+# NEW way to create metrics from SNODAS 
 
+siteIDs<-t(matrix(c(140, 'BIG WOOD RIVER AT HAILEY', 'bwh', 167,'CAMAS CREEK NR BLAINE ID', 'cc', 
+                    144, 'SILVER CREEK AT SPORTSMAN ACCESS', 'sc', 
+                    141, 'BIG WOOD RIVER AT STANTON CROSSING', 'bws'), nrow=3, ncol=4))
+colnames(siteIDs)<-c('locationid', 'name', 'site')
+
+# TODO: historic data are compiled based on 1st of month; this years data need to be compiled through TODAY
 
 winterSums_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, locationid, metric, sum(value) AS winterSum 
            FROM snodasdata WHERE EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3
            GROUP BY(wateryear, locationid, metric) ORDER BY wateryear;")
 
-pivot_wider(data=winterSums_apr,names_from = c(metric,locationid),values_from = c(wintersum),names_sep=".")
+# add the modeling site abbreviation for readability
+winterSums_apr<- merge(winterSums_apr, siteIDs)
+# pivot data wider
+snodas_april<-pivot_wider(data=winterSums_apr[,c(2,3,4,6)],names_from = c(site, metric),values_from = c(wintersum),names_sep=".")
+
+#compile all April data for modeling
+alldat <- april1swe %>% full_join(metrics, by ="wateryear") %>% 
+  merge(snodas_april, by= 'wateryear')
+
+filename = 'alldat_apr.csv'
 
 
+
+# -----------------------------------------------------------------------------
 
 
 #TODO: change sno wide sub to use doy in $day
