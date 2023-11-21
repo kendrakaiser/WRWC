@@ -384,4 +384,19 @@ agri_met<- merge(pici[,1:3], fafi, by='date_time') #wide for modeling
 agri_met$wy[!is.na(agri_met$date_time)]<- as.numeric(as.character(waterYear(agri_met$date_time[!is.na(agri_met$date_time)], numeric=TRUE)))
 
 # saving to local directory
-write.csv(agrimet, file.path(data_dir,'agri_metT.csv'), row.names = FALSE)
+write.csv(agrimet, file.path('~/agri_metT.csv'), row.names = FALSE)
+
+# > head(agrimet)
+# date_time              t  site_name month    y   wy
+# 1 1982-06-01 00:00:00 53.35    picabo     6 1982 1982
+# 2 1982-06-01 01:00:00 53.74    picabo     6 1982 1982
+# 3 1982-06-01 02:00:00 52.64    picabo     6 1982 1982
+# 4 1982-06-01 03:00:00 51.54    picabo     6 1982 1982
+# 5 1982-06-01 04:00:00 49.89    picabo     6 1982 1982
+# 6 1982-06-01 05:00:00 49.10    picabo     6 1982 1982
+
+am_data=dbGetQuery(conn,"SELECT datetime AS date_time, value AS t, locations.sitenote as site_name, EXTRACT(MONTH FROM datetime) AS month, EXTRACT(YEAR FROM datetime) as y, wateryear(datetime) as wy
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid 
+           WHERE metric = 'air temperature' AND qcstatus = 'true';")
+
+head(am_data)
