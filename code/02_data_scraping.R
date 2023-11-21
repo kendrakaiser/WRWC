@@ -67,7 +67,7 @@ streamflow_db$mo=month(streamflow_db$datetime)
 stream.id<-c("bwh","bws","cc","sc")
 years = min(streamflow_db$wateryear):max(streamflow_db$wateryear)
 metrics<-data.frame(matrix(ncol = 17, nrow= length(years)))
-names(metrics)<-c("wateryear","bwh.wq","bwh.vol","bwh.cm", "bwh.tot_vol", "bws.wq", "bws.vol","bws.cm","bws.tot_vol","cc.wq","cc.vol","cc.cm", "cc.tot_vol", "sc.wq","sc.vol", "sc.cm","sc.tot_vol")
+names(metrics)<-c("wateryear","bwh.wq","bwh.irr_vol","bwh.cm", "bwh.tot_vol", "bws.wq", "bws.irr_vol","bws.cm","bws.tot_vol","cc.wq","cc.irr_vol","cc.cm", "cc.tot_vol", "sc.wq","sc.irr_vol", "sc.cm","sc.tot_vol")
 metrics$wateryear<- years
 
 # calculate winter baseflow, annual irrigation season volume and center of mass
@@ -81,11 +81,11 @@ for(i in 1:length(stream.id)){
     
     #total april-september flow in AF
     sub2<- sub %>% filter(wateryear == years[y] & between(mo, 4, 9)) 
-    vol<- sum(sub2$value)*1.98 #convert from cfs to ac-ft
+    irr_vol<- sum(sub2$value)*1.98 #convert from cfs to ac-ft
     
     #total april-september flow in AF
     subv2<- sub %>% filter(wateryear == years[y])
-    tot.vol<- sum(subv2$value)*1.98 #convert from cfs to ac-ft
+    tot_vol<- sum(subv2$value)*1.98 #convert from cfs to ac-ft
     
     #center of mass between April 1 and July 31
     sub3<- sub %>% filter(wateryear == years[y] & between(mo, 4, 7)) 
@@ -93,9 +93,9 @@ for(i in 1:length(stream.id)){
     cm <- sum(sub3$doy * sub3$value)/sum(sub3$value)
     
     metrics[y,(((i-1)*4)+2)]<- wq
-    metrics[y,(((i-1)*4)+3)]<- vol
+    metrics[y,(((i-1)*4)+3)]<- irr_vol
     metrics[y,(((i-1)*4)+4)]<- cm
-    metrics[y,(((i-1)*4)+5)]<- tot.vol
+    metrics[y,(((i-1)*4)+5)]<- tot_vol
   }
 }
 
