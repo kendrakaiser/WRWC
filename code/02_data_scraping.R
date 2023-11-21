@@ -259,6 +259,18 @@ snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum
 
 
 # integrate SNODAS with USGS and SNOTEL
+#TODO: THESE NEED CHANGED ONCE USGS and SNOTEL are updated
+#April data for modeling
+alldat <- feb1swe %>% full_join(metrics, by ="wateryear") %>% 
+  merge(snodas_feb, by= 'wateryear')
+
+filename = 'alldat_feb.csv' 
+
+#April data for modeling
+alldat <- mar1swe %>% full_join(metrics, by ="wateryear") %>% 
+  merge(snodas_march, by= 'wateryear')
+
+filename = 'alldat_mar.csv'
 
 #April data for modeling
 alldat <- april1swe %>% full_join(metrics, by ="wateryear") %>% 
@@ -269,59 +281,6 @@ filename = 'alldat_apr.csv'
 
 
 # -----------------------------------------------------------------------------
-
-
-#TODO: change sno wide sub to use doy in $day
-
-# Calculate SNODAS monthly values and merge with streamflow and snotel data
-# -----------------------------------------------------------------------------
-
-#fxn to sum data for a given range of months
-cuml.snodas<-function(in_array, out_array, start_mo, end_mo){
-  for (i in 1:length(n.yrs)){
-    sub1<- in_array %>% filter(year == n.yrs[i] & (mo >= start_mo | mo < end_mo)) %>% as.data.frame() 
-    out_array$year[i] <-n.yrs[i]
-    out_array[i,2:5]<- sub1 %>% dplyr::select(c(2:5)) %>% colSums() %>% t()  %>% as.data.frame() 
-  }
-  return(out_array)
-}
-
-if (run_date == 'feb1'){
-  #calculate seasonal totals 
-  p.wint<- cuml.snodas(pTemp, p.wint, 10, 2)
-  runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 2)
-  sno.wide.sub<- sno.wide[sno.wide$mo == 2 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-  #compile all Feb data for modeling
-  alldat <- feb1swe %>% full_join(metrics, by ="year") %>% 
-    #merge(sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year') %>% 
-    merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
-  
-  filename = 'alldat_feb.csv'
-} else if (run_date == 'march1'){
-  #calculate seasonal totals 
-  p.wint<- cuml.snodas(pTemp, p.wint, 10, 3)
-  runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 3)
-  sno.wide.sub<- sno.wide[sno.wide$mo == 3 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-  #compile all March data for modeling
-  alldat <- mar1swe %>% full_join(metrics, by ="year") %>% 
-    merge(sno.wide.sub[,c(1,3,5,7,9,10,14,16,18)], by= 'year') %>% 
-    merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
-  
-  filename = 'alldat_mar.csv'
-} else if (run_date == 'april1'){
-  #calculate seasonal totals 
-  p.wint<- cuml.snodas(pTemp, p.wint, 10, 4)
-  runoff.sub<- cuml.snodas(runoffTemp, runoff.sub, 10, 4)
-  sno.wide.sub<- sno.wide[sno.wide$mo == 4 & sno.wide$day ==1,] %>% dplyr::select(-c(datetime, mo, day))
-  
-  #compile all April data for modeling
-  alldat <- april1swe %>% full_join(metrics, by ="year") %>% 
-    merge(sno.wide.sub[,c(1,2,3,4,9,10,11,12,18)], by= 'year') %>% 
-    merge(p.wint, by= 'year')%>% merge(runoff.sub, by= 'year') #%>% merge(p.spring, by= 'year')
-  
-  filename = 'alldat_apr.csv'
-}
-
 # EXPORT Streamflow, Snotel, and Snodas Data
 # -----------------------------------------------------------------------------
 write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
