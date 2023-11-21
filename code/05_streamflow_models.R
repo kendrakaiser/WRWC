@@ -16,10 +16,12 @@ options(warn = -1)
 #------------------------------------------------------------------------------ # 
 var<- read.csv(file.path(model_out,'all_vars.csv'))
 
-swe_cols<-grep('swe', colnames(var)) # consider if we want this in output or SNODAS data
+swe_cols<-grep("(?!swe_)_?swe", colnames(var), perl = TRUE, value = TRUE)
+
 wint_t_cols<-grep('nj_t', colnames(var))
 aj_t_cols<-grep('aj_t', colnames(var))
-vol_cols<- grep('vol', colnames(var))
+irr_vol_cols<- grep('irr_vol', colnames(var))
+tot_vol_cols<- grep('tot_vol', colnames(var))
 snodas_cols<- c(grep('wint', colnames(var)), grep('runoff', colnames(var)), grep('snow', colnames(var)), grep('swe_total', colnames(var)))
 
 #par(mar=c(1, 1, 1, 1))
@@ -39,13 +41,18 @@ vol_model<-function(site, sites, max_var){
   '
   site_vars<- grep(paste(sites, collapse="|"), colnames(var))
   hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
-              all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
-  name<- paste0(site, ".vol")
+              all_of(swe_cols), all_of(wint_t_cols), -all_of(tot_vol_cols)) %>% filter(complete.cases(.))
+  name<- paste0(site, ".irr_vol")
+  #id column names that should be removed from the modeling set
+  irr_vols<- colnames(hist)[grep('irr_vol', colnames(hist))]
   vol_col<-grep(name, colnames(hist))
+  cms<- colnames(hist)[grep('cm', colnames(hist))]
   
   #use regsubsets to assess the results
-  tryCatch({regsubsets.out<-regsubsets(log(hist[[vol_col]])~., data=hist[,-c(1)], nbest=1, nvmax=max_var, really.big=T)}, 
-           error= function(e) {print(paste(site,"volume model did not work"))}) #error catch
+  tryCatch({regsubsets.out<-regsubsets(log(hist[[vol_col]])~., 
+            data=hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE], 
+            nbest=1, nvmax=max_var, really.big=T)}, 
+            error= function(e) {print(paste(site,"volume model did not work"))})
   reg_sum<- summary(regsubsets.out)
   rm(regsubsets.out)
   # which set of variables have the lowest BIC
@@ -54,7 +61,7 @@ vol_model<-function(site, sites, max_var){
   mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
  
    #fit the regression model and use LOOCV to evaluate performance
-  form<- paste(paste("log(", name, ")~ "), paste(sum$vars, collapse=" + "), sep = "")
+  form<- paste(paste("log(", name, ")~ "), paste(mod_sum$vars, collapse=" + "), sep = "")
   
   mod<-lm(form, data=hist)
   mod_sum$lm<-summary(mod)$adj.r.squared
@@ -81,12 +88,12 @@ vol_model<-function(site, sites, max_var){
 }
 
 # Create Volume Models for each USGS gage
-bwh_output<- vol_model("bwh", 9)
+bwh_output<- vol_model("bwh", "bwh", 9)
 bws_output<- vol_model("bws", c("bwh", "bws"), 9)
 cc_output<- vol_model("cc", c("bwh", "cc"), 9)
-sc_output<- vol_model("sc", c("bwh", "sc", "cc"), 9)
+sc_output<- vol_model("sc", c("bwh", "sc"), 9)
 
-
+#TODO: update to make these from model function output
 
 #Plot Big Wood at Hailey modeled data for visual evaluation 
 png(filename = file.path(fig_dir_mo, "BWH_modelFit.png"),
@@ -97,7 +104,6 @@ plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
-
 #Save Big Wood at Stanton
 png(filename = file.path(fig_dir_mo, "BWS_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -107,7 +113,7 @@ png(filename = file.path(fig_dir_mo, "BWS_modelFit.png"),
     abline(0,1,col="gray50",lty=1)
 dev.off()
 
-#Save Model fit figure
+#Save Model fit Silver Creek
 png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
@@ -149,42 +155,56 @@ r2s[,3]<- round(c(exp(mod_sum$bwh$loocv$MAE), exp(mod_sum$bws$loocv$MAE), exp(mo
 png(file.path(fig_dir_mo,"r2s.png"), height = 25*nrow(r2s), width = 80*ncol(r2s))
 grid.table(r2s)
 dev.off()
-# ----------------------
-# use regsubsets to plot the results
-#regsubets.res<-cbind(regsubsets.out$size,regsubsets.out$adjr2, regsubsets.out$bic)
-#quartz(title="Adjusted R^2",10,10)
-#plot(regsubsets.out, scale = "adjr2", main="Adjusted R^2 For the best model of a given size")
-#quartz(title="BIC",10,10)
-#plot(regsubsets.out, scale = "bic", main="BIC For the best model of a given size")
-#quartz(title="R2 v BIC",10,10)
-#plot(reg_sum$bic, reg_sum$adjr2, xlab="BIC", ylab="adj R2")
 
 # ------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for Center of Mass Predictions
 # ------------------------------------------------------------------------------ # 
-
+cm_model<-function(site, sites, max_var){
+  'site: site name as string
+   sites: list of sites with relevant variables for prediction 
+   max_var: max number of variables  
+  '
+  site_vars<- grep(paste(sites, collapse="|"), colnames(var))
+  hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
+                all_of(swe_cols), all_of(aj_t_cols), -all_of(irr_vol_cols), -all_of(tot_vol_cols)) %>% filter(complete.cases(.))
+  name<- paste0(site, ".cm")
+  #id column names that should be removed from the modeling set
+  vol_col<-grep(name, colnames(hist))
+  irr_vols<- colnames(hist)[grep('irr_vol', colnames(hist))]
+  cms<- colnames(hist)[grep('cm', colnames(hist))]
+  
+  #use regsubsets to assess the results
+  tryCatch({regsubsets.out<-regsubsets(hist[[vol_col]]~., 
+            data=hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE], 
+            nbest=1, nvmax=max_var, really.big=T)}, 
+           error= function(e) {print(paste(site,"center of mass model did not work"))}) #error catch
+  reg_sum<- summary(regsubsets.out)
+  rm(regsubsets.out)
+  # which set of variables have the lowest BIC
+  vars<-reg_sum$which[which.min(reg_sum$bic),]
+  #vars<-reg_sum$which[which.max(reg_sum$adjr2),]
+  mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+  
+  #fit the regression model and use LOOCV to evaluate performance
+  form<- paste(paste(name, "~ "), paste(mod_sum$vars, collapse=" + "), sep = "")
+  
+  mod<-lm(form, data=hist)
+  mod_sum$lm<-summary(mod)$adj.r.squared
+  
+  #put coefficients into DF to save across runs
+  coef<- signif(mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
+  
+  #save summary of LOOCV
+  model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+  mod_sum$loocv<- model$results
+  
+  return(list(mod_sum, model, coef))
+}
 # Big Wood at Hailey
-# TODO: data isn't going through 2022 -- there is no runoff total for 140, 167, 144??
-# this doesn't like to run efficiently 
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, bwh.cm, bwh.wq, 
-                  all_of(swe_cols),  all_of(snodas_cols), all_of(aj_t_cols)) %>% filter(complete.cases(.)) 
-
-tryCatch({regsubsets.out<-regsubsets(hist$bwh.cm~., data=hist[,-1], nbest=1, nvmax=nv_max, really.big=TRUE)}, 
-         error= function(e) {print("Big Wood Hailey CM model did not work")}) #error catch
-reg_sum<- summary(regsubsets.out)
-rm(regsubsets.out)
-
-vars<-reg_sum$which[which.min(reg_sum$bic),]
-bwh.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
-
-#fit a regression model and use LOOCV to evaluate performance
-form<- paste("bwh.cm~ ", paste(bwh.cm_sum$vars, collapse=" + "), sep = "")
-bwh_cm.mod<-lm(form, data=hist) 
-bwh.cm_sum$lm<-summary(bwh_cm.mod)$adj.r.squared
-#Save summary of LOOCV
-model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-bwh.cm_sum$loocv<- model$results
-#bwh.cm_sum
+bwh_cm_out<- cm_model("bwh", "bwh", 9)
+bwh_cm_out<- cm_model("bws", "bws", 9)
+#bwh.wq, bws.wq, 
+sc_cm_out<- cm_model("sc", c("bwh","sc"), 9)
 
 #Save model results
 png(filename = file.path(fig_dir_mo, "bwh.cm_modelFit.png"),
@@ -196,27 +216,6 @@ dev.off()
 
 # -------------------------------------------------------------
 # Big Wood at Stanton
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, bws.cm, bws.wq,
-                  all_of(swe_cols), all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
-
-#select Parameters
-tryCatch({regsubsets.out<-regsubsets(hist$bws.cm~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
-         error= function(e) {print("Big Wood Stanton CM model did not work")}) #error catch
-reg_sum<- summary(regsubsets.out)
-rm(regsubsets.out)
-
-vars<-reg_sum$which[which.min(reg_sum$bic),]
-bws.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
-
-#fit a regression model and use LOOCV to evaluate performance
-form<- paste("bws.cm~ ", paste(bws.cm_sum$vars, collapse=" + "), sep = "")
-bws_cm.mod<-lm(form, data=hist) 
-bws.cm_sum$lm<-summary(bws_cm.mod)$adj.r.squared
-
-#Save summary of LOOCV
-model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-bws.cm_sum$loocv<- model$results
-
 # Save figure of model results
 png(filename = file.path(fig_dir_mo, "bws.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -227,25 +226,6 @@ dev.off()
 
 # -------------------------------------------------------------
 # Silver Creek Center of Mass
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, sc.cm, sc.wq, bwh.wq, bws.wq, 
-         all_of(swe_cols),all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
-
-# Select and Save Parameters
-tryCatch({regsubsets.out<- regsubsets(hist$sc.cm~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
-         error= function(e) {print("Silver Creek CM model did not work")}) #error catch
-reg_sum<- summary(regsubsets.out)
-vars<-reg_sum$which[which.min(reg_sum$bic),]
-sc.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
-
-#fit a regression model and use LOOCV to evaluate performance
-form<- paste("sc.cm~ ", paste(sc.cm_sum$vars, collapse=" + "), sep = "")
-sc_cm.mod<- lm(form, data=hist)
-sc.cm_sum$lm<-summary(sc_cm.mod)$adj.r.squared
-#Save summary of LOOCV
-model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-sc.cm_sum$loocv<- model$results
-#sc.cm_sum
-
 # Save figure of model results
 png(filename = file.path(fig_dir_mo, "sc.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -256,27 +236,6 @@ dev.off()
 
 # -------------------------------------------------------------
 # Camas Creek Center of Mass
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, cc.cm, cc.wq, all_of(swe_cols), 
-                                 all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
-
-# Select and Save model parameters
-tryCatch({regsubsets.out<-regsubsets(hist$cc.cm~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
-         error= function(e) {print("Camas Creek CM model did not work")}) #error catch
-reg_sum<- summary(regsubsets.out)
-rm(regsubsets.out)
-
-vars<-reg_sum$which[which.min(reg_sum$bic),]
-cc.cm_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
-
-#fit a regression model and use LOOCV to evaluate performance
-form<- paste("cc.cm~ ", paste(cc.cm_sum$vars, collapse=" + "), sep = "")
-cc_cm.mod<-lm(form, data=hist) 
-cc.cm_sum$lm<-summary(cc_cm.mod)$adj.r.squared
-
-#Save summary of LOOCV
-model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-cc.cm_sum$loocv<- model$results
-#cc.cm_sum
 # Save figure of model results 
 png(filename = file.path(fig_dir_mo, "cc.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
