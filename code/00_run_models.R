@@ -52,9 +52,9 @@ if (run_date == 'feb1'){
   vol.summary <<-'feb_vol_summary.csv'
   cm.summary <<- 'feb_cm_summary.csv'
   
-  vol_summary <<- 'feb_vol_summary.rdata'
+  vol_sum <<- 'feb_vol_summary.rdata'
   vol_mods <<- 'feb_vol_mods.rdata'
-  cm_summary <<- 'feb_cm_summary.rdata'
+  cm_sum <<- 'feb_cm_summary.rdata'
   cm_mods <<- 'feb_cm_mods.rdata'
   wr_params <<- 'feb_wr_vars.rdata'
   
@@ -67,9 +67,9 @@ if (run_date == 'feb1'){
   vol.summary <<-'mar_vol_summary.csv'
   cm.summary <<- 'mar_cm_summary.csv'
   
-  vol_summary <<- 'mar_vol_summary.rdata'
+  vol_sum <<- 'mar_vol_summary.rdata'
   vol_mods <<- 'mar_vol_mods.rdata'
-  cm_summary <<- 'mar_cm_summary.rdata'
+  cm_sum <<- 'mar_cm_summary.rdata'
   cm_mods <<- 'mar_cm_mods.rdata'
   wr_params <<- 'mar_wr_vars.rdata'
   
@@ -82,9 +82,9 @@ if (run_date == 'feb1'){
   vol.summary <<-'apr_vol_summary.csv'
   cm.summary <<- 'apr_cm_summary.csv'
   
-  vol_summary <<- 'apr_vol_summary.rdata'
+  vol_sum <<- 'apr_vol_summary.rdata'
   vol_mods <<- 'apr_vol_mods.rdata'
-  cm_summary <<- 'apr_cm_summary.rdata'
+  cm_sum <<- 'apr_cm_summary.rdata'
   cm_mods <<- 'apr_cm_mods.rdata'
   wr_params <<- 'apr_wr_vars.rdata'
 }

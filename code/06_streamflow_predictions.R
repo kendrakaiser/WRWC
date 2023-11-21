@@ -14,12 +14,11 @@
 stream.id<-unique(as.character(usgs_sites$abv))
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 
-#TODO: why change naming conventions here? change for consistency?
 # Load the models and parameters from all the models 
-mod_summary <<- list.load(file.path(data_dir, mod_summary))
-vol.mods <<- list.load(file.path(data_dir, vol_mods))
-cm_summary <<- list.load(file.path(data_dir,cm_summary))
-cm.mods <<- list.load(file.path(data_dir, cm_mods))
+mod_summary <<- list.load(file.path(data_dir, mod_sum))
+vol_models <<- list.load(file.path(data_dir, vol_mods))
+cm_summary <<- list.load(file.path(data_dir,cm_sum))
+cm_models<<- list.load(file.path(data_dir, cm_mods))
 
 # ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates, changed to start at the beginning of year in accordance with my calculation of cm, consider changing to day of wy
