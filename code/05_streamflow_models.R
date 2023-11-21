@@ -203,10 +203,12 @@ cm_model<-function(site, sites, max_var){
 # Big Wood at Hailey
 bwh_cm_out<- cm_model("bwh", "bwh", 9)
 bwh_cm_out<- cm_model("bws", "bws", 9)
-#bwh.wq, bws.wq, 
 sc_cm_out<- cm_model("sc", c("bwh","sc"), 9)
+cc_cm_out<- cm_model("cc", "cc", 9)
 
-#Save model results
+
+# Big Wood at Hailey
+#Save model result figures
 png(filename = file.path(fig_dir_mo, "bwh.cm_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
@@ -267,20 +269,4 @@ grid.table(r2s_cm)
 dev.off()
 
 options(warn = defaultW)
-
-# -------------------------------------------------------------
-# Evaluation of residuals 
-#https://drsimonj.svbtle.com/visualising-residuals
-#library(broom)
-#bwh.m<- model %>% augment()
-
-#ggplot(bwh.m, aes(x = "hc.swe", y = "log(bwh.vol)")) +
- #   geom_smooth(method = "lm", se = FALSE, color = "lightgrey") +
-  #  geom_segment(aes(xend = hc.swe, yend = .fitted), alpha = .2) +  # Note `.fitted`
-   # geom_point(aes(alpha = abs(.std.resid))) +  # Note `.resid`
-    #guides(alpha = FALSE) +
-    #geom_point(aes(y = .fitted), shape = 1) +  # Note `.fitted`
-    #theme_bw()
-
-
 
