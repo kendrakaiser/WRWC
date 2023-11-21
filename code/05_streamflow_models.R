@@ -84,6 +84,17 @@ vol_model<-function(site, sites, max_var){
   #r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
   #ggcorrplot(r)
   
+  #Plot modeled data for visual evaluation 
+  fig_name = paste0(site, ".vol_modelFit.png")
+  png(filename = file.path(fig_dir_mo, fig_name),
+      width = 5.5, height = 5.5,units = "in", pointsize = 12,
+      bg = "white", res = 600) 
+  
+  plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, 
+       xlab="Observed Irrigation Season KAF", ylab="Predicted Irrigation Season KAF")
+  abline(0,1,col="gray50",lty=1)
+  dev.off()
+  
   return(list(mod_sum, model, coef))
 }
 
@@ -93,42 +104,10 @@ bws_output<- vol_model("bws", c("bwh", "bws"), 9)
 cc_output<- vol_model("cc", c("bwh", "cc"), 9)
 sc_output<- vol_model("sc", c("bwh", "sc"), 9)
 
-#TODO: update to make these from model function output
 
-#Plot Big Wood at Hailey modeled data for visual evaluation 
-png(filename = file.path(fig_dir_mo, "BWH_modelFit.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
 
-plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood at Hailey \nApril-Sept Streamflow Vol (1000 ac-ft)")
-abline(0,1,col="gray50",lty=1)
-dev.off()
 
-#Save Big Wood at Stanton
-png(filename = file.path(fig_dir_mo, "BWS_modelFit.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
 
-    plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood at Stanton Crossing \nApril-Sept Streamflow Vol (1000 ac-ft)")
-    abline(0,1,col="gray50",lty=1)
-dev.off()
-
-#Save Model fit Silver Creek
-png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-
-    plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Silver Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
-    abline(0,1,col="gray50",lty=1)
-dev.off()
-
-#Save figure of model results
-png(filename = file.path(fig_dir_mo, "CC_modelFit.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-    plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
-    abline(0,1,col="gray50",lty=1)
-dev.off()
 
 
 # EXPORT VOL MODEL DETAILS
@@ -198,53 +177,24 @@ cm_model<-function(site, sites, max_var){
   model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
   mod_sum$loocv<- model$results
   
+  #Save model result figures
+  fig_name = paste0(site, ".cm_modelFit.png")
+  png(filename = file.path(fig_dir_mo, fig_name),
+      width = 5.5, height = 5.5,units = "in", pointsize = 12,
+      bg = "white", res = 600) 
+  plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed CM", ylab="Predicted CM")
+  abline(0,1,col="gray50",lty=1)
+  dev.off()
+  
   return(list(mod_sum, model, coef))
 }
-# Big Wood at Hailey
+
+# Create Center of Mass Models for each site
 bwh_cm_out<- cm_model("bwh", "bwh", 9)
 bwh_cm_out<- cm_model("bws", "bws", 9)
 sc_cm_out<- cm_model("sc", c("bwh","sc"), 9)
 cc_cm_out<- cm_model("cc", "cc", 9)
 
-
-# Big Wood at Hailey
-#Save model result figures
-png(filename = file.path(fig_dir_mo, "bwh.cm_modelFit.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood Hailey Center of Mass")
-abline(0,1,col="gray50",lty=1)
-dev.off()
-
-# -------------------------------------------------------------
-# Big Wood at Stanton
-# Save figure of model results
-png(filename = file.path(fig_dir_mo, "bws.cm_modelFit.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood Stanton Center of Mass")
-abline(0,1,col="gray50",lty=1)
-dev.off()
-
-# -------------------------------------------------------------
-# Silver Creek Center of Mass
-# Save figure of model results
-png(filename = file.path(fig_dir_mo, "sc.cm_modelFit.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted",main="Silver Creek Center of Mass (doy)")
-abline(0,1,col="gray50",lty=1)
-dev.off()
-
-# -------------------------------------------------------------
-# Camas Creek Center of Mass
-# Save figure of model results 
-png(filename = file.path(fig_dir_mo, "cc.cm_modelFit.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed", ylab="Predicted",main="Camas Creek Center of Mass (doy)")
-abline(0,1,col="gray50",lty=1)
-dev.off()
 
 
 ### EXPORT Center of Mass MODEL DETAILS
