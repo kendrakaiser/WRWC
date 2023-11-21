@@ -271,21 +271,12 @@ colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
 # -------------------------------
 # NEW way to create metrics from SNODAS 
 
-siteIDs<-t(matrix(c(140, 'BIG WOOD RIVER AT HAILEY', 'bwh', 167,'CAMAS CREEK NR BLAINE ID', 'cc', 
-                    144, 'SILVER CREEK AT SPORTSMAN ACCESS', 'sc', 
-                    141, 'BIG WOOD RIVER AT STANTON CROSSING', 'bws'), nrow=3, ncol=4))
-colnames(siteIDs)<-c('locationid', 'name', 'site')
+winterSums_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS winterSum, snodasdata.locationid, name, sitenote
+           FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid WHERE EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3
+           GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 
-# TODO: historic data are compiled based on 1st of month; this years data need to be compiled through TODAY
-
-winterSums_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, locationid, metric, sum(value) AS winterSum 
-           FROM snodasdata WHERE EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3
-           GROUP BY(wateryear, locationid, metric) ORDER BY wateryear;")
-
-# add the modeling site abbreviation for readability
-winterSums_apr<- merge(winterSums_apr, siteIDs)
 # pivot data wider
-snodas_april<-pivot_wider(data=winterSums_apr[,c(2,3,4,6)],names_from = c(site, metric),values_from = c(wintersum),names_sep=".")
+snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
 
 #compile all April data for modeling
 alldat <- april1swe %>% full_join(metrics, by ="wateryear") %>% 

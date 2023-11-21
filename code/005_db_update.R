@@ -1,10 +1,14 @@
 #db updater
+source(file.path(git_dir, 'code/init_db.R'))
+source(file.path(git_dir, 'code/01_packages.R'))
+source(paste0(git_dir,"/code/fxn_dbIntakeTools.R")) 
+source(paste0(git_dir,"/code/fxn_get_snow.R")) 
+source(paste0(git_dir,"/code/fxn_SNODASR_functions.R")) 
 
 dbExecute(conn,"CREATE OR REPLACE FUNCTION wateryear(datetime timestamp without time zone) RETURNS integer AS $$
               SELECT CASE WHEN ( EXTRACT(month FROM datetime)) >= 10  THEN EXTRACT(year FROM datetime) +1 
                                       ELSE EXTRACT(year FROM datetime) 
                         END
-                
                 $$
             LANGUAGE SQL;")
 
@@ -18,7 +22,7 @@ dbExecute(conn,"CREATE OR REPLACE FUNCTION wateryear(datetime timestamp without 
 
 
 
-getWriteData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #location can be locationID or locationName
+updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #location can be locationID or locationName
   
   #if rebuildInvalidData=T, returned dataset will include invalid data
   
@@ -67,7 +71,8 @@ getWriteData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
   }
   
   #get existing data from db:
-  dataInDb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"') ORDER BY datetime;"))
+  #changed to just get a few columns instead of whole dataset
+  dataInDb=dbGetQuery(conn,paste0("SELECT dataid, datetime, qcstatus FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"') ORDER BY datetime;"))
   
   #if rebuild:
   # if(rebuildInvalidData){ #drop records w/ qc=F to trigger rebuild
@@ -151,14 +156,17 @@ getWriteData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
     #dbSourceNewData(metric=metric,locationID=locationID,days=missingDays)
     
     #get dataset again after adding new data
-    dataInDb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"') ORDER BY datetime;"))
+    #dataInDb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE metricid = '",metricID,"' AND locationid = '",locationID,"' AND datetime::date IN ('",paste(days,collapse="', '"),"') ORDER BY datetime;"))
   }
   
-  if(!rebuildInvalidData){  #strip qc=F data out of returned dataset
-    dataInDb=dataInDb[dataInDb$qcstatus==TRUE,]
-  }
+  # if(!rebuildInvalidData){  #strip qc=F data out of returned dataset
+  #   dataInDb=dataInDb[dataInDb$qcstatus==TRUE,]
+  # }
   
-  return(dataInDb)
+  #return(dataInDb)
 }
 
-sd=getWriteData(metric="streamflow", location="BIG WOOD RIVER AT HAILEY", days=seq.Date(as.Date("1996-01-01"),as.Date("2023-10-02"),by="day"),sourceName="USGS")
+updateDbData(metric="USGS", location="BIG WOOD RIVER AT HAILEY", days=seq.Date(as.Date("1996-01-01"),as.Date("2023-11-20"),by="day"),sourceName="USGS")
+
+
+updateDbData(metric="streamflow", location="BIG WOOD RIVER AT HAILEY", days=seq.Date(as.Date("1996-01-01"),as.Date("2023-11-20"),by="day"),sourceName="USGS")
