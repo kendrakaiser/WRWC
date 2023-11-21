@@ -22,7 +22,7 @@ source(paste0(git_dir,"/code/fxn_SNODASR_functions.R"))
 conn=scdbConnect() #connect to database
 
 #all flow locations
-dbGetQuery(conn, "SELECT distinct data.locationid, name FROM data left join locations on data.locationid = locations.locationid WHERE metric = 'flow'")
+#dbGetQuery(conn, "SELECT distinct data.locationid, name FROM data left join locations on data.locationid = locations.locationid WHERE metric = 'flow'")
 
 
 #data frame of snodas-derived metric names and units

@@ -1,4 +1,12 @@
 
+# dbExecute(conn,"CREATE OR REPLACE FUNCTION wateryear(datetime timestamp without time zone) RETURNS integer AS $$
+#               SELECT CASE WHEN ( EXTRACT(month FROM datetime)) >= 10  THEN EXTRACT(year FROM datetime) +1 
+#                                       ELSE EXTRACT(year FROM datetime) 
+#                         END
+#                 $$
+#             LANGUAGE SQL;")
+
+
 scdbConnect=function(readOnly=T){
   if(readOnly){
     conn=dbConnect(RPostgres::Postgres(),
