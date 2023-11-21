@@ -19,7 +19,7 @@ spring.temps = read.csv(file.path(data_dir, 'sprTemps.csv'))
 nj.temps = read.csv(file.path(data_dir, 'njTemps.csv'))
 
 # combine discharge & SWE with temp data
-var = swe_q %>% inner_join(spring.temps, by ="year") %>% inner_join(nj.temps, by ="year")
+var = swe_q %>% inner_join(spring.temps, by ="wateryear") %>% inner_join(nj.temps, by ="wateryear")
 
 # sp.test<-apply(var, MARGIN=2, shapiro.test) 
 #TODO : automate this step (e.g. if p < 0.05 log it and remove the og)
@@ -31,7 +31,7 @@ var$hc.log_swe <- log(var$hc.swe)
 var$lwd.log_swe <- log(var$lwd.swe)
 var$ga.log_swe <- log(var$ga.swe)
 var$bc.log_swe <- log(var$bc.swe)
-var<-var[,!(names(var) %in% c('cg.swe', 'g.swe','gs.swe','hc.swe', 'lwd.swe','ga.swe','bc.swe', 'nj_t.sr', 'aj_t.sr'))]
+var<-var[,!(names(var) %in% c('cg.swe', 'g.swe','gs.swe','hc.swe', 'lwd.swe','ga.swe','bc.swe', 'sr.nj_t', 'sr.aj_t'))]
 
 #save variables for use in other scripts
 #TODO: change folder structure so that they are either pre-defined or created
