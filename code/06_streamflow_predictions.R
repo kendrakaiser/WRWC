@@ -11,8 +11,6 @@
 # -----------------------------------------------------------------------------  
 
 # Import Data ------------------------------------------------------------------  
-# var= read.csv(file.path(data_dir,'var_feb.csv'))
-# usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 
@@ -41,8 +39,8 @@ colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol (KAF)", "Pred. Vol \
 rownames(output.vol)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
 pred.params.vol<-array(NA,c(4,4))
-rownames(pred.params.vol)<-c("bwh.vol","bws.vol","cc.vol","sc.vol")
-colnames(pred.params.vol)<-c("log.vol","sigma", "low.log.vol", "upp.log.vol")
+rownames(pred.params.vol)<-c("bwh.irr_vol","bws.irr_vol","cc.irr_vol","sc.irr_vol")
+colnames(pred.params.vol)<-c("log.irr_vol","sigma", "low.log.irr_vol", "upp.log.irr_vol")
 
 # center of mass
 output.cm<-data.frame(array(NA,c(5,4)))
@@ -56,7 +54,7 @@ colnames(pred.params.cm)<-c("cm","sigma")
 
 # summary stats
 mod_sum<-data.frame(array(NA,c(6,2)))
-colnames(mod_sum)<-c("Vol Adj-R2", "CM Adj-R2")
+colnames(mod_sum)<-c("Irr Vol Adj-R2", "CM Adj-R2")
 rownames(mod_sum)<-c("bwh","bws","cc","sc", "bw.div", "sc.div")
 
 # ------------------------------------------------------------------------------  
@@ -100,7 +98,7 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
 
 # --------------------------------------------------
 # Subset Big Wood Variables
-hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bwh.vol, vol.params$bwh$vars)) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bwh.irr_vol, vol.params$bwh$vars)) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #Prediction Data
@@ -108,14 +106,14 @@ pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$bwh$vars)
 
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol.mods$bwh_mod)$adj.r.squared
-mod_out<- modOut(vol.mods$bwh_mod, pred.dat, var$bwh.wq[var$year == pred.yr], var$bwh.wq[var$year < pred.yr], hist$bwh.vol, mean(colMeans(swe_cols, na.rm=T)), var$bwh.vol[var$year == pred.yr-1])
+mod_out<- modOut(vol.mods$bwh_mod, pred.dat, var$bwh.wq[var$year == pred.yr], var$bwh.wq[var$year < pred.yr], hist$bwh.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$bwh.irr_vol[var$year == pred.yr-1])
 #these could be formatted differently to be saved to the gloabl env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
-hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bws.vol, vol.params$bws$vars)) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bws.irr_vol, vol.params$bws$vars)) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #  bws Prediction Data 
@@ -123,14 +121,14 @@ pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$bws$vars)
 
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol.mods$bws_mod)$adj.r.squared
-mod_out<- modOut(vol.mods$bws_mod, pred.dat, var$bws.wq[var$year == pred.yr], var$bws.wq[var$year < pred.yr], hist$bws.vol, mean(colMeans(swe_cols, na.rm=T)), var$bws.vol[var$year == pred.yr-1])
+mod_out<- modOut(vol.mods$bws_mod, pred.dat, var$bws.wq[var$year == pred.yr], var$bws.wq[var$year < pred.yr], hist$bws.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$bws.irr_vol[var$year == pred.yr-1])
 output.vol[2,] <- mod_out[[1]] #prediction plus sigma^2
 mod_out[[2]][,2]<- mod_out[[2]][,2]^2 #manually lognormalizing the sigma
 pred.params.vol[2,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Silver Creek 
-hist <- var[var$year < pred.yr,] %>% dplyr::select(c(sc.vol, vol.params$sc$vars)) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(c(sc.irr_vol, vol.params$sc$vars)) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 # SC Prediction Data 
@@ -138,13 +136,13 @@ pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$sc$vars)
 
 # Silver Creek Model output
 mod_sum[4,1]<-summary(vol.mods$sc_mod)$adj.r.squared
-mod_out<- modOut(vol.mods$sc_mod, pred.dat, var$sc.wq[var$year == pred.yr], var$sc.wq[var$year < pred.yr], hist$sc.vol, mean(colMeans(swe_cols, na.rm=T)), var$sc.vol[var$year == pred.yr-1])
+mod_out<- modOut(vol.mods$sc_mod, pred.dat, var$sc.wq[var$year == pred.yr], var$sc.wq[var$year < pred.yr], hist$sc.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$sc.irr_vol[var$year == pred.yr-1])
 output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection 
-hist <- var[var$year < pred.yr,] %>% dplyr::select(cc.vol, vol.params$cc$vars) %>% filter(complete.cases(.))
+hist <- var[var$year < pred.yr,] %>% dplyr::select(cc.irr_vol, vol.params$cc$vars) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #CC Prediction Data 
@@ -152,7 +150,7 @@ pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol.params$cc$vars)
 
 # Camas Creek Model output
 mod_sum[3,1]<-summary(vol.mods$cc_mod)$adj.r.squared
-mod_out<- modOut(vol.mods$cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], var$cc.wq[var$year < pred.yr], hist$cc.vol, mean(colMeans(swe_cols, na.rm=T)), var$cc.vol[var$year == pred.yr-1])
+mod_out<- modOut(vol.mods$cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], var$cc.wq[var$year < pred.yr], hist$cc.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$cc.irr_vol[var$year == pred.yr-1])
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
@@ -309,8 +307,8 @@ write.csv(pred.params.cm, file.path(model_out,"pred.params.cm.csv"),row.names=T)
 # between each gage
 
 # calculate correlations between flow conditions across the basins
-flow.data = var[var$year >= 1997 & var$year < 2022,] %>% dplyr::select(bwh.vol, 
-      bwh.cm, bws.vol, bws.cm, cc.vol, cc.cm, sc.vol, sc.cm) 
+flow.data = var[var$year >= 1997 & var$year < pred.yr,] %>% dplyr::select(bwh.irr_vol, 
+      bwh.cm, bws.irr_vol, bws.cm, cc.irr_vol, cc.cm, sc.irr_vol, sc.cm) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
 cor.mat<-cor(cbind(flow.data[c(1,3,5,7)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
@@ -370,11 +368,11 @@ write.csv(CMyear.sample, file.path(model_out, paste0("CMyear.sample-", end_date,
 
 # TESTING
 # Draw sample of years with similar volume for comparison -- 
-vol.data = var[var$year >1996 & var$year < pred.yr,]%>% dplyr::select(year, bwh.vol, bws.vol, cc.vol, sc.vol) 
+vol.data = var[var$year >1996 & var$year < pred.yr,]%>% dplyr::select(year, bwh.irr_vol, bws.irr_vol, cc.irr_vol, sc.irr_vol) 
 vol.data$prob<-NA
 
 #TODO: Write this up in a methods section
-samp.sd<- c(sd(log(var$bwh.vol)), sd(log(var$bws.vol)), sd(log(var$cc.vol)), sd(log(var$sc.vol)))
+samp.sd<- c(sd(log(var$bwh.irr_vol)), sd(log(var$bws.irr_vol)), sd(log(var$cc.irr_vol)), sd(log(var$sc.irr_vol)))
 var.fore<- pred.params.vol[,2] + samp.sd
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
