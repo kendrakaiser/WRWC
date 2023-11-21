@@ -232,53 +232,35 @@ write.csv(metrics, file.path(data_dir,'metrics.csv'), row.names=FALSE)
 print('Streamflow Data Saved')
 
 #------------------------------------------------------------------------------
-# Get SNODAS from Database and integrate with above dataframe
+# Get SNODAS from Database 
+#------------------------------------------------------------------------------
+#FEBRUARY
+winterSums_feb=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS winterSum, snodasdata.locationid, name, sitenote
+           FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid WHERE EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2
+           GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+# pivot data wider
+snodas_feb<-pivot_wider(data=winterSums_feb[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
 
-#get all snodas data using grab_ws_snow function
-
-
-#old:
-dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata") 
-snodas<-dbGetQuery(conn,"SELECT * FROM snodasdata WHERE;")
-
-#-- Data Munging----------------------------------------------------------------
-# modify df to subset and plot
-snodas$year <- year(snodas$datetime)
-snodas$mo<- month(snodas$datetime)
-snodas$day<- day(snodas$datetime)
-
-
-# PIVOT snodas data to merge into the allDat frame
-#change to snodas[,c(1:4)] w/ new data source?
-sno.wide<- snodas[,c(2:4,12)] %>% pivot_wider(names_from = c(metric, site), names_glue = "{site}.{metric}", values_from = value) 
-# modify df to merge
-sno.wide$yearog <- year(sno.wide$datetime)
-sno.wide$mo<- month(sno.wide$datetime)
-sno.wide$day<- day(sno.wide$datetime)
-sno.wide$year<- as.numeric(as.character(waterYear(sno.wide$datetime, numeric=TRUE)))
-n.yrs<- unique(sno.wide$year)
-
-# subset snodas data to calculate cumulative values
-pTemp<-sno.wide[,c(1,6,7,8,9,18,19,21)] #TODO need to use reg expressions to do this correctly
-p.wint<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
-colnames(p.wint) <- c('year', "liquid_precip_wint.140", "liquid_precip_wint.167", "liquid_precip_wint.144", "liquid_precip_wint.141")
-p.spring<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
-colnames(p.spring) <- c('year', "liquid_precip_spr.140", "liquid_precip_spr.167", "liquid_precip_spr.144", "liquid_precip_spr.141")
-runoffTemp<-sno.wide[,c(1,14, 15, 16, 17,18,19,21)] #prob need to change this subsetting
-runoff.sub<-as.data.frame(array(data=NA, dim=c(length(n.yrs), 5)))
-colnames(runoff.sub) <- colnames(runoffTemp)[c(8, 2:5)]
-
-# -------------------------------
-# NEW way to create metrics from SNODAS 
-
-winterSums_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS winterSum, snodasdata.locationid, name, sitenote
+#MARCH
+winterSums_mar=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS winterSum, snodasdata.locationid, name, sitenote
            FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid WHERE EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3
            GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+# pivot data wider
+snodas_march<-pivot_wider(data=winterSums_mar[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
 
+#APRIL
+winterSums_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS winterSum, snodasdata.locationid, name, sitenote
+           FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid WHERE EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 4
+           GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 # pivot data wider
 snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
 
-#compile all April data for modeling
+
+
+
+# integrate SNODAS with USGS and SNOTEL
+
+#April data for modeling
 alldat <- april1swe %>% full_join(metrics, by ="wateryear") %>% 
   merge(snodas_april, by= 'wateryear')
 
