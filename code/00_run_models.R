@@ -29,7 +29,7 @@ input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 data_dir <<- file.path(cd, 'data') # local
 
 # set end date for AgriMet Data download
-end_date <<-as.Date("2023-04-01")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
+end_date <<-as.Date("2023-10-01")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
 # ---- Run Model code
 
@@ -49,12 +49,12 @@ if (run_date == 'feb1'){
   fig_dir_mo_rmd <<- './figures/February'
   model_out <<-  file.path(cd, 'February_output')
   
-  vol.vars <<-'feb_vol_vars.csv'
-  cm.vars <<- 'feb_cm_vars.csv'
+  vol.summary <<-'feb_vol_summary.csv'
+  cm.summary <<- 'feb_cm_summary.csv'
   
-  vol_params <<- 'feb_vol_vars.rdata'
+  vol_summary <<- 'feb_vol_summary.rdata'
   vol_mods <<- 'feb_vol_mods.rdata'
-  cm_params <<- 'feb_cm_vars.rdata'
+  cm_summary <<- 'feb_cm_summary.rdata'
   cm_mods <<- 'feb_cm_mods.rdata'
   wr_params <<- 'feb_wr_vars.rdata'
   
@@ -64,12 +64,12 @@ if (run_date == 'feb1'){
   fig_dir_mo_rmd <<- './figures/March'
   model_out <<-  file.path(cd, 'March_output')
   
-  vol.vars <<-'mar_vol_vars.csv'
-  cm.vars <<- 'mar_cm_vars.csv'
+  vol.summary <<-'mar_vol_summary.csv'
+  cm.summary <<- 'mar_cm_summary.csv'
   
-  vol_params <<- 'mar_vol_vars.rdata'
+  vol_summary <<- 'mar_vol_summary.rdata'
   vol_mods <<- 'mar_vol_mods.rdata'
-  cm_params <<- 'mar_cm_vars.rdata'
+  cm_summary <<- 'mar_cm_summary.rdata'
   cm_mods <<- 'mar_cm_mods.rdata'
   wr_params <<- 'mar_wr_vars.rdata'
   
@@ -79,12 +79,12 @@ if (run_date == 'feb1'){
   fig_dir_mo_rmd <<- './figures/April'
   model_out <<-  file.path(cd, 'April_output')
   
-  vol.vars <<-'apr_vol_vars.csv'
-  cm.vars <<- 'apr_cm_vars.csv'
+  vol.summary <<-'apr_vol_summary.csv'
+  cm.summary <<- 'apr_cm_summary.csv'
   
-  vol_params <<- 'apr_vol_vars.rdata'
+  vol_summary <<- 'apr_vol_summary.rdata'
   vol_mods <<- 'apr_vol_mods.rdata'
-  cm_params <<- 'apr_cm_vars.rdata'
+  cm_summary <<- 'apr_cm_summary.rdata'
   cm_mods <<- 'apr_cm_mods.rdata'
   wr_params <<- 'apr_wr_vars.rdata'
 }
@@ -97,6 +97,7 @@ source(file.path(git_dir, 'code/04_data_integration.R'))
 
 # Create Streamflow Models 
 #-------------------------------------------------------------------------------
+#TODO: this only needs to be run after 10-1, the models will stay the same through the prediction season & take a long time to run
 suppressWarnings(source(file.path(git_dir, 'code/05_streamflow_models.R')))# warning messages are expected and okay
 
 # Make the Irrigation Season Streamflow Predictions

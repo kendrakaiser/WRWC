@@ -99,29 +99,24 @@ vol_model<-function(site, sites, max_var){
 }
 
 # Create Volume Models for each USGS gage
-bwh_output<- vol_model("bwh", "bwh", 9)
-bws_output<- vol_model("bws", c("bwh", "bws"), 9)
-cc_output<- vol_model("cc", c("bwh", "cc"), 9)
-sc_output<- vol_model("sc", c("bwh", "sc"), 9)
-
-
-
-
-
+bwh_vol_mod<- vol_model("bwh", "bwh", 9)
+bws_vol_mod<- vol_model("bws", c("bwh", "bws"), 9)
+cc_vol_mod<- vol_model("cc", c("bwh", "cc"), 9)
+sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 9)
 
 
 # EXPORT VOL MODEL DETAILS
 #TODO: update all these structures using output from new model function
 # ----------------------
 # compile all model details into one list to export
-mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
-vol_models<- list(bwh_mod = bwh_mod, bws_mod = bws_mod, sc_mod = sc_mod, cc_mod = cc_mod)
-mod_coef<- cbind(bwh_coef, bws_coef, sc_coef, cc_coef)
+mod_summary<- list(bwh = bwh_vol_mod[[1]], bws = bws_vol_mod[[1]], sc = sc_vol_mod[[1]], cc = cc_vol_mod[[1]])
+vol_models<- list(bwh_mod = bwh_vol_mod[[2]], bws_mod = bws_vol_mod[[2]], sc_mod = sc_vol_mod[[2]], cc_mod = cc_vol_mod[[2]])
+mod_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod[[3]])
 
 write.csv(mod_coef, file.path(model_out,'mod_coeff.csv'), row.names = FALSE)
-write.list(mod_sum, file.path(data_dir, vol.vars))
+write.list(mod_summary, file.path(data_dir, vol.summary)) #.csv
 
-list.save(mod_sum, file.path(data_dir, vol_params))
+list.save(mod_summary, file.path(data_dir, vol_summary)) #.Rdata
 list.save(vol_models, file.path(data_dir, vol_mods))
 
 r2s<- data.frame(matrix(ncol = 3, nrow = 4))
@@ -135,9 +130,9 @@ png(file.path(fig_dir_mo,"r2s.png"), height = 25*nrow(r2s), width = 80*ncol(r2s)
 grid.table(r2s)
 dev.off()
 
-# ------------------------------------------------------------------------------ # 
+# ---------------------------------------------------------------------------- # 
 # Evaluate alternative model combinations for Center of Mass Predictions
-# ------------------------------------------------------------------------------ # 
+# ---------------------------------------------------------------------------- # 
 cm_model<-function(site, sites, max_var){
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
@@ -195,17 +190,16 @@ bwh_cm_out<- cm_model("bws", "bws", 9)
 sc_cm_out<- cm_model("sc", c("bwh","sc"), 9)
 cc_cm_out<- cm_model("cc", "cc", 9)
 
-
-
+# ---------------------------------------------------------------------------- # 
 ### EXPORT Center of Mass MODEL DETAILS
-# -----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 #compile all model details into one list to export
-mod_cm.sum<- list(bwh = bwh.cm_sum, bws = bws.cm_sum, sc = sc.cm_sum, cc = cc.cm_sum)
+cm_summary<- list(bwh = bwh.cm_sum, bws = bws.cm_sum, sc = sc.cm_sum, cc = cc.cm_sum)
 cm_models<- list(bwh_cm.mod = bwh_cm.mod, bws_cm.mod = bws_cm.mod, sc_cm.mod = sc_cm.mod, cc_cm.mod = cc_cm.mod)
 
-write.list(mod_cm.sum, file.path(data_dir, cm.vars))
+write.list(cm_summary, file.path(data_dir, cm.summary))
 
-list.save(mod_cm.sum, file.path(data_dir, cm_params))
+list.save(cm_summary, file.path(data_dir, cm_summary))
 list.save(cm_models, file.path(data_dir, cm_mods))
 
 r2s_cm<- data.frame(matrix(ncol = 2, nrow = 4))
@@ -219,4 +213,3 @@ grid.table(r2s_cm)
 dev.off()
 
 options(warn = defaultW)
-

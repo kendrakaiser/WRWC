@@ -16,9 +16,9 @@ temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 
 #TODO: why change naming conventions here? change for consistency?
 # Load the models and parameters from all the models 
-vol.params <<- list.load(file.path(data_dir, vol_params))
+mod_summary <<- list.load(file.path(data_dir, mod_summary))
 vol.mods <<- list.load(file.path(data_dir, vol_mods))
-cm.params <<- list.load(file.path(data_dir,cm_params))
+cm_summary <<- list.load(file.path(data_dir,cm_summary))
 cm.mods <<- list.load(file.path(data_dir, cm_mods))
 
 # ------------------------------------------------------------------------------  
