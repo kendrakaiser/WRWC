@@ -16,10 +16,9 @@ options(warn = -1)
 #------------------------------------------------------------------------------ # 
 var<- read.csv(file.path(model_out,'all_vars.csv'))
 
-swe_cols<-grep('swe', colnames(var))
-t_cols<-grep('.t.', colnames(var))
-wint_t_cols<-grep('nj.t', colnames(var))
-aj_t_cols<-grep('aj.t', colnames(var))
+swe_cols<-grep('swe', colnames(var)) # consider if we want this in output or SNODAS data
+wint_t_cols<-grep('nj_t', colnames(var))
+aj_t_cols<-grep('aj_t', colnames(var))
 vol_cols<- grep('vol', colnames(var))
 snodas_cols<- c(grep('wint', colnames(var)), grep('runoff', colnames(var)), grep('snow', colnames(var)), grep('swe_total', colnames(var)))
 
@@ -28,50 +27,66 @@ snodas_cols<- c(grep('wint', colnames(var)), grep('runoff', colnames(var)), grep
 
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
-nv_max=9
+
 
 #------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for April-Sept Volume Predictions
 #------------------------------------------------------------------------------ # 
+vol_model<-function(site, sites, max_var){
+  'site: site name as string
+   sites: list of sites with relevant variables for prediction 
+   max_var: max number of variables  
+  '
+  site_vars<- grep(paste(sites, collapse="|"), colnames(var))
+  hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
+              all_of(swe_cols), all_of(wint_t_cols)) %>% filter(complete.cases(.))
+  name<- paste0(site, ".vol")
+  vol_col<-grep(name, colnames(hist))
+  
+  #use regsubsets to assess the results
+  tryCatch({regsubsets.out<-regsubsets(log(hist[[vol_col]])~., data=hist[,-c(1)], nbest=1, nvmax=max_var, really.big=T)}, 
+           error= function(e) {print(paste(site,"volume model did not work"))}) #error catch
+  reg_sum<- summary(regsubsets.out)
+  rm(regsubsets.out)
+  # which set of variables have the lowest BIC
+  vars<-reg_sum$which[which.min(reg_sum$bic),]
+  #vars<-reg_sum$which[which.max(reg_sum$adjr2),]
+  mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+ 
+   #fit the regression model and use LOOCV to evaluate performance
+  form<- paste(paste("log(", name, ")~ "), paste(sum$vars, collapse=" + "), sep = "")
+  
+  mod<-lm(form, data=hist)
+  mod_sum$lm<-summary(mod)$adj.r.squared
+  
+  #put coefficients into DF to save across runs
+  coef<- signif(mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
+  
+  #save summary of LOOCV
+  model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+  mod_sum$loocv<- model$results
+  #check residuals mod.red<- resid(model)
+  
+  #linear model of logged prediction v.s. observed for a more accurate r2
+  pred<-exp(model$pred$pred)/1000
+  obs<- exp(model$pred$obs)/1000
+  r2<- lm(pred ~obs)
+  mod_sum$true.r2<-summary(r2)$adj.r.squared
+  
+  # calculate the correlations
+  #r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
+  #ggcorrplot(r)
+  
+  return(list(mod_sum, model, coef))
+}
 
-# Big Wood at Hailey
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwh.vol, bwh.wq, bwh.ly.vol, 
-              all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
+# Create Volume Models for each USGS gage
+bwh_output<- vol_model("bwh", 9)
+bws_output<- vol_model("bws", c("bwh", "bws"), 9)
+cc_output<- vol_model("cc", c("bwh", "cc"), 9)
+sc_output<- vol_model("sc", c("bwh", "sc", "cc"), 9)
 
-#use regsubsets to assess the results
-tryCatch({regsubsets.out<-regsubsets(log(hist$bwh.vol)~., data=hist[,-c(1)], nbest=1, nvmax=nv_max)}, 
-         error= function(e) {print("Big Wood Hailey Vol model did not work")}) #error catch
-reg_sum<- summary(regsubsets.out)
-rm(regsubsets.out)
 
-vars<-reg_sum$which[which.min(reg_sum$bic),]
-#vars<-reg_sum$which[which.max(reg_sum$adjr2),]
-bwh_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
-
-#fit the regression model and use LOOCV to evaluate performance
-form<- paste("log(bwh.vol)~ ", paste(bwh_sum$vars, collapse=" + "), sep = "")
-#pairs(var[bwh_sum$vars])
-bwh_mod<-lm(form, data=hist)
-bwh_sum$lm<-summary(bwh_mod)$adj.r.squared
-
-#put coefficients into DF to save across runs
-bwh_coef<- signif(bwh_mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
-
-#save summary of LOOCV
-model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-bwh_sum$loocv<- model$results
-#bwh_sum
-
-#linear model of logged prediction v.s. observed for a more accurate r2
-pred<-exp(model$pred$pred)/1000
-obs<- exp(model$pred$obs)/1000
-bwh_r2<- lm(pred ~obs)
-bwh_sum$true.r2<-summary(bwh_r2)$adj.r.squared
-
-#check residuals
-mod.red<- resid(model)
-#hist(mod.red)
-#shapiro.test(mod.red)
 
 #Plot Big Wood at Hailey modeled data for visual evaluation 
 png(filename = file.path(fig_dir_mo, "BWH_modelFit.png"),
@@ -82,50 +97,8 @@ plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed
 abline(0,1,col="gray50",lty=1)
 dev.off()
 
-# calculate the correlations
-r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
-#ggcorrplot(r)
 
-# -------------------------------------------------------------
-# Big Wood at Stanton
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.vol, bws.wq, bws.ly.vol,
-                  all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.))
-
-#use regsubsets to explore models
-tryCatch({regsubsets.out<-regsubsets(log(hist$bws.vol)~., data=hist[,-c(1)], nbest=1, nvmax=nv_max)}, 
-         error= function(e) {print("Big Wood Stanton Vol model did not work")}) #error catch
-reg_sum<- summary(regsubsets.out) #summary of regsubsets to pull info from
-rm(regsubsets.out)
-
-vars<-reg_sum$which[which.min(reg_sum$bic),] #T/F of variables
-#vars3<-coef(regsubsets.out, 5)
-bws_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
-
-#fit a regression model and use LOOCV to evaluate performance
-form<- paste("log(bws.vol)~ ", paste(bws_sum$vars, collapse=" + "), sep = "")
-bws_mod<-lm(form, data=hist)
-bws_sum$lm<-summary(bws_mod)$adj.r.squared
-
-#put coefficients into DF to save across runs
-bws_coef<- signif(bws_mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
-
-#save summary of LOOCV
-model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-bws_sum$loocv<- model$results
-#bws_sum
-
-#linear model of logged prediction v.s. observed for a more accurate r2
-pred<-exp(model$pred$pred)/1000
-obs<- exp(model$pred$obs)/1000
-bws_r2<- lm(pred ~obs)
-bws_sum$true.r2<-summary(bws_r2)$adj.r.squared
-
-#check residuals
-mod.red<- resid(model)
-#hist(mod.red)
-#shapiro.test(mod.red)
-
-#Save Model fit figure
+#Save Big Wood at Stanton
 png(filename = file.path(fig_dir_mo, "BWS_modelFit.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
@@ -133,44 +106,6 @@ png(filename = file.path(fig_dir_mo, "BWS_modelFit.png"),
     plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Big Wood at Stanton Crossing \nApril-Sept Streamflow Vol (1000 ac-ft)")
     abline(0,1,col="gray50",lty=1)
 dev.off()
-
-# -------------------------------------------------------------
-# Silver Creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.vol, sc.wq, sc.ly.vol, bwh.wq, bwh.wq, bwh.ly.vol,
-             all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
-
-# Silver Creek regsubsets 
-tryCatch({regsubsets.out<-regsubsets(log(hist$sc.vol)~., data=hist[,-1], nbest=3, nvmax=nv_max)}, 
-         error= function(e) {print("Silver Creek Vol model did not work")}) #error catch
-reg_sum<- summary(regsubsets.out)
-rm(regsubsets.out)
-
-vars<-reg_sum$which[which.min(reg_sum$bic),]
-sc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2=reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
-
-#fit a regression model and use LOOCV to evaluate performance
-form<- paste("log(sc.vol)~ ", paste(sc_sum$vars, collapse=" + "), sep = "")
-sc_mod<-lm(form, data=hist)
-sc_sum$lm<-summary(sc_mod)$adj.r.squared
-
-#put coefficients into DF to save across runs
-sc_coef<- signif(sc_mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
-
-#Save summary of LOOCV
-model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-sc_sum$loocv<- model$results
-#sc_sum
-
-#linear model of logged prediction v.s. observed for a more accurate r2
-pred<-exp(model$pred$pred)/1000
-obs<- exp(model$pred$obs)/1000
-sc_r2<- lm(pred ~obs)
-sc_sum$true.r2<-summary(sc_r2)$adj.r.squared
-
-#check residuals
-mod.red<- resid(model)
-#hist(mod.red)
-#shapiro.test(mod.red)
 
 #Save Model fit figure
 png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
@@ -180,42 +115,6 @@ png(filename = file.path(fig_dir_mo, "SC_modelFit.png"),
     plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, xlab="Observed", ylab="Predicted",main="Silver Creek \nApril-Sept Streamflow Vol (1000 ac-ft)")
     abline(0,1,col="gray50",lty=1)
 dev.off()
-
-# -------------------------------------------------------------
-# Camas creek
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.vol, cc.wq, cc.ly.vol,
-            all_of(swe_cols), all_of(wint_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
-
-#select parameters
-tryCatch({regsubsets.out<-regsubsets(log(hist$cc.vol)~., data=hist[,-1], nbest=1, nvmax=nv_max)}, 
-         error= function(e) {print("Camas Creek Vol model did not work")}) #error catch
-reg_sum<- summary(regsubsets.out)
-rm(regsubsets.out)
-
-vars<-reg_sum$which[which.min(reg_sum$bic),]
-cc_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2= reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
-
-#fit a regression model and use LOOCV to evaluate performance
-form<- paste("log(cc.vol)~ ", paste(cc_sum$vars, collapse=" + "), sep = "")
-cc_mod<-lm(form, data=hist)
-cc_sum$lm<-summary(cc_mod)$adj.r.squared
-
-cc_coef<- signif(cc_mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
-
-#save summary of LOOCV
-model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-cc_sum$loocv<- model$results
-
-#linear model of logged prediction v.s. observed for a more accurate r2
-pred<-exp(model$pred$pred)/1000
-obs<- exp(model$pred$obs)/1000
-cc_r2<- lm(pred ~obs)
-cc_sum$true.r2<-summary(cc_r2)$adj.r.squared
-
-#check residuals
-mod.red<- resid(model)
-#hist(mod.red)
-#shapiro.test(mod.red)
 
 #Save figure of model results
 png(filename = file.path(fig_dir_mo, "CC_modelFit.png"),
@@ -227,6 +126,7 @@ dev.off()
 
 
 # EXPORT VOL MODEL DETAILS
+#TODO: update all these structures using output from new model function
 # ----------------------
 # compile all model details into one list to export
 mod_sum<- list(bwh = bwh_sum, bws = bws_sum, sc = sc_sum, cc = cc_sum)
@@ -266,7 +166,7 @@ dev.off()
 # Big Wood at Hailey
 # TODO: data isn't going through 2022 -- there is no runoff total for 140, 167, 144??
 # this doesn't like to run efficiently 
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bwh.cm, bwh.wq, 
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, bwh.cm, bwh.wq, 
                   all_of(swe_cols),  all_of(snodas_cols), all_of(aj_t_cols)) %>% filter(complete.cases(.)) 
 
 tryCatch({regsubsets.out<-regsubsets(hist$bwh.cm~., data=hist[,-1], nbest=1, nvmax=nv_max, really.big=TRUE)}, 
@@ -296,7 +196,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Big Wood at Stanton
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, bws.cm, bws.wq,
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, bws.cm, bws.wq,
                   all_of(swe_cols), all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 #select Parameters
@@ -327,7 +227,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Silver Creek Center of Mass
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, sc.cm, sc.wq, bwh.wq, bws.wq, 
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, sc.cm, sc.wq, bwh.wq, bws.wq, 
          all_of(swe_cols),all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Select and Save Parameters
@@ -356,7 +256,7 @@ dev.off()
 
 # -------------------------------------------------------------
 # Camas Creek Center of Mass
-hist <- var[var$year < pred.yr,] %>% dplyr::select(year, cc.cm, cc.wq, all_of(swe_cols), 
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, cc.cm, cc.wq, all_of(swe_cols), 
                                  all_of(aj_t_cols), all_of(snodas_cols)) %>% filter(complete.cases(.)) 
 
 # Select and Save model parameters
