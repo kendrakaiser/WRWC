@@ -31,6 +31,18 @@ write.csv(sc.flow.simLong, file.path(data_dir,'sc.flow.simLong.csv'), row.names=
 volumes<-read.csv(file.path(model_out,"vol.sample.csv"))
 colnames(volumes)<-c("bwh.vol", "bws.vol","cc.vol", "sc.vol") #this has already been read in via the streamflow simulation script; re-consider re-reading it in
 volumes.sampleLong<- volumes %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
+#add run date?
+vol.bws<- volumes.sampleLong %>% filter(site_name == 'bws.vol')
+bp.stats <- boxplot.stats(vol.bws$vol_af)
+bp.stats.long <- purrr::list_rbind(lapply(bp.stats, as.data.frame), names_to = "name")
+bp.long<- dplyr::bind_rows(bp.stats)
+
+
+long_df <- tibble::as_tibble(bp.stats) %>%
+  tidyr::unnest_longer(col = everything())
+
+list_rbind(bp.stats)
+
 write.csv(volumes.sampleLong, file.path(data_dir,'volumes.sampleLong.csv'), row.names=FALSE)
 
 curt.sampleLong<- read.csv(file.path(model_out,"curt.sample.csv"))
