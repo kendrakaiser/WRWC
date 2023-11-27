@@ -440,8 +440,9 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
       
       stillMissingDays=days[!days %in% as.Date(am_data$datetime)]
       #print(stillMissingDays)
-      am_data=rbind(am_data,data.frame(`DATE       TIME`="", OB="", datetime=stillMissingDays,airT=-999,check.names = F))
-      
+      if(length(stillMissingDays>0)){ ## add placeholder invalid data for missing days
+        am_data=rbind(am_data,data.frame(`DATE       TIME`="", OB="", datetime=stillMissingDays,airT=-999,check.names = F))
+      }
       am_data$airTQC=T
       am_data$airT[is.na(am_data$airT)]=-999
       am_data$airT[am_data$airT< -33]=-999
@@ -481,7 +482,7 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
 
 
 #############---------------update snodas data------------------------
-#first call will build all metrics, other calls should be unnecessary
+#first call will build all metrics, other calls should be unnecessary (but are quick)
 update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="snow_covered_area")
 update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="liquid_precip")
 update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="swe_total")
@@ -514,9 +515,6 @@ updateDbData(metric="swe", location="stickney mill", days=seq.Date(as.Date("2000
 updateDbData(metric="swe", location="bear canyon", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
 
 #dbGetQuery(conn,"SELECT data.locationid, locations.name, min(datetime) FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE metric = 'swe' GROUP BY data.locationid, locations.name;")
-
-
-
 
 
 ###########-----------update AgriMet data------------------

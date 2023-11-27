@@ -44,6 +44,16 @@ library(scales) # wrap text of figure labels
 library(ggnewscale) # plot two scatter plots with different scales on the same plot
 library(RPostgres) #connect to db
 
+library(sf)
+library(curl)
+library(terra)
+library(R.utils)
+library(raster)
+
+
+
+
+
 #'Water Year
 #'
 #'Create an ordered factor or numeric values from a vector of dates based on
