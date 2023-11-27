@@ -534,6 +534,17 @@ updateDbData(metric="air temperature", location="Fairfield AgriMet station", day
 
 dbExecute(conn,"REFRESH MATERIALIZED VIEW locationattributes;")
 
+# 6 1982-06-01 05:00:00 49.10    picabo     6 1982 1982
+
+# dbExecute(conn,"CREATE MATERIALIZED VIEW daily_air_temperature AS SELECT datetime::date AS date, AVG(value) AS day_mean_t, locations.sitenote as site_name, EXTRACT(MONTH FROM datetime) AS month, EXTRACT(YEAR FROM datetime) as y, wateryear(datetime) as wy
+#            FROM data LEFT JOIN locations ON data.locationid = locations.locationid 
+#            WHERE metric = 'air temperature' AND qcstatus = 'true'
+#            GROUP BY date, site_name, month, y, wy;")
+
+
+dbExecute(conn,"REFRESH MATERIALIZED VIEW daily_air_temperature;")
+
+
 
 # dbExecute(conn, "CREATE MATERIALIZED VIEW snodasdata AS SELECT data.metric, data.value, data.datetime, 
 #           data.metricid, data.locationid, data.qcstatus, data.qcdetails

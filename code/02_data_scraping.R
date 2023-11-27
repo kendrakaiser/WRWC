@@ -393,12 +393,5 @@ write.csv(agrimet, file.path('~/agri_metT.csv'), row.names = FALSE)
 # 3 1982-06-01 02:00:00 52.64    picabo     6 1982 1982
 # 4 1982-06-01 03:00:00 51.54    picabo     6 1982 1982
 # 5 1982-06-01 04:00:00 49.89    picabo     6 1982 1982
-# 6 1982-06-01 05:00:00 49.10    picabo     6 1982 1982
-
-am_data=dbGetQuery(conn,"SELECT datetime AS date_time, value AS t, locations.sitenote as site_name, EXTRACT(MONTH FROM datetime) AS month, EXTRACT(YEAR FROM datetime) as y, wateryear(datetime) as wy
-           FROM data LEFT JOIN locations ON data.locationid = locations.locationid 
-           WHERE metric = 'air temperature' AND qcstatus = 'true';")
-
-head(am_data)
 
 
