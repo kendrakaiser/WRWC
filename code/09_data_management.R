@@ -38,6 +38,28 @@ bp.stats.long <- purrr::list_rbind(lapply(bp.stats, as.data.frame), names_to = "
 bp.long<- dplyr::bind_rows(bp.stats)
 
 
+
+makeBpStatDF=function(x,site.metric,simDate){
+  simDate=as.Date(simDate)
+  # x=rnorm(100)
+  # site.metric="bws.vol"
+  # simDate=Sys.Date()
+  x.stats=boxplot.stats(x)
+  
+  statDF=data.frame(site_metric=site.metric,simDate=simDate,stat="n",value=x.stats$n)
+  statDF=rbind(statDF,data.frame(site_metric=site.metric,simDate=simDate,stat="min",value=x.stats$stats[[1]]))
+  statDF=rbind(statDF,data.frame(site_metric=site.metric,simDate=simDate,stat="lower_hinge",value=x.stats$stats[[2]]))
+  statDF=rbind(statDF,data.frame(site_metric=site.metric,simDate=simDate,stat="med",value=x.stats$stats[[3]]))
+  statDF=rbind(statDF,data.frame(site_metric=site.metric,simDate=simDate,stat="upper_hinge",value=x.stats$stats[[4]]))
+  statDF=rbind(statDF,data.frame(site_metric=site.metric,simDate=simDate,stat="max",value=x.stats$stats[[5]]))
+  if(length(x.stats$out)>0){
+    statDF=rbind(statDF,data.frame(site_metric=site.metric,simDate=simDate,stat="outlier",value=x.stats$out))
+  }
+  return(statDF)
+}
+
+
+
 long_df <- tibble::as_tibble(bp.stats) %>%
   tidyr::unnest_longer(col = everything())
 
