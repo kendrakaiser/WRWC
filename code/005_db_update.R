@@ -522,6 +522,37 @@ updateDbData(metric="swe", location="bear canyon", days=seq.Date(as.Date("2000-0
 
 updateDbData(metric="air temperature", location="Picabo AgriMet station", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="AgriMet")
 updateDbData(metric="air temperature", location="Fairfield AgriMet station", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="AgriMet")
-
 #dbGetQuery(conn,"SELECT data.locationid, locations.name, min(datetime) FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE metric = 'air temperature' GROUP BY data.locationid, locations.name;")
+
+######################-------------------- update db materialized views
+
+# dbExecute(conn, "CREATE MATERIALIZED VIEW locationattributes AS SELECT ROW_NUMBER() OVER(), met.locationid, met.name, met.locationgeometry, met.metrics, wsh.wshedareakm, wsh.watershedgeometry FROM
+#                       (SELECT DISTINCT locations.name, locations.locationid, locations.geometry AS locationgeometry, STRING_AGG(DISTINCT(data.metric), ',') AS metrics FROM locations LEFT JOIN data ON locations.locationid = data.locationid GROUP BY locations.locationid) met
+#                      LEFT JOIN 
+#                       (SELECT locations.locationid, watersheds.geometry AS watershedgeometry, ST_AREA(watersheds.geometry)/1000000 AS wshedareakm FROM locations LEFT JOIN watersheds ON locations.locationid = watersheds.outflowlocationid) wsh
+#                       ON met.locationid = wsh.locationid;")
+
+dbExecute(conn,"REFRESH MATERIALIZED VIEW locationattributes;")
+
+
+# dbExecute(conn, "CREATE MATERIALIZED VIEW snodasdata AS SELECT data.metric, data.value, data.datetime, 
+#           data.metricid, data.locationid, data.qcstatus, data.qcdetails
+#           FROM data LEFT JOIN batches ON data.batchid = batches.batchid WHERE batches.source = 'snodas' AND qcstatus=TRUE;")
+# 
+
+dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata")
+
+# dbExecute(conn,"CREATE OR REPLACE FUNCTION wateryear(datetime timestamp without time zone) RETURNS integer AS $$
+#               SELECT CASE WHEN ( EXTRACT(month FROM datetime)) >= 10  THEN EXTRACT(year FROM datetime) +1 
+#                                       ELSE EXTRACT(year FROM datetime) 
+#                         END
+#                 
+#                 $$
+#             LANGUAGE SQL;")
+
+
+
+
+
+
 
