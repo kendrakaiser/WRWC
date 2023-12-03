@@ -14,43 +14,6 @@ conn=scdbConnect()
 # ------------------------------------------------------------------------------
 # USGS Gages
 # ------------------------------------------------------------------------------
-# bwh = 13139510  #  Bullion Bridge, Big Wood at Hailey
-# bws = 13140800  #  Stanton Crossing, Big Wood
-# cc  = 13141500  #  Camas Creek near Blaine
-# sc  = 13150430  #  Silver Creek near Picabo
-# bwr = 13142500  #  Big Wood below Magic near Richfield
-# mr  = 13142000  #  Magic Reservoir storage in acre - feet, impt for carry-over
-# bwbr = 13140335 # Big Wood at S Broadford Bridge Nr Bellevue, data only goes back to 2017
-# bwk = 13135500  #  Big Wood nr Ketchum, goes to 2011
-# usgs_sites = c(bwh, bws, cc, sc, bwr) #  put all sites in one vector
-# 
-# pCode = "00060" # USGS code for streamflow
-# sCode = "00054" # USGS code for reservoir storage (acre-feet)
-# 
-# # Dataframe with information about sites and period of record, uv = instantaneous value
-# site_info<- whatNWISdata(sites= usgs_sites, parameterCd = pCode, outputDataTypeCd ='uv') 
-# site_info$abv <- c("bwh", "bws", "cc", "bwr", 'sc')
-# site_info <- site_info %>% dplyr::select(site_no, station_nm, dec_lat_va, dec_long_va, alt_va, huc_cd, begin_date, end_date, count_nu, abv)
-# 
-# # Dowload data from all sites into one dataframe
-# streamflow <- readNWISdv(siteNumbers = site_info$site_no, parameterCd = pCode, startDate = min(site_info$begin_date), endDate = max(site_info$end_date)) %>% renameNWISColumns() %>% data.frame
-# 
-# #Re-format dates and pull out month /day/ water year
-# streamflow$Date <- as.Date(streamflow$Date, format = "%Y-%m-%d")
-# streamflow$mo <- month(streamflow$Date)
-# streamflow$wy <- as.numeric(as.character(waterYear(streamflow$Date, numeric=TRUE)))
-# streamflow$day <- day(streamflow$Date)
-# # Cleanup Streamflow data frame and join relevant site information
-# streamflow <- streamflow %>% dplyr::select(-agency_cd) %>% inner_join(site_info, by ="site_no") 
-# 
-
-streamflow_db=rbind(getWriteData(metric="streamflow", location="BIG WOOD RIVER AT HAILEY", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS"),
-                    getWriteData(metric="streamflow", location="BIG WOOD RIVER AT STANTON CROSSING", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS"),
-                    getWriteData(metric="streamflow", location="SILVER CREEK AT SPORTSMAN ACCESS", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS"),
-                    getWriteData(metric="streamflow", location="CAMAS CREEK NR BLAINE ID", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
-)
-streamflow_db=streamflow_db[,c("locationid","value","datetime")]
-
 streamflow_db = merge(streamflow_db,
                       dbGetQuery(conn, paste0("SELECT locationid, sitenote AS abv FROM locations WHERE locationid IN ('",paste(unique(streamflow_db$locationid),collapse="', '"),"');"))
 )
@@ -61,49 +24,62 @@ streamflow_db$mo=month(streamflow_db$datetime)
 
 # ----------------------------------------------------------------------------------
 # THESE METRICS will be replaced with SQL queries!
-#calculate hydrologic metrics for each year for each station 
-# winter "baseflow" (wb), Apr - Sept total Volume (vol), and center of mass (cm)
+# calculate hydrologic metrics for each year for each station 
+# winter "baseflow" (wb), Apr - Sept irrigation volume (irr_vol), total Volume (tot_vol), and center of mass (cm)
 # ------------------------------------------------------------------------------
 stream.id<-c("bwh","bws","cc","sc")
-years = min(streamflow_db$wateryear):max(streamflow_db$wateryear)
-metrics<-data.frame(matrix(ncol = 17, nrow= length(years)))
-names(metrics)<-c("wateryear","bwh.wq","bwh.irr_vol","bwh.cm", "bwh.tot_vol", "bws.wq", "bws.irr_vol","bws.cm","bws.tot_vol","cc.wq","cc.irr_vol","cc.cm", "cc.tot_vol", "sc.wq","sc.irr_vol", "sc.cm","sc.tot_vol")
-metrics$wateryear<- years
 
-# calculate winter baseflow, annual irrigation season volume and center of mass
-for(i in 1:length(stream.id)){
-  sub <- streamflow_db %>% filter(abv == stream.id[i])
-  
-  for (y in 1: length(years)){
-    #average winter flow
-    sub1<- sub %>% filter(wateryear == years[y] & (mo >= 10 | mo < 2))
-    wq <- mean(sub1$value, na.rm = TRUE)
-    
-    #total april-september flow in AF
-    sub2<- sub %>% filter(wateryear == years[y] & between(mo, 4, 9)) 
-    irr_vol<- sum(sub2$value)*1.98 #convert from cfs to ac-ft
-    
-    #total april-september flow in AF
-    subv2<- sub %>% filter(wateryear == years[y])
-    tot_vol<- sum(subv2$value)*1.98 #convert from cfs to ac-ft
-    
-    #center of mass between April 1 and July 31
-    sub3<- sub %>% filter(wateryear == years[y] & between(mo, 4, 7)) 
-    sub3$doy <- yday(as.Date(sub3$datetime))
-    cm <- sum(sub3$doy * sub3$value)/sum(sub3$value)
-    
-    metrics[y,(((i-1)*4)+2)]<- wq
-    metrics[y,(((i-1)*4)+3)]<- irr_vol
-    metrics[y,(((i-1)*4)+4)]<- cm
-    metrics[y,(((i-1)*4)+5)]<- tot_vol
-  }
-}
+names(metrics)<-c("wateryear","bwh.wq","bwh.irr_vol","bwh.cm", "bwh.tot_vol", "bws.wq", "bws.irr_vol","bws.cm","bws.tot_vol","cc.wq","cc.irr_vol","cc.cm", "cc.tot_vol", "sc.wq","sc.irr_vol", "sc.cm","sc.tot_vol")
 
 # add variable for last years streamflow -- total water year flow 
 metrics$bwh.ly_vol[2:length(years)]<- metrics$bwh.tot_vol[1:length(years)-1]
 metrics$bws.ly_vol[2:length(years)]<- metrics$bws.tot_vol[1:length(years)-1]
 metrics$cc.ly_vol[2:length(years)]<- metrics$cc.tot_vol[1:length(years)-1]
 metrics$sc.ly_vol[2:length(years)]<- metrics$sc.tot_vol[1:length(years)-1]
+
+
+
+#Average Winter Flow 
+avgBaseflow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, AVG(value) AS wq, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
+           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+# pivot data wider
+#snodas_feb<-pivot_wider(data=winterSums_feb[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
+
+#Total April-September flow in AF [1.98 #convert from cfs to ac-ft]
+irr_AF=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS irr_vol, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 10) 
+           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+
+#Total water year flow in AF [1.98 #convert from cfs to ac-ft]
+tot_AF=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS tot_vol, data.locationid, name, sitenote
+          FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+          WHERE metric = 'streamflow' AND qcstatus = 'true'
+          GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+
+tot_AF$wy1<-tot_AF$wateryear-1
+totAF<- merge(tot_AF, tot_AF[,c('wateryear', "tot_vol", 'locationid', 'metric')], by.x=c('wy1', 'locationid', 'metric'), by.y=c('wateryear','locationid', 'metric'), suffixes = c('', 'ly'))
+
+
+#center of mass between April 1 and July 31
+cm_dat=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS flow, data.locationid, name, sitenote,  EXTRACT(doy FROM datetime) AS doy 
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 8) 
+           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote, doy) ORDER BY wateryear;")
+
+years<- min(cm_dat$wateryear):max(cm_dat$wateryear)
+cm<-data.frame(matrix(ncol = 3, nrow= length(years)*4)) %>% `colnames<-`(c('wateryear', 'sitenote', 'cm'))
+cm$wateryear<- rep(years, times=4)
+cm$sitenote<- rep(unique(cm_dat$sitenote), each=length(years))
+
+for(sitename in unique(cm$sitenote)){
+  sub <- cm_dat %>% filter(sitenote == sitename)
+  for (wy in unique(cm$wateryear)){
+    ix= which(cm$wateryear== wy & cm$sitenote == sitename) 
+    cm$cm[ix]<- sum(sub$doy * sub$flow)/sum(sub$flow)
+  }}
 
 # ------------------------------------------------------------------------------
 # Retrieve Snotel Data 
@@ -393,12 +369,5 @@ write.csv(agrimet, file.path('~/agri_metT.csv'), row.names = FALSE)
 # 3 1982-06-01 02:00:00 52.64    picabo     6 1982 1982
 # 4 1982-06-01 03:00:00 51.54    picabo     6 1982 1982
 # 5 1982-06-01 04:00:00 49.89    picabo     6 1982 1982
-# 6 1982-06-01 05:00:00 49.10    picabo     6 1982 1982
-
-am_data=dbGetQuery(conn,"SELECT datetime AS date_time, value AS t, locations.sitenote as site_name, EXTRACT(MONTH FROM datetime) AS month, EXTRACT(YEAR FROM datetime) as y, wateryear(datetime) as wy
-           FROM data LEFT JOIN locations ON data.locationid = locations.locationid 
-           WHERE metric = 'air temperature' AND qcstatus = 'true';")
-
-head(am_data)
 
 
