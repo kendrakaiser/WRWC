@@ -16,8 +16,8 @@ options(warn = -1)
 #------------------------------------------------------------------------------ # 
 var<- read.csv(file.path(model_out,'all_vars.csv'))
 
+# ID columns for subsetting
 swe_cols<-grep("(?!swe_)_?swe", colnames(var), perl = TRUE, value = TRUE)
-
 wint_t_cols<-grep('nj_t', colnames(var))
 aj_t_cols<-grep('aj_t', colnames(var))
 irr_vol_cols<- grep('irr_vol', colnames(var))
@@ -27,13 +27,12 @@ snodas_cols<- c(grep('wint', colnames(var)), grep('runoff', colnames(var)), grep
 #par(mar=c(1, 1, 1, 1))
 #pairs(c(var[swe_cols[1:8]], var[snodas_cols[1:10]]))
 
-#specify the cross-validation method
-ctrl <- trainControl(method = "LOOCV")
-
-
 #------------------------------------------------------------------------------ # 
 # Evaluate alternative model combinations for April-Sept Volume Predictions
 #------------------------------------------------------------------------------ # 
+#specify the cross-validation method
+ctrl <- trainControl(method = "LOOCV")
+
 vol_model<-function(site, sites, max_var){
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
@@ -106,9 +105,7 @@ sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 9)
 
 
 # EXPORT VOL MODEL DETAILS
-#TODO: update all these structures using output from new model function
 # ----------------------
-# compile all model details into one list to export
 vol_mod_summary<- list(bwh = bwh_vol_mod[[1]], bws = bws_vol_mod[[1]], sc = sc_vol_mod[[1]], cc = cc_vol_mod[[1]])
 vol_models<- list(bwh_mod = bwh_vol_mod[[2]], bws_mod = bws_vol_mod[[2]], sc_mod = sc_vol_mod[[2]], cc_mod = cc_vol_mod[[2]])
 vol_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod[[3]])
@@ -119,16 +116,15 @@ write.list(vol_mod_summary, file.path(data_dir, vol.summary)) #.csv
 list.save(vol_mod_summary, file.path(data_dir, vol_sum)) #.Rdata
 list.save(vol_models, file.path(data_dir, vol_mods))
 
-#TODO: update this
+# Pull out R2 for summary stats
 r2s<- data.frame(matrix(ncol = 3, nrow = 4))
 colnames(r2s)<-c("AdjR2", "Loocv R2", "MAE")
 rownames(r2s)<-c("BWH", "BWS", "SC", "CC")
-#this wont work as is
-#r2s[,1]<- round(c(mod_sum$bwh$true.r2, mod_sum$bws$true.r2,mod_sum$sc$true.r2,mod_sum$cc$true.r2)*100, 2)
-#r2s[,2]<- round(c(mod_sum$bwh$loocv$Rsquared, mod_sum$bws$loocv$Rsquared,mod_sum$sc$loocv$Rsquared,mod_sum$cc$loocv$Rsquared)*100, 2)
-#r2s[,3]<- round(c(exp(mod_sum$bwh$loocv$MAE), exp(mod_sum$bws$loocv$MAE), exp(mod_sum$sc$loocv$MAE), exp(mod_sum$cc$loocv$MAE)), 2)
+r2s[,1]<- round(c(bwh_vol_mod[[1]]$true.r2, bws_vol_mod[[1]]$true.r2, sc_vol_mod[[1]]$true.r2,cc_vol_mod[[1]]$true.r2)*100, 2)
+r2s[,2]<- round(c(bwh_vol_mod[[1]]$loocv$Rsquared, bws_vol_mod[[1]]$loocv$Rsquared,sc_vol_mod[[1]]$loocv$Rsquared,cc_vol_mod[[1]]$loocv$Rsquared)*100, 2)
+r2s[,3]<- round(c(exp(bwh_vol_mod[[1]]$loocv$MAE), exp(bws_vol_mod[[1]]$loocv$MAE), exp(sc_vol_mod[[1]]$loocv$MAE), exp(cc_vol_mod[[1]]$loocv$MAE)), 2)
 
-png(file.path(fig_dir_mo,"r2s.png"), height = 25*nrow(r2s), width = 80*ncol(r2s))
+png(file.path(fig_dir_mo,"r2s_vol.png"), height = 25*nrow(r2s), width = 80*ncol(r2s))
 grid.table(r2s)
 dev.off()
 
@@ -188,7 +184,7 @@ cm_model<-function(site, sites, max_var){
 
 # Create Center of Mass Models for each site
 bwh_cm_mod<- cm_model("bwh", "bwh", 9)
-bwh_cm_mod<- cm_model("bws", "bws", 9)
+bws_cm_mod<- cm_model("bws", "bws", 9)
 sc_cm_mod<- cm_model("sc", c("bwh","sc"), 9)
 cc_cm_mod<- cm_model("cc", "cc", 9)
 
@@ -196,8 +192,8 @@ cc_cm_mod<- cm_model("cc", "cc", 9)
 ### EXPORT Center of Mass MODEL DETAILS
 # ----------------------------------------------------------------------------
 #compile all model details into one list to export
-cm_mod_sum<- list(bwh = bwh_cm_out[[1]], bws = bws_cm_out[[1]], sc = sc_cm_out[[1]], cc = cc_cm_out[[1]])
-cm_models<- list(bwh_cm.mod = bwh_cm_out[[2]], bws_cm.mod = bws_cm_out[[2]], sc_cm.mod = sc_cm_out[[2]], cc_cm.mod = cc_cm_out[[2]])
+cm_mod_sum<- list(bwh = bwh_cm_mod[[1]], bws = bws_cm_out[[1]], sc = sc_cm_out[[1]], cc = cc_cm_out[[1]])
+cm_models<- list(bwh_cm.mod = bwh_cm_mod[[2]], bws_cm.mod = bws_cm_out[[2]], sc_cm.mod = sc_cm_out[[2]], cc_cm.mod = cc_cm_out[[2]])
 
 write.list(cm_mod_sum, file.path(data_dir, cm.summary))
 
@@ -207,12 +203,12 @@ list.save(cm_models, file.path(data_dir, cm_mods))
 r2s_cm<- data.frame(matrix(ncol = 2, nrow = 4))
 colnames(r2s_cm)<-c("AdjR2", "Loocv R2")
 rownames(r2s_cm)<-c("BWH", "BWS", "SC", "CC")
-#TODO this will break as is
-#r2s_cm[,1]<- round(c(mod_cm.sum$bwh$adjr2, mod_cm.sum$bws$adjr2,mod_cm.sum$sc$adjr2,mod_cm.sum$cc$adjr2)*100, 2)
-#r2s_cm[,2]<- round(c(mod_cm.sum$bwh$loocv$Rsquared, mod_cm.sum$bws$loocv$Rsquared,mod_cm.sum$sc$loocv$Rsquared,mod_cm.sum$cc$loocv$Rsquared)*100, 2)
 
-#png(file.path(fig_dir_mo,"r2s_cm.png"), height = 25*nrow(r2s_cm), width = 80*ncol(r2s_cm))
-#grid.table(r2s_cm)
-#dev.off()
+r2s_cm[,1]<- round(c(bwh_cm_mod[[1]]$adjr2, bws_cm_out[[1]]$adjr2, sc_cm_out[[1]]$adjr2, cc_cm_out[[1]]$adjr2)*100, 2)
+r2s_cm[,2]<- round(c(bwh_cm_mod[[1]]$loocv$Rsquared, bws_cm_out[[1]]$loocv$Rsquared, sc_cm_out[[1]]$loocv$Rsquared, cc_cm_out[[1]]$loocv$Rsquared)*100, 2)
+
+png(file.path(fig_dir_mo,"r2s_cm.png"), height = 25*nrow(r2s_cm), width = 80*ncol(r2s_cm))
+grid.table(r2s_cm)
+dev.off()
 
 options(warn = defaultW)
