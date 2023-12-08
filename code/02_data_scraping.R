@@ -12,32 +12,10 @@ source(paste0(git_dir,"/code/fxn_SNODASR_functions.R"))
 conn=scdbConnect() 
 
 # ------------------------------------------------------------------------------
-# USGS Gages
-# ------------------------------------------------------------------------------
-streamflow_db = merge(streamflow_db,
-                      dbGetQuery(conn, paste0("SELECT locationid, sitenote AS abv FROM locations WHERE locationid IN ('",paste(unique(streamflow_db$locationid),collapse="', '"),"');"))
-)
-
-streamflow_db$wateryear=as.numeric(as.character(waterYear(streamflow_db$datetime, numeric=TRUE)))
-streamflow_db$mo=month(streamflow_db$datetime)
-
-
-# ----------------------------------------------------------------------------------
-# THESE METRICS will be replaced with SQL queries!
+# USGS Gages Data & Metrics
 # calculate hydrologic metrics for each year for each station 
 # winter "baseflow" (wb), Apr - Sept irrigation volume (irr_vol), total Volume (tot_vol), and center of mass (cm)
 # ------------------------------------------------------------------------------
-stream.id<-c("bwh","bws","cc","sc")
-
-names(metrics)<-c("wateryear","bwh.wq","bwh.irr_vol","bwh.cm", "bwh.tot_vol", "bws.wq", "bws.irr_vol","bws.cm","bws.tot_vol","cc.wq","cc.irr_vol","cc.cm", "cc.tot_vol", "sc.wq","sc.irr_vol", "sc.cm","sc.tot_vol")
-
-# add variable for last years streamflow -- total water year flow 
-metrics$bwh.ly_vol[2:length(years)]<- metrics$bwh.tot_vol[1:length(years)-1]
-metrics$bws.ly_vol[2:length(years)]<- metrics$bws.tot_vol[1:length(years)-1]
-metrics$cc.ly_vol[2:length(years)]<- metrics$cc.tot_vol[1:length(years)-1]
-metrics$sc.ly_vol[2:length(years)]<- metrics$sc.tot_vol[1:length(years)-1]
-
-
 
 #Average Winter Flow 
 avgBaseflow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, AVG(value) AS wq, data.locationid, name, sitenote
@@ -81,6 +59,7 @@ for(sitename in unique(cm$sitenote)){
     cm$cm[ix]<- sum(sub$doy * sub$flow)/sum(sub$flow)
   }}
 
+print('Streamflow Metrics Complete')
 # ------------------------------------------------------------------------------
 # Retrieve Snotel Data 
 # ------------------------------------------------------------------------------
@@ -188,24 +167,8 @@ for (i in 1:length(snotel_sites)) {
 # Update the Feb 1 SWE with the current swe
 feb1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
 
-# ------------------------------------------------------------------------------
-# Save Data
-# ------------------------------------------------------------------------------
 
-# Save Snotel data as csvs -----
-write.csv(april1swe, file.path(data_dir, 'april1swe.csv'), row.names=FALSE)
-write.csv(mar1swe, file.path(data_dir, 'mar1swe.csv'), row.names=FALSE)
-write.csv(feb1swe, file.path(data_dir, 'feb1swe.csv'), row.names=FALSE)
 
-write.csv(snotel, file.path(data_dir,'snotel_data.csv'), row.names=FALSE)
-write.csv(snotel_site_info, file.path(data_dir,'snotel_sites.csv'), row.names=FALSE)
-
-# Save flow data as csvs ------
-write.csv(streamflow_db, file.path(data_dir,'streamflow_data.csv'), row.names=FALSE) # should we remove this now that it is all in the db?
-write.csv(metrics, file.path(data_dir,'metrics.csv'), row.names=FALSE)
-#write.csv(site_info, file.path(data_dir,'usgs_sites.csv'), row.names=FALSE)
-
-print('Streamflow Data Saved')
 
 #------------------------------------------------------------------------------
 # Get SNODAS from Database 
