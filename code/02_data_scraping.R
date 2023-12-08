@@ -63,6 +63,17 @@ print('Streamflow Metrics Complete')
 # ------------------------------------------------------------------------------
 # Retrieve Snotel Data 
 # ------------------------------------------------------------------------------
+# TODO need the name of the snoteldata set, are the snotel shorthand sitenames under sitenote?
+#FEBRUARY TESTER
+winterSWE_feb=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS swe, snotel_data.locationid, name, sitenote
+           FROM snotel_data LEFT JOIN locations ON snotel_data.locationid = locations.locationid WHERE EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2
+           GROUP BY(wateryear, snotel_data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+# pivot data wider
+swe_feb<-pivot_wider(data=winterSums_feb[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
+
+
+
+
 # SNOTEL Sites ----
 cg = 895 #  Chocolate Gulch (0301)
 g  = 489 #  Galena (0101)
