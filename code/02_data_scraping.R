@@ -59,6 +59,8 @@ streamflow_db$wateryear=as.numeric(as.character(waterYear(streamflow_db$datetime
 streamflow_db$mo=month(streamflow_db$datetime)
 
 
+
+
 # ----------------------------------------------------------------------------------
 # THESE METRICS will be replaced with SQL queries!
 #calculate hydrologic metrics for each year for each station 
