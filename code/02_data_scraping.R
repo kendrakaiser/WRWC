@@ -41,7 +41,6 @@ tot_AF$wy1<-tot_AF$wateryear-1
 totAF<- merge(tot_AF, tot_AF[,c('wateryear', "tot_vol", 'locationid', 'metric')], by.x=c('wy1', 'locationid', 'metric'), by.y=c('wateryear','locationid', 'metric'), suffixes = c('', 'ly'))
 
 
-<<<<<<< HEAD
 
 
 # ----------------------------------------------------------------------------------
@@ -54,13 +53,13 @@ years = min(streamflow_db$wateryear):max(streamflow_db$wateryear)
 metrics<-data.frame(matrix(ncol = 17, nrow= length(years)))
 names(metrics)<-c("wateryear","bwh.wq","bwh.irr_vol","bwh.cm", "bwh.tot_vol", "bws.wq", "bws.irr_vol","bws.cm","bws.tot_vol","cc.wq","cc.irr_vol","cc.cm", "cc.tot_vol", "sc.wq","sc.irr_vol", "sc.cm","sc.tot_vol")
 metrics$wateryear<- years
-=======
+
 #center of mass between April 1 and July 31
 cm_dat=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS flow, data.locationid, name, sitenote,  EXTRACT(doy FROM datetime) AS doy 
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 8) 
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote, doy) ORDER BY wateryear;")
->>>>>>> 4a25d432e696e9740779704d83bfcfb2eb506bf3
+
 
 years<- min(cm_dat$wateryear):max(cm_dat$wateryear)
 cm<-data.frame(matrix(ncol = 3, nrow= length(years)*4)) %>% `colnames<-`(c('wateryear', 'sitenote', 'cm'))
