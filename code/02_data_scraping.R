@@ -44,7 +44,7 @@ totAF<- merge(tot_AF, tot_AF[,c('wateryear', "tot_vol", 'locationid', 'metric')]
               by.y=c('wateryear','locationid', 'metric'), suffixes = c('', '_ly')) %>% dplyr::rename(ly_vol = tot_vol_ly)
   
 # pivot data wider
-tot_vol<-pivot_wider(data=totAF[,c("wateryear","tot_vol","ly_vol","sitenote")], names_from = c(sitenote), values_from = c(tot_vol, ly_vol))
+tot_vol<-pivot_wider(data=totAF[,c("wateryear","tot_vol","ly_vol","sitenote")], names_from = c(sitenote), values_from = c(tot_vol, ly_vol), names_glue = "{sitenote}.{.value}")
 
 #CENTER of MASS between April 1 and July 31
 cm_dat=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS flow, data.locationid, name, sitenote,  EXTRACT(doy FROM datetime) AS doy 
@@ -82,20 +82,20 @@ winterSWE_feb=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, 
 swe_feb<-pivot_wider(data=winterSWE_feb[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
 
 #March
-winterSWE_mar=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS swe, data.locationid, name, sitenote
+winterSWE_mar=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
-           (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3)
+           (EXTRACT(day FROM datetime) = 1 AND EXTRACT(month FROM datetime) = 3)
            AND metric = 'swe' AND qcstatus = 'true'
-           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+           ORDER BY wateryear;")
 # pivot data wider
 swe_mar<-pivot_wider(data=winterSWE_mar[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
 
 #APRIL
-winterSWE_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS swe, data.locationid, name, sitenote
+winterSWE_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
-           (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 4)
+           (EXTRACT(day FROM datetime) = 1 AND EXTRACT(month FROM datetime) = 4)
            AND metric = 'swe' AND qcstatus = 'true'
-           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+           ORDER BY wateryear;")
 # pivot data wider
 swe_apr<-pivot_wider(data=winterSWE_apr[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
 
