@@ -11,11 +11,12 @@
 # -----------------------------------------------------------------------------  
 
 # Import Data ------------------------------------------------------------------  
+usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
 stream.id<-unique(as.character(usgs_sites$abv))
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 
 # Load the models and parameters from all the models 
-vol_mod_sum <<- list.load(file.path(data_dir, mod_sum))
+vol_mod_sum <<- list.load(file.path(data_dir, vol_sum))
 vol_models <<- list.load(file.path(data_dir, vol_mods))
 cm_mod_sum <<- list.load(file.path(data_dir,cm_sum))
 cm_models<<- list.load(file.path(data_dir, cm_mods))
