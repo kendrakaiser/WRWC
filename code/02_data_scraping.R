@@ -44,14 +44,13 @@ totAF<- merge(tot_AF, tot_AF[,c('wateryear', "tot_vol", 'locationid', 'metric')]
               by.y=c('wateryear','locationid', 'metric'), suffixes = c('', '_ly')) %>% dplyr::rename(ly_vol = tot_vol_ly)
   
 # pivot data wider
-baseflow<-pivot_wider(data=totAF[,c("wateryear","tot_vol","ly_vol","sitenote")], names_from = c(sitenote), values_from = c(tot_vol, ly_vol))
+tot_vol<-pivot_wider(data=totAF[,c("wateryear","tot_vol","ly_vol","sitenote")], names_from = c(sitenote), values_from = c(tot_vol, ly_vol))
 
 #CENTER of MASS between April 1 and July 31
 cm_dat=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS flow, data.locationid, name, sitenote,  EXTRACT(doy FROM datetime) AS doy 
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 8) 
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote, doy) ORDER BY wateryear;")
-
 
 years<- min(cm_dat$wateryear):max(cm_dat$wateryear)
 cm<-data.frame(matrix(ncol = 3, nrow= length(years)*4)) %>% `colnames<-`(c('wateryear', 'sitenote', 'cm'))
@@ -69,6 +68,7 @@ for(sitename in unique(cm$sitenote)){
 cm_wide<- cm %>% pivot_wider(names_from = sitenote, values_from = cm, names_glue = "{sitenote}.cm" )
 
 print('Streamflow Metrics Complete')
+
 # ------------------------------------------------------------------------------
 # Retrieve Snotel Data 
 # ------------------------------------------------------------------------------
@@ -105,21 +105,20 @@ todaySWE_=dbGetQuery(conn,"SELECT DISTINCT ON (locationid) datetime, wateryear(d
            WHERE metric = 'swe' AND qcstatus = true ORDER BY locationid, datetime DESC;")
 
 # SNOTEL Sites ----
-cg = 895 #  Chocolate Gulch (0301)
-g  = 489 #  Galena (0101)
-gs = 490 #  Galena Summit (0101)
-hc = 537 #  Hyndman Creek (0402)
-lwd= 601 #  Lost-Wood Divide (Trail Creek 0304)
-ds = 450 #  Dollarhide Summit (Placer/Warm Springs Creek 0201)
-ccd = 382 #  Camas Creek Divide (Sheep/Camas Creek 0101)
-sr = 769 #  Soldier R.S (Upper Soldier Creek 0303)
-ga = 492 #  Garfield R.S. (Upper Muldoon Creek 0301)
-sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
-sm = 792 # Stickney Mill
-bc = 320 # Bear Canyon
-snotel_sites = c(cg, g, gs, hc, lwd, ds, ccd, sr, ga, sp, sm, bc)
-snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "ccd.swe", "sr.swe", "ga.swe", "sp.swe", "sm.swe", "bc.swe")
-
+#cg = 895 #  Chocolate Gulch (0301)
+#g  = 489 #  Galena (0101)
+#gs = 490 #  Galena Summit (0101)
+#hc = 537 #  Hyndman Creek (0402)
+#lwd= 601 #  Lost-Wood Divide (Trail Creek 0304)
+#ds = 450 #  Dollarhide Summit (Placer/Warm Springs Creek 0201)
+#ccd = 382 #  Camas Creek Divide (Sheep/Camas Creek 0101)
+#sr = 769 #  Soldier R.S (Upper Soldier Creek 0303)
+#ga = 492 #  Garfield R.S. (Upper Muldoon Creek 0301)
+#sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
+#sm = 792 # Stickney Mill
+#bc = 320 # Bear Canyon
+#snotel_sites = c(cg, g, gs, hc, lwd, ds, ccd, sr, ga, sp, sm, bc)
+#snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "ccd.swe", "sr.swe", "ga.swe", "sp.swe", "sm.swe", "bc.swe")
 
 #------------------------------------------------------------------------------
 # Get SNODAS from Database 
@@ -145,144 +144,32 @@ winterSums_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric,
 # pivot data wider
 snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
 
-
-
-
-# integrate SNODAS with USGS and SNOTEL
-#TODO: THESE NEED CHANGED ONCE USGS and SNOTEL are updated
+#------------------------------------------------------------------------------
+# Integrate & EXPORT Data: USGS SNOTEL SNODAS
+#------------------------------------------------------------------------------
 
 #February data for modeling
-alldat <- feb1swe %>% full_join(metrics, by ="wateryear") %>% 
+alldat <- swe_feb %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
+  merge(irr_vol, by= 'wateryear') %>% merge(cm_wide, by= 'wateryear') %>% 
   merge(snodas_feb, by= 'wateryear')
 
 filename = 'alldat_feb.csv' 
 
-#March data for modeling
-alldat <- mar1swe %>% full_join(metrics, by ="wateryear") %>% 
-  merge(snodas_march, by= 'wateryear')
+write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
 
+#March data for modeling
+alldat <- swe_mar %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
+  merge(irr_vol, by= 'wateryear') %>% merge(cm_wide, by= 'wateryear') %>% 
+  merge(snodas_march, by= 'wateryear')
 filename = 'alldat_mar.csv'
+write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
 
 #April data for modeling
-alldat <- april1swe %>% full_join(metrics, by ="wateryear") %>% 
+alldat <- swe_apr %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
+  merge(irr_vol, by= 'wateryear') %>% merge(cm_wide, by= 'wateryear') %>% 
   merge(snodas_april, by= 'wateryear')
 
 filename = 'alldat_apr.csv'
-
-
-
-# -----------------------------------------------------------------------------
-# EXPORT Streamflow, Snotel, and Snodas Data
-# -----------------------------------------------------------------------------
 write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
+
 print("All streamflow and snow data saved")
-
-#------------------------------------------------------------------------------
-#TODO: move these figures to seperate script
-wq<- alldat %>% select("year", "bwh.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
-
-# Boxplots of Historic Conditions
-sitelabs<- c( "Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")
-wq_box<- ggplot(wq %>% filter(year < pred.yr), aes(x=factor(site), y=winterFlow))+
-  geom_boxplot(alpha=0.8)+
-  theme_bw()+
-  xlab("USGS Site")+
-  ylab("Average Nov-Jan Winter Flow (cfs)")+
-  geom_point(data = wq %>% filter(year == pred.yr),  aes(x=factor(site), y=winterFlow), color="blue", size=3, shape=15)+
-  scale_x_discrete(labels= sitelabs)
-
-png(filename = file.path(fig_dir,"wq_box.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-print(wq_box)
-dev.off()
-
-# AGRIMET DATA
-# -----------------------------------------------------------------------------
-source(file.path(git_dir, 'code/fxn_grabAgriMetData.R'))
-
-# Download NRCS ET Agrimet data ----
-# OB = Air temperature
-# PC = precipitation, cumulative (units?)
-# SI = hourly solar radiation (units?)
-# SQ = solar radiation, cumulative ??
-# additional: soil temp, humidity, vapor pressure
-
-# Download Fairfield Data ----------------------------------------
-# start: 06/25/1987; site number: 3108
-# create increments to download data
-fiveYearDates=c(seq.Date(from=as.Date("1987-06-25"), to=as.Date(end_date), by="5 years"), end_date)
-fafi = data.frame()
-
-# download site data in ten year increments to prevent timing out server, will produce warning, that's okay
-for (i in 2:length(fiveYearDates)){
-  tempDF=getAgriMet.data(site_id="FAFI", timescale="hourly", DayBgn = fiveYearDates[i-1], DayEnd=fiveYearDates[i], 
-                         pCodes=c("OB", "PC","SI", "SQ"))
-  fafi=plyr::rbind.fill(fafi, tempDF)
-  rm(tempDF)
-}
-
-# rename columns
-colnames(fafi)<- c("date_time", "fafi_t", "fafi_pc", "fafi_si", "fafi_sq")
-# update format of dates
-fafi$date_time<- as.POSIXct(fafi$date_time, format ='%m/%d/%Y %H:%M')
-fafi$mo <- month(fafi$date_time)
-fafi$y <- year(fafi$date_time)
-# update format of values
-for(i in 2:4) {
-  fafi[, i]<- as.numeric(as.character(fafi[, i]))
-}
-fafi<-fafi[-1,] #remove first bad data value
-fafiT<-fafi[,1:2]
-fafiT[,3]<- 'fairfield'
-fafiT<-cbind(fafiT, fafi[,6:7])
-colnames(fafiT) <- c("date_time","t", "site_name", 'month', 'y')
-
-# Download Picabo Data --------------------------------------
-# start: 1982-06-01; site number: 7040; 
-# Has SWE 1993-2002 and 2005-2017 - but can't be used predicatively since it is no longer available
-# create increments to download data
-fiveYearDates_p=c(seq.Date(from=as.Date("1982-06-01"), to=end_date, by="5 years"),end_date) 
-pici = data.frame()
-
-# download site data in ten year increments to prevent timing out server
-for (i in 2:length(fiveYearDates_p)){
-  tempDF=getAgriMet.data(site_id="PICI", timescale="hourly", DayBgn = fiveYearDates_p[i-1], DayEnd=fiveYearDates_p[i], pCodes=c("OB", "PC")) 
-  pici=plyr::rbind.fill(pici, tempDF)
-}
-# rename columns 
-colnames(pici)<- c("date_time", "pici_t", "pici_pc")
-# update format of dates
-pici$date_time<- as.POSIXct(pici$date_time, format ='%m/%d/%Y %H:%M')
-pici$mo <- month(pici$date_time)
-pici$y <- year(pici$date_time)
-# update format of values
-pici[, 2]<- as.numeric(as.character(pici[, 2]))
-pici[, 3]<- as.numeric(as.character(pici[, 3]))
-piciT<- pici [,1:2]
-piciT[, 3]<-'picabo'
-piciT<- cbind(piciT, pici[,4:5])
-colnames(piciT)<- c("date_time","t", "site_name", 'month', 'y')
-
-# Download Richmond Data - can't do this through AgriMet because it's Idaho Power Data
-# start 3/27/2014 - 01-2020 daily temp; site number 7673
-# ichi=getAgriMet.data(site_id="ICHI", timescale="hourly", DayBgn = "2014-01-01", DayEnd="2020-02-01", pCodes=c("OB", "PC"))
-
-# Merge & save AgriMet Data ---------------------------------
-agrimet <- rbind(piciT, fafiT) #long form agrimet data for database
-agrimet$wy[!is.na(agrimet$date_time)]<- as.numeric(as.character(waterYear(agrimet$date_time[!is.na(agrimet$date_time)], numeric=TRUE)))
-agri_met<- merge(pici[,1:3], fafi, by='date_time') #wide for modeling
-agri_met$wy[!is.na(agri_met$date_time)]<- as.numeric(as.character(waterYear(agri_met$date_time[!is.na(agri_met$date_time)], numeric=TRUE)))
-
-# saving to local directory
-write.csv(agrimet, file.path('~/agri_metT.csv'), row.names = FALSE)
-
-# > head(agrimet)
-# date_time              t  site_name month    y   wy
-# 1 1982-06-01 00:00:00 53.35    picabo     6 1982 1982
-# 2 1982-06-01 01:00:00 53.74    picabo     6 1982 1982
-# 3 1982-06-01 02:00:00 52.64    picabo     6 1982 1982
-# 4 1982-06-01 03:00:00 51.54    picabo     6 1982 1982
-# 5 1982-06-01 04:00:00 49.89    picabo     6 1982 1982
-
-
