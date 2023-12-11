@@ -77,15 +77,32 @@ print('Streamflow Metrics Complete')
 # ------------------------------------------------------------------------------
 # Retrieve Snotel Data 
 # ------------------------------------------------------------------------------
-# TODO need the name of the snoteldata set, are the snotel shorthand sitenames under sitenote?
-#FEBRUARY TESTER
-winterSWE_feb=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS swe, data.locationid, name, sitenote
+#FEBRUARY
+winterSWE_feb=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
-           (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2)
+           (EXTRACT(day FROM datetime) = 1 AND EXTRACT(month FROM datetime) = 2)
+           AND metric = 'swe' AND qcstatus = 'true'
+           ORDER BY wateryear;")
+# pivot data wider
+swe_feb<-pivot_wider(data=winterSWE_feb[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
+
+#March
+winterSWE_mar=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS swe, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
+           (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3)
            AND metric = 'swe' AND qcstatus = 'true'
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 # pivot data wider
-swe_feb<-pivot_wider(data=winterSums_feb[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
+swe_mar<-pivot_wider(data=winterSWE_mar[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
+
+#APRIL
+winterSWE_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS swe, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
+           (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 4)
+           AND metric = 'swe' AND qcstatus = 'true'
+           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+# pivot data wider
+swe_apr<-pivot_wider(data=winterSWE_apr[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
 
 
 #
@@ -109,96 +126,6 @@ sm = 792 # Stickney Mill
 bc = 320 # Bear Canyon
 snotel_sites = c(cg, g, gs, hc, lwd, ds, ccd, sr, ga, sp, sm, bc)
 snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "ccd.swe", "sr.swe", "ga.swe", "sp.swe", "sm.swe", "bc.swe")
-
-# Download Snotel data ----
-snotel_data = snotel_download(snotel_sites, path = data_dir, internal = TRUE )
-# Pull out Snotel site information ----
-snotel_site_info<-data.frame('id'=NA, 'start'=NA, 'end'=NA, 'lat'=NA, 'long'=NA, 'elev'=NA, 'description'=NA, 'site_name'=NA, 'huc8'=NA)
-snotel_site_info$start <-as.Date(NA)
-snotel_site_info$end <-as.Date(NA)
-for (i in 1:length(snotel_sites)){
-  snotel_site_info[i,'id'] <- snotel_sites[i] 
-  snotel_site_info[i,'start'] <- snotel_data$start[snotel_data$site_id == snotel_sites[i]][1]
-  snotel_site_info[i,'end'] <- snotel_data$end[snotel_data$site_id == snotel_sites[i]][1]
-  snotel_site_info[i,'lat'] <- snotel_data$latitude[snotel_data$site_id == snotel_sites[i]][1]
-  snotel_site_info[i,'long'] <- snotel_data$longitude[snotel_data$site_id == snotel_sites[i]][1]
-  snotel_site_info[i,'elev'] <- snotel_data$elev[snotel_data$site_id == snotel_sites[i]][1]
-  snotel_site_info[i,'description'] <- snotel_data$description[snotel_data$site_id == snotel_sites[i]][1]
-}
-snotel_site_info$site_name <- c('chocolate gulch', 'galena', 'galena summit', 'hyndman', 'lost-wood divide', 'dollarhide summit', 'camas creek divide', 'soldier r.s.', 'garfield r.s.', 'swede peak', "stickney mill", "bear canyon")
-snotel_site_info$abv<- snotel_abrv
-snotel_site_info$huc8 <- c(219,219,219,219,219,219,220,220,221,221,303,101)
-# remove unnecessary columns from Snotel data frame
-snotel = subset(snotel_data, select = -c(network, state, start, end, latitude, longitude, elev, county, description))
-snotel$site_name<-trimws(snotel$site_name)
-snotel$date <- as.Date(snotel$date, format = "%Y-%m-%d")
-snotel$mo <- month(snotel$date)
-snotel$wy <- as.numeric(as.character(waterYear(snotel$date, numeric=TRUE)))
-snotel$day <- day(snotel$date)
-
-# subset SWE data by month for model ----
-wy<- seq(1979, year(end_date))
-
-#--- subset April 1 data for model
-april1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
-colnames(april1swe)<- c('wateryear', snotel_abrv)
-april1swe[,1]<- wy
-april1swe<-as.data.frame(april1swe)
-
-today_swe<- matrix(data=NA, nrow=1, ncol=length(snotel_sites))
-colnames(today_swe)<- c(snotel_abrv)
-
-for (i in 1:length(snotel_sites)) {
-  sub<- snotel[snotel$site_name == snotel_site_info$site_name[i] & snotel$mo == 4 & snotel$day ==1,]
-  april1swe[which(april1swe$year == min(sub$wy)) : which(april1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
-  sub2<- snotel[snotel$site_name == snotel_site_info$site_name[i],]
-  if (month(end_date) < 5){
-    today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
-  } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 4 & sub2$day ==30 & sub2$wy == (pred.yr-1)]}
-}
-# Update the April 1 SWE with the current swe
-april1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
-
-#--- subset March 1 data for model 
-mar1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
-colnames(mar1swe)<- c('year', snotel_abrv)
-mar1swe[,1]<- wy
-mar1swe<-as.data.frame(mar1swe)
-today_swe<- matrix(data=NA, nrow=1, ncol=length(snotel_sites))
-colnames(today_swe)<- c(snotel_abrv)
-
-for (i in 1:length(snotel_sites)) {
-  sub<- snotel[snotel$site_name == snotel_site_info$site_name[i] & snotel$mo == 3 & snotel$day ==1,]
-  mar1swe[which(mar1swe$year == min(sub$wy)) : which(mar1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
-  sub2<- snotel[snotel$site_name == snotel_site_info$site_name[i],]
-  if (month(end_date) < 4){
-    today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
-  } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 3 & sub2$day ==31 & sub2$wy == (pred.yr-1)]}
-}
-# Update the March 1 SWE with the current swe
-mar1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
-
-#--- subset February 1 data for model 
-feb1swe<- matrix(data=NA, nrow=length(wy), ncol=length(snotel_sites)+1)
-colnames(feb1swe)<- c('year', snotel_abrv)
-feb1swe[,1]<- wy
-feb1swe<-as.data.frame(feb1swe)
-
-today_swe<- matrix(data=NA, nrow=1, ncol=length(snotel_sites))
-colnames(today_swe)<- c(snotel_abrv)
-
-for (i in 1:length(snotel_sites)) {
-  sub<- snotel[snotel$site_name == snotel_site_info$site_name[i] & snotel$mo == 2 & snotel$day ==1,]
-  feb1swe[which(feb1swe$year == min(sub$wy)) : which(feb1swe$year == max(sub$wy)),i+1]<- sub$snow_water_equivalent
-  sub2<- snotel[snotel$site_name == snotel_site_info$site_name[i],]
-  if (month(end_date) < 3){
-    today_swe[i]<- sub2$snow_water_equivalent[sub2$date == end_date-1]
-  } else {today_swe[i] <- sub2$snow_water_equivalent[sub2$mo == 2 & sub2$day ==28 & sub2$wy == (pred.yr-1)]}
-}
-# Update the Feb 1 SWE with the current swe
-feb1swe[length(wy), 1:length(snotel_sites)+1]<- today_swe
-
-
 
 
 #------------------------------------------------------------------------------
