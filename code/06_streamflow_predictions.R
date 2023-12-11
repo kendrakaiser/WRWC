@@ -71,7 +71,7 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   wq:       array of historic winter flows (e.g. hist$cc.wq)
   vol:      array of historic april-sept volumes  (hist$cc.vol)
   hist.swe: mean(arrays of historic SWE from ws snotel sites) #mean(hist$ccd+hist$sr, na.rm=T)
-  lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$year == pred.yr-1] 
+  lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$wateryear == pred.yr-1] 
   '
   pred.params.vol<-array(NA,c(1,4))
   output.vol<-array(NA,c(1,3))
@@ -98,59 +98,59 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
 
 # --------------------------------------------------
 # Subset Big Wood Variables
-hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bwh.irr_vol, vol_mod_sum$bwh$vars)) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bwh.irr_vol, vol_mod_sum$bwh$vars)) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #Prediction Data
-pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars) 
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars) 
 
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol_models$bwh_mod)$adj.r.squared
-mod_out<- modOut(vol_models$bwh_mod, pred.dat, var$bwh.wq[var$year == pred.yr], var$bwh.wq[var$year < pred.yr], hist$bwh.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$bwh.irr_vol[var$year == pred.yr-1])
-#these could be formatted differently to be saved to the gloabl env. within the function
+mod_out<- modOut(vol_models$bwh_mod, pred.dat, var$bwh.wq[var$wateryear == pred.yr], var$bwh.wq[var$wateryear < pred.yr], hist$bwh.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$bwh.irr_vol[var$wateryear == pred.yr-1])
+#these could be formatted differently to be saved to the global env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
-hist <- var[var$year < pred.yr,] %>% dplyr::select(c(bws.irr_vol, vol_mod_sum$bws$vars)) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bws.irr_vol, vol_mod_sum$bws$vars)) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #  bws Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol_mod_sum$bws$vars) 
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bws$vars) 
 
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol_models$bws_mod)$adj.r.squared
-mod_out<- modOut(vol_models$bws_mod, pred.dat, var$bws.wq[var$year == pred.yr], var$bws.wq[var$year < pred.yr], hist$bws.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$bws.irr_vol[var$year == pred.yr-1])
+mod_out<- modOut(vol_models$bws_mod, pred.dat, var$bws.wq[var$wateryear == pred.yr], var$bws.wq[var$wateryear < pred.yr], hist$bws.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$bws.irr_vol[var$wateryear == pred.yr-1])
 output.vol[2,] <- mod_out[[1]] #prediction plus sigma^2
 mod_out[[2]][,2]<- mod_out[[2]][,2]^2 #manually lognormalizing the sigma
 pred.params.vol[2,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Silver Creek 
-hist <- var[var$year < pred.yr,] %>% dplyr::select(c(sc.irr_vol, vol_mod_sum$sc$vars)) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(sc.irr_vol, vol_mod_sum$sc$vars)) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 # SC Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars) 
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars) 
 
 # Silver Creek Model output
 mod_sum[4,1]<-summary(vol_models$sc_mod)$adj.r.squared
-mod_out<- modOut(vol_models$sc_mod, pred.dat, var$sc.wq[var$year == pred.yr], var$sc.wq[var$year < pred.yr], hist$sc.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$sc.irr_vol[var$year == pred.yr-1])
+mod_out<- modOut(vol_models$sc_mod, pred.dat, var$sc.wq[var$wateryear == pred.yr], var$sc.wq[var$wateryear < pred.yr], hist$sc.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$sc.irr_vol[var$wateryear == pred.yr-1])
 output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection 
-hist <- var[var$year < pred.yr,] %>% dplyr::select(cc.irr_vol, vol_mod_sum$cc$vars) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.irr_vol, vol_mod_sum$cc$vars) %>% filter(complete.cases(.))
 swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #CC Prediction Data 
-pred.dat<-var[var$year == pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars)
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars)
 
 # Camas Creek Model output
 mod_sum[3,1]<-summary(vol_models$cc_mod)$adj.r.squared
-mod_out<- modOut(vol_models$cc_mod, pred.dat, var$cc.wq[var$year == pred.yr], var$cc.wq[var$year < pred.yr], hist$cc.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$cc.irr_vol[var$year == pred.yr-1])
+mod_out<- modOut(vol_models$cc_mod, pred.dat, var$cc.wq[var$wateryear == pred.yr], var$cc.wq[var$wateryear < pred.yr], hist$cc.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$cc.irr_vol[var$wateryear == pred.yr-1])
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
@@ -203,17 +203,17 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, 
 # Big Wood at Hailey center of mass
 sub_params<- cm_mod_sum$bwh$vars[-grep('aj', cm_mod_sum$bwh$vars)]
 aj_params<-cm_mod_sum$bwh$vars[grep('aj', cm_mod_sum$bwh$vars)]
-hist <- var[var$year < pred.yr,] %>% dplyr::select(bwh.cm, cm_mod_sum$bwh$vars) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.cm, cm_mod_sum$bwh$vars) %>% filter(complete.cases(.))
 
 # Prediction Data with modeled temperature data
-pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::slice(rep(1:n(), 5000))
+pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::slice(rep(1:n(), 5000))
 pred.data[aj_params] <- temp.ran[aj_params]
 
 # Big Wood Hailey Model output
 mod_sum[1,2]<-summary(cm_models$bwh_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm_models$bwh_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
-                   (var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$bwh.cm, var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
+                   (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
+                   hist$bwh.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
                    hist%>% dplyr::select(contains('swe')))
 output.cm[1,] <- mod_out[[1]]
 pred.params.cm[1,] <- mod_out[[2]]
@@ -223,17 +223,17 @@ pred.params.cm[1,] <- mod_out[[2]]
 # 
 sub_params<- cm_mod_sum$bws$vars[-grep('aj', cm_mod_sum$bws$vars)]
 aj_params<-cm_mod_sum$bws$vars[grep('aj', cm_mod_sum$bws$vars)]
-hist <- var[var$year < pred.yr,] %>% dplyr::select(bws.cm, cm_mod_sum$bws$vars) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bws.cm, cm_mod_sum$bws$vars) %>% filter(complete.cases(.))
 
 # Prediction Data with modeled temperature data
-pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
 pred.data[aj_params] <- temp.ran[aj_params]
 
 # Big Wood Stanton Model output
 mod_sum[2,2]<-summary(cm_models$bws_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm_models$bws_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
-                   (var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$bws.cm, var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
+                   (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
+                   hist$bws.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
                    hist%>% dplyr::select(contains('swe')))
 output.cm[2,] <- mod_out[[1]]
 pred.params.cm[2,] <- mod_out[[2]]
@@ -246,20 +246,20 @@ if (is.integer(grep('aj', cm_mod_sum$sc$vars))){
   sub_params<- cm_mod_sum$sc$vars[-grep('aj', cm_mod_sum$sc$vars)]
   aj_params<-cm_mod_sum$sc$vars[grep('aj', cm_mod_sum$sc$vars)]
   # Prediction Data with modeled temperature data
-  pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+  pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
   pred.data[aj_params] <- temp.ran[aj_params]
 } else {
   sub_params<- cm_mod_sum$sc$vars
-  pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params))
+  pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params))
 }
 
-hist <- var[var$year < pred.yr,] %>% dplyr::select(sc.cm, cm_mod_sum$sc$vars) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(sc.cm, cm_mod_sum$sc$vars) %>% filter(complete.cases(.))
 
 # Silver Creek  Model output
 mod_sum[4,2]<-summary(cm_models$sc_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm_models$sc_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
-                   (var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$sc.cm, var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
+                   (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
+                   hist$sc.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
                    hist%>% dplyr::select(contains('swe')))
 output.cm[4,] <- mod_out[[1]]
 pred.params.cm[4,] <- mod_out[[2]]
@@ -269,17 +269,17 @@ pred.params.cm[4,] <- mod_out[[2]]
 
 sub_params<- cm_mod_sum$cc$vars[-grep('aj', cm_mod_sum$cc$vars)]
 aj_params<-cm_mod_sum$cc$vars[grep('aj', cm_mod_sum$cc$vars)]
-hist <- var[var$year < pred.yr,] %>% dplyr::select(cc.cm, cm_mod_sum$cc$vars) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.cm, cm_mod_sum$cc$vars) %>% filter(complete.cases(.))
 
 #Prediction Data with modeled temperature data
-pred.data<-var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
 pred.data[aj_params] <- temp.ran[aj_params]
 
 # Camas Creek Model output
 mod_sum[3,2]<-summary(cm_models$cc_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm_models$cc_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
-                   (var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$cc.cm, var[var$year == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
+                   (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
+                   hist$cc.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
                    hist%>% dplyr::select(contains('swe')))
 output.cm[3,] <- mod_out[[1]]
 pred.params.cm[3,] <- mod_out[[2]]
@@ -307,7 +307,7 @@ write.csv(pred.params.cm, file.path(model_out,"pred.params.cm.csv"),row.names=T)
 # between each gage
 
 # calculate correlations between flow conditions across the basins
-flow.data = var[var$year >= 1997 & var$year < pred.yr,] %>% dplyr::select(bwh.irr_vol, 
+flow.data = var[var$wateryear >= 1997 & var$wateryear < pred.yr,] %>% dplyr::select(bwh.irr_vol, 
       bwh.cm, bws.irr_vol, bws.cm, cc.irr_vol, cc.cm, sc.irr_vol, sc.cm) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
@@ -338,8 +338,8 @@ write.csv(pred.pars, file.path(model_out,"pred.pars.csv"),row.names=T)
 # Create distribution and draw samples of CENTER of MASS & Volume
 # ------------------------------------------------------------------------------
 # Draw sample of years with similar center of mass (timing)
-cm.data = var[var$year >= 1997 & var$year < pred.yr,]
-cm.data = cm.data %>% dplyr::select(year, bwh.cm, bws.cm,cc.cm, sc.cm) 
+cm.data = var[var$wateryear >= 1997 & var$wateryear < pred.yr,]
+cm.data = cm.data %>% dplyr::select(wateryear, bwh.cm, bws.cm,cc.cm, sc.cm) 
 cm.data$prob<-NA
 
 samp.sd.cm<- c(sd(var$bwh.cm), sd(var$bws.cm), sd(var$cc.cm), sd(var$sc.cm))
@@ -353,7 +353,7 @@ for(i in 1:dim(cm.data)[1]){
   }
 
 # create normal distribution of years 
-CMyear.sample<-sample(cm.data$year,5000,replace=TRUE, prob=cm.data$prob) 
+CMyear.sample<-sample(cm.data$wateryear,5000,replace=TRUE, prob=cm.data$prob) 
 # Of the 5000 replicates show the percentage that each year represents
 cm_prob<-as.data.frame(summary(as.factor(CMyear.sample))/5000)
 colnames(cm_prob)<- c("% of sample")
@@ -368,7 +368,7 @@ write.csv(CMyear.sample, file.path(model_out, paste0("CMyear.sample-", end_date,
 
 # TESTING
 # Draw sample of years with similar volume for comparison -- 
-vol.data = var[var$year >1996 & var$year < pred.yr,]%>% dplyr::select(year, bwh.irr_vol, bws.irr_vol, cc.irr_vol, sc.irr_vol) 
+vol.data = var[var$wateryear >1996 & var$wateryear < pred.yr,]%>% dplyr::select(wateryear, bwh.irr_vol, bws.irr_vol, cc.irr_vol, sc.irr_vol) 
 vol.data$prob<-NA
 
 #TODO: Write this up in a methods section
