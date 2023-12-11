@@ -4,14 +4,10 @@
 # 09-15-2023
 
 # Import & Compile Data -------------------------------------------------------# 
-
-# Streamflow, Current SWE, historic and Modeled Temperature Data
-usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
-stream.id<-unique(as.character(usgs_sites$abv))
+# Streamflow, Current SWE, historic Temperature Data
 
 # input data name 'alldat_mo.csv'
 swe_q = read.csv(file.path(data_dir,input_data))
-swe_q$bws.vol[swe_q$year <=1996]<- NA
 swe_q[swe_q == 0] <- 0.01 # change zeros to a value so lm works 
 
 # observed temperatures
