@@ -110,7 +110,7 @@ vol_mod_summary<- list(bwh = bwh_vol_mod[[1]], bws = bws_vol_mod[[1]], sc = sc_v
 vol_models<- list(bwh_mod = bwh_vol_mod[[2]], bws_mod = bws_vol_mod[[2]], sc_mod = sc_vol_mod[[2]], cc_mod = cc_vol_mod[[2]])
 vol_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod[[3]])
 
-write.csv(mod_coef, file.path(model_out,'mod_coeff.csv'), row.names = FALSE)
+write.csv(vol_coef, file.path(model_out,'vol_coeff.csv'), row.names = FALSE)
 write.list(vol_mod_summary, file.path(data_dir, vol.summary)) #.csv
 
 list.save(vol_mod_summary, file.path(data_dir, vol_sum)) #.Rdata
