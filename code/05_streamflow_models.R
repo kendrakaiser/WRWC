@@ -94,7 +94,7 @@ vol_model<-function(site, sites, max_var){
   abline(0,1,col="gray50",lty=1)
   dev.off()
   
-  return(list(mod_sum, model, coef))
+  return(list(mod_sum, mod, coef))
 }
 
 # Create Volume Models for each USGS gage
@@ -113,8 +113,8 @@ vol_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod
 write.csv(vol_coef, file.path(model_out,'vol_coeff.csv'), row.names = FALSE)
 write.list(vol_mod_summary, file.path(data_dir, vol.summary)) #.csv
 
-list.save(vol_mod_summary, file.path(data_dir, vol_sum)) #.Rdata
-list.save(vol_models, file.path(data_dir, vol_mods))
+list.save(vol_mod_summary, file.path(data_dir, vol_sum)) #.Rdata summary stats
+list.save(vol_models, file.path(data_dir, vol_mods)) #actual model structure
 
 # Pull out R2 for summary stats
 r2s<- data.frame(matrix(ncol = 3, nrow = 4))
