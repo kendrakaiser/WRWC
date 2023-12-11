@@ -23,38 +23,30 @@ avgBaseflow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, AV
            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 # pivot data wider
-#snodas_feb<-pivot_wider(data=winterSums_feb[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
+baseflow<-pivot_wider(data=avgBaseflow[,c("wateryear","wq","sitenote")],names_from = c(sitenote),values_from = c(wq), names_glue = "{sitenote}.wq")
 
-#Total April-September flow in AF [1.98 #convert from cfs to ac-ft]
+#Total Irrigation Season April-September streamflow in AF [1.98 #convert from cfs to ac-ft]
 irr_AF=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS irr_vol, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 10) 
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+# pivot data wider
+irr_vol<-pivot_wider(data=irr_AF[,c("wateryear","irr_vol","sitenote")],names_from = c(sitenote),values_from = c(irr_vol), names_glue = "{sitenote}.irr_vol")
 
-#Total water year flow in AF [1.98 #convert from cfs to ac-ft]
+#Total Water Year volume in AF [1.98 #convert from cfs to ac-ft]
 tot_AF=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS tot_vol, data.locationid, name, sitenote
           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
           WHERE metric = 'streamflow' AND qcstatus = 'true'
           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 
 tot_AF$wy1<-tot_AF$wateryear-1
-totAF<- merge(tot_AF, tot_AF[,c('wateryear', "tot_vol", 'locationid', 'metric')], by.x=c('wy1', 'locationid', 'metric'), by.y=c('wateryear','locationid', 'metric'), suffixes = c('', 'ly'))
+totAF<- merge(tot_AF, tot_AF[,c('wateryear', "tot_vol", 'locationid', 'metric')], by.x=c('wy1', 'locationid', 'metric'), 
+              by.y=c('wateryear','locationid', 'metric'), suffixes = c('', '_ly')) %>% dplyr::rename(ly_vol = tot_vol_ly)
+  
+# pivot data wider
+baseflow<-pivot_wider(data=totAF[,c("wateryear","tot_vol","ly_vol","sitenote")], names_from = c(sitenote), values_from = c(tot_vol, ly_vol))
 
-
-
-
-# ----------------------------------------------------------------------------------
-# THESE METRICS will be replaced with SQL queries!
-#calculate hydrologic metrics for each year for each station 
-# winter "baseflow" (wb), Apr - Sept total Volume (vol), and center of mass (cm)
-# ------------------------------------------------------------------------------
-stream.id<-c("bwh","bws","cc","sc")
-years = min(streamflow_db$wateryear):max(streamflow_db$wateryear)
-metrics<-data.frame(matrix(ncol = 17, nrow= length(years)))
-names(metrics)<-c("wateryear","bwh.wq","bwh.irr_vol","bwh.cm", "bwh.tot_vol", "bws.wq", "bws.irr_vol","bws.cm","bws.tot_vol","cc.wq","cc.irr_vol","cc.cm", "cc.tot_vol", "sc.wq","sc.irr_vol", "sc.cm","sc.tot_vol")
-metrics$wateryear<- years
-
-#center of mass between April 1 and July 31
+#CENTER of MASS between April 1 and July 31
 cm_dat=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS flow, data.locationid, name, sitenote,  EXTRACT(doy FROM datetime) AS doy 
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 8) 
@@ -69,9 +61,12 @@ cm$sitenote<- rep(unique(cm_dat$sitenote), each=length(years))
 for(sitename in unique(cm$sitenote)){
   sub <- cm_dat %>% filter(sitenote == sitename)
   for (wy in unique(cm$wateryear)){
+    sub2 <- sub %>% filter(wateryear == wy)
     ix= which(cm$wateryear== wy & cm$sitenote == sitename) 
-    cm$cm[ix]<- sum(sub$doy * sub$flow)/sum(sub$flow)
+    cm$cm[ix]<- sum(sub2$doy * sub2$flow)/sum(sub2$flow)
   }}
+
+cm_wide<- cm %>% pivot_wider(names_from = sitenote, values_from = cm, names_glue = "{sitenote}.cm" )
 
 print('Streamflow Metrics Complete')
 # ------------------------------------------------------------------------------
@@ -104,12 +99,10 @@ winterSWE_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, 
 # pivot data wider
 swe_apr<-pivot_wider(data=winterSWE_apr[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
 
-
-#
-todaySWE_=dbGetQuery(conn,"SELECT datetime, wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
-           FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
-           metric = 'swe' AND qcstatus = 'true'
-           ORDER BY datetime;")
+#Grab Todays SWE
+todaySWE_=dbGetQuery(conn,"SELECT DISTINCT ON (locationid) datetime, wateryear(datetime) AS wateryear, metric AS swe, value, locations.locationid, locations.name 
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'swe' AND qcstatus = true ORDER BY locationid, datetime DESC;")
 
 # SNOTEL Sites ----
 cg = 895 #  Chocolate Gulch (0301)
@@ -157,13 +150,14 @@ snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum
 
 # integrate SNODAS with USGS and SNOTEL
 #TODO: THESE NEED CHANGED ONCE USGS and SNOTEL are updated
-#April data for modeling
+
+#February data for modeling
 alldat <- feb1swe %>% full_join(metrics, by ="wateryear") %>% 
   merge(snodas_feb, by= 'wateryear')
 
 filename = 'alldat_feb.csv' 
 
-#April data for modeling
+#March data for modeling
 alldat <- mar1swe %>% full_join(metrics, by ="wateryear") %>% 
   merge(snodas_march, by= 'wateryear')
 
