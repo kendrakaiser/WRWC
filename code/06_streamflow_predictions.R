@@ -200,6 +200,7 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, 
   return(list(output.cm, pred.params.cm))
 }
 
+#-------------------------------------------------------------------------------
 # Big Wood at Hailey center of mass
 sub_params<- cm_mod_sum$bwh$vars[-grep('aj', cm_mod_sum$bwh$vars)]
 aj_params<-cm_mod_sum$bwh$vars[grep('aj', cm_mod_sum$bwh$vars)]
