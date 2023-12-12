@@ -1,4 +1,29 @@
 # Figures and tables for data analysis and model output from wood river streamflow forecasting
+
+#------------------------------------------------------------------------------
+# Historic condition data
+#TODO: update
+ 
+wq<- alldat %>% select("year", "bwh.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
+
+# Boxplots of Historic Conditions
+sitelabs<- c( "Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")
+wq_box<- ggplot(wq %>% filter(year < pred.yr), aes(x=factor(site), y=winterFlow))+
+  geom_boxplot(alpha=0.8)+
+  theme_bw()+
+  xlab("USGS Site")+
+  ylab("Average Nov-Jan Winter Flow (cfs)")+
+  geom_point(data = wq %>% filter(year == pred.yr),  aes(x=factor(site), y=winterFlow), color="blue", size=3, shape=15)+
+  scale_x_discrete(labels= sitelabs)
+
+png(filename = file.path(fig_dir,"wq_box.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+print(wq_box)
+dev.off()
+
+#------------------------------------------------------------------------------
+
 #model output version
 vol.sample<-read.csv(file.path(model_out,"vol.sample.csv"))
 #database input version

@@ -94,7 +94,7 @@ vol_model<-function(site, sites, max_var){
   abline(0,1,col="gray50",lty=1)
   dev.off()
   
-  return(list(mod_sum, model, coef))
+  return(list(mod_sum, mod, coef))
 }
 
 # Create Volume Models for each USGS gage
@@ -110,11 +110,11 @@ vol_mod_summary<- list(bwh = bwh_vol_mod[[1]], bws = bws_vol_mod[[1]], sc = sc_v
 vol_models<- list(bwh_mod = bwh_vol_mod[[2]], bws_mod = bws_vol_mod[[2]], sc_mod = sc_vol_mod[[2]], cc_mod = cc_vol_mod[[2]])
 vol_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod[[3]])
 
-write.csv(mod_coef, file.path(model_out,'mod_coeff.csv'), row.names = FALSE)
+write.csv(vol_coef, file.path(model_out,'vol_coeff.csv'), row.names = FALSE)
 write.list(vol_mod_summary, file.path(data_dir, vol.summary)) #.csv
 
-list.save(vol_mod_summary, file.path(data_dir, vol_sum)) #.Rdata
-list.save(vol_models, file.path(data_dir, vol_mods))
+list.save(vol_mod_summary, file.path(data_dir, vol_sum)) #.Rdata summary stats
+list.save(vol_models, file.path(data_dir, vol_mods)) #actual model structure
 
 # Pull out R2 for summary stats
 r2s<- data.frame(matrix(ncol = 3, nrow = 4))
@@ -192,8 +192,8 @@ cc_cm_mod<- cm_model("cc", "cc", 9)
 ### EXPORT Center of Mass MODEL DETAILS
 # ----------------------------------------------------------------------------
 #compile all model details into one list to export
-cm_mod_sum<- list(bwh = bwh_cm_mod[[1]], bws = bws_cm_out[[1]], sc = sc_cm_out[[1]], cc = cc_cm_out[[1]])
-cm_models<- list(bwh_cm.mod = bwh_cm_mod[[2]], bws_cm.mod = bws_cm_out[[2]], sc_cm.mod = sc_cm_out[[2]], cc_cm.mod = cc_cm_out[[2]])
+cm_mod_sum<- list(bwh = bwh_cm_mod[[1]], bws = bws_cm_mod[[1]], sc = sc_cm_mod[[1]], cc = cc_cm_mod[[1]])
+cm_models<- list(bwh_cm.mod = bwh_cm_mod[[2]], bws_cm.mod = bws_cm_mod[[2]], sc_cm.mod = sc_cm_mod[[2]], cc_cm.mod = cc_cm_mod[[2]])
 
 write.list(cm_mod_sum, file.path(data_dir, cm.summary))
 
@@ -204,11 +204,11 @@ r2s_cm<- data.frame(matrix(ncol = 2, nrow = 4))
 colnames(r2s_cm)<-c("AdjR2", "Loocv R2")
 rownames(r2s_cm)<-c("BWH", "BWS", "SC", "CC")
 
-r2s_cm[,1]<- round(c(bwh_cm_mod[[1]]$adjr2, bws_cm_out[[1]]$adjr2, sc_cm_out[[1]]$adjr2, cc_cm_out[[1]]$adjr2)*100, 2)
-r2s_cm[,2]<- round(c(bwh_cm_mod[[1]]$loocv$Rsquared, bws_cm_out[[1]]$loocv$Rsquared, sc_cm_out[[1]]$loocv$Rsquared, cc_cm_out[[1]]$loocv$Rsquared)*100, 2)
+r2s_cm[,1]<- round(c(bwh_cm_mod[[1]]$adjr2, bws_cm_mod[[1]]$adjr2, sc_cm_mod[[1]]$adjr2, cc_cm_mod[[1]]$adjr2)*100, 2)
+r2s_cm[,2]<- round(c(bwh_cm_mod[[1]]$loocv$Rsquared, bws_cm_mod[[1]]$loocv$Rsquared, sc_cm_mod[[1]]$loocv$Rsquared, cc_cm_mod[[1]]$loocv$Rsquared)*100, 2)
 
 png(file.path(fig_dir_mo,"r2s_cm.png"), height = 25*nrow(r2s_cm), width = 80*ncol(r2s_cm))
 grid.table(r2s_cm)
 dev.off()
 
-options(warn = defaultW)
+

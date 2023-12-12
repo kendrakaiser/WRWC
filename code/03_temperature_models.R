@@ -7,8 +7,16 @@
 # ----------------------------------------------------------------------------- # 
 
 # import data ----
-#snotel_data = read.csv(file.path(data_dir,'snotel_data.csv'))
 #agrimet = read.csv(file.path(data_dir,'agri_metT.csv'))
+
+#connect to database
+conn=scdbConnect() 
+
+# Pull AGRIMET Data from database
+# -----------------------------------------------------------------------------
+agrimet<- dbGetQuery(conn, "SELECT * FROM daily_air_temperature;")
+# saving to local directory
+write.csv(agrimet, file.path('~/agri_metT.csv'), row.names = FALSE)
 
 #renaming agrimet columns to match snotel for calculations
 colnames(agrimet)<- c("date_time","temperature_mean", "site_name", "mo", "y", "wy")
