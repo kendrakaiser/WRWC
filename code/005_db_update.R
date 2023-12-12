@@ -392,17 +392,21 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
       
     }
     
-    sourceSnotel=function(metricID, locationID){
+    sourceSnotel=function(metricID, locationID, missingDays){
       #for debug:
       # metricID=6
-      # locationID=c(168)
+      # locationID=c(170)
       
       
       #db knows internal snotel source location ids:
       thisLocation_sourceID=dbGetQuery(conn,paste0("SELECT source_site_id FROM locations WHERE locationid = '",locationID,"';"))$source_site_id
       
       snotel_data = snotel_download(thisLocation_sourceID, path = tempdir(), internal = TRUE)
+      snotel_data=snotel_data[snotel_data$date %in% missingDays,]
+      
       snotel_data = snotel_data[,c("date","snow_water_equivalent","temperature_mean")]
+      
+      
       
       #process and write swe
       snotel_data$sweQC=TRUE
@@ -458,8 +462,8 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
       sourceUSGS(metricID,locationID,missingDays)
     }
     if(sourceName == "snotel"){
-      if( (max(missingDays)-Sys.Date()>=1) | rebuildInvalidData ){ # current data is not here - run rebuild function (or, if rebuild invalid data, run anyway)
-        sourceSnotel(metricID,locationID) #no date argument to snotel_download function
+      if( (Sys.Date()-max(missingDays)<=1) | rebuildInvalidData ){ # current data is not here - run rebuild function (or, if rebuild invalid data, run anyway)
+        sourceSnotel(metricID,locationID, missingDays) 
       }
     }
     if(sourceName=="AgriMet"){
@@ -560,7 +564,6 @@ dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata")
 #                 
 #                 $$
 #             LANGUAGE SQL;")
-
 
 
 
