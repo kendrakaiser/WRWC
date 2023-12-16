@@ -16,6 +16,12 @@ conn=scdbConnect()
 # -----------------------------------------------------------------------------
 agrimet<- dbGetQuery(conn, "SELECT * FROM daily_air_temperature;")
 
+#agrimet_nj<- dbGetQuery(conn, "SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempF 
+ #   FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+  #  WHERE metric = 'temperature mean' AND qcstatus = 'true' AND 
+   # (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
+    #GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+
 # saving to local directory
 write.csv(agrimet, file.path('~/agri_metT.csv'), row.names = FALSE)
 
@@ -48,23 +54,20 @@ snotel_aj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric,
 first.yr<-1988
 last.yr<-pred.yr
 nyrs<-last.yr-first.yr+1
-site.key <- c(as.character(unique(snotel$site_name)), as.character(unique(agrimet$site_name)))
 site.key<- as.character(unique(agrimet$site_name))
-elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,5)))
 
 #summer temp july-sept, winter temp NDJFM
-colnames(tdata)<-c("wateryear","site","spring_tempF", "sum_tempF","nj_tempF")
+colnames(tdata)<-c("wateryear","site","aj_tempF", "sum_tempF","nj_tempF")
 tdata$wateryear<-rep(first.yr:last.yr,length(site.key))
 tdata$site<-rep(site.key, each=nyrs)
-tdata$elev<-rep(elev, each=nyrs)
 
 #calculate average Snotel seasonal temperatures for every year
-for(i in 1:2){ #hard coded this in after adding agrimet sites to site.key list
+for(i in 1:2){ 
   for (y in first.yr:last.yr){
     #subset to indv. site and year
-      sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$wy==y, ])}
+      sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$wy==y,])
     #average april - june temps
     #if length is greater than 95% of the desired period calculate the mean
     if (length(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"]) > 88) {
@@ -80,10 +83,10 @@ for(i in 1:2){ #hard coded this in after adding agrimet sites to site.key list
         } else (nj.mean.temp <- NA)
   
     #save to tdata table
-    tdata$spring_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- aj.mean.temp #april-june
+    tdata$aj_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- aj.mean.temp
     tdata$sum_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- sum.mean.temp
     tdata$nj_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- nj.mean.temp
-
+  }
 }
 
 #transform temperature dataframe for main model
