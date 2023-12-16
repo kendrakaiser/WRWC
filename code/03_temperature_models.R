@@ -15,6 +15,7 @@ conn=scdbConnect()
 # Pull AGRIMET Data from database
 # -----------------------------------------------------------------------------
 agrimet<- dbGetQuery(conn, "SELECT * FROM daily_air_temperature;")
+
 # saving to local directory
 write.csv(agrimet, file.path('~/agri_metT.csv'), row.names = FALSE)
 
@@ -25,12 +26,19 @@ agrimet$date_time<- as.Date(agrimet$date_time)
 agrimet$temperature_mean[agrimet$temperature_mean < -90] <- NA
 agrimet$temperature_mean[agrimet$temperature_mean > 150] <- NA
 
-#FEBRUARY
-snotel_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
-           FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
-           (EXTRACT(day FROM datetime) = 1 AND EXTRACT(month FROM datetime) = 2)
-           AND metric = 'swe' AND qcstatus = 'true'
-           ORDER BY wateryear;")
+#TODO NEED to add IF statement that reqiures the record length to be at least 88 
+#Mean Nov- Jan Temp
+snotel.nj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempF, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND 
+           (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
+           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+
+snotel_aj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS aj_tempF, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND 
+           (EXTRACT(month FROM datetime) >= 4 OR EXTRACT(month FROM datetime) <= 6)
+           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 
 #TODO make snotel temp merge with agrimet data and call the loop from that singular df
 
@@ -44,7 +52,7 @@ site.key <- c(as.character(unique(snotel$site_name)), as.character(unique(agrime
 site.key<- as.character(unique(agrimet$site_name))
 elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
-tdata<-data.frame(array(NA,c(length(site.key)*nyrs,7)))
+tdata<-data.frame(array(NA,c(length(site.key)*nyrs,5)))
 
 #summer temp july-sept, winter temp NDJFM
 colnames(tdata)<-c("wateryear","site","spring_tempF", "sum_tempF","nj_tempF")
@@ -56,9 +64,6 @@ tdata$elev<-rep(elev, each=nyrs)
 for(i in 1:2){ #hard coded this in after adding agrimet sites to site.key list
   for (y in first.yr:last.yr){
     #subset to indv. site and year
-    if (i>13){ # this should be transformed 
-      sub<- snotel[snotel$site_name == site.key[i] & snotel$wy==y, ]
-    } else if (i<=2){ 
       sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$wy==y, ])}
     #average april - june temps
     #if length is greater than 95% of the desired period calculate the mean
@@ -74,18 +79,16 @@ for(i in 1:2){ #hard coded this in after adding agrimet sites to site.key list
        nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"], na.rm=TRUE)
         } else (nj.mean.temp <- NA)
   
-    
     #save to tdata table
     tdata$spring_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- aj.mean.temp #april-june
     tdata$sum_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- sum.mean.temp
     tdata$nj_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- nj.mean.temp
 
-  }
 }
 
 #transform temperature dataframe for main model
-spring.tdata <-pivot_wider(tdata[,1:3], names_from = site, values_from = spring_tempF)
-nf.tdata<-pivot_wider(tdata[,c(1,2,7)], names_from = site, values_from = nf_tempF)
+spring.tdata <-pivot_wider(tdata[,1:3], names_from = site, values_from = aj_tempF)
+nj.tdata<-pivot_wider(tdata[,c(1,2,5)], names_from = site, values_from = nj_tempF)
 
 #TODO - rename above output so that names can be merged from metric and site
 colnames(spring.tdata)<-c("wateryear", "cg.aj_t","ccd.aj_t", "sr.aj_t", "bc.aj_t","ds.aj_t","g.aj_t","ga.aj_t", "hc.aj_t", "lw.aj_t", "sm.aj_t", "gs.aj_t", "sp.aj_t","p.aj_t", "f.aj_t")
