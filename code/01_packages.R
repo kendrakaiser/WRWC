@@ -6,7 +6,7 @@
  #'snotelr', 'XML', 'httr', 'plyr', 'dplyr', 'devtools', 'readr', 'lubridate', 
  #'lfstat', 'gridExtra', 'varhandle', 'viridis', 'ggplot2', 'nlme', 'tidyr', 
  #'knitr', 'fasstr', 'stringr','kableExtra', 'leaps', 'rlist', 'caret', 'erer', 
- #'ggcorrplot', 'scales'))
+ #'ggcorrplot', 'scales', 'terra', 'sf', 'RPostgres', 'R.utils', 'raster', 'ggnewscale'))
 
 #remotes::install_github("USGS-R/smwrBase") 
 # load packages
@@ -49,6 +49,8 @@ library(curl)
 library(terra)
 library(R.utils)
 library(raster)
+
+
 
 
 
