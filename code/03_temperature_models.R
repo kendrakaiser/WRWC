@@ -25,6 +25,15 @@ agrimet$date_time<- as.Date(agrimet$date_time)
 agrimet$temperature_mean[agrimet$temperature_mean < -90] <- NA
 agrimet$temperature_mean[agrimet$temperature_mean > 150] <- NA
 
+#FEBRUARY
+snotel_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
+           (EXTRACT(day FROM datetime) = 1 AND EXTRACT(month FROM datetime) = 2)
+           AND metric = 'swe' AND qcstatus = 'true'
+           ORDER BY wateryear;")
+
+#TODO make snotel temp merge with agrimet data and call the loop from that singular df
+
 # Analyze and Predict temperature trend ----
 # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993
 
@@ -32,23 +41,24 @@ first.yr<-1988
 last.yr<-pred.yr
 nyrs<-last.yr-first.yr+1
 site.key <- c(as.character(unique(snotel$site_name)), as.character(unique(agrimet$site_name)))
+site.key<- as.character(unique(agrimet$site_name))
 elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,7)))
 
 #summer temp july-sept, winter temp NDJFM
-colnames(tdata)<-c("wateryear","site","spring_tempF", "sum_tempF", "wint_tempF", "nj_tempF", "nf_tempF")
+colnames(tdata)<-c("wateryear","site","spring_tempF", "sum_tempF","nj_tempF")
 tdata$wateryear<-rep(first.yr:last.yr,length(site.key))
 tdata$site<-rep(site.key, each=nyrs)
 tdata$elev<-rep(elev, each=nyrs)
 
 #calculate average Snotel seasonal temperatures for every year
-for(i in 1:14){ #hard coded this in after adding agrimet sites to site.key list
+for(i in 1:2){ #hard coded this in after adding agrimet sites to site.key list
   for (y in first.yr:last.yr){
     #subset to indv. site and year
-    if (i<13){
+    if (i>13){ # this should be transformed 
       sub<- snotel[snotel$site_name == site.key[i] & snotel$wy==y, ]
-    } else if (i>=13){
+    } else if (i<=2){ 
       sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$wy==y, ])}
     #average april - june temps
     #if length is greater than 95% of the desired period calculate the mean
@@ -59,60 +69,34 @@ for(i in 1:14){ #hard coded this in after adding agrimet sites to site.key list
     if (length(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "temperature_mean"]) > 88) {
       sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "temperature_mean"], na.rm=TRUE)
       } else (sum.mean.temp <- NA)
-    #average winter temps
-    if (length(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo == 3, "temperature_mean"]) > 149) {
-      wint.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2 | sub$mo ==3, "temperature_mean"], na.rm=TRUE)
-      } else (wint.mean.temp <- NA)
     #average nov-jan temps
     if (length(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"]) > 88) {
        nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"], na.rm=TRUE)
         } else (nj.mean.temp <- NA)
-    #average nov-feb temps
-    if (length(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "temperature_mean"]) > 119) {
-      nf.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1 | sub$mo ==2, "temperature_mean"], na.rm=TRUE)
-      } else (nf.mean.temp <- NA)
-    #average feb-march temps
-    if (length(sub[sub$mo == 2 | sub$mo ==3, "temperature_mean"]) > 58) {
-      fm.mean.temp <- mean(sub[sub$mo == 2 | sub$mo ==3, "temperature_mean"], na.rm=TRUE)
-      } else (fm.mean.temp <- NA)
+  
     
     #save to tdata table
     tdata$spring_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- aj.mean.temp #april-june
     tdata$sum_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- sum.mean.temp
-    tdata$wint_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- wint.mean.temp
     tdata$nj_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- nj.mean.temp
-    tdata$nf_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- nf.mean.temp
-    tdata$fm_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- fm.mean.temp
+
   }
 }
 
 #transform temperature dataframe for main model
-spring.tdata <-pivot_wider(tdata[,1:3], names_from = site, values_from = spring.tempF)
-sum.tdata<-pivot_wider(tdata[,c(1,2,4)], names_from = site, values_from = sum.tempF)
-wint.tdata<-pivot_wider(tdata[,c(1,2,5)], names_from = site, values_from = wint.tempF)
-nj.tdata<-pivot_wider(tdata[,c(1,2,6)], names_from = site, values_from = nj.tempF)
-nf.tdata<-pivot_wider(tdata[,c(1,2,7)], names_from = site, values_from = nf.tempF)
-fm.tdata<-pivot_wider(tdata[,c(1,2,9)], names_from = site, values_from = fm.tempF)
+spring.tdata <-pivot_wider(tdata[,1:3], names_from = site, values_from = spring_tempF)
+nf.tdata<-pivot_wider(tdata[,c(1,2,7)], names_from = site, values_from = nf_tempF)
 
 #TODO - rename above output so that names can be merged from metric and site
 colnames(spring.tdata)<-c("wateryear", "cg.aj_t","ccd.aj_t", "sr.aj_t", "bc.aj_t","ds.aj_t","g.aj_t","ga.aj_t", "hc.aj_t", "lw.aj_t", "sm.aj_t", "gs.aj_t", "sp.aj_t","p.aj_t", "f.aj_t")
 colnames(nj.tdata)<-c("wateryear", "cg.nj_t","ccd.nj_t", "sr.nj_t", "bc.nj_t","ds.nj_t","g.nj_t","ga.nj_t", "hc.nj_t", "lw.nj_t", "sm.nj_t", "gs.nj_t", "sp.nj_t","p.nj_t", "f.nj_t")
 
-# these dont get used
-colnames(sum.tdata)<-c("wateryear", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
-colnames(wint.tdata)<-c("wateryear", "wint_t.cg","wint_t.ccd", "wint_t.sr", "wint_t.bc","wint_t.ds","wint_t.g","wint_t.ga", "wint_t.hc", "wint_t.lw", "wint_t.sm", "wint_t.gs", "wint_t.sp","wint_t.p", "wint_t.f")
-colnames(nf.tdata)<-c("wateryear", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
-colnames(fm.tdata)<-c("wateryear", "t.cg","t.ccd", "t.sr", "t.bc","t.ds","t.g","t.ga", "t.hc", "t.lw", "t.sm", "t.gs", "t.sp","t.p", "t.f")
-
 spring.tdata[spring.tdata == "NaN"]<- NA
 nj.tdata[nj.tdata== "NaN"]<- NA
 
 write.csv(spring.tdata, file.path(data_dir, 'sprTemps.csv'), row.names=FALSE)
-write.csv(sum.tdata, file.path(data_dir, 'sumTemps.csv'), row.names=FALSE)
-write.csv(wint.tdata, file.path(data_dir, 'wintTemps.csv'), row.names=FALSE)
 write.csv(nj.tdata, file.path(data_dir, 'njTemps.csv'), row.names=FALSE)
-write.csv(nf.tdata, file.path(data_dir, 'nfTemps.csv'), row.names=FALSE)
-write.csv(fm.tdata, file.path(data_dir, 'fmTemps.csv'), row.names=FALSE)
+
 
 
 #plot all data
@@ -157,7 +141,7 @@ png(filename = file.path(fig_dir,"NovJanT_box.png"),
 print(wt_box)
 dev.off()
 
-# TODO: REMOVE I dont think we need this anymore -- spring temps never get used in the model
+
 # have 500 predictions of the upcoming years temperature for each site -- make sure that the notation (aj.site) is consitent with the model selection
 # linear regression using elevation alone
 input <- tdata[tdata$site != "fairfield" & tdata$site != "picabo",] %>% filter(complete.cases(.))
