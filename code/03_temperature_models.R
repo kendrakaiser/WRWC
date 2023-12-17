@@ -14,6 +14,7 @@ conn=scdbConnect()
 
 # Pull AGRIMET Data from database
 # -----------------------------------------------------------------------------
+# TODO: automate pulling the averaged agrimet data from db - test code aint workin
 agrimet<- dbGetQuery(conn, "SELECT * FROM daily_air_temperature;")
 
 #agrimet_nj<- dbGetQuery(conn, "SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempF 
@@ -40,7 +41,7 @@ snotel.nj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric,
            (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 
-snotel_aj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS aj_tempF, data.locationid, name, sitenote
+snotel.aj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS aj_tempF, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND 
            (EXTRACT(month FROM datetime) >= 4 OR EXTRACT(month FROM datetime) <= 6)
@@ -59,9 +60,9 @@ site.key<- as.character(unique(agrimet$site_name))
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,5)))
 
 #summer temp july-sept, winter temp NDJFM
-colnames(tdata)<-c("wateryear","site","aj_tempF", "sum_tempF","nj_tempF")
+colnames(tdata)<-c("wateryear","sitenote","aj_tempf","nj_tempf", "sum_tempf")
 tdata$wateryear<-rep(first.yr:last.yr,length(site.key))
-tdata$site<-rep(site.key, each=nyrs)
+tdata$sitenote<-rep(site.key, each=nyrs)
 
 #calculate average Snotel seasonal temperatures for every year
 for(i in 1:2){ 
@@ -83,27 +84,25 @@ for(i in 1:2){
         } else (nj.mean.temp <- NA)
   
     #save to tdata table
-    tdata$aj_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- aj.mean.temp
-    tdata$sum_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- sum.mean.temp
-    tdata$nj_tempF[tdata$wateryear == y & tdata$site == site.key[i]] <- nj.mean.temp
+    tdata$aj_tempf[tdata$wateryear == y & tdata$site == site.key[i]] <- aj.mean.temp
+    tdata$nj_tempf[tdata$wateryear == y & tdata$site == site.key[i]] <- nj.mean.temp
+    tdata$sum_tempf[tdata$wateryear == y & tdata$site == site.key[i]] <- sum.mean.temp
   }
 }
 
 #transform temperature dataframe for main model
-spring.tdata <-pivot_wider(tdata[,1:3], names_from = site, values_from = aj_tempF)
-nj.tdata<-pivot_wider(tdata[,c(1,2,5)], names_from = site, values_from = nj_tempF)
-
-#TODO - rename above output so that names can be merged from metric and site
-colnames(spring.tdata)<-c("wateryear", "cg.aj_t","ccd.aj_t", "sr.aj_t", "bc.aj_t","ds.aj_t","g.aj_t","ga.aj_t", "hc.aj_t", "lw.aj_t", "sm.aj_t", "gs.aj_t", "sp.aj_t","p.aj_t", "f.aj_t")
-colnames(nj.tdata)<-c("wateryear", "cg.nj_t","ccd.nj_t", "sr.nj_t", "bc.nj_t","ds.nj_t","g.nj_t","ga.nj_t", "hc.nj_t", "lw.nj_t", "sm.nj_t", "gs.nj_t", "sp.nj_t","p.nj_t", "f.nj_t")
-
-spring.tdata[spring.tdata == "NaN"]<- NA
-nj.tdata[nj.tdata== "NaN"]<- NA
-
-write.csv(spring.tdata, file.path(data_dir, 'sprTemps.csv'), row.names=FALSE)
-write.csv(nj.tdata, file.path(data_dir, 'njTemps.csv'), row.names=FALSE)
+tdata.wide <- tdata[c(1:4)] %>% pivot_wider(names_from = sitenote, values_from = c("aj_tempf","nj_tempf"), names_glue = "{sitenote}.{.value}" )
+nj.snot <-snotel.nj_temp %>% dplyr::select(wateryear, nj_tempf, sitenote) %>% pivot_wider(names_from = sitenote, values_from = nj_tempf, names_glue = "{sitenote}.nj_temp" )
+aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% pivot_wider(names_from = sitenote, values_from = aj_tempf, names_glue = "{sitenote}.aj_temp" )
 
 
+#something is going wrong here
+all.temp.dat <- tdata.wide %>% merge(nj.snot, by= 'wateryear') %>% 
+  merge(aj.snot , by= 'wateryear') 
+
+
+#TODO: All of these figures will have to be updated using either new format
+#from above if static or db format if we are going to have them on the website
 
 #plot all data
 png(filename = file.path(fig_dir,"SpringTemps.png"),
