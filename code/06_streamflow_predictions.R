@@ -11,8 +11,7 @@
 # -----------------------------------------------------------------------------  
 
 # Import Data ------------------------------------------------------------------  
-usgs_sites = read.csv(file.path(data_dir,'usgs_sites.csv'))
-stream.id<-unique(as.character(usgs_sites$abv))
+stream.id<-c("bwh", "bws", "cc", "sc") #automate to no be hard coded
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 
 # Load the models and parameters from all the models 
@@ -34,7 +33,6 @@ colnames(wy)<-c("Date","day")
 # volumes
 output.vol<-array(NA,c(length(stream.id),3))
 rownames(output.vol)<-stream.id
-output.vol<-output.vol[-4,]
 colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol (KAF)", "Pred. Vol \n% of mean")
 rownames(output.vol)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
@@ -43,9 +41,8 @@ rownames(pred.params.vol)<-c("bwh.irr_vol","bws.irr_vol","cc.irr_vol","sc.irr_vo
 colnames(pred.params.vol)<-c("log.irr_vol","sigma", "low.log.irr_vol", "upp.log.irr_vol")
 
 # center of mass
-output.cm<-data.frame(array(NA,c(5,4)))
+output.cm<-data.frame(array(NA,c(4,4)))
 rownames(output.cm)<-stream.id
-output.cm<-output.cm[-4,]
 colnames(output.cm)<-c("SWE % of mean","cm","cm-mean","cm.date") #"Hist Nov-Jan Temp","Nov-Jan Temps",
 
 pred.params.cm<-array(NA,c(4,2))
@@ -53,9 +50,9 @@ rownames(pred.params.cm)<-c("bwh.cm","bws.cm","cc.cm","sc.cm")
 colnames(pred.params.cm)<-c("cm","sigma")
 
 # summary stats
-mod_sum<-data.frame(array(NA,c(6,2)))
+mod_sum<-data.frame(array(NA,c(4,2)))
 colnames(mod_sum)<-c("Irr Vol Adj-R2", "CM Adj-R2")
-rownames(mod_sum)<-c("bwh","bws","cc","sc", "bw.div", "sc.div")
+rownames(mod_sum)<-c("bwh","bws","cc","sc")
 
 # ------------------------------------------------------------------------------  
 #
