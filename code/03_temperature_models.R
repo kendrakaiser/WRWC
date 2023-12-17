@@ -47,7 +47,7 @@ snotel.aj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric,
            (EXTRACT(month FROM datetime) >= 4 OR EXTRACT(month FROM datetime) <= 6)
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 
-#TODO make snotel temp merge with agrimet data and call the loop from that singular df
+#TODO make a SQL query for agrimet data so that its all streamlined??
 
 # Analyze and Predict temperature trend ----
 # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993
@@ -64,7 +64,7 @@ elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
 tdata$elev<-rep(elev, each=nyrs)
 
 #summer temp july-sept, winter temp NDJFM
-colnames(tdata)<-c("wateryear","sitenote","aj_tempf","nj_tempf", "sum_tempf")
+colnames(tdata)<-c("wateryear","sitenote","aj_t","nj_t", "sum_t")
 tdata$wateryear<-rep(first.yr:last.yr,length(site.key))
 tdata$sitenote<-rep(site.key, each=nyrs)
 
@@ -88,21 +88,23 @@ for(i in 1:2){
         } else (nj.mean.temp <- NA)
   
     #save to tdata table
-    tdata$aj_tempf[tdata$wateryear == y & tdata$site == site.key[i]] <- aj.mean.temp
-    tdata$nj_tempf[tdata$wateryear == y & tdata$site == site.key[i]] <- nj.mean.temp
-    tdata$sum_tempf[tdata$wateryear == y & tdata$site == site.key[i]] <- sum.mean.temp
+    tdata$aj_t[tdata$wateryear == y & tdata$site == site.key[i]] <- aj.mean.temp
+    tdata$nj_t[tdata$wateryear == y & tdata$site == site.key[i]] <- nj.mean.temp
+    tdata$sum_t[tdata$wateryear == y & tdata$site == site.key[i]] <- sum.mean.temp
   }
 }
 
 #transform temperature dataframe for main model
-tdata.wide <- tdata[c(1:4)] %>% pivot_wider(names_from = sitenote, values_from = c("aj_tempf","nj_tempf"), names_glue = "{sitenote}.{.value}" )
-nj.snot <-snotel.nj_temp %>% dplyr::select(wateryear, nj_tempf, sitenote) %>% pivot_wider(names_from = sitenote, values_from = nj_tempf, names_glue = "{sitenote}.nj_temp" )
-aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% pivot_wider(names_from = sitenote, values_from = aj_tempf, names_glue = "{sitenote}.aj_temp" )
+tdata.wide <- tdata[c(1:4)] %>% pivot_wider(names_from = sitenote, values_from = c("aj_t","nj_t"), names_glue = "{sitenote}.{.value}" )
+nj.snot <-snotel.nj_temp %>% dplyr::select(wateryear, nj_tempf, sitenote) %>% pivot_wider(names_from = sitenote, values_from = nj_tempf, names_glue = "{sitenote}.nj_t" )
+aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% pivot_wider(names_from = sitenote, values_from = aj_tempf, names_glue = "{sitenote}.aj_t" )
 
 
 #compile data into one wide table
 all.temp.dat <- tdata.wide %>% merge(nj.snot, by= 'wateryear') %>% 
   merge(aj.snot , by= 'wateryear') 
+
+write.csv(all.temp.dat, file.path(data_dir,"temp_dat.csv"), row.names=FALSE)
 
 #---------------
 #TODO: All of these figures will have to be updated using either new format
