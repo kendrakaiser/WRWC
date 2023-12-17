@@ -106,12 +106,12 @@ sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 9)
 
 # EXPORT VOL MODEL DETAILS
 # ----------------------
-vol_mod_summary<- list(bwh = bwh_vol_mod[[1]], bws = bws_vol_mod[[1]], sc = sc_vol_mod[[1]], cc = cc_vol_mod[[1]])
+vol_mod_sum<- list(bwh = bwh_vol_mod[[1]], bws = bws_vol_mod[[1]], sc = sc_vol_mod[[1]], cc = cc_vol_mod[[1]])
 vol_models<- list(bwh_mod = bwh_vol_mod[[2]], bws_mod = bws_vol_mod[[2]], sc_mod = sc_vol_mod[[2]], cc_mod = cc_vol_mod[[2]])
 vol_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod[[3]])
 
 write.csv(vol_coef, file.path(model_out,'vol_coeff.csv'), row.names = FALSE)
-write.list(vol_mod_summary, file.path(data_dir, vol.summary)) #.csv
+write.list(vol_mod_sum, file.path(data_dir, vol.summary)) #.csv
 
 list.save(vol_mod_summary, file.path(data_dir, vol_sum)) #.Rdata summary stats
 list.save(vol_models, file.path(data_dir, vol_mods)) #actual model structure
