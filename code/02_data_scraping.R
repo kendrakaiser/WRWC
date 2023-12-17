@@ -4,7 +4,7 @@
 # June 19, 2020
 # ------------------------------------------------------------------------------
 #tools to connect and write to database
-source(file.path(git_dir, 'code/init_db.R'))
+source(file.path(git_dir, 'code/init_db.R')) #terra sf RPostgres #R.utils raster
 source(paste0(git_dir,"/code/fxn_dbIntakeTools.R")) 
 source(paste0(git_dir,"/code/fxn_get_snow.R")) 
 source(paste0(git_dir,"/code/fxn_SNODASR_functions.R")) 
@@ -153,23 +153,20 @@ alldat <- swe_feb %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'w
   merge(irr_vol, by= 'wateryear') %>% merge(cm_wide, by= 'wateryear') %>% 
   merge(snodas_feb, by= 'wateryear')
 
-filename = 'alldat_feb.csv' 
-
-write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
+write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
 #March data for modeling
 alldat <- swe_mar %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
   merge(irr_vol, by= 'wateryear') %>% merge(cm_wide, by= 'wateryear') %>% 
   merge(snodas_march, by= 'wateryear')
-filename = 'alldat_mar.csv'
-write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
+
+write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
 #April data for modeling
 alldat <- swe_apr %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
   merge(irr_vol, by= 'wateryear') %>% merge(cm_wide, by= 'wateryear') %>% 
   merge(snodas_april, by= 'wateryear')
 
-filename = 'alldat_apr.csv'
-write.csv(alldat, file.path(data_dir,filename), row.names=FALSE)
+write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
 print("All streamflow and snow data saved")
