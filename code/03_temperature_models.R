@@ -60,8 +60,8 @@ site.key<- as.character(unique(agrimet$site_name))
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,5)))
 
 #TODO: Need to pull the elevation info from db associated with each site so lm works
-elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
-tdata$elev<-rep(elev, each=nyrs)
+#elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
+#tdata$elev<-rep(elev, each=nyrs)
 
 #summer temp july-sept, winter temp NDJFM
 colnames(tdata)<-c("wateryear","sitenote","aj_t","nj_t", "sum_t")
