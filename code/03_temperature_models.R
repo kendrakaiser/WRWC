@@ -59,6 +59,10 @@ site.key<- as.character(unique(agrimet$site_name))
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,5)))
 
+#TODO: Need to pull the elevation info from db associated with each site so lm works
+elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
+tdata$elev<-rep(elev, each=nyrs)
+
 #summer temp july-sept, winter temp NDJFM
 colnames(tdata)<-c("wateryear","sitenote","aj_tempf","nj_tempf", "sum_tempf")
 tdata$wateryear<-rep(first.yr:last.yr,length(site.key))
@@ -96,11 +100,11 @@ nj.snot <-snotel.nj_temp %>% dplyr::select(wateryear, nj_tempf, sitenote) %>% pi
 aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% pivot_wider(names_from = sitenote, values_from = aj_tempf, names_glue = "{sitenote}.aj_temp" )
 
 
-#something is going wrong here
+#compile data into one wide table
 all.temp.dat <- tdata.wide %>% merge(nj.snot, by= 'wateryear') %>% 
   merge(aj.snot , by= 'wateryear') 
 
-
+#---------------
 #TODO: All of these figures will have to be updated using either new format
 #from above if static or db format if we are going to have them on the website
 
@@ -126,7 +130,7 @@ wt<-ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=wat
 png(filename = file.path(fig_dir,"WinterTemps.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
-  print(wt)
+print(wt)
 dev.off()
 
 
@@ -145,19 +149,22 @@ png(filename = file.path(fig_dir,"NovJanT_box.png"),
     bg = "white", res = 600) 
 print(wt_box)
 dev.off()
+#---------------
 
+#-------------------------------------------------------------------------------
+# Bootstrap spring temperature predictions for each site
+#TODO need to update based off of new data structure and naming convention
+#-------------------------------------------------------------------------------
 
-# have 500 predictions of the upcoming years temperature for each site -- make sure that the notation (aj.site) is consitent with the model selection
-# linear regression using elevation alone
 input <- tdata[tdata$site != "fairfield" & tdata$site != "picabo",] %>% filter(complete.cases(.))
 lr.elev<- lm(spring.tempF~  elev+wateryear, data=input)
-#lr.elev<- lm(spring.tempF~  poly(elev,2) +year, data=input)
+summary(lr.elev)
 input$fitted<- predict(lr.elev)
+#lr.elev<- lm(spring.tempF~  poly(elev,2) +year, data=input)
 #el <- as.data.frame(seq(from=1700, to=2700, by=30))
 #y <- as.data.frame(seq(from=1988, to=2021, by=1))
 #predicted_df <- data.frame(t_pred = predict(lr.elev, el, y, interval = 'confidence', level=0.95), elev=el, year=y)
 
-summary(lr.elev)
 
 # TODO: make a plot that represents the model better
 #plot the observed versus fitted 
@@ -213,3 +220,7 @@ new.data$spr.tempF[14]<- mean(tdata$spring.tempF[tdata$site == "picabo"], na.rm 
 nboot<-5000
 aj.pred.temps<- mvrnorm(nboot, new.data$spr.tempF, site.cov)
 write.csv(aj.pred.temps, file.path(data_dir, 'aj_pred.temps.csv'), row.names=FALSE)
+
+
+
+
