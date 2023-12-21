@@ -113,7 +113,8 @@ makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;"
   
 }
   
-  
+#writeSummaryStats(c(runif(1000),10,11),"poodle.dog",simDate=Sys.Date()-1)  
+
 bxpList=makeBoxplotData(dbGetQuery(conn,"SELECT * FROM summarystatistics WHERE site= 'poodle' AND metric = 'dog' AND rundate = '2023-12-21' 
                                    AND (simdate='2023-12-21' OR simdate='2023-12-20');"))
 bxp(bxpList)
