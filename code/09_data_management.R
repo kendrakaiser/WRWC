@@ -72,8 +72,6 @@ writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
   dbWriteTable(conn,"summarystatistics",statDF,append=T)
 }
 
-
-
 makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;")){
   groups=unique(dbdf[c("site","metric","simdate","rundate")])
   bpData=list(stats=matrix(nrow=5,ncol=nrow(groups)),n=rep(NA,nrow(groups)),out=vector(),group=vector(),names=vector())
@@ -116,6 +114,7 @@ makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;"
 }
   
   
-
-
+bxpList=makeBoxplotData(dbGetQuery(conn,"SELECT * FROM summarystatistics WHERE site= 'poodle' AND metric = 'dog' AND rundate = '2023-12-21' 
+                                   AND (simdate='2023-12-21' OR simdate='2023-12-20');"))
+bxp(bxpList)
 
