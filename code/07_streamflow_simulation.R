@@ -14,7 +14,7 @@ dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30
 # timeseries of flow at each gage 
 
 #Irrigation Season April-September streamflow in cfs
-irr_cfs=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, data.locationid, name, sitenote
+irr_cfs=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 10) 
            ORDER BY wateryear;")
@@ -54,10 +54,10 @@ for(k in 1:ns){
   year<-CMyear.sample[k] # year sample
   vol<-vol.sample[k,] # volume sample
 
-  bwh<- bwh.wy[bwh.wy$wy == year, "value"][183:365]
-  bws<- bws.wy[bws.wy$wy == year, "value"][183:365]
-  sc<- sc.wy[sc.wy$wy == year, "value"][183:365]
-  cc <- cc.wy[cc.wy$wy == year, "value"][183:365]
+  bwh<- bwh.wy[bwh.wy$wateryear == year, "value"]
+  bws<- bws.wy[bws.wy$wateryear == year, "value"]
+  sc<- sc.wy[sc.wy$wateryear == year, "value"]
+  cc <- cc.wy[cc.wy$wateryear == year, "value"]
   
   bwh.flow.s[,k]<-sim.flow(bwh, exp(vol$bwh.irr_vol))
   bws.flow.s[,k]<-sim.flow(bws, exp(vol$bws.irr_vol))
