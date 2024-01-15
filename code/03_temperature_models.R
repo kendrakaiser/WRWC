@@ -159,18 +159,42 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # Bootstrap spring temperature predictions for each site
-#TODO need to test a better model
+#TODO need to test a better model - this one sucks
 #-------------------------------------------------------------------------------
 # the soldier ranger station has some missing years that cut the record short - consider removing
 input<- snotel.aj_temp %>% merge(elev, by="sitenote")  %>% dplyr::select(wateryear, aj_tempf, sitenote, elev) %>% filter(complete.cases(.))
 lr.elev<- lm(aj_tempf~  elev+wateryear+sitenote, data=input)
 summary(lr.elev)
-
 input$fitted<- predict(lr.elev)
-#lr.elev<- lm(spring.tempF~  poly(elev,2) +year, data=input)
-#el <- as.data.frame(seq(from=1700, to=2700, by=30))
-#y <- as.data.frame(seq(from=1988, to=2021, by=1))
-#predicted_df <- data.frame(t_pred = predict(lr.elev, el, y, interval = 'confidence', level=0.95), elev=el, year=y)
+
+# covarience matrix (var-cov matrix) - diagonal the variance of temp at each site, the rest are the correlations
+sp.agri<- tdata.wide %>% dplyr :: select (wateryear, picabo.aj_t, fairfield.aj_t) 
+
+sp.temps <- aj.snot %>% merge(sp.agri, by= 'wateryear') %>% filter(complete.cases(.))
+
+site.cov<- cov(sp.temps[-1], use="complete.obs")
+# calculate the correlations
+r <- as.data.frame(round(cor(sp.temps[-1], use="complete.obs"),2))
+
+# data for prediction
+all_site.key<-c(as.character(unique(snotel.aj_temp$sitenote)), site.key)
+new.data<-data.frame(array(NA,c(length(all_site.key),4)))
+colnames(new.data)<-c("wateryear","sitenote", "elev", "aj_tempf")
+new.data$wateryear<-rep(last.yr+1,length(all_site.key))
+new.data$sitenote<-(all_site.key)
+new.data$elev<-elev$elev
+
+#predict the mean april-june temperature at each site
+new.data$aj_tempf[1:12]<-predict(lr.elev, new.data[1:12,])
+# use the mean of fairfield and picabo - has no trend and decreases strength of lm
+new.data$aj_tempf[14]<- mean(tdata.wide$fairfield.aj_t, na.rm = TRUE)
+new.data$aj_tempf[13]<- mean(tdata.wide$picabo.aj_t, na.rm = TRUE)
+
+# Draw stream temperatures using multivariate normal distribution
+nboot<-5000
+aj.pred.temps<- mvrnorm(nboot, new.data$aj_tempf, site.cov)
+write.csv(aj.pred.temps, file.path(data_dir, 'aj_pred.temps.csv'), row.names=FALSE)
+
 
 
 # TODO: make a plot that represents the model better
@@ -179,7 +203,7 @@ png(filename = file.path(fig_dir,"ModeledTemps.png"),
     width = 5.5, height = 3.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 
-ggplot(input, aes(x=spring.tempF, y=fitted, color=site)) + 
+ggplot(input, aes(x=aj_tempf, y=fitted, color=sitenote)) + 
   geom_abline(intercept=0,lty=1)+
   geom_point()+
   xlim(2, 11.5)+
@@ -187,9 +211,9 @@ ggplot(input, aes(x=spring.tempF, y=fitted, color=site)) +
   xlab('Observed Mean April - June Temperature (F)') +
   ylab('Predicted Mean April - June Temperature (F)') +
   theme_bw()
-  #+geom_line(color='red', data = predicted_df, aes(y=kwh_pred.fit/1000, x=MonthlyQ/1000))
+#+geom_line(color='red', data = predicted_df, aes(y=kwh_pred.fit/1000, x=MonthlyQ/1000))
 dev.off()
-  
+
 ggplot(input, aes(x=spring.tempF, y=fitted)) + geom_point()+
   geom_smooth(method = "lm", se = FALSE)+
   xlim(2, 11.5)+
@@ -197,37 +221,5 @@ ggplot(input, aes(x=spring.tempF, y=fitted)) + geom_point()+
   xlab('Observed Mean April - June Temperature (F)') +
   ylab('Predicted Mean April - June Temperature (F)')+
   theme_bw()
-
-# polynomial fit - come back to later
-#lr.elev<-lm(spring.tempF~  poly(elev,2) +year, data=input) #polynomial helps 
-#ix <- sort(input$spring.tempF,index.return=T)$ix
-#geom_smooth(method="lm", formula=y~x+(x^2))
-#stat_smooth(method = lm,  data = input, formula = y ~ poly(x, 2) + z)
-#adding in fairfield and picabo throws off the regression - it effectively does poorly everywhere
-
-# covarience matrix (var-cov matrix) - diagonal the variance of temp at each site, the rest are the correlations
-site.cov<- cov(spring.tdata[-1], use="complete.obs")
-# calculate the correlations
-r <- as.data.frame(round(cor(spring.tdata[-1], use="complete.obs"),2))
-
-# data for prediction
-new.data<-data.frame(array(NA,c(length(site.key),4)))
-colnames(new.data)<-c("wateryear","site", "elev", "spr.tempF")
-new.data$wateryear<-rep(last.yr+1,length(site.key))
-new.data$site<-(site.key)
-new.data$elev<-elev
-
-#predict the mean april-june temperature at each site
-new.data$spr.tempF[1:12]<-predict(lr.elev, new.data[1:12,])
-# use the mean of fairfield and picabo - has no trend and decreases strength of lm
-new.data$spr.tempF[13]<- mean(tdata$spring.tempF[tdata$site == "fairfield"], na.rm = TRUE)
-new.data$spr.tempF[14]<- mean(tdata$spring.tempF[tdata$site == "picabo"], na.rm = TRUE)
-
-# Draw stream temperatures using multivariate normal distribution
-nboot<-5000
-aj.pred.temps<- mvrnorm(nboot, new.data$spr.tempF, site.cov)
-write.csv(aj.pred.temps, file.path(data_dir, 'aj_pred.temps.csv'), row.names=FALSE)
-
-
 
 
