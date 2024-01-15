@@ -64,6 +64,7 @@ for(k in 1:ns){
   sc.flow.s[,k]<-sim.flow(sc, exp(vol$sc.irr_vol))
   cc.flow.s[,k]<-sim.flow(cc, exp(vol$cc.irr_vol))
 }
+# TODO: add an error catch if the output is NA
 
 # ------------------------------------------------------------------------------
 # Calculate prediction Intervals
