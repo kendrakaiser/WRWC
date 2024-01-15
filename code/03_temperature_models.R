@@ -105,7 +105,7 @@ aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% piv
 
 
 #compile data into one wide table
-all.temp.dat <- nj.snot %>% merge(aj.snot , by= 'wateryear') %>% 
+all.temp.dat <- aj.snot %>% merge(nj.snot , by= 'wateryear') %>% 
   merge(tdata.wide, by= 'wateryear') 
 
 write.csv(all.temp.dat, file.path(data_dir,"temp_dat.csv"), row.names=FALSE)
@@ -159,12 +159,13 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # Bootstrap spring temperature predictions for each site
-#TODO need to update based off of new data structure and naming convention
+#TODO need to test a better model
 #-------------------------------------------------------------------------------
-
-input <- tdata[tdata$site != "fairfield" & tdata$site != "picabo",] %>% filter(complete.cases(.))
-lr.elev<- lm(spring.tempF~  elev+wateryear, data=input)
+# the soldier ranger station has some missing years that cut the record short - consider removing
+input<- snotel.aj_temp %>% merge(elev, by="sitenote")  %>% dplyr::select(wateryear, aj_tempf, sitenote, elev) %>% filter(complete.cases(.))
+lr.elev<- lm(aj_tempf~  elev+wateryear+sitenote, data=input)
 summary(lr.elev)
+
 input$fitted<- predict(lr.elev)
 #lr.elev<- lm(spring.tempF~  poly(elev,2) +year, data=input)
 #el <- as.data.frame(seq(from=1700, to=2700, by=30))
