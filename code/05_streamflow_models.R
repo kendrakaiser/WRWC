@@ -113,7 +113,7 @@ vol_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod
 write.csv(vol_coef, file.path(model_out,'vol_coeff.csv'), row.names = FALSE)
 write.list(vol_mod_sum, file.path(data_dir, vol.summary)) #.csv
 
-list.save(vol_mod_summary, file.path(data_dir, vol_sum)) #.Rdata summary stats
+list.save(vol_mod_sum, file.path(data_dir, vol_sum)) #.Rdata summary stats
 list.save(vol_models, file.path(data_dir, vol_mods)) #actual model structure
 
 # Pull out R2 for summary stats
