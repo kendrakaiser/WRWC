@@ -11,15 +11,20 @@ ns<-5000  #Number of simulations
 dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30",sep="")),"day")
 
 # ------------------------------------------------------------------------------
-# volume & samples for each gage
-streamflow_data<-read.csv(file.path(data_dir,"streamflow_data.csv"))
+# timeseries of flow at each gage 
 
-bwh.wy<-streamflow_data[streamflow_data$abv == 'bwh',]
-bws.wy<-streamflow_data[streamflow_data$abv == 'bws',]
-cc.wy<-streamflow_data[streamflow_data$abv == 'cc',]
-sc.wy<-streamflow_data[streamflow_data$abv == 'sc',]
+#Irrigation Season April-September streamflow in cfs
+irr_cfs=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 10) 
+           ORDER BY wateryear;")
 
-colnames(vol.sample)<-c("bwh.vol", "bws.vol","cc.vol", "sc.vol")
+bwh.wy<-irr_cfs[irr_cfs$sitenote == "bwh", ]
+bws.wy<-irr_cfs[irr_cfs$sitenote == "bws", ]
+cc.wy<-irr_cfs[irr_cfs$sitenote == "cc", ]
+sc.wy<-irr_cfs[irr_cfs$sitenote == "sc", ]
+
+colnames(vol.sample)<-c("bwh.irr_vol", "bws.irr_vol","cc.irr_vol", "sc.irr_vol")
 
 # ------------------------------------------------------------------------------
 # Create arrays to store outputs of stochastic simulations
@@ -54,10 +59,10 @@ for(k in 1:ns){
   sc<- sc.wy[sc.wy$wy == year, "value"][183:365]
   cc <- cc.wy[cc.wy$wy == year, "value"][183:365]
   
-  bwh.flow.s[,k]<-sim.flow(bwh, exp(vol$bwh.vol))
-  bws.flow.s[,k]<-sim.flow(bws, exp(vol$bws.vol))
-  sc.flow.s[,k]<-sim.flow(sc, exp(vol$sc.vol))
-  cc.flow.s[,k]<-sim.flow(cc, exp(vol$cc.vol))
+  bwh.flow.s[,k]<-sim.flow(bwh, exp(vol$bwh.irr_vol))
+  bws.flow.s[,k]<-sim.flow(bws, exp(vol$bws.irr_vol))
+  sc.flow.s[,k]<-sim.flow(sc, exp(vol$sc.irr_vol))
+  cc.flow.s[,k]<-sim.flow(cc, exp(vol$cc.irr_vol))
 }
 
 # ------------------------------------------------------------------------------
