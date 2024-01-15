@@ -374,20 +374,20 @@ samp.sd<- c(sd(log(var$bwh.irr_vol)), sd(log(var$bws.irr_vol)), sd(log(var$cc.ir
 var.fore<- pred.params.vol[,2] + samp.sd
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
-for(i in 1:dim(vol.data)[1]){
-    vec<-log(vol.data[i,2:5])
+#for(i in 1:dim(vol.data)[1]){
+ #   vec<-log(vol.data[i,2:5])
     
-    vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec-var.fore),  # pred.params.vol[,2] +/- standard error (pred.params.vol$sigma) would return effectively one year
-                              upper=as.numeric(vec+var.fore), #
-                              mean=pred.params.vol[,1],corr=cor.mat[1:4,1:4])[1]
-    vol.diff<- rbind(vol.diff, exp(as.numeric(vec+var.fore)) - exp(as.numeric(vec-j)))
-}
+  #  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec-var.fore),  # pred.params.vol[,2] +/- standard error (pred.params.vol$sigma) would return effectively one year
+   #                           upper=as.numeric(vec+var.fore), #
+    #                          mean=pred.params.vol[,1],corr=cor.mat[1:4,1:4])[1]
+    #vol.diff<- rbind(vol.diff, exp(as.numeric(vec+var.fore)) - exp(as.numeric(vec-j)))
+#}
 
 # this part is broken
-vol_prob<-as.data.frame(summary(as.factor(vol.sample))/5000)*100
-colnames(vol_prob)<- c("% of sample")
+#vol_prob<-as.data.frame(summary(as.factor(vol.sample))/5000)*100
+#colnames(vol_prob)<- c("% of sample")
 
-png(file.path(fig_dir_mo,"vol_prob.png"), height = 50*nrow(vol_prob), width = 200*ncol(vol_prob))
-grid.table(vol_prob)
-dev.off()
+#png(file.path(fig_dir_mo,"vol_prob.png"), height = 50*nrow(vol_prob), width = 200*ncol(vol_prob))
+#grid.table(vol_prob)
+#dev.off()
 
