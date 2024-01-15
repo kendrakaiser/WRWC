@@ -88,6 +88,7 @@ pi[,1:4] <-as.data.frame(pred.int(bwh.flow.s))
 pi[,5:8] <-as.data.frame(pred.int(bws.flow.s))
 pi[,9:12]<-as.data.frame(pred.int(sc.flow.s))
 pi[,13:16]<-as.data.frame(pred.int(cc.flow.s))
+rownames(pi)<-dates
 
 
 # ------------------------------------------------------------------------------
