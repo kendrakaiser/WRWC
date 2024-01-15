@@ -55,20 +55,24 @@ snotel.aj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric,
 first.yr<-1988
 last.yr<-pred.yr
 nyrs<-last.yr-first.yr+1
-site.key<- as.character(unique(agrimet$site_name))
+site.key <- c(as.character(unique(agrimet$site_name))) #as.character(unique(snotel.aj_temp$sitenote)), 
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,5)))
 
-#TODO: Need to pull the elevation info from db associated with each site so lm works
-#elev<-c(1923,1740,1750,2408,2566,2277,1999,2323,2408,2265,2676,2329,1536,1494)
-#tdata$elev<-rep(elev, each=nyrs)
+#TODO: Need to check the elevations to confirm correct
+elev<- structure(list(sitenote = c("lwd", "bc", "sr", "g", "gs", "hc", "ds", "ga", "sp", 
+                "sm", "ccd", "cg", "picabo", "fairfield"), elev = c(1923L, 1740L, 1750L, 2408L, 
+                2566L, 2277L, 1999L, 2323L, 2408L, 2265L,2676L, 2329L, 1536L, 1494L)), 
+               class = "data.frame", row.names = c(NA, 
+                                                                                                                                                       -14L))
+#tdata$elev<-rep(elev$elev, each=nyrs)
 
 #summer temp july-sept, winter temp NDJFM
 colnames(tdata)<-c("wateryear","sitenote","aj_t","nj_t", "sum_t")
 tdata$wateryear<-rep(first.yr:last.yr,length(site.key))
 tdata$sitenote<-rep(site.key, each=nyrs)
 
-#calculate average Snotel seasonal temperatures for every year
+#calculate average agrimet seasonal temperatures for every year
 for(i in 1:2){ 
   for (y in first.yr:last.yr){
     #subset to indv. site and year
@@ -95,14 +99,14 @@ for(i in 1:2){
 }
 
 #transform temperature dataframe for main model
-tdata.wide <- tdata[c(1:4)] %>% pivot_wider(names_from = sitenote, values_from = c("aj_t","nj_t"), names_glue = "{sitenote}.{.value}" )
+tdata.wide <- tdata[c(1:5)] %>% pivot_wider(names_from = sitenote, values_from = c("aj_t","nj_t", "sum_t"), names_glue = "{sitenote}.{.value}" )
 nj.snot <-snotel.nj_temp %>% dplyr::select(wateryear, nj_tempf, sitenote) %>% pivot_wider(names_from = sitenote, values_from = nj_tempf, names_glue = "{sitenote}.nj_t" )
 aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% pivot_wider(names_from = sitenote, values_from = aj_tempf, names_glue = "{sitenote}.aj_t" )
 
 
 #compile data into one wide table
-all.temp.dat <- tdata.wide %>% merge(nj.snot, by= 'wateryear') %>% 
-  merge(aj.snot , by= 'wateryear') 
+all.temp.dat <- nj.snot %>% merge(aj.snot , by= 'wateryear') %>% 
+  merge(tdata.wide, by= 'wateryear') 
 
 write.csv(all.temp.dat, file.path(data_dir,"temp_dat.csv"), row.names=FALSE)
 
