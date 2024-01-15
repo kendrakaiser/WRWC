@@ -17,16 +17,20 @@ all_vars_long <- var %>% pivot_longer(cols = -c('wateryear'), names_to = c("site
 write.csv(all_vars_long, file.path(data_dir,'all_vars_long.csv'), row.names=FALSE)
 
 
-bwh.flow.simLong<- read.csv(file.path(model_out, "BWH.sim.csv")) %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-bws.flow.simLong<- read.csv(file.path(model_out, "BWS.sim.csv")) %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-cc.flow.simLong<- read.csv(file.path(model_out, "CC.sim.csv")) %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-sc.flow.simLong <- read.csv(file.path(model_out, "SC.sim.csv")) %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+#TODO: should be able to do this directly from the environment rather than read/write
+bwh.flow.simLong<- bwh.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+bws.flow.simLong<- bws.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+cc.flow.simLong<-  cc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+sc.flow.simLong <- sc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
 
+#remove this?
 write.csv(bwh.flow.simLong, file.path(data_dir,'bwh.flow.simLong.csv'), row.names=FALSE)
 write.csv(bws.flow.simLong, file.path(data_dir,'bws.flow.simLong.csv'), row.names=FALSE)
 write.csv(cc.flow.simLong, file.path(data_dir,'cc.flow.simLong.csv'), row.names=FALSE)
 write.csv(sc.flow.simLong, file.path(data_dir,'sc.flow.simLong.csv'), row.names=FALSE)
 
+#TODO: split the names to two variables make the dates come through 
+pred.intervals<- pi %>% pivot_longer(everything(), names_to = "sitePI", values_to = "dailyFlow")
 
 volumes<-read.csv(file.path(model_out,"vol.sample.csv"))
 colnames(volumes)<-c("bwh.vol", "bws.vol","cc.vol", "sc.vol") #this has already been read in via the streamflow simulation script; re-consider re-reading it in
