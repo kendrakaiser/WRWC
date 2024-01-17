@@ -38,9 +38,6 @@ source(file.path(git_dir, 'code/01_packages.R'))
 run_info<- sessionInfo()
 writeLines(capture.output(sessionInfo()), file.path(cd, "sessionInfo.txt"))
 
-source(file.path(git_dir, 'code/02_data_scraping.R'))
-source(file.path(git_dir, 'code/03_temperature_models.R')) 
-
 # sets input/output file directories and selects model params and models depending on model run date 
 # ------------------------------------------------------------------------------
 if (run_date == 'feb1'){
@@ -93,6 +90,8 @@ if (run_date == 'feb1'){
 # ------------------------------------------------------------------------------
 # Compile Data Based on Run Date
 # ------------------------------------------------------------------------------
+source(file.path(git_dir, 'code/02_data_scraping.R'))
+source(file.path(git_dir, 'code/03_temperature_models.R')) 
 source(file.path(git_dir, 'code/04_data_integration.R'))  
 
 # Create Streamflow Models 
