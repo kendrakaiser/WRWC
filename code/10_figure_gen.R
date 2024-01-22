@@ -3,7 +3,7 @@
 #------------------------------------------------------------------------------
 # Historic condition data
 #TODO: update
- 
+
 wq<- alldat %>% select("year", "bwh.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
 
 # Boxplots of Historic Conditions
@@ -67,7 +67,7 @@ ex.vols<- ex.vols%>% relocate(Exceedance)
 my_table_theme <- ttheme_default(core=list(fg_params = list(col = c("red","darkorange","green3","deepskyblue", "blue3"), col=NA)))
 png(file.path(fig_dir_mo,"ex.vols.png"), height = 30*nrow(ex.vols), width = 130*ncol(ex.vols))
 # save to LOCAL shiny directory
-shiny_path <- "C:/Users/stevenschmitz/Desktop/BigWood-App-main/www/"
+shiny_path <- "C:/Users/stevenschmitz/Desktop/BigWood-App-main/www/" #local directory on Steven's
 png(file.path(shiny_path,"ex.vols.png"), height = 30*nrow(ex.vols), width = 130*ncol(ex.vols))
 grid.table(ex.vols, theme = my_table_theme, rows = NULL)
 dev.off()
@@ -148,9 +148,23 @@ png(filename = file.path(shiny_path,"sampled_volumes_big.png"),
     width = 6.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 print(p)
+
+#saving as interactive plotly plot for shiny app
+p_plotly <- plot_ly(
+  data = ggplotly(p, tooltip = "all")$data,
+  type = ggplotly(p, tooltip = "all")$type,
+  mode = ggplotly(p, tooltip = "all")$mode,
+  source = ggplotly(p, tooltip = "all")$source,
+  text = ggplotly(p, tooltip = "all")$text,
+  hoverinfo = ggplotly(p, tooltip = "all")$hoverinfo
+)
+
+# Save plot as an HTML file - loads in Shiny app easily
+htmlwidgets::saveWidget(p_plotly, file = "C:/Users/stevenschmitz/Desktop/BigWood-App-main/www/sampled_volumes_big_plotly.html") #consider directory
+
 dev.off()
 
-saveRDS(p, file.path(fig_dir_mo,"sampled_volumes.rds"))
+saveRDS(p, file.path(fig_dir_mo,"sampled_big_vol-.rds"))
 
 ps<- ggplot(vol.ccsc_shiny, aes(x=site, y=value, fill=site), alpha=0.6) +
   geom_boxplot(outlier.alpha = 0.3) +
@@ -171,6 +185,19 @@ png(filename = file.path(shiny_path,"sampled_volumes_ccsc.png"),
     width = 5.5, height = 5.5,units = "in", pointsize = 12,
     bg = "white", res = 600) 
 print(ps)
+
+#saving as interactive plotly plot for shiny app
+ps_plotly <- plot_ly(
+  data = ggplotly(ps, tooltip = "all")$data,
+  type = ggplotly(ps, tooltip = "all")$type,
+  mode = ggplotly(ps, tooltip = "all")$mode,
+  source = ggplotly(ps, tooltip = "all")$source,
+  text = ggplotly(ps, tooltip = "all")$text,
+  hoverinfo = ggplotly(ps, tooltip = "all")$hoverinfo
+)
+
+# Save plot as an HTML file - loads in Shiny app easily
+htmlwidgets::saveWidget(ps_plotly, file = "C:/Users/stevenschmitz/Desktop/BigWood-App-main/www/sampled_volumes_sccc_plotly.html") #consider directory
 dev.off()
 
 saveRDS(ps, file = file.path(fig_dir_mo, paste0("sampled_sc_vol-", end_date, ".rds")))
