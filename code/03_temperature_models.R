@@ -6,9 +6,6 @@
 # based on subsets of basins that preformed best in lm of center of mass etc
 # ----------------------------------------------------------------------------- # 
 
-# import data ----
-#agrimet = read.csv(file.path(data_dir,'agri_metT.csv'))
-
 #connect to database
 conn=scdbConnect() 
 
@@ -59,12 +56,11 @@ site.key <- c(as.character(unique(agrimet$site_name))) #as.character(unique(snot
 #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
 tdata<-data.frame(array(NA,c(length(site.key)*nyrs,5)))
 
-#TODO: Need to check the elevations to confirm correct
+
 elev<- structure(list(sitenote = c("lwd", "bc", "sr", "g", "gs", "hc", "ds", "ga", "sp", 
-                "sm", "ccd", "cg", "picabo", "fairfield"), elev = c(1923L, 1740L, 1750L, 2408L, 
-                2566L, 2277L, 1999L, 2323L, 2408L, 2265L,2676L, 2329L, 1536L, 1494L)), 
-               class = "data.frame", row.names = c(NA, 
-                                                                                                                                                       -14L))
+                "sm", "ccd", "cg", "picabo", "fairfield"), elev = c(7900L, 7900L, 5740L, 7470L, 
+                8780L, 7620L, 8420L, 6560L, 7640L, 7430L,5710L, 6310L, 4900L, 5038L)), 
+               class = "data.frame", row.names = c(NA,-14L))
 #tdata$elev<-rep(elev$elev, each=nyrs)
 
 #summer temp july-sept, winter temp NDJFM
@@ -108,54 +104,7 @@ aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% piv
 all.temp.dat <- aj.snot %>% merge(nj.snot , by= 'wateryear') %>% 
   merge(tdata.wide, by= 'wateryear') 
 
-write.csv(all.temp.dat, file.path(data_dir,"temp_dat.csv"), row.names=FALSE)
-
-#---------------
-#TODO: All of these figures will have to be updated using either new format
-#from above if static or db format if we are going to have them on the website
-
-#plot all data
-png(filename = file.path(fig_dir,"SpringTemps.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=wateryear, y=spring.tempF, color=site)) +geom_point()
-dev.off()
-
-ggplot(tdata[tdata$site == "fairfield" | tdata$site == "picabo",], aes(x=wateryear, y=spring.tempF, color=site)) +geom_point()
-ggplot(tdata[tdata$site == "camas creek divide" | tdata$site == "chocolate gulch",], aes(x=wateryear, y=spring.tempF, color=site)) +geom_point()
-
-#plot all data
-png(filename = file.path(fig_dir,"SummerTemps.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=wateryear, y=sum.tempF, color=site)) +geom_point()
-dev.off()
-
-wt<-ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=wateryear, y=wint.tempF, color=site)) +geom_point()
-
-png(filename = file.path(fig_dir,"WinterTemps.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-print(wt)
-dev.off()
-
-
-subT<-tdata[tdata$site != "fairfield" & tdata$site != "picabo",]
-
-wt_box<- ggplot(subT%>% filter(wateryear < pred.yr), aes(x=reorder(factor(site), nj.tempF, na.rm = TRUE), y=nj.tempF))+
-  geom_boxplot(alpha=0.8)+
-  theme_bw()+
-  xlab("Snotel Site")+
-  ylab("Average Nov-Jan Temperature (F)")+
-  geom_point(data = subT %>% filter(wateryear == pred.yr), aes(reorder(factor(site), nj.tempF, na.rm = TRUE), y=nj.tempF), color="blue", size=3, shape=15)+
-  coord_flip()
-
-png(filename = file.path(fig_dir,"NovJanT_box.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-print(wt_box)
-dev.off()
-#---------------
+#write.csv(all.temp.dat, file.path(data_dir,"temp_dat.csv"), row.names=FALSE)
 
 #-------------------------------------------------------------------------------
 # Bootstrap spring temperature predictions for each site
@@ -194,32 +143,4 @@ new.data$aj_tempf[13]<- mean(tdata.wide$picabo.aj_t, na.rm = TRUE)
 nboot<-5000
 aj.pred.temps<- mvrnorm(nboot, new.data$aj_tempf, site.cov)
 write.csv(aj.pred.temps, file.path(data_dir, 'aj_pred.temps.csv'), row.names=FALSE)
-
-
-
-# TODO: make a plot that represents the model better
-#plot the observed versus fitted 
-png(filename = file.path(fig_dir,"ModeledTemps.png"),
-    width = 5.5, height = 3.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-
-ggplot(input, aes(x=aj_tempf, y=fitted, color=sitenote)) + 
-  geom_abline(intercept=0,lty=1)+
-  geom_point()+
-  xlim(2, 11.5)+
-  ylim(2,11.5) +
-  xlab('Observed Mean April - June Temperature (F)') +
-  ylab('Predicted Mean April - June Temperature (F)') +
-  theme_bw()
-#+geom_line(color='red', data = predicted_df, aes(y=kwh_pred.fit/1000, x=MonthlyQ/1000))
-dev.off()
-
-ggplot(input, aes(x=spring.tempF, y=fitted)) + geom_point()+
-  geom_smooth(method = "lm", se = FALSE)+
-  xlim(2, 11.5)+
-  ylim(2,11.5) +
-  xlab('Observed Mean April - June Temperature (F)') +
-  ylab('Predicted Mean April - June Temperature (F)')+
-  theme_bw()
-
 
