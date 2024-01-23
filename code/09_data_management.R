@@ -8,13 +8,13 @@
 #might not need to re-read these in because they are already in the environment - need to test and clean that up throughout
 
 # Predicted mean april-june temperature
-aj_pred.temps<- read.csv(file.path(data_dir,'aj_pred.temps.csv'))
+#aj_pred.temps<- read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 aj_pred.temps.long <- aj_pred.temps %>% pivot_longer(cols = everything(), names_to = "site", values_to = "aj.mean.t")
 write.csv(aj_pred.temps.long, file.path(data_dir,'aj_pred_temps_long.csv'), row.names=FALSE)
 
-var<-read.csv(file.path(model_out,'all_vars.csv'))
+#var<-read.csv(file.path(model_out,'all_vars.csv'))
 all_vars_long <- var %>% pivot_longer(cols = -c('wateryear'), names_to = c("site", "variable"), names_sep="[.]", values_to = "value")
-write.csv(all_vars_long, file.path(data_dir,'all_vars_long.csv'), row.names=FALSE)
+#write.csv(all_vars_long, file.path(data_dir,'all_vars_long.csv'), row.names=FALSE)
 
 
 #TODO: should be able to do this directly from the environment rather than read/write
@@ -24,10 +24,10 @@ cc.flow.simLong<-  cc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulati
 sc.flow.simLong <- sc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
 
 #remove this?
-write.csv(bwh.flow.simLong, file.path(data_dir,'bwh.flow.simLong.csv'), row.names=FALSE)
-write.csv(bws.flow.simLong, file.path(data_dir,'bws.flow.simLong.csv'), row.names=FALSE)
-write.csv(cc.flow.simLong, file.path(data_dir,'cc.flow.simLong.csv'), row.names=FALSE)
-write.csv(sc.flow.simLong, file.path(data_dir,'sc.flow.simLong.csv'), row.names=FALSE)
+#write.csv(bwh.flow.simLong, file.path(data_dir,'bwh.flow.simLong.csv'), row.names=FALSE)
+#write.csv(bws.flow.simLong, file.path(data_dir,'bws.flow.simLong.csv'), row.names=FALSE)
+#write.csv(cc.flow.simLong, file.path(data_dir,'cc.flow.simLong.csv'), row.names=FALSE)
+#write.csv(sc.flow.simLong, file.path(data_dir,'sc.flow.simLong.csv'), row.names=FALSE)
 
 #TODO: split the names to two variables make the dates come through 
 pred.intervals<- pi %>% pivot_longer(everything(), names_to = "sitePI", values_to = "dailyFlow")
@@ -39,7 +39,7 @@ volumes.sampleLong<- volumes %>% pivot_longer(everything(), names_to = "site_nam
 vol.bws<- volumes.sampleLong %>% filter(site_name == 'bws.vol')
 
 
-write.csv(volumes.sampleLong, file.path(data_dir,'volumes.sampleLong.csv'), row.names=FALSE)
+#write.csv(volumes.sampleLong, file.path(data_dir,'volumes.sampleLong.csv'), row.names=FALSE)
 
 curt.sampleLong<- read.csv(file.path(model_out,"curt.sample.csv"))
 
