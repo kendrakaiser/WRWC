@@ -149,24 +149,24 @@ snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum
 #------------------------------------------------------------------------------
 
 #February data for modeling
-alldat <- swe_feb %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
+alldat_feb <- swe_feb %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
   merge(irr_vol, by= 'wateryear') %>% merge(cm_wide, by= 'wateryear') %>% 
   merge(snodas_feb, by= 'wateryear')
 
-write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
+#write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
 #March data for modeling
-alldat <- swe_mar %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
+alldat_mar <- swe_mar %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
   merge(irr_vol, by= 'wateryear') %>% merge(cm_wide, by= 'wateryear') %>% 
   merge(snodas_march, by= 'wateryear')
 
-write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
+#write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
 #April data for modeling
-alldat <- swe_apr %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
+alldat_april <- swe_apr %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
   merge(irr_vol, by= 'wateryear') %>% merge(cm_wide, by= 'wateryear') %>% 
   merge(snodas_april, by= 'wateryear')
 
-write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
+#write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
 print("All streamflow and snow data saved")
