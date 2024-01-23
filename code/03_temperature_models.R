@@ -142,5 +142,5 @@ new.data$aj_tempf[13]<- mean(tdata.wide$picabo.aj_t, na.rm = TRUE)
 # Draw stream temperatures using multivariate normal distribution
 nboot<-5000
 aj.pred.temps<- mvrnorm(nboot, new.data$aj_tempf, site.cov)
-write.csv(aj.pred.temps, file.path(data_dir, 'aj_pred.temps.csv'), row.names=FALSE)
+#write.csv(aj.pred.temps, file.path(data_dir, 'aj_pred.temps.csv'), row.names=FALSE)
 
