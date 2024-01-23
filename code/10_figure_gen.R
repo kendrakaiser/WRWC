@@ -274,3 +274,80 @@ lines(dates,bwh.wy$value[bwh.wy$wy == 1998][183:365], lwd=1, col="red")
 
 #matplot(bwh.flow.s, type='l',col = "gray90" )
 #matplot(sc.flow.s, type='l',col = "gray90" )
+
+# TEMP data and MODEL FIGURES
+#TODO: update with new naming conventions
+
+#---------------
+#TODO: All of these figures will have to be updated using either new format
+#from above if static or db format if we are going to have them on the website
+
+#plot all data
+png(filename = file.path(fig_dir,"SpringTemps.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=wateryear, y=spring.tempF, color=site)) +geom_point()
+dev.off()
+
+ggplot(tdata[tdata$site == "fairfield" | tdata$site == "picabo",], aes(x=wateryear, y=spring.tempF, color=site)) +geom_point()
+ggplot(tdata[tdata$site == "camas creek divide" | tdata$site == "chocolate gulch",], aes(x=wateryear, y=spring.tempF, color=site)) +geom_point()
+
+#plot all data
+png(filename = file.path(fig_dir,"SummerTemps.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=wateryear, y=sum.tempF, color=site)) +geom_point()
+dev.off()
+
+wt<-ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=wateryear, y=wint.tempF, color=site)) +geom_point()
+
+png(filename = file.path(fig_dir,"WinterTemps.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+print(wt)
+dev.off()
+
+
+subT<-tdata[tdata$site != "fairfield" & tdata$site != "picabo",]
+
+wt_box<- ggplot(subT%>% filter(wateryear < pred.yr), aes(x=reorder(factor(site), nj.tempF, na.rm = TRUE), y=nj.tempF))+
+  geom_boxplot(alpha=0.8)+
+  theme_bw()+
+  xlab("Snotel Site")+
+  ylab("Average Nov-Jan Temperature (F)")+
+  geom_point(data = subT %>% filter(wateryear == pred.yr), aes(reorder(factor(site), nj.tempF, na.rm = TRUE), y=nj.tempF), color="blue", size=3, shape=15)+
+  coord_flip()
+
+png(filename = file.path(fig_dir,"NovJanT_box.png"),
+    width = 5.5, height = 5.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+print(wt_box)
+dev.off()
+#---------------
+
+# TODO: make a plot that represents the model better
+#plot the observed versus fitted 
+png(filename = file.path(fig_dir,"ModeledTemps.png"),
+    width = 5.5, height = 3.5,units = "in", pointsize = 12,
+    bg = "white", res = 600) 
+
+ggplot(input, aes(x=aj_tempf, y=fitted, color=sitenote)) + 
+  geom_abline(intercept=0,lty=1)+
+  geom_point()+
+  xlim(2, 11.5)+
+  ylim(2,11.5) +
+  xlab('Observed Mean April - June Temperature (F)') +
+  ylab('Predicted Mean April - June Temperature (F)') +
+  theme_bw()
+#+geom_line(color='red', data = predicted_df, aes(y=kwh_pred.fit/1000, x=MonthlyQ/1000))
+dev.off()
+
+ggplot(input, aes(x=spring.tempF, y=fitted)) + geom_point()+
+  geom_smooth(method = "lm", se = FALSE)+
+  xlim(2, 11.5)+
+  ylim(2,11.5) +
+  xlab('Observed Mean April - June Temperature (F)') +
+  ylab('Predicted Mean April - June Temperature (F)')+
+  theme_bw()
+
+
