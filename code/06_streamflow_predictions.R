@@ -15,10 +15,10 @@ stream.id<-c("bwh", "bws", "cc", "sc") #automate to no be hard coded
 temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
 
 # Load the models and parameters from all the models 
-vol_mod_sum <<- list.load(file.path(data_dir, vol_sum)) 
-vol_models <<- list.load(file.path(data_dir, vol_mods))
-cm_mod_sum <<- list.load(file.path(data_dir,cm_sum))
-cm_models<<- list.load(file.path(data_dir, cm_mods))
+#vol_mod_sum <<- list.load(file.path(data_dir, vol_sum)) 
+#vol_models <<- list.load(file.path(data_dir, vol_mods))
+#cm_mod_sum <<- list.load(file.path(data_dir,cm_sum))
+#cm_models<<- list.load(file.path(data_dir, cm_mods))
 
 # ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates, changed to start at the beginning of year in accordance with my calculation of cm, consider changing to day of wy
@@ -292,10 +292,10 @@ png(file.path(fig_dir_mo,"pred.cm.png"), height = 30*nrow(output.vol), width = 9
 grid.table(output.cm)
 dev.off()
 
-write.csv(output.vol, file.path(model_out,"pred.output.vol.csv"),row.names=T)
-write.csv(pred.params.vol, file.path(model_out,"pred.params.vol.csv"),row.names=T)
-write.csv(output.cm, file.path(model_out,"pred.output.cm.csv"),row.names=T)
-write.csv(pred.params.cm, file.path(model_out,"pred.params.cm.csv"),row.names=T)
+#write.csv(output.vol, file.path(model_out,"pred.output.vol.csv"),row.names=T)
+#write.csv(pred.params.vol, file.path(model_out,"pred.params.vol.csv"),row.names=T)
+#write.csv(output.cm, file.path(model_out,"pred.output.cm.csv"),row.names=T)
+#write.csv(pred.params.cm, file.path(model_out,"pred.params.cm.csv"),row.names=T)
 
 # ------------------------------------------------------------------------------
 # Draw a sample of volumes and water years with similar timing
@@ -319,7 +319,7 @@ cov.mat<-cor.mat*outer.prod
 # Draw flow volumes using multivariate normal distribution (ac-ft)
 vol.sample<-data.frame(mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4]))
 colnames(vol.sample)<-c("Big Wood Hailey", "Big Wood Stanton","Camas Creek","Silver Creek")
-write.csv(exp(vol.sample), file.path(model_out,paste0("vol.sample-", end_date,".csv")),row.names=F)
+#write.csv(exp(vol.sample), file.path(model_out,paste0("vol.sample-", end_date,".csv")),row.names=F)
 
 # save correlation matrix for model details report
 cor.mat.out<-as.data.frame(round(cor.mat,2))
@@ -328,8 +328,8 @@ grid.table(cor.mat.out)
 dev.off()
 
 # save output from correlations
-write.csv(cov.mat, file.path(model_out,"cov.mat.csv"),row.names=T)
-write.csv(pred.pars, file.path(model_out,"pred.pars.csv"),row.names=T)
+#write.csv(cov.mat, file.path(model_out,"cov.mat.csv"),row.names=T)
+#write.csv(pred.pars, file.path(model_out,"pred.pars.csv"),row.names=T)
 
 
 # ------------------------------------------------------------------------------
@@ -361,7 +361,7 @@ grid.table(cm_prob)
 dev.off()
 
 #save the probabilities for use in the simulation
-write.csv(CMyear.sample, file.path(model_out, paste0("CMyear.sample-", end_date,".csv")),row.names=F)
+#write.csv(CMyear.sample, file.path(model_out, paste0("CMyear.sample-", end_date,".csv")),row.names=F)
 
 
 # TESTING
