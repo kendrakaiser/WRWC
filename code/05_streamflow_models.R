@@ -110,11 +110,11 @@ vol_mod_sum<- list(bwh = bwh_vol_mod[[1]], bws = bws_vol_mod[[1]], sc = sc_vol_m
 vol_models<- list(bwh_mod = bwh_vol_mod[[2]], bws_mod = bws_vol_mod[[2]], sc_mod = sc_vol_mod[[2]], cc_mod = cc_vol_mod[[2]])
 vol_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod[[3]])
 
-write.csv(vol_coef, file.path(model_out,'vol_coeff.csv'), row.names = FALSE)
-write.list(vol_mod_sum, file.path(data_dir, vol.summary)) #.csv
+#write.csv(vol_coef, file.path(model_out,'vol_coeff.csv'), row.names = FALSE)
+#write.list(vol_mod_sum, file.path(data_dir, vol.summary)) #.csv
 
-list.save(vol_mod_sum, file.path(data_dir, vol_sum)) #.Rdata summary stats
-list.save(vol_models, file.path(data_dir, vol_mods)) #actual model structure
+#list.save(vol_mod_sum, file.path(data_dir, vol_sum)) #.Rdata summary stats
+#list.save(vol_models, file.path(data_dir, vol_mods)) #actual model structure
 
 # Pull out R2 for summary stats
 r2s<- data.frame(matrix(ncol = 3, nrow = 4))
@@ -195,10 +195,10 @@ cc_cm_mod<- cm_model("cc", "cc", 9)
 cm_mod_sum<- list(bwh = bwh_cm_mod[[1]], bws = bws_cm_mod[[1]], sc = sc_cm_mod[[1]], cc = cc_cm_mod[[1]])
 cm_models<- list(bwh_cm.mod = bwh_cm_mod[[2]], bws_cm.mod = bws_cm_mod[[2]], sc_cm.mod = sc_cm_mod[[2]], cc_cm.mod = cc_cm_mod[[2]])
 
-write.list(cm_mod_sum, file.path(data_dir, cm.summary))
+#write.list(cm_mod_sum, file.path(data_dir, cm.summary))
 
-list.save(cm_mod_sum, file.path(data_dir, cm_sum))
-list.save(cm_models, file.path(data_dir, cm_mods))
+#list.save(cm_mod_sum, file.path(data_dir, cm_sum))
+#list.save(cm_models, file.path(data_dir, cm_mods))
 
 r2s_cm<- data.frame(matrix(ncol = 2, nrow = 4))
 colnames(r2s_cm)<-c("AdjR2", "Loocv R2")
