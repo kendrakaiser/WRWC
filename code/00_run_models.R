@@ -10,8 +10,11 @@
 
 # GitHub File Path
 git_dir <<- '~/github/WRWC'
+git_dir=getwd()
+
 # Local File Path
 cd <<- '~/Desktop/WRWC'
+cd=getwd()
 
 # set prediction year
 pred.yr <<- 2023
@@ -22,6 +25,7 @@ run_date <<- 'april1'
 author <<- "Kendra Kaiser"
 
 todays_date <<- "04/01/2023"
+
 
 # Output file paths - do not change
 fig_dir <<- file.path(git_dir, 'figures') # github
@@ -103,9 +107,9 @@ suppressWarnings(source(file.path(git_dir, 'code/05_streamflow_models.R')))# war
 source(file.path(git_dir, 'code/06_streamflow_predictions.R'))
 
 # Remove unnecessary variables in the environment
-rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir", 
-             "data_dir", "input_data", "fig_dir_mo_rmd", "fig_dir_mo",  "author",  "todays_date", "end_date", 
-             "model_out", "streamflow_data_out"))
+# rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir",
+#              "data_dir", "input_data", "fig_dir_mo_rmd", "fig_dir_mo",  "author",  "todays_date", "end_date",
+#              "model_out", "streamflow_data_out"))
 
 # Simulate the Irrigation Season Hydrograph
 source(file.path(git_dir, 'code/07_streamflow_simulation.R'))

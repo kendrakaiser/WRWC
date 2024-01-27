@@ -9,7 +9,7 @@
 
 # Predicted mean april-june temperature
 #aj_pred.temps<- read.csv(file.path(data_dir,'aj_pred.temps.csv'))
-aj_pred.temps.long <- aj_pred.temps %>% pivot_longer(cols = everything(), names_to = "site", values_to = "aj.mean.t")
+aj.pred.temps.long <- aj.pred.temps %>% pivot_longer(cols = everything(), names_to = "site", values_to = "aj.mean.t")
 write.csv(aj_pred.temps.long, file.path(data_dir,'aj_pred_temps_long.csv'), row.names=FALSE)
 
 #var<-read.csv(file.path(model_out,'all_vars.csv'))
@@ -18,10 +18,10 @@ all_vars_long <- var %>% pivot_longer(cols = -c('wateryear'), names_to = c("site
 
 
 #TODO: should be able to do this directly from the environment rather than read/write
-bwh.flow.simLong<- bwh.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-bws.flow.simLong<- bws.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-cc.flow.simLong<-  cc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-sc.flow.simLong <- sc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+# bwh.flow.simLong<- bwh.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+# bws.flow.simLong<- bws.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+# cc.flow.simLong<-  cc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+# sc.flow.simLong <- sc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
 
 #remove this?
 #write.csv(bwh.flow.simLong, file.path(data_dir,'bwh.flow.simLong.csv'), row.names=FALSE)
@@ -48,8 +48,9 @@ curt.sampleLong<- read.csv(file.path(model_out,"curt.sample.csv"))
 
 
 writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
-
+'x:x is the sample for which summary stats will be written to db'
   simDate=as.Date(simDate)
+  runDate=as.Date(runDate)
 
   
   if(length(strsplit(site.metric,"\\.")[[1]])!=2){
@@ -98,7 +99,7 @@ makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;"
   }
   
   return(bpData)
-  #boxplat wants:
+  #boxplot wants:
   # Value
   # List with the following components:
   # stats	
@@ -119,7 +120,13 @@ makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;"
   
 #writeSummaryStats(c(runif(1000),10,11),"poodle.dog",simDate=Sys.Date()-1)  
 
-bxpList=makeBoxplotData(dbGetQuery(conn,"SELECT * FROM summarystatistics WHERE site= 'poodle' AND metric = 'dog' AND rundate = '2023-12-21' 
-                                   AND (simdate='2023-12-21' OR simdate='2023-12-20');"))
-bxp(bxpList)
+str(vol.sample)
 
+writeSummaryStats(x=vol.sample$bwh.irr_vol, site.metric="bwh.irr_vol",simDate=end_date)
+writeSummaryStats(x=vol.sample$bws.irr_vol, site.metric="bws.irr_vol",simDate=end_date)
+writeSummaryStats(x=vol.sample$cc.irr_vol, site.metric="cc.irr_vol",simDate=end_date)
+writeSummaryStats(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=end_date)
+
+
+bxpList=makeBoxplotData(dbGetQuery(conn,"SELECT * FROM summarystatistics WHERE site= 'bwh' AND metric = 'irr_vol' AND simdate='2023-10-01';"))
+bxp(bxpList)
