@@ -130,3 +130,7 @@ writeSummaryStats(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=end_
 
 bxpList=makeBoxplotData(dbGetQuery(conn,"SELECT * FROM summarystatistics WHERE site= 'bwh' AND metric = 'irr_vol' AND simdate='2023-10-01';"))
 bxp(bxpList)
+
+
+dbWriteTable(conn,"predictionintervals",pi,overwrite=T)
+#bGetQuery(conn,"SELECT * FROM predictionintervals;")
