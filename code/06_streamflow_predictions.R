@@ -12,7 +12,8 @@
 
 # Import Data ------------------------------------------------------------------  
 stream.id<-c("bwh", "bws", "cc", "sc") #automate to no be hard coded
-temp.ran = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
+#aj.pred.temps = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
+
 
 # Load the models and parameters from all the models 
 #vol_mod_sum <<- list.load(file.path(data_dir, vol_sum)) 
@@ -205,7 +206,7 @@ hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.cm, cm_mod_sum$bwh$v
 
 # Prediction Data with modeled temperature data
 pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::slice(rep(1:n(), 5000))
-pred.data[aj_params] <- temp.ran[aj_params]
+pred.data[aj_params] <- aj.pred.temps[aj_params]
 
 # Big Wood Hailey Model output
 mod_sum[1,2]<-summary(cm_models$bwh_cm.mod)$adj.r.squared
@@ -225,7 +226,7 @@ hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bws.cm, cm_mod_sum$bws$v
 
 # Prediction Data with modeled temperature data
 pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
-pred.data[aj_params] <- temp.ran[aj_params]
+pred.data[aj_params] <- aj.pred.temps[aj_params]
 
 # Big Wood Stanton Model output
 mod_sum[2,2]<-summary(cm_models$bws_cm.mod)$adj.r.squared
@@ -245,7 +246,7 @@ if (is.integer(grep('aj', cm_mod_sum$sc$vars))){
   aj_params<-cm_mod_sum$sc$vars[grep('aj', cm_mod_sum$sc$vars)]
   # Prediction Data with modeled temperature data
   pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
-  pred.data[aj_params] <- temp.ran[aj_params]
+  pred.data[aj_params] <- aj.pred.temps[aj_params]
 } else {
   sub_params<- cm_mod_sum$sc$vars
   pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params))
@@ -271,7 +272,7 @@ hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.cm, cm_mod_sum$cc$var
 
 #Prediction Data with modeled temperature data
 pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
-pred.data[aj_params] <- temp.ran[aj_params]
+pred.data[aj_params] <- aj.pred.temps[aj_params]
 
 # Camas Creek Model output
 mod_sum[3,2]<-summary(cm_models$cc_cm.mod)$adj.r.squared

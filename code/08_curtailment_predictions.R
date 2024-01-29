@@ -3,8 +3,8 @@
 # Kendra Kaiser
 # ---------------------------------
 
-#import data
-wr_og<-read.csv(file.path(data_dir,'WD37__01192021 Irrigation rights Big Wood Above Magic.csv'))
+#import data -- MOVE from local machine to github
+wr_og<-read.csv(file.path(input_dir,'WD37__01192021 Irrigation rights Big Wood Above Magic.csv'))
 
 #subset to relevant colums
 wr<- wr_og %>% select('Right.ID', 'Priority.Date', 'PD.Sort.Key', "Overall.Max.Diversion.Rate.cfs.", 
