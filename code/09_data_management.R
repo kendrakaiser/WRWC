@@ -17,24 +17,18 @@
 
 
 #TODO: remove re: summary stats?
-bwh.flow.simLong<- bwh.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-bws.flow.simLong<- bws.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-cc.flow.simLong<-  cc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-sc.flow.simLong <- sc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-
-#remove this?
-#write.csv(bwh.flow.simLong, file.path(data_dir,'bwh.flow.simLong.csv'), row.names=FALSE)
-#write.csv(bws.flow.simLong, file.path(data_dir,'bws.flow.simLong.csv'), row.names=FALSE)
-#write.csv(cc.flow.simLong, file.path(data_dir,'cc.flow.simLong.csv'), row.names=FALSE)
-#write.csv(sc.flow.simLong, file.path(data_dir,'sc.flow.simLong.csv'), row.names=FALSE)
+# bwh.flow.simLong<- bwh.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+# bws.flow.simLong<- bws.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+# cc.flow.simLong<-  cc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
+# sc.flow.simLong <- sc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
 
 #TODO: split the names to two variables make the dates come through 
 #write to database, but overright it every day
 pred.intervals<- pi %>% pivot_longer(everything(), names_to = "sitePI", values_to = "dailyFlow")
 
-volumes<-read.csv(file.path(model_out,"vol.sample.csv"))
-colnames(volumes)<-c("bwh.vol", "bws.vol","cc.vol", "sc.vol") #this has already been read in via the streamflow simulation script; re-consider re-reading it in
-volumes.sampleLong<- volumes %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
+#volumes<-read.csv(file.path(model_out,"vol.sample.csv"))
+#colnames(volumes)<-c("bwh.vol", "bws.vol","cc.vol", "sc.vol") #this has already been read in via the streamflow simulation script; re-consider re-reading it in
+volumes.sampleLong<- volume.sample %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
 #add run date?
 vol.bws<- volumes.sampleLong %>% filter(site_name == 'bws.vol')
 
