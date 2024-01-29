@@ -4,49 +4,17 @@
 # August, 2022
 # ------------------------------------------------------------------------------
 
-# Pivot Longer
-#might not need to re-read these in because they are already in the environment - need to test and clean that up throughout
-
-# Predicted mean april-june temperature
-#aj_pred.temps<- read.csv(file.path(data_dir,'aj_pred.temps.csv'))
-aj.pred.temps.long <- aj.pred.temps %>% pivot_longer(cols = everything(), names_to = "site", values_to = "aj.mean.t")
-write.csv(aj_pred.temps.long, file.path(data_dir,'aj_pred_temps_long.csv'), row.names=FALSE)
-
-#var<-read.csv(file.path(model_out,'all_vars.csv'))
-all_vars_long <- var %>% pivot_longer(cols = -c('wateryear'), names_to = c("site", "variable"), names_sep="[.]", values_to = "value")
-#write.csv(all_vars_long, file.path(data_dir,'all_vars_long.csv'), row.names=FALSE)
-
-
-#TODO: should be able to do this directly from the environment rather than read/write
-# bwh.flow.simLong<- bwh.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-# bws.flow.simLong<- bws.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-# cc.flow.simLong<-  cc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-# sc.flow.simLong <- sc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
-
-#remove this?
-#write.csv(bwh.flow.simLong, file.path(data_dir,'bwh.flow.simLong.csv'), row.names=FALSE)
-#write.csv(bws.flow.simLong, file.path(data_dir,'bws.flow.simLong.csv'), row.names=FALSE)
-#write.csv(cc.flow.simLong, file.path(data_dir,'cc.flow.simLong.csv'), row.names=FALSE)
-#write.csv(sc.flow.simLong, file.path(data_dir,'sc.flow.simLong.csv'), row.names=FALSE)
-
 #TODO: split the names to two variables make the dates come through 
 pred.intervals<- pi %>% pivot_longer(everything(), names_to = "sitePI", values_to = "dailyFlow")
 
-volumes<-read.csv(file.path(model_out,"vol.sample.csv"))
-colnames(volumes)<-c("bwh.vol", "bws.vol","cc.vol", "sc.vol") #this has already been read in via the streamflow simulation script; re-consider re-reading it in
-volumes.sampleLong<- volumes %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
+
+volumes.sampleLong<- volume.sample %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
 #add run date?
-vol.bws<- volumes.sampleLong %>% filter(site_name == 'bws.vol')
+#vol.bws<- volumes.sampleLong %>% filter(site_name == 'bws.vol')
 
+#curt.sampleLong<- curt.sample
 
-#write.csv(volumes.sampleLong, file.path(data_dir,'volumes.sampleLong.csv'), row.names=FALSE)
-
-curt.sampleLong<- read.csv(file.path(model_out,"curt.sample.csv"))
-
-
-
-
-
+# Function to calculate summary statistics from model runs that can be used to generate irrigation season volume boxplots
 writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
 'x:x is the sample for which summary stats will be written to db'
   simDate=as.Date(simDate)
@@ -77,6 +45,21 @@ writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
   dbWriteTable(conn,"summarystatistics",statDF,append=T)
 }
 
+#writeSummaryStats(c(runif(1000),10,11),"poodle.dog",simDate=Sys.Date()-1)  
+
+# push model output to database
+writeSummaryStats(x=vol.sample$bwh.irr_vol, site.metric="bwh.irr_vol",simDate=end_date)
+writeSummaryStats(x=vol.sample$bws.irr_vol, site.metric="bws.irr_vol",simDate=end_date)
+writeSummaryStats(x=vol.sample$cc.irr_vol, site.metric="cc.irr_vol",simDate=end_date)
+writeSummaryStats(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=end_date)
+
+# TODO: test/ is this working?
+# Write daily prediction interval data to db for generating timeseries forecast figures
+dbWriteTable(conn,"predictionintervals",pi,overwrite=T)
+#bGetQuery(conn,"SELECT * FROM predictionintervals;")
+
+
+# pull data from db to generate data in the format necessary to create boxplot -- this will be moved to shiny side
 makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;")){
   groups=unique(dbdf[c("site","metric","simdate","rundate")])
   bpData=list(stats=matrix(nrow=5,ncol=nrow(groups)),n=rep(NA,nrow(groups)),out=vector(),group=vector(),names=vector())
@@ -117,20 +100,9 @@ makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;"
   #  a vector of names for the groups.
   
 }
-  
-#writeSummaryStats(c(runif(1000),10,11),"poodle.dog",simDate=Sys.Date()-1)  
 
-str(vol.sample)
-
-writeSummaryStats(x=vol.sample$bwh.irr_vol, site.metric="bwh.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$bws.irr_vol, site.metric="bws.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$cc.irr_vol, site.metric="cc.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=end_date)
-
-
+# SAMPLE code to show how to make boxplot from data stored in db - mmove to shiny
 bxpList=makeBoxplotData(dbGetQuery(conn,"SELECT * FROM summarystatistics WHERE site= 'bwh' AND metric = 'irr_vol' AND simdate='2023-10-01';"))
 bxp(bxpList)
 
 
-dbWriteTable(conn,"predictionintervals",pi,overwrite=T)
-#bGetQuery(conn,"SELECT * FROM predictionintervals;")
