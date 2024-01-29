@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------------- # 
 
 # Set input parameters and directories in global environment for each model run
-
+# TODO: Set up as project and change to getwd()
 # GitHub File Path
 git_dir <<- '~/github/WRWC'
 # Local File Path

@@ -5,19 +5,18 @@
 # ------------------------------------------------------------------------------
 
 # Pivot Longer
-#might not need to re-read these in because they are already in the environment - need to test and clean that up throughout
 
 # Predicted mean april-june temperature
 #aj_pred.temps<- read.csv(file.path(data_dir,'aj_pred.temps.csv'))
-aj_pred.temps.long <- aj_pred.temps %>% pivot_longer(cols = everything(), names_to = "site", values_to = "aj.mean.t")
-write.csv(aj_pred.temps.long, file.path(data_dir,'aj_pred_temps_long.csv'), row.names=FALSE)
+#aj_pred.temps.long <- aj.pred.temps %>% pivot_longer(cols = everything(), names_to = "site", values_to = "aj.mean.t")
+#write.csv(aj_pred.temps.long, file.path(data_dir,'aj_pred_temps_long.csv'), row.names=FALSE)
 
-#var<-read.csv(file.path(model_out,'all_vars.csv'))
-all_vars_long <- var %>% pivot_longer(cols = -c('wateryear'), names_to = c("site", "variable"), names_sep="[.]", values_to = "value")
+#REMOVE?
+#all_vars_long <- var %>% pivot_longer(cols = -c('wateryear'), names_to = c("site", "variable"), names_sep="[.]", values_to = "value")
 #write.csv(all_vars_long, file.path(data_dir,'all_vars_long.csv'), row.names=FALSE)
 
 
-#TODO: should be able to do this directly from the environment rather than read/write
+#TODO: remove re: summary stats?
 bwh.flow.simLong<- bwh.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
 bws.flow.simLong<- bws.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
 cc.flow.simLong<-  cc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulation", values_to = "dailyFlow")
@@ -30,6 +29,7 @@ sc.flow.simLong <- sc.flow.s %>% pivot_longer(cols = -c(1), names_to = "simulati
 #write.csv(sc.flow.simLong, file.path(data_dir,'sc.flow.simLong.csv'), row.names=FALSE)
 
 #TODO: split the names to two variables make the dates come through 
+#write to database, but overright it every day
 pred.intervals<- pi %>% pivot_longer(everything(), names_to = "sitePI", values_to = "dailyFlow")
 
 volumes<-read.csv(file.path(model_out,"vol.sample.csv"))
@@ -48,7 +48,7 @@ curt.sampleLong<- read.csv(file.path(model_out,"curt.sample.csv"))
 
 
 writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
-
+'x: simulated sample data'
   simDate=as.Date(simDate)
 
   
