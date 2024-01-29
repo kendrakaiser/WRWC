@@ -9,12 +9,11 @@
 # Set input parameters and directories in global environment for each model run
 
 # GitHub File Path
-git_dir <<- '~/github/WRWC'
 git_dir=getwd()
 
-# Local File Path
-cd <<- '~/Desktop/WRWC'
-cd=getwd()
+# Output file paths
+fig_dir <<- file.path(git_dir, 'figures') # github
+input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 
 # set prediction year
 pred.yr <<- 2023
@@ -23,14 +22,7 @@ run_date <<- 'april1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
-
 todays_date <<- "04/01/2023"
-
-
-# Output file paths - do not change
-fig_dir <<- file.path(git_dir, 'figures') # github
-input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
-data_dir <<- file.path(cd, 'data') # local
 
 # set end date for AgriMet Data download
 end_date <<-as.Date("2023-10-01")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
@@ -106,28 +98,22 @@ suppressWarnings(source(file.path(git_dir, 'code/05_streamflow_models.R')))# war
 # Make the Irrigation Season Streamflow Predictions
 source(file.path(git_dir, 'code/06_streamflow_predictions.R'))
 
-# Remove unnecessary variables in the environment
-# rm.all.but(c("cd", "pred.yr", "run_date", "git_dir", "fig_dir", "input_dir",
-#              "data_dir", "input_data", "fig_dir_mo_rmd", "fig_dir_mo",  "author",  "todays_date", "end_date",
-#              "model_out", "streamflow_data_out"))
-
 # Simulate the Irrigation Season Hydrograph
 source(file.path(git_dir, 'code/07_streamflow_simulation.R'))
 
-# Develop curtailment models and make curtailment date predictions
-# Retiring this 'code/curtailment_model.R')))
-source(file.path(git_dir, 'code/08_curtailment_predictions.R'))
+# Develop curtailment models and make curtailment date predictions - not tested yet
+#source(file.path(git_dir, 'code/08_curtailment_predictions.R'))
 
-
+#TODO: move knit results to shiny so users can click - "download report"
 # knit Model Results PDF
-detach(package:plyr) #plyr interferes with a grouping function needed for plotting
-params_list = list(fig_dir_mo_rmd = fig_dir_mo_rmd, set_author = author, 
-                   todays_date=todays_date, data_dir = data_dir, 
-                   git_dir = git_dir, input_data = input_data, run_date=run_date)
+#detach(package:plyr) #plyr interferes with a grouping function needed for plotting
+#params_list = list(fig_dir_mo_rmd = fig_dir_mo_rmd, set_author = author, 
+ #                  todays_date=todays_date, data_dir = data_dir, 
+  #                 git_dir = git_dir, input_data = input_data, run_date=run_date)
 
 # knit PDF - if it doesn't work you can open the 'ModelOutputv2.Rmd' and press 'knit'
-rmarkdown::render(file.path(git_dir, 'ModelOutputv2.Rmd'), params = params_list, 
-     output_file = file.path(git_dir, paste0("ModelOutput-", end_date, ".pdf")))
+#rmarkdown::render(file.path(git_dir, 'ModelOutputv2.Rmd'), params = params_list, 
+     #output_file = file.path(git_dir, paste0("ModelOutput-", end_date, ".pdf")))
 
 
 
