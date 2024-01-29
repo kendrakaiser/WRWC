@@ -13,6 +13,9 @@ git_dir <<- '~/github/WRWC'
 # Local File Path
 cd <<- '~/Desktop/WRWC'
 
+git_dir=getwd()
+cd=getwd()
+
 # set prediction year
 pred.yr <<- 2023
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
