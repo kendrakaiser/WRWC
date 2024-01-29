@@ -25,7 +25,7 @@ author <<- "Kendra Kaiser"
 todays_date <<- "04/01/2023"
 
 # set end date for AgriMet Data download
-end_date <<-as.Date("2023-10-01")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
+end_date <<-as.Date("2023-04-01")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
 # ---- Run Model code
 
@@ -40,8 +40,7 @@ if (run_date == 'feb1'){
   input_data <<- 'alldat_feb.csv'
   fig_dir_mo <<- file.path(fig_dir,'February')
   fig_dir_mo_rmd <<- './figures/February'
-  model_out <<-  file.path(cd, 'February_output')
-  
+
   vol.summary <<-'feb_vol_summary.csv'
   cm.summary <<- 'feb_cm_summary.csv'
   
@@ -55,8 +54,7 @@ if (run_date == 'feb1'){
   input_data <<- 'alldat_mar.csv'
   fig_dir_mo <<- file.path(fig_dir,'March')
   fig_dir_mo_rmd <<- './figures/March'
-  model_out <<-  file.path(cd, 'March_output')
-  
+
   vol.summary <<-'mar_vol_summary.csv'
   cm.summary <<- 'mar_cm_summary.csv'
   
@@ -70,8 +68,7 @@ if (run_date == 'feb1'){
   input_data <<- 'alldat_apr.csv'
   fig_dir_mo <<- file.path(fig_dir,'April')
   fig_dir_mo_rmd <<- './figures/April'
-  model_out <<-  file.path(cd, 'April_output')
-  
+
   vol.summary <<-'apr_vol_summary.csv'
   cm.summary <<- 'apr_cm_summary.csv'
   
@@ -103,6 +100,9 @@ source(file.path(git_dir, 'code/07_streamflow_simulation.R'))
 
 # Develop curtailment models and make curtailment date predictions - not tested yet
 #source(file.path(git_dir, 'code/08_curtailment_predictions.R'))
+
+# manage data and push necessary outputs to db
+source(file.path(git_dir, 'code/09_data_management.R'))
 
 #TODO: move knit results to shiny so users can click - "download report"
 # knit Model Results PDF
