@@ -8,7 +8,7 @@
 pred.intervals<- pi %>% pivot_longer(everything(), names_to = "sitePI", values_to = "dailyFlow")
 
 
-volumes.sampleLong<- volume.sample %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
+volumes.sampleLong<- vol.sample %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
 #add run date?
 #vol.bws<- volumes.sampleLong %>% filter(site_name == 'bws.vol')
 
