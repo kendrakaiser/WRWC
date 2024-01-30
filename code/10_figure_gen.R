@@ -160,7 +160,7 @@ p_plotly <- plot_ly(
 )
 
 # Save plot as an HTML file - loads in Shiny app easily
-htmlwidgets::saveWidget(p_plotly, file = "C:/Users/stevenschmitz/Desktop/BigWood-App-main/www/sampled_volumes_big_plotly.html") #consider directory
+htmlwidgets::saveWidget(p_plotly, file = "C:/Users/stevenschmitz/Desktop/BigWood-App-main/www/sampled_volumes_big_plotly.html") #revise directory
 
 dev.off()
 
