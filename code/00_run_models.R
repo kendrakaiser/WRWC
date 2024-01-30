@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------------- # 
 
 # Set input parameters and directories in global environment for each model run
-
+# TODO: Set up as project and change to getwd()
 # GitHub File Path
 git_dir=getwd()
 
@@ -23,9 +23,12 @@ pred.yr <<- 2023
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
 run_date <<- 'april1'
 
-# info for model run report
+# info for model run report - move to RMD
 author <<- "Kendra Kaiser"
 todays_date <<- "04/01/2023"
+
+fig_dir <<- file.path(git_dir, 'figures') # github
+input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 
 # set end date for AgriMet Data download
 end_date <<-as.Date("2023-04-01")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
@@ -114,6 +117,7 @@ source(file.path(git_dir, 'code/09_data_management.R'))
  #                  todays_date=todays_date, data_dir = data_dir, 
   #                 git_dir = git_dir, input_data = input_data, run_date=run_date)
 
+# update the Rmd to work with figures in the shiny folder and create a "make pdf" button
 # knit PDF - if it doesn't work you can open the 'ModelOutputv2.Rmd' and press 'knit'
 #rmarkdown::render(file.path(git_dir, 'ModelOutputv2.Rmd'), params = params_list, 
      #output_file = file.path(git_dir, paste0("ModelOutput-", end_date, ".pdf")))

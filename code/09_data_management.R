@@ -5,10 +5,11 @@
 # ------------------------------------------------------------------------------
 
 #TODO: split the names to two variables make the dates come through 
+#write to database, but overright it every day
 pred.intervals<- pi %>% pivot_longer(everything(), names_to = "sitePI", values_to = "dailyFlow")
 
-
 volumes.sampleLong<- vol.sample %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
+
 #add run date?
 #vol.bws<- volumes.sampleLong %>% filter(site_name == 'bws.vol')
 
