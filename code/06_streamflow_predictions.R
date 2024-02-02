@@ -71,6 +71,15 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   hist.swe: mean(arrays of historic SWE from ws snotel sites) #mean(hist$ccd+hist$sr, na.rm=T)
   lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$wateryear == pred.yr-1] 
   '
+  
+  # mod<- vol_models$bwh_mod
+  # pred.dat<- pred.dat
+  # wq.cur<-var$bwh.wq[var$wateryear == pred.yr]
+  # wq<-var$bwh.wq[var$wateryear < pred.yr]
+  # vol<- hist$bwh.irr_vol
+  # hist.swe<- mean(colMeans(swe_cols, na.rm=T)) 
+  # lastQ<- var$bwh.irr_vol[var$wateryear == pred.yr-1]
+  
   pred.params.vol<-array(NA,c(1,4))
   output.vol<-array(NA,c(1,3))
   
@@ -341,7 +350,7 @@ cm.data = var[var$wateryear >= 1997 & var$wateryear < pred.yr,]
 cm.data = cm.data %>% dplyr::select(wateryear, bwh.cm, bws.cm,cc.cm, sc.cm) 
 cm.data$prob<-NA
 
-samp.sd.cm<- c(sd(var$bwh.cm), sd(var$bws.cm), sd(var$cc.cm), sd(var$sc.cm))
+samp.sd.cm<- c(sd(var$bwh.cm[var$wateryear < pred.yr]), sd(var$bws.cm[var$wateryear < pred.yr]), sd(var$cc.cm[var$wateryear < pred.yr]), sd(var$sc.cm[var$wateryear < pred.yr]))
 var.fore.cm<- pred.params.cm[,2] + samp.sd.cm
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
