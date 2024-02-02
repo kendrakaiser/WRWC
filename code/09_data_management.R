@@ -48,11 +48,11 @@ writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
 
 #writeSummaryStats(c(runif(1000),10,11),"poodle.dog",simDate=Sys.Date()-1)  
 
-# push model output to database
-writeSummaryStats(x=vol.sample$bwh.irr_vol, site.metric="bwh.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$bws.irr_vol, site.metric="bws.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$cc.irr_vol, site.metric="cc.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=end_date)
+# push model output to database - is in log form
+writeSummaryStats(x=exp(vol.sample$bwh.irr_vol), site.metric="bwh.irr_vol",simDate=end_date)
+writeSummaryStats(x=exp(vol.sample$bws.irr_vol), site.metric="bws.irr_vol",simDate=end_date)
+writeSummaryStats(x=exp(vol.sample$cc.irr_vol), site.metric="cc.irr_vol",simDate=end_date)
+writeSummaryStats(x=exp(vol.sample$sc.irr_vol), site.metric="sc.irr_vol",simDate=end_date)
 
 # TODO: test/ is this working?
 # Write daily prediction interval data to db for generating timeseries forecast figures
