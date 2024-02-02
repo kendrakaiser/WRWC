@@ -72,13 +72,13 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$wateryear == pred.yr-1] 
   '
   
-  # mod<- vol_models$bwh_mod
+  # mod<- vol_models$cc_mod
   # pred.dat<- pred.dat
-  # wq.cur<-var$bwh.wq[var$wateryear == pred.yr]
-  # wq<-var$bwh.wq[var$wateryear < pred.yr]
-  # vol<- hist$bwh.irr_vol
-  # hist.swe<- mean(colMeans(swe_cols, na.rm=T)) 
-  # lastQ<- var$bwh.irr_vol[var$wateryear == pred.yr-1]
+  # wq.cur<-var$cc.wq[var$wateryear == pred.yr]
+  # wq<-var$cc.wq[var$wateryear < pred.yr]
+  # vol<- hist$cc.irr_vol
+  # hist.swe<- mean(colMeans(swe_cols, na.rm=T))
+  # lastQ<- var$cc.irr_vol[var$wateryear == pred.yr-1]
   
   pred.params.vol<-array(NA,c(1,4))
   output.vol<-array(NA,c(1,3))

@@ -48,17 +48,16 @@ writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
 
 #writeSummaryStats(c(runif(1000),10,11),"poodle.dog",simDate=Sys.Date()-1)  
 
-# push model output to database
-writeSummaryStats(x=vol.sample$bwh.irr_vol, site.metric="bwh.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$bws.irr_vol, site.metric="bws.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$cc.irr_vol, site.metric="cc.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=end_date)
+# push model output to database - is in log form
+writeSummaryStats(x=exp(vol.sample$bwh.irr_vol), site.metric="bwh.irr_vol",simDate=end_date)
+writeSummaryStats(x=exp(vol.sample$bws.irr_vol), site.metric="bws.irr_vol",simDate=end_date)
+writeSummaryStats(x=exp(vol.sample$cc.irr_vol), site.metric="cc.irr_vol",simDate=end_date)
+writeSummaryStats(x=exp(vol.sample$sc.irr_vol), site.metric="sc.irr_vol",simDate=end_date)
 
 # TODO: test/ is this working?
 # Write daily prediction interval data to db for generating timeseries forecast figures
 dbWriteTable(conn,"predictionintervals",pi,overwrite=T)
 #bGetQuery(conn,"SELECT * FROM predictionintervals;")
-
 
 # pull data from db to generate data in the format necessary to create boxplot -- this will be moved to shiny side
 makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;")){
@@ -106,4 +105,38 @@ makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;"
 bxpList=makeBoxplotData(dbGetQuery(conn,"SELECT * FROM summarystatistics WHERE site= 'bwh' AND metric = 'irr_vol' AND simdate='2023-10-01';"))
 bxp(bxpList)
 
+
+# ------------------------------------------------------------------------------
+# Calculate Exceedance Probabilities
+# ------------------------------------------------------------------------------
+
+exceed.probs<- function(vols, probs){
+  'calculate exceedance probabilities of model output
+  p=m/(n+1)
+  vols: numeric of volumes
+  probs: array of probabilities to calculate'
+  
+  n=length(vols) 
+  m=round(probs*(n+1))
+  #rank the sampled volumes
+  ranks<- rank(vols)
+  # find the index of which volume goes with each exceedance
+  ix=match(m, ranks)
+  # find the volume of each exceedance
+  ex.vols=vols[ix]
+  return(ex.vols)
+}
+
+# Exceedance probs from NWRFC
+prb<- c(0.1, 0.25, 0.5, 0.75, 0.9)
+# Calculate exceedance probabilities and save table with labels
+ex.vols<- round(apply(exp(vol.sample), 2, exceed.probs, prb)/1000) %>% as.data.frame()
+ex.vols$Exceedance <- c('90%', '75%', '50%', '25%', '10%') 
+ex.vols<- ex.vols%>% relocate(Exceedance)
+
+my_table_theme <- ttheme_default(core=list(fg_params = list(col = c("red","darkorange","green3","deepskyblue", "blue3"), col=NA)))
+grid.table(ex.vols, theme = my_table_theme, rows = NULL)
+
+# Write exceedance prob to db
+dbWriteTable(conn,"exceednaceprobabilities",ex.vols,overwrite=T)
 
