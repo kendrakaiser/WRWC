@@ -60,7 +60,7 @@ dbWriteBatch=function(batch,notes=" ",include=T,dbHandle=conn){
   return(batchID)
 }
 
-dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPrediction=F,simnumber=0,addMetric=F,qcStatus=T,dbHandle=conn){
+dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPrediction=F,simnumber=0,addMetric=F,qcStatus=T,qcDetails="",dbHandle=conn){
   if(is.data.frame(value)){value=value[,1]} #strip extra attributes
   
   #first check batches, locations, and metrics
@@ -132,6 +132,7 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
   writeMe$value=as.numeric(writeMe$value)
   writeMe$qcstatus[qcStatus]="true"
   writeMe$qcstatus[!qcStatus]="false"
+  writeMe$qcdetails=qcDetails
   
   writeMe=writeMe[complete.cases(writeMe$value),]
   

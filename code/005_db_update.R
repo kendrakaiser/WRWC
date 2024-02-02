@@ -346,6 +346,7 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
     sourceUSGS=function(metricID, locationID, days){
       print("sourcing USGS data...")
       
+      
       ##db knows about these as source_site_id
       # bwb = 13139510  #  Bullion Bridge, Big Wood at Hailey
       # bws = 13140800  #  Stanton Crossing, Big Wood
@@ -372,11 +373,33 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
       #   endDate=startDate
       # }
       
+      streamflowindb=dbGetQuery(conn,paste0("SELECT * FROM data WHERE locationid = '",locationID,"' AND metricid = '",metricID,
+                                            "' AND ( datetime IN ('",paste(days,collapse="', '"),"') OR qcdetails = 'P' );"))
       
-      # Dowload data from this location
+      
+      days=unique(c(days, streamflowindb$datetime))
+      days=days[order(days)]
+      
+
+      # Download data from this location
       streamflow <- readNWISdv(siteNumbers = thisLocation_sourceID, parameterCd = pCode, startDate = min(days), endDate = max(days) ) %>% renameNWISColumns() %>% data.frame
       
+      dupDays=streamflowindb$datetime[duplicated(streamflowindb$datetime)]
       
+      allStreamflow=merge(streamflow,streamflowindb,by.x="Date",by.y="datetime",all.x=T, all.y=T)
+      
+      allStreamflow$flowMatch=allStreamflow$Flow==allStreamflow$value
+      
+      problemDays=allStreamflow$Date[!allStreamflow$flowMatch]
+      
+      remDays=c(dupDays,problemDays)
+      remDays=remDays[complete.cases(remDays)]
+      
+      if(length(remDays)>0){
+        dbExecute(conn,paste0("DELETE FROM data WHERE locationid = '",locationID,"' AND metricid = '",metricID,
+                              "' AND datetime IN ('",paste(remDays,collapse="', '"),"');")
+        )
+      }
       if(!all(days %in% streamflow$Date)){
         addDays=days[!days %in% streamflow$Date]
         streamflow=rbind(streamflow,data.frame(agency_cd="USGS",site_no=thisLocation_sourceID,Date=addDays,Flow=NA,Flow_cd="bad"))
@@ -388,7 +411,7 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
       
       
       #write to db
-      dbWriteData(metric="streamflow",value=streamflow$Flow,datetime=streamflow$Date,locationID=locationID,sourceName="USGS",qcStatus=streamflow$qcStatus)
+      dbWriteData(metric="streamflow",value=streamflow$Flow,datetime=streamflow$Date,locationID=locationID,sourceName="USGS",qcStatus=streamflow$qcStatus,qcDetails=streamflow$Flow_cd)
       
     }
     
