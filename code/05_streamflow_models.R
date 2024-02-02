@@ -85,7 +85,7 @@ vol_model<-function(site, sites, max_var){
   
   #Plot modeled data for visual evaluation 
   fig_name = paste0(site, ".vol_modelFit.png")
-  png(filename = file.path(fig_dir_mo, fig_name),
+  png(filename = file.path(fig_dir, fig_name),
       width = 5.5, height = 5.5,units = "in", pointsize = 12,
       bg = "white", res = 600) 
   
@@ -100,7 +100,7 @@ vol_model<-function(site, sites, max_var){
 # Create Volume Models for each USGS gage
 bwh_vol_mod<- vol_model("bwh", "bwh", 9)
 bws_vol_mod<- vol_model("bws", c("bwh", "bws"), 9)
-cc_vol_mod<- vol_model("cc", c("bwh", "cc"), 9)
+cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), 9)
 sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 9)
 
 
@@ -124,9 +124,7 @@ r2s[,1]<- round(c(bwh_vol_mod[[1]]$true.r2, bws_vol_mod[[1]]$true.r2, sc_vol_mod
 r2s[,2]<- round(c(bwh_vol_mod[[1]]$loocv$Rsquared, bws_vol_mod[[1]]$loocv$Rsquared,sc_vol_mod[[1]]$loocv$Rsquared,cc_vol_mod[[1]]$loocv$Rsquared)*100, 2)
 r2s[,3]<- round(c(exp(bwh_vol_mod[[1]]$loocv$MAE), exp(bws_vol_mod[[1]]$loocv$MAE), exp(sc_vol_mod[[1]]$loocv$MAE), exp(cc_vol_mod[[1]]$loocv$MAE)), 2)
 
-png(file.path(fig_dir_mo,"r2s_vol.png"), height = 25*nrow(r2s), width = 80*ncol(r2s))
 grid.table(r2s)
-dev.off()
 
 # ---------------------------------------------------------------------------- # 
 # Evaluate alternative model combinations for Center of Mass Predictions
