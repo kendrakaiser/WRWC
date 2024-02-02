@@ -56,7 +56,9 @@ writeSummaryStats(x=exp(vol.sample$sc.irr_vol), site.metric="sc.irr_vol",simDate
 
 # TODO: test/ is this working?
 # Write daily prediction interval data to db for generating timeseries forecast figures
-dbWriteTable(conn,"predictionintervals",pi,overwrite=T)
+pi_date=pi
+pi_date$date=rownames(pi)
+dbWriteTable(conn,"predictionintervals",pi_date,overwrite=T)
 #bGetQuery(conn,"SELECT * FROM predictionintervals;")
 
 # pull data from db to generate data in the format necessary to create boxplot -- this will be moved to shiny side
