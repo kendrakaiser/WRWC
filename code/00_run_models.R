@@ -16,23 +16,23 @@ fig_dir <<- file.path(git_dir, 'figures') # github
 input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 
 # set prediction year
-pred.yr <<- 2023
+pred.yr <<- 2024
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
-run_date <<- 'april1'
+run_date <<- 'feb1'
 
 # info for model run report
 author <<- "Kendra Kaiser"
-todays_date <<- "04/01/2023"
+todays_date <<- "02/01/2023"
 
 # set end date for AgriMet Data download
-end_date <<-as.Date("2023-04-01")# Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
+end_date <<-Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
 # ---- Run Model code
 
 source(file.path(git_dir, 'code/01_packages.R'))
 
 run_info<- sessionInfo()
-writeLines(capture.output(sessionInfo()), file.path(cd, "sessionInfo.txt"))
+#writeLines(capture.output(sessionInfo()), file.path(cd, "sessionInfo.txt"))
 
 # sets input/output file directories and selects model params and models depending on model run date 
 # ------------------------------------------------------------------------------
@@ -83,6 +83,7 @@ if (run_date == 'feb1'){
 # ------------------------------------------------------------------------------
 # Compile Data Based on Run Date
 # ------------------------------------------------------------------------------
+source(file.path(git_dir,'code/005_db_update.R'))
 source(file.path(git_dir, 'code/02_data_scraping.R'))
 source(file.path(git_dir, 'code/03_temperature_models.R')) 
 source(file.path(git_dir, 'code/04_data_integration.R'))  
