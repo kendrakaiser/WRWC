@@ -35,6 +35,7 @@ var$ga.log_swe <- log(var$ga.swe)
 var$bc.log_swe <- log(var$bc.swe)
 var<-var[,!(names(var) %in% c('cg.swe', 'g.swe','gs.swe','hc.swe', 'lwd.swe','ga.swe','bc.swe', 'sr.nj_t', 'sr.aj_t'))]
 
+
 #save variables for use in other scripts
 #TODO: change folder structure so that they are either pre-defined or created -- alt to check w sam about -- remove saving all together because they will stay in the environment?
 #write.csv(var, file.path(model_out,'all_vars.csv'), row.names = FALSE)
