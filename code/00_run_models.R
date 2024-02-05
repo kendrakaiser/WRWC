@@ -25,7 +25,7 @@ run_date <<- 'feb1'
 
 # info for model run report - move to RMD
 author <<- "Kendra Kaiser"
-todays_date <<- "02/01/2023"
+todays_date <<- "02/05/2023"
 
 
 # ---- Run Model code
