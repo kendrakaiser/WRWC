@@ -14,7 +14,6 @@ options(warn = -1)
 #------------------------------------------------------------------------------ # 
 # Import & Compile Data                                                        -# 
 #------------------------------------------------------------------------------ # 
-#var<- read.csv(file.path(model_out,'all_vars.csv'))
 
 # ID columns for subsetting
 swe_cols<-grep("(?!swe_)_?swe", colnames(var), perl = TRUE, value = TRUE)

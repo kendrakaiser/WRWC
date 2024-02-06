@@ -12,8 +12,6 @@
 
 # Import Data ------------------------------------------------------------------  
 stream.id<-c("bwh", "bws", "cc", "sc") #automate to no be hard coded
-#aj.pred.temps = read.csv(file.path(data_dir,'aj_pred.temps.csv'))
-
 
 # Load the models and parameters from all the models 
 #vol_mod_sum <<- list.load(file.path(data_dir, vol_sum)) 
