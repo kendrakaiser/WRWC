@@ -90,14 +90,3 @@ pi[,9:12]<-as.data.frame(pred.int(sc.flow.s))
 pi[,13:16]<-as.data.frame(pred.int(cc.flow.s))
 rownames(pi)<-dates
 
-
-# ------------------------------------------------------------------------------
-# Save Output -- Remove?
-
-#paste0("ModelOutput-", end_date, ".pdf")
-
-#write.csv(bwh.flow.s, file.path(model_out, paste0("BWH.sim-",end_date,".csv")), row.names=dates, col.names = TRUE)
-#write.csv(bws.flow.s, file.path(model_out, paste0("BWS.sim-",end_date,".csv")), row.names=dates, col.names = TRUE)
-#write.csv(cc.flow.s, file.path(model_out, paste0("CC.sim-", end_date,".csv")), row.names=dates, col.names = TRUE)
-#write.csv(sc.flow.s, file.path(model_out, paste0("SC.sim-", end_date,".csv")), row.names=dates, col.names = TRUE)
-
