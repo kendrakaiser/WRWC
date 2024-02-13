@@ -7,17 +7,17 @@
 # ----------------------------------------------------------------------------- # 
 
 # Set input parameters and directories in global environment for each model run
-# TODO: Set up as project and change to getwd()
 # GitHub File Path
 git_dir=getwd()
+#cd=getwd()
 
 # Output file paths
 fig_dir <<- file.path(git_dir, 'figures') # github
 input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
 
-git_dir=getwd()
-cd=getwd()
-
+# set end date for AgriMet Data download
+end_date <<-Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
+#TODO: auto select based on date
 # set prediction year
 pred.yr <<- 2024
 # set run date for pulling swe data 'feb1', 'march1', 'april1'
@@ -25,13 +25,8 @@ run_date <<- 'feb1'
 
 # info for model run report - move to RMD
 author <<- "Kendra Kaiser"
-todays_date <<- "02/01/2023"
+todays_date <<- "02/05/2023"
 
-fig_dir <<- file.path(git_dir, 'figures') # github
-input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
-
-# set end date for AgriMet Data download
-end_date <<-Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
 # ---- Run Model code
 
@@ -96,7 +91,8 @@ source(file.path(git_dir, 'code/04_data_integration.R'))
 
 # Create Streamflow Models 
 #-------------------------------------------------------------------------------
-#TODO: this only needs to be run after 10-1, the models will stay the same through the prediction season & take a long time to run
+#TODO: 1) use sys.date to determine if these need to be run, 2) save mod files directly to db and have them read in here
+#this only needs to be run after 10-1, the models will stay the same through the prediction season & take a long time to run
 suppressWarnings(source(file.path(git_dir, 'code/05_streamflow_models.R')))# warning messages are expected and okay
 
 # Make the Irrigation Season Streamflow Predictions
@@ -122,7 +118,4 @@ source(file.path(git_dir, 'code/09_data_management.R'))
 # knit PDF - if it doesn't work you can open the 'ModelOutputv2.Rmd' and press 'knit'
 #rmarkdown::render(file.path(git_dir, 'ModelOutputv2.Rmd'), params = params_list, 
      #output_file = file.path(git_dir, paste0("ModelOutput-", end_date, ".pdf")))
-
-
-
 

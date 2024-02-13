@@ -57,7 +57,7 @@ writeSummaryStats(x=exp(vol.sample$sc.irr_vol), site.metric="sc.irr_vol",simDate
 # TODO: test/ is this working?
 # Write daily prediction interval data to db for generating timeseries forecast figures
 pi_date=pi
-pi_date$date=rownames(pi)
+pi_date$date=as.Date(rownames(pi))
 dbWriteTable(conn,"predictionintervals",pi_date,overwrite=T)
 #bGetQuery(conn,"SELECT * FROM predictionintervals;")
 
