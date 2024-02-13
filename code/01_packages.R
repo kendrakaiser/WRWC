@@ -10,27 +10,10 @@
 
 #remotes::install_github("USGS-R/smwrBase") 
 # load packages
-library(MASS)
-library(mvtnorm) #multivariate distributions
-library(tidyverse)
-library(tidyr)
-library(dataRetrieval) #USGS data
-library(snotelr) #NRCS data
-library(httr)
-library(dplyr)
-library(plyr)
-library(devtools)
-library(lubridate) #date transformation
-library(gridExtra) #makes table in 05 streamflow models
-library(ggplot2) # plotting
-library(nlme) 
-library(knitr)
-library(fasstr)
-library(stringr)
-library(leaps) #regsubsets
-library(caret) #loocv
-library(RPostgres) #connect to db
-library(raster)
+
+#"dplyr","plyr","devtools","knitr","httr"
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load("MASS","mvtnorm","tidyverse","tidyr","dataRetrieval","snotelr","lubridate","gridExtra","ggplot2","nlme","fasstr","stringr","leaps","caret","RPostgres","raster")
 
 
 

@@ -133,6 +133,7 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
   writeMe$qcstatus[qcStatus]="true"
   writeMe$qcstatus[!qcStatus]="false"
   writeMe$qcdetails=qcDetails
+  writeMe[(writeMe$qcStatus==F & writeMe$value=-999),]$value = NULL
   
   writeMe=writeMe[complete.cases(writeMe$value),]
   
@@ -158,6 +159,8 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
     # if(qcStatus==F){
     #   writeMe$qcstatus="false"
     # }
+
+    
     dbAppendTable(conn, name="data", value=writeMe)
     
   }
