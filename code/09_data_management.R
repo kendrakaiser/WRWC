@@ -8,19 +8,22 @@
 # Write model structure to database
 # ------------------------------------------------------------------------------
 
-modDate<- as.Date(paste0(year(end_date), "/", month(end_date), "/", 1))
 
 # generate initial table structure
 #dbExecute(conn, "CREATE TABLE volumemodels(modelid SERIAL PRIMARY KEY, 
 #         modeldate DATE, devdate DATE, models TEXT);")
 
-writemodel= capture.output(dump("vol_models", file = ""))
-dbExecute(conn, paste0("INSERT INTO volumemodels values ", modDate, ", ", 
-                       Sys.Date(), ", '", writemodel, "';"))
-      
+writeModelQuery=DBI::sqlInterpolate(conn, sql="INSERT INTO volumemodels (modeldate, devdate, models) VALUES (?modDate, ?devDate, ?models );",
+                                    modDate=as.Date(paste0(year(end_date), "/", month(end_date), "/", 1)),
+                                    devDate=Sys.Date(),
+                                    models=capture.output(cat(capture.output(dput(vol_models)),file="",sep="")))
+
+dbExecute(conn,writeModelQuery)
 
 # How you pull models from db
-# dbGetQuery(conn, "SELECT * FROM volumemodels")
+dbModel=dbGetQuery(conn, "SELECT * FROM volumemodels limit 1")
+
+eval(parse(text=dbModel$models[1]))
 
 # ------------------------------------------------------------------------------
 # write the prediction intervals for daily streamflow output
@@ -39,10 +42,10 @@ dbWriteTable(conn,"predictionintervals",pi_date,overwrite=T)
 # ------------------------------------------------------------------------------
 # Function to calculate summary statistics from model runs that can be used to generate irrigation season volume boxplots
 writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
-'x:x is the sample for which summary stats will be written to db'
+  'x:x is the sample for which summary stats will be written to db'
   simDate=as.Date(simDate)
   runDate=as.Date(runDate)
-
+  
   
   if(length(strsplit(site.metric,"\\.")[[1]])!=2){
     stop(paste0("Invalid site.metric ",site.metric))
