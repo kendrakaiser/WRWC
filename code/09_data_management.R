@@ -7,17 +7,16 @@
 # ------------------------------------------------------------------------------
 # Write model structure to database
 # ------------------------------------------------------------------------------
-if (month(end_date) == 2){
-  model_mo  <<- feb
-} else if (month(end_date) == 3){
-  model_mo  <<- mar
-} else if (month(end_date) == 4){
-  model_mo   <<- april
-}
 
-vol_models
+modDate<- as.Date(paste0(year(end_date), "/", month(end_date), "/", 1))
+
+# generate initial table structure
 #dbExecute(conn, "CREATE TABLE volumemodels(modelid SERIAL PRIMARY KEY, 
-#         modeldate DATE, devdate DATE, models BYTEA);")
+#         modeldate DATE, devdate DATE, models TEXT);")
+
+dbExecute(conn, paste0("INSERT INTO volumemodels values ", modDate, ", ", 
+                       Sys.Date(), ", '", paste0(dput(var), collapse=), "';"))
+      
 
 # How you pull models from db
 # dbGetQuery(conn, "SELECT * FROM volumemodels")
