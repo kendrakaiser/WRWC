@@ -7,8 +7,20 @@
 # ------------------------------------------------------------------------------
 # Write model structure to database
 # ------------------------------------------------------------------------------
-vol_models
+if (month(end_date) == 2){
+  model_mo  <<- feb
+} else if (month(end_date) == 3){
+  model_mo  <<- mar
+} else if (month(end_date) == 4){
+  model_mo   <<- april
+}
 
+vol_models
+#dbExecute(conn, "CREATE TABLE volumemodels(modelid SERIAL PRIMARY KEY, 
+#         modeldate DATE, devdate DATE, models BYTEA);")
+
+# How you pull models from db
+# dbGetQuery(conn, "SELECT * FROM volumemodels")
 
 # ------------------------------------------------------------------------------
 # write the prediction intervals for daily streamflow output
