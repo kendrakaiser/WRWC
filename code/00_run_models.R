@@ -9,75 +9,40 @@
 # Set input parameters and directories in global environment for each model run
 # GitHub File Path
 git_dir=getwd()
-#cd=getwd()
 
 # Output file paths
 fig_dir <<- file.path(git_dir, 'figures') # github
-input_dir <<- file.path(git_dir, 'input') # github CHECK THIS - necessary?
+input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
 # set end date for AgriMet Data download
 end_date <<-Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
-#TODO: auto select based on date
+
 # set prediction year
-pred.yr <<- 2024
-# set run date for pulling swe data 'feb1', 'march1', 'april1'
-run_date <<- 'feb1'
+pred.yr <<- year(end_date)
 
-# info for model run report - move to RMD
-author <<- "Kendra Kaiser"
-todays_date <<- "02/05/2023"
-
-
-# ---- Run Model code
-
+# ------------------------------------------------------------------------------
+# Run Model
+# ------------------------------------------------------------------------------
 source(file.path(git_dir, 'code/01_packages.R'))
 
 run_info<- sessionInfo()
-#writeLines(capture.output(sessionInfo()), file.path(cd, "sessionInfo.txt"))
+#writeLines(capture.output(sessionInfo()), file.path(git_dir, "sessionInfo.txt"))
 
-# sets input/output file directories and selects model params and models depending on model run date 
+# sets output figure directories based on model run date 
 # ------------------------------------------------------------------------------
-if (run_date == 'feb1'){
-  input_data <<- 'alldat_feb.csv'
+if (month(end_date) == 2){
+  
   fig_dir_mo <<- file.path(fig_dir,'February')
   fig_dir_mo_rmd <<- './figures/February'
-
-  vol.summary <<-'feb_vol_summary.csv'
-  cm.summary <<- 'feb_cm_summary.csv'
   
-  vol_sum <<- 'feb_vol_summary.rdata'
-  vol_mods <<- 'feb_vol_mods.rdata'
-  cm_sum <<- 'feb_cm_summary.rdata'
-  cm_mods <<- 'feb_cm_mods.rdata'
-  wr_params <<- 'feb_wr_vars.rdata'
+} else if (month(end_date) == 3){
   
-} else if (run_date == 'march1'){
-  input_data <<- 'alldat_mar.csv'
   fig_dir_mo <<- file.path(fig_dir,'March')
   fig_dir_mo_rmd <<- './figures/March'
-
-  vol.summary <<-'mar_vol_summary.csv'
-  cm.summary <<- 'mar_cm_summary.csv'
   
-  vol_sum <<- 'mar_vol_summary.rdata'
-  vol_mods <<- 'mar_vol_mods.rdata'
-  cm_sum <<- 'mar_cm_summary.rdata'
-  cm_mods <<- 'mar_cm_mods.rdata'
-  wr_params <<- 'mar_wr_vars.rdata'
-  
-} else if (run_date == 'april1'){
-  input_data <<- 'alldat_apr.csv'
+} else if (month(end_date) == 4){
   fig_dir_mo <<- file.path(fig_dir,'April')
   fig_dir_mo_rmd <<- './figures/April'
-
-  vol.summary <<-'apr_vol_summary.csv'
-  cm.summary <<- 'apr_cm_summary.csv'
-  
-  vol_sum <<- 'apr_vol_summary.rdata'
-  vol_mods <<- 'apr_vol_mods.rdata'
-  cm_sum <<- 'apr_cm_summary.rdata'
-  cm_mods <<- 'apr_cm_mods.rdata'
-  wr_params <<- 'apr_wr_vars.rdata'
 }
 
 
