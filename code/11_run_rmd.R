@@ -1,3 +1,8 @@
+
+# info for model run report - move to RMD
+author <<- "Kendra Kaiser"
+todays_date <<- "02/05/2023"
+
 #TODO: move knit results to shiny so users can click - "download report"
 # knit Model Results PDF
 #detach(package:plyr) #plyr interferes with a grouping function needed for plotting
