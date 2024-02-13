@@ -10,19 +10,21 @@
 
 
 # generate initial table structure
-#dbExecute(conn, "CREATE TABLE volumemodels(modelid SERIAL PRIMARY KEY, 
+# dbExecute(conn, "CREATE TABLE volumemodels(modelid SERIAL PRIMARY KEY,
 #         modeldate DATE, devdate DATE, models TEXT);")
+
+volModels_db=vol_models
 
 writeModelQuery=DBI::sqlInterpolate(conn, sql="INSERT INTO volumemodels (modeldate, devdate, models) VALUES (?modDate, ?devDate, ?models );",
                                     modDate=as.Date(paste0(year(end_date), "/", month(end_date), "/", 1)),
                                     devDate=Sys.Date(),
-                                    models=capture.output(cat(capture.output(dput(vol_models)),file="",sep="")))
-
+                                    models=capture.output(cat(capture.output(dump("volModels_db",file="")),file="",sep="")))
 dbExecute(conn,writeModelQuery)
 
 # How you pull models from db
-dbModel=dbGetQuery(conn, "SELECT * FROM volumemodels limit 1")
+dbModel=dbGetQuery(conn, "SELECT * FROM volumemodels") #WHERE...
 
+rm(volModels_db)# the returned models list will have the same name as it head when it was written to the db - in this case volModels_db.
 eval(parse(text=dbModel$models[1]))
 
 # ------------------------------------------------------------------------------
