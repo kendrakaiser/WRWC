@@ -14,8 +14,9 @@ modDate<- as.Date(paste0(year(end_date), "/", month(end_date), "/", 1))
 #dbExecute(conn, "CREATE TABLE volumemodels(modelid SERIAL PRIMARY KEY, 
 #         modeldate DATE, devdate DATE, models TEXT);")
 
+writemodel= capture.output(dump("vol_models", file = ""))
 dbExecute(conn, paste0("INSERT INTO volumemodels values ", modDate, ", ", 
-                       Sys.Date(), ", '", paste0(dput(var), collapse=), "';"))
+                       Sys.Date(), ", '", writemodel, "';"))
       
 
 # How you pull models from db
