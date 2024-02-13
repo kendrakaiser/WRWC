@@ -34,10 +34,6 @@ library(raster)
 
 
 
-
-
-
-
 #'Water Year
 #'
 #'Create an ordered factor or numeric values from a vector of dates based on
