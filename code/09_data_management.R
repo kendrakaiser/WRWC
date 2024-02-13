@@ -4,17 +4,27 @@
 # August, 2022
 # ------------------------------------------------------------------------------
 
-#TODO: split the names to two variables make the dates come through 
-#write to database, but overright it every day
-pred.intervals<- pi %>% pivot_longer(everything(), names_to = "sitePI", values_to = "dailyFlow")
+# ------------------------------------------------------------------------------
+# Write model structure to database
+# ------------------------------------------------------------------------------
+vol_models
 
-volumes.sampleLong<- vol.sample %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
 
-#add run date?
-#vol.bws<- volumes.sampleLong %>% filter(site_name == 'bws.vol')
+# ------------------------------------------------------------------------------
+# write the prediction intervals for daily streamflow output
+# ------------------------------------------------------------------------------
+pi_date=pi
+pi_date$date=as.Date(rownames(pi))
+dbWriteTable(conn,"predictionintervals",pi_date,overwrite=T)
 
+# ------------------------------------------------------------------------------
+# write Curtailment model output
+# ------------------------------------------------------------------------------
 #curt.sampleLong<- curt.sample
 
+# ------------------------------------------------------------------------------
+# Write summary statistics for predicted irrigation season volumes
+# ------------------------------------------------------------------------------
 # Function to calculate summary statistics from model runs that can be used to generate irrigation season volume boxplots
 writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
 'x:x is the sample for which summary stats will be written to db'
@@ -46,21 +56,14 @@ writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
   dbWriteTable(conn,"summarystatistics",statDF,append=T)
 }
 
-#writeSummaryStats(c(runif(1000),10,11),"poodle.dog",simDate=Sys.Date()-1)  
-
-# push model output to database - is in log form
+# push model output to database
 writeSummaryStats(x=exp(vol.sample$bwh.irr_vol), site.metric="bwh.irr_vol",simDate=end_date)
 writeSummaryStats(x=exp(vol.sample$bws.irr_vol), site.metric="bws.irr_vol",simDate=end_date)
 writeSummaryStats(x=exp(vol.sample$cc.irr_vol), site.metric="cc.irr_vol",simDate=end_date)
 writeSummaryStats(x=exp(vol.sample$sc.irr_vol), site.metric="sc.irr_vol",simDate=end_date)
 
-# TODO: test/ is this working?
-# Write daily prediction interval data to db for generating timeseries forecast figures
-pi_date=pi
-pi_date$date=as.Date(rownames(pi))
-dbWriteTable(conn,"predictionintervals",pi_date,overwrite=T)
-#bGetQuery(conn,"SELECT * FROM predictionintervals;")
-
+# ------------------------------------------------------------------------------
+#Sample code to show how to make bxplt from db
 # pull data from db to generate data in the format necessary to create boxplot -- this will be moved to shiny side
 makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;")){
   groups=unique(dbdf[c("site","metric","simdate","rundate")])
@@ -109,7 +112,7 @@ bxp(bxpList)
 
 
 # ------------------------------------------------------------------------------
-# Calculate Exceedance Probabilities
+# Calculate Exceedance Probabilities and write to db
 # ------------------------------------------------------------------------------
 
 exceed.probs<- function(vols, probs){
