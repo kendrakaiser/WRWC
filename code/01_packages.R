@@ -11,43 +11,25 @@
 #remotes::install_github("USGS-R/smwrBase") 
 # load packages
 library(MASS)
-library(plotrix)
 library(mvtnorm) #multivariate distributions
 library(tidyverse)
 library(tidyr)
 library(dataRetrieval) #USGS data
 library(snotelr) #NRCS data
-library(XML)
 library(httr)
-library(plyr)
 library(dplyr)
+library(plyr)
 library(devtools)
-library(readr)
 library(lubridate) #date transformation
-#library(lfstat) #water year
-library(gridExtra)
-#library(RNRCS)
-library(varhandle)
-library(viridis) # color scheme
+library(gridExtra) #makes table in 05 streamflow models
 library(ggplot2) # plotting
 library(nlme) 
 library(knitr)
 library(fasstr)
 library(stringr)
 library(leaps) #regsubsets
-library(rlist) #list.save
 library(caret) #loocv
-library(erer) #write.list to csv
-library(ggcorrplot) # colored correlation plot, not in use
-library(scales) # wrap text of figure labels
-#library(smwrBase)
-library(ggnewscale) # plot two scatter plots with different scales on the same plot
 library(RPostgres) #connect to db
-
-library(sf)
-library(curl)
-library(terra)
-library(R.utils)
 library(raster)
 
 
