@@ -11,18 +11,18 @@
 #remotes::install_github("USGS-R/smwrBase") 
 # load packages
 library(MASS)
-library(plotrix)
+#library(plotrix)
 library(mvtnorm) #multivariate distributions
 library(tidyverse)
 library(tidyr)
 library(dataRetrieval) #USGS data
 library(snotelr) #NRCS data
-library(XML)
-library(httr)
-library(plyr)
-library(dplyr)
-library(devtools)
-library(readr)
+#library(XML)
+#library(httr)
+#library(plyr)
+#library(dplyr)
+#library(devtools)
+#library(readr)
 library(lubridate) #date transformation
 #library(lfstat) #water year
 library(gridExtra)
