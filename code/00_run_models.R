@@ -17,13 +17,12 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 # set end date for AgriMet Data download
 end_date <<-Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
-# set prediction year
-pred.yr <<- year(end_date)
-
 # ------------------------------------------------------------------------------
 # Run Model
 # ------------------------------------------------------------------------------
 source(file.path(git_dir, 'code/01_packages.R'))
+# set prediction year
+pred.yr <<- year(end_date)
 
 run_info<- sessionInfo()
 #writeLines(capture.output(sessionInfo()), file.path(git_dir, "sessionInfo.txt"))
