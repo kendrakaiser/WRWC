@@ -7,11 +7,11 @@
 # Streamflow, Current SWE, historic Temperature Data
 
 # input data name 'alldat_mo.csv'
-if (run_date == 'feb1'){
+if (month(end_date) == 2){
   swe_q  <<- alldat_feb
-} else if (run_date == 'march1'){
+} else if (month(end_date) == 3){
   swe_q  <<- alldat_mar
-} else if (run_date == 'april1'){
+} else if (month(end_date) == 4){
   swe_q  <<- alldat_april
 }
 
