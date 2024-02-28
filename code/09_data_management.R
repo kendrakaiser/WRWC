@@ -88,14 +88,20 @@ makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;"
   for(i in 1:nrow(groups)){
     thisName=paste0(groups[i,"site"],".",groups[i,"metric"],"_simDate:",groups[i,"simdate"],"_runDate:",groups[i,"rundate"])
     bpData$names[i]=thisName
-    thisData=merge(groups[i,],dbdf)
-    bpData$stats[,i]=c(thisData$value[thisData$stat==c("min")],
-                       thisData$value[thisData$stat==c("lower_hinge")],
-                       thisData$value[thisData$stat==c("med")],
-                       thisData$value[thisData$stat==c("upper_hinge")],
-                       thisData$value[thisData$stat==c("max")])
+    thisData=merge(groups[i,],dbdf, all=F)
+    thisData$ssid=NULL#drop this column so unique works
+    thisData=unique(thisData) # drop duplicate records (from multiple model runs on the same day)
+    #if there are still multiple model runs on the same days(simdate and rundate), warn but proceed
+    if(length(thisData$value[thisData$stat==c("min")])!=1 ){
+      warning("multiple model outputs found for: \n",paste(capture.output(print(groups[i,])),collapse="\n"))
+    }
+    bpData$stats[,i]=c(mean(thisData$value[thisData$stat==c("min")]),
+                       mean(thisData$value[thisData$stat==c("lower_hinge")]),
+                       mean(thisData$value[thisData$stat==c("med")]),
+                       mean(thisData$value[thisData$stat==c("upper_hinge")]),
+                       mean(thisData$value[thisData$stat==c("max")]))
     
-    bpData$n[i]=thisData$value[thisData$stat==c("n")]
+    bpData$n[i]=mean(thisData$value[thisData$stat==c("n")])
     
     outliers=thisData$value[thisData$stat==c("outlier")]
     bpData$out=c(bpData$out,outliers)
@@ -104,6 +110,7 @@ makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;"
   }
   
   return(bpData)
+}
   #boxplot wants:
   # Value
   # List with the following components:
