@@ -133,8 +133,7 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
   writeMe$qcstatus[qcStatus]="true"
   writeMe$qcstatus[!qcStatus]="false"
   writeMe$qcdetails=qcDetails
-  writeMe[(writeMe$qcStatus==F & writeMe$value=-999),]$value = NULL
-  
+ 
   writeMe=writeMe[complete.cases(writeMe$value),]
   
   potentialDups=dbGetQuery(conn, paste0("SELECT metricid, metric, value, datetime, locationid, simnumber FROM data WHERE metricid = '",metricID,

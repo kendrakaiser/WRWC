@@ -82,35 +82,35 @@ writeSummaryStats(x=exp(vol.sample$sc.irr_vol), site.metric="sc.irr_vol",simDate
 # ------------------------------------------------------------------------------
 #Sample code to show how to make bxplt from db
 # pull data from db to generate data in the format necessary to create boxplot -- this will be moved to shiny side
-makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;")){
-  groups=unique(dbdf[c("site","metric","simdate","rundate")])
-  bpData=list(stats=matrix(nrow=5,ncol=nrow(groups)),n=rep(NA,nrow(groups)),out=vector(),group=vector(),names=vector())
-  for(i in 1:nrow(groups)){
-    thisName=paste0(groups[i,"site"],".",groups[i,"metric"],"_simDate:",groups[i,"simdate"],"_runDate:",groups[i,"rundate"])
-    bpData$names[i]=thisName
-    thisData=merge(groups[i,],dbdf, all=F)
-    thisData$ssid=NULL#drop this column so unique works
-    thisData=unique(thisData) # drop duplicate records (from multiple model runs on the same day)
-    #if there are still multiple model runs on the same days(simdate and rundate), warn but proceed
-    if(length(thisData$value[thisData$stat==c("min")])!=1 ){
-      warning("multiple model outputs found for: \n",paste(capture.output(print(groups[i,])),collapse="\n"))
-    }
-    bpData$stats[,i]=c(mean(thisData$value[thisData$stat==c("min")]),
-                       mean(thisData$value[thisData$stat==c("lower_hinge")]),
-                       mean(thisData$value[thisData$stat==c("med")]),
-                       mean(thisData$value[thisData$stat==c("upper_hinge")]),
-                       mean(thisData$value[thisData$stat==c("max")]))
-    
-    bpData$n[i]=mean(thisData$value[thisData$stat==c("n")])
-    
-    outliers=thisData$value[thisData$stat==c("outlier")]
-    bpData$out=c(bpData$out,outliers)
-    bpData$group=c(bpData$group,rep(i,length(outliers)))
-    
-  }
-  
-  return(bpData)
-}
+# makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;")){
+#   groups=unique(dbdf[c("site","metric","simdate","rundate")])
+#   bpData=list(stats=matrix(nrow=5,ncol=nrow(groups)),n=rep(NA,nrow(groups)),out=vector(),group=vector(),names=vector())
+#   for(i in 1:nrow(groups)){
+#     thisName=paste0(groups[i,"site"],".",groups[i,"metric"],"_simDate:",groups[i,"simdate"],"_runDate:",groups[i,"rundate"])
+#     bpData$names[i]=thisName
+#     thisData=merge(groups[i,],dbdf, all=F)
+#     thisData$ssid=NULL#drop this column so unique works
+#     thisData=unique(thisData) # drop duplicate records (from multiple model runs on the same day)
+#     #if there are still multiple model runs on the same days(simdate and rundate), warn but proceed
+#     if(length(thisData$value[thisData$stat==c("min")])!=1 ){
+#       warning("multiple model outputs found for: \n",paste(capture.output(print(groups[i,])),collapse="\n"))
+#     }
+#     bpData$stats[,i]=c(mean(thisData$value[thisData$stat==c("min")]),
+#                        mean(thisData$value[thisData$stat==c("lower_hinge")]),
+#                        mean(thisData$value[thisData$stat==c("med")]),
+#                        mean(thisData$value[thisData$stat==c("upper_hinge")]),
+#                        mean(thisData$value[thisData$stat==c("max")]))
+#     
+#     bpData$n[i]=mean(thisData$value[thisData$stat==c("n")])
+#     
+#     outliers=thisData$value[thisData$stat==c("outlier")]
+#     bpData$out=c(bpData$out,outliers)
+#     bpData$group=c(bpData$group,rep(i,length(outliers)))
+#     
+#   }
+#   
+#   return(bpData)
+# }
   #boxplot wants:
   # Value
   # List with the following components:
@@ -128,11 +128,11 @@ makeBoxplotData=function(dbdf=dbGetQuery(conn,"SELECT * FROM summarystatistics;"
   # names	
   #  a vector of names for the groups.
   
-}
+
 
 # SAMPLE code to show how to make boxplot from data stored in db - mmove to shiny
-bxpList=makeBoxplotData(dbGetQuery(conn,"SELECT * FROM summarystatistics WHERE site= 'bwh' AND metric = 'irr_vol' AND simdate='2023-10-01';"))
-bxp(bxpList)
+# bxpList=makeBoxplotData(dbGetQuery(conn,"SELECT * FROM summarystatistics WHERE site= 'bwh' AND metric = 'irr_vol' AND simdate='2023-10-01';"))
+# bxp(bxpList)
 
 
 # ------------------------------------------------------------------------------
