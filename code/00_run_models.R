@@ -14,7 +14,8 @@ git_dir=getwd()
 fig_dir <<- file.path(git_dir, 'figures') # github
 input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
-# set end date for AgriMet Data download
+# TODO simdate v.s. run date
+# set end date 
 end_date <<-Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
 # ------------------------------------------------------------------------------
