@@ -16,12 +16,23 @@ conn=scdbConnect()
 # calculate hydrologic metrics for each year for each station 
 # winter "baseflow" (wb), Apr - Sept irrigation volume (irr_vol), total Volume (tot_vol), and center of mass (cm)
 # ------------------------------------------------------------------------------
-
-#Average Winter Flow 
+source(file.path(git_dir,'code/fxn_baseflowA.R'))
+#Average Winter Flow - doesnt work properly bc needs filtered, retaining so code doesnt break
 avgBaseflow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, AVG(value) AS wq, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+
+#pull winter flow to do filter on
+wint_flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2)
+                     ORDER BY datetime;")
+#test filter with BWH
+bwh<- wint_flow %>% filter(sitenote =='bwh') %>% group_by(wateryear)
+#this is not correct
+bwh$bwh.wq<- baseflowA(bwh.flow[,"flow"], alpha = 0.925, passes = 3)[[1]]
+
 # pivot data wider
 baseflow<-pivot_wider(data=avgBaseflow[,c("wateryear","wq","sitenote")],names_from = c(sitenote),values_from = c(wq), names_glue = "{sitenote}.wq")
 
@@ -102,6 +113,7 @@ winterSWE_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, 
 # pivot data wider
 swe_apr<-pivot_wider(data=winterSWE_apr[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
 
+#TODO - set this to query the SWE based on 
 #Grab Todays SWE
 todaySWE_=dbGetQuery(conn,"SELECT DISTINCT ON (locationid) datetime, wateryear(datetime) AS wateryear, metric AS swe, value, locations.locationid, locations.name 
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
@@ -120,8 +132,6 @@ todaySWE_=dbGetQuery(conn,"SELECT DISTINCT ON (locationid) datetime, wateryear(d
 #sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
 #sm = 792 # Stickney Mill
 #bc = 320 # Bear Canyon
-#snotel_sites = c(cg, g, gs, hc, lwd, ds, ccd, sr, ga, sp, sm, bc)
-#snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "ccd.swe", "sr.swe", "ga.swe", "sp.swe", "sm.swe", "bc.swe")
 
 #------------------------------------------------------------------------------
 # Get SNODAS from Database 
@@ -146,6 +156,8 @@ winterSums_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric,
            GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 # pivot data wider
 snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
+
+#TODO - set this to query the SNODAS for specific simulation date
 
 #------------------------------------------------------------------------------
 # Integrate & EXPORT Data: USGS SNOTEL SNODAS
