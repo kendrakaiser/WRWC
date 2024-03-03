@@ -66,7 +66,8 @@ source(file.path(git_dir, 'code/06_streamflow_predictions.R'))
 # Simulate the Irrigation Season Hydrograph
 source(file.path(git_dir, 'code/07_streamflow_simulation.R'))
 
-# Develop curtailment models and make curtailment date predictions - not tested yet
+# Develop curtailment models and make curtailment date predictions 
+# TODO: test with previous years hydrographs to see how accurate
 #source(file.path(git_dir, 'code/08_curtailment_predictions.R'))
 
 # manage data and push necessary outputs to db
