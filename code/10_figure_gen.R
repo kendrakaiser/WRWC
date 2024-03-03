@@ -204,6 +204,43 @@ legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
 dev.off()
 
+options(scipen = 999)
+
+ggplot(var, aes(x=bwh.irr_vol/1000, y=sc.irr_vol/1000))+
+  geom_abline(intercept=24.17,slope=.06781, lty=1, color="lightgrey")+
+  geom_point()+
+  theme_bw()+
+  xlab("Big Wood Hailey Apr-Oct Volume (KAF)")+
+  ylab("Silver Creek Apr-Oct Volume (KAF)")
+
+tst<-lm(var$sc.irr_vol ~ var$bwh.irr_vol)
+summary(tst)
+
+# Silver Creek
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars) %>% filter(complete.cases(.))
+hist$gs.log_swe<- exp(hist$gs.log_swe)
+#SC Prediction Data 
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars)
+pred.dat$gs.log_swe<-exp(pred.dat$gs.log_swe)
+
+boxplot(hist[,1])
+stripchart(pred.dat[,1], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,2:5])
+stripchart(pred.dat[,2:5], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,6:9])
+stripchart(pred.dat[,6:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+
+#CC historic data
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars) %>% filter(complete.cases(.))
+hist$ga.log_swe<- exp(hist$ga.log_swe)
+#CC Prediction Data 
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars)
+pred.dat$ga.log_swe<-exp(pred.dat$ga.log_swe)
+
+boxplot(hist[,1:6])
+stripchart(pred.dat[,1:6], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,7:9])
+stripchart(pred.dat[,7:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
 
 #These do NOT WORK
 
@@ -379,3 +416,36 @@ dev.off()
 #   theme_bw()
 # 
 # 
+flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'streamflow' AND qcstatus = 'true';")
+
+flow$mo<-month(flow$datetime)
+flow$day<-day(flow$datetime)
+flow$plot_date<- as.Date(paste(flow$mo, flow$day,sep="-"), "%m-%d", origin="1970-10-01")
+flow$Date<-as.Date(flow$datetime)
+flow$year<- year(flow$datetime)
+flow_hist<- flow[flow$wateryear < pred.yr,]
+flow_ytd<- flow[flow$year == pred.yr,]
+
+ggplot(flow) +
+  geom_line(aes(x = plot_date, y = flow, group = wateryear), color = 'dodgerblue2', lwd = 0.5)+
+  facet_wrap(~sitenote) +
+  theme_bw()
+
+flow_bwh<- flow_hist[flow_hist$sitenote== 'bwh',] 
+flow_bwh$wateryear<- as.factor(flow_bwh$wateryear)
+
+months_order <- c(10:12,1:9)
+flow_bwh<- flow_bwh %>% mutate(mo = factor(mo, levels = months_order, labels = month.abb[months_order], ordered = TRUE)) 
+  
+ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear, color= wateryear)) +
+  geom_line(lwd = 0.5, color='lightgrey')+
+  geom_line(data=flow_ytd,  aes(x = plot_date, y = flow, group = wateryear), lwd = 0.5, color='dodgerblue2')+
+  ylab("Big Wood Hailey Streamflow (cfs)")+
+  xlab("Day of Year")+
+  #coord_trans(y = "log10")+
+  #scale_colour_viridis_d(option = "plasma")+
+  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
+  theme_bw()
+
