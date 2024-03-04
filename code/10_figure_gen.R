@@ -418,34 +418,42 @@ stripchart(pred.dat[,7:9], pch = 19, col = 4,vertical = TRUE, add = TRUE)
 # 
 flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'streamflow' AND qcstatus = 'true';")
+           WHERE metric = 'streamflow' AND qcstatus = 'true' ORDER BY datetime;")
 
-flow$mo<-month(flow$datetime)
-flow$day<-day(flow$datetime)
-flow$plot_date<- as.Date(paste(flow$mo, flow$day,sep="-"), "%m-%d", origin="1970-10-01")
-flow$Date<-as.Date(flow$datetime)
-flow$year<- year(flow$datetime)
+#seq dates starting with the beginning of water year
+flow <- flow %>% mutate(wyF=factor(wateryear)) %>%
+  mutate(plot_date=as.Date(paste0(ifelse(month(datetime) < 10, pred.yr, pred.yr-1),
+                              "-", month(datetime), "-", day(datetime))))
+
 flow_hist<- flow[flow$wateryear < pred.yr,]
-flow_ytd<- flow[flow$year == pred.yr,]
+flow_ytd<- flow[flow$wateryear == pred.yr,]
 
-ggplot(flow) +
-  geom_line(aes(x = plot_date, y = flow, group = wateryear), color = 'dodgerblue2', lwd = 0.5)+
-  facet_wrap(~sitenote) +
-  theme_bw()
-
-flow_bwh<- flow_hist[flow_hist$sitenote== 'bwh',] 
-flow_bwh$wateryear<- as.factor(flow_bwh$wateryear)
-
-months_order <- c(10:12,1:9)
-flow_bwh<- flow_bwh %>% mutate(mo = factor(mo, levels = months_order, labels = month.abb[months_order], ordered = TRUE)) 
-  
-ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear, color= wateryear)) +
-  geom_line(lwd = 0.5, color='lightgrey')+
+# New facet label names for supp variable
+site.labs <- c("Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")
+names(site.labs) <- c("bwh", "bws", "cc", "sc")
+                      
+#facet wrap of all sites
+ggplot(flow, aes(x = plot_date, y = flow, group = wateryear)) +
+  geom_line(color = 'lightgrey', lwd = 0.5)+
   geom_line(data=flow_ytd,  aes(x = plot_date, y = flow, group = wateryear), lwd = 0.5, color='dodgerblue2')+
+  facet_wrap(~sitenote, scales = "free", labeller = labeller(sitenote = site.labs)) +
+  scale_x_date(date_labels = "%b")+
+  theme_bw()+
+  theme(strip.background=element_rect(fill="white"))
+  
+
+#subset to BWH for single plot
+flow_bwh<- flow_hist[flow_hist$sitenote== 'bwh',] 
+flow_bwh_ytd<- flow_ytd[flow_ytd$sitenote== 'bwh',] 
+
+ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear)) +
+  geom_line(lwd = 0.5, color='lightgrey')+
+  geom_line(data=flow_bwh_ytd,  aes(x = plot_date, y = flow, group = wateryear), lwd = 0.5, color='dodgerblue2')+
   ylab("Big Wood Hailey Streamflow (cfs)")+
   xlab("Day of Year")+
-  #coord_trans(y = "log10")+
-  #scale_colour_viridis_d(option = "plasma")+
-  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
+  scale_x_date(date_labels = "%b")+
   theme_bw()
+
+
+
 
