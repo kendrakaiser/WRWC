@@ -28,10 +28,11 @@ wint_flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, me
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2)
                      ORDER BY datetime;")
+
 #test filter with BWH
-bwh<- wint_flow %>% filter(sitenote =='bwh') %>% group_by(wateryear)
+bwh<- wint_flow %>% filter(sitenote =='bwh') %>% filter(wateryear > 1987)
 #this is not correct
-bwh$bwh.wq<- baseflowA(bwh.flow[,"flow"], alpha = 0.925, passes = 3)[[1]]
+bwh$bwh.wq<- baseflowA(bwh[,"flow"], alpha = 0.925, passes = 3)[[1]]
 
 # pivot data wider
 baseflow<-pivot_wider(data=avgBaseflow[,c("wateryear","wq","sitenote")],names_from = c(sitenote),values_from = c(wq), names_glue = "{sitenote}.wq")
