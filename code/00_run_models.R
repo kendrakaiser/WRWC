@@ -21,6 +21,7 @@ end_date <<-Sys.Date() #as.Date("2021-02-01") replace when testing historical ti
 # Run Model
 # ------------------------------------------------------------------------------
 source(file.path(git_dir, 'code/01_packages.R'))
+source(file.path(git_dir, 'code/init_db.R'))
 # set prediction year
 pred.yr <<- year(end_date)
 

@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------------- # 
 
 #connect to database
-conn=scdbConnect() 
+#conn=scdbConnect() 
 
 # Pull AGRIMET Data from database
 # -----------------------------------------------------------------------------
@@ -30,19 +30,21 @@ agrimet$date_time<- as.Date(agrimet$date_time)
 agrimet$temperature_mean[agrimet$temperature_mean < -90] <- NA
 agrimet$temperature_mean[agrimet$temperature_mean > 150] <- NA
 
-#TODO NEED to add IF statement that reqiures the record length to be at least 88 
+#TODO NEED to add IF statement that requires the record length to be at least 88 
 #Mean Nov- Jan Temp
-snotel.nj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempF, data.locationid, name, sitenote
+snotel.nj_temp=dbGetQuery(conn,"SELECT * FROM (SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempF, data.locationid, name, sitenote, COUNT(DISTINCT(dataid)) AS days_in_record
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND 
            (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
-           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear) AS njtemp 
+                          WHERE days_in_record >= 80;")
 
 snotel.aj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS aj_tempF, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND 
-           (EXTRACT(month FROM datetime) >= 4 OR EXTRACT(month FROM datetime) <= 6)
+           (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) <= 6)
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+
 
 #TODO make a SQL query for agrimet data so that its all streamlined??
 
