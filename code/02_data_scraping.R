@@ -16,7 +16,7 @@ conn=scdbConnect()
 # calculate hydrologic metrics for each year for each station 
 # winter "baseflow" (wb), Apr - Sept irrigation volume (irr_vol), total Volume (tot_vol), and center of mass (cm)
 # ------------------------------------------------------------------------------
-source(file.path(git_dir,'code/fxn_baseflowA.R'))
+#source(file.path(git_dir,'code/fxn_baseflowA.R'))
 #Average Winter Flow - doesnt work properly bc needs filtered, retaining so code doesnt break
 avgBaseflow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, AVG(value) AS wq, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
@@ -30,9 +30,9 @@ wint_flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, me
                      ORDER BY datetime;")
 
 #test filter with BWH
-bwh<- wint_flow %>% filter(sitenote =='bwh') %>% filter(wateryear > 1987)
+#bwh<- wint_flow %>% filter(sitenote =='bwh') %>% filter(wateryear > 1987)
 #this is not correct
-bwh$bwh.wq<- baseflowA(bwh[,"flow"], alpha = 0.925, passes = 3)[[1]]
+#bwh$bwh.wq<- baseflowA(bwh[,"flow"], alpha = 0.925, passes = 3)[[1]]
 
 # pivot data wider
 baseflow<-pivot_wider(data=avgBaseflow[,c("wateryear","wq","sitenote")],names_from = c(sitenote),values_from = c(wq), names_glue = "{sitenote}.wq")
