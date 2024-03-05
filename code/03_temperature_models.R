@@ -41,7 +41,7 @@ snotel.nj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric,
 snotel.aj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS aj_tempF, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND 
-           (EXTRACT(month FROM datetime) >= 4 OR EXTRACT(month FROM datetime) <= 6)
+           (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) <= 6)
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 
 #TODO make a SQL query for agrimet data so that its all streamlined??
@@ -101,8 +101,8 @@ aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% piv
 
 
 #compile data into one wide table
-all.temp.dat <- aj.snot %>% merge(nj.snot , by= 'wateryear') %>% 
-  merge(tdata.wide, by= 'wateryear') 
+all.temp.dat <- nj.snot %>% merge(aj.snot , by= 'wateryear', all.x=TRUE) %>% 
+  merge(tdata.wide, by= 'wateryear', all.x=TRUE) 
 
 #write.csv(all.temp.dat, file.path(data_dir,"temp_dat.csv"), row.names=FALSE)
 

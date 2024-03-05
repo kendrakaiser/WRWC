@@ -18,7 +18,7 @@ if (month(end_date) == 2){
 swe_q[swe_q == 0] <- 0.01 # change zeros to a value so lm works 
 
 # combine discharge & SWE with temp data
-var = swe_q %>% inner_join(all.temp.dat, by ="wateryear")
+var = swe_q %>% merge(all.temp.dat, by ="wateryear", all.x=TRUE)
 
 # sp.test<-apply(var, MARGIN=2, shapiro.test) 
 #TODO : automate this step (e.g. if p < 0.05 log it and remove the og)
