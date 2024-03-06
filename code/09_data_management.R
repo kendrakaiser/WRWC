@@ -70,6 +70,9 @@ writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
   }
   #return(statDF)
   
+  dbExecute(conn,paste0("DELETE FROM summarystatistics WHERE site = '",site,"' AND metric = '",metric,
+                        "' AND rundate = '",rundate,"' AND simdate = '",simdate,"';"))
+  
   dbWriteTable(conn,"summarystatistics",statDF,append=T)
 }
 
