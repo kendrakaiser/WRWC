@@ -69,14 +69,16 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
   hist.swe: mean(arrays of historic SWE from ws snotel sites) #mean(hist$ccd+hist$sr, na.rm=T)
   lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$wateryear == pred.yr-1] 
   '
-  
-  # mod<- vol_models$cc_mod
-  # pred.dat<- pred.dat
-  # wq.cur<-var$cc.wq[var$wateryear == pred.yr]
-  # wq<-var$cc.wq[var$wateryear < pred.yr]
-  # vol<- hist$cc.irr_vol
-  # hist.swe<- mean(colMeans(swe_cols, na.rm=T))
-  # lastQ<- var$cc.irr_vol[var$wateryear == pred.yr-1]
+
+# mod<- vol_models$cc_mod
+# pred.dat<- var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars)
+# wq.cur<-var$cc.wq[var$wateryear == pred.yr]
+# wq<-var$cc.wq[var$wateryear < pred.yr]
+# hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.irr_vol, vol_mod_sum$cc$vars) %>% filter(complete.cases(.))
+# vol<- hist$cc.irr_vol
+# swe_cols <- hist %>% dplyr::select(contains('swe'))
+# hist.swe<- mean(colMeans(swe_cols, na.rm=T))
+# lastQ<- var$cc.irr_vol[var$wateryear == pred.yr-1]
   
   pred.params.vol<-array(NA,c(1,4))
   output.vol<-array(NA,c(1,3))

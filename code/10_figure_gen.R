@@ -203,15 +203,18 @@ stripchart(pred.dat[,6:9], pch = 19, col = 4,vertical = TRUE, add = TRUE)
 
 #CC historic data
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars) %>% filter(complete.cases(.))
-hist$ga.log_swe<- exp(hist$ga.log_swe)
+#hist$ga.log_swe<- exp(hist$ga.log_swe)
 #CC Prediction Data 
 pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars)
-pred.dat$ga.log_swe<-exp(pred.dat$ga.log_swe)
+#pred.dat$ga.log_swe<-exp(pred.dat$ga.log_swe)
 
-boxplot(hist[,1:6])
-stripchart(pred.dat[,1:6], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
-boxplot(hist[,7:9])
-stripchart(pred.dat[,7:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,c(1,3,4,5)])
+stripchart(pred.dat[,c(1,3,4,5)], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,2])
+stripchart(pred.dat[,2], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+
+boxplot(hist[,6:9])
+stripchart(pred.dat[,6:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
 
 #These do NOT WORK 
 # #Multiple Water Years plotted on one figure
