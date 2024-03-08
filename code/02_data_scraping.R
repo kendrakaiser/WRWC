@@ -16,7 +16,7 @@ conn=scdbConnect()
 # calculate hydrologic metrics for each year for each station 
 # winter "baseflow" (wb), Apr - Sept irrigation volume (irr_vol), total Volume (tot_vol), and center of mass (cm)
 # ------------------------------------------------------------------------------
-source(file.path(git_dir,'code/fxn_baseflowA.R'))
+source(file.path(git_dir,'code/fxn_baseflowA.r'))
 #Average Winter Flow - doesnt work properly bc needs filtered, retaining so code doesnt break
 # avgBaseflow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, AVG(value) AS wq, data.locationid, name, sitenote
 #            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
@@ -34,6 +34,7 @@ bf_wrapper=function(wy, lid, wint_flow_df){
   bf=baseflowA(thisQ)
   return(mean(bf$bf))
 }
+
 avgBaseflow=unique(wint_flow[,c("wateryear","metric","locationid","name","sitenote")])
 
 avgBaseflow$wq = mapply(bf_wrapper, wy=avgBaseflow$wateryear, lid=avgBaseflow$locationid, MoreArgs = list(wint_flow_df=wint_flow))
