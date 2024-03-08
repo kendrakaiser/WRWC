@@ -189,17 +189,17 @@ summary(tst)
 
 # Silver Creek
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars) %>% filter(complete.cases(.))
-hist$gs.log_swe<- exp(hist$gs.log_swe)
+hist$lwd.log_swe<- exp(hist$lwd.log_swe)
 #SC Prediction Data 
 pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars)
-pred.dat$gs.log_swe<-exp(pred.dat$gs.log_swe)
+pred.dat$lwd.log_swe<-exp(pred.dat$lwd.log_swe)
 
 boxplot(hist[,1])
 stripchart(pred.dat[,1], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
-boxplot(hist[,2:5])
-stripchart(pred.dat[,2:5], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
-boxplot(hist[,6:9])
-stripchart(pred.dat[,6:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,c(3:6)])
+stripchart(pred.dat[,c(3:6)], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,7:9])
+stripchart(pred.dat[,7:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
 
 #CC historic data
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars) %>% filter(complete.cases(.))
@@ -208,13 +208,16 @@ hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars) %>%
 pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars)
 #pred.dat$ga.log_swe<-exp(pred.dat$ga.log_swe)
 
-boxplot(hist[,c(1,3,4,5)])
-stripchart(pred.dat[,c(1,3,4,5)], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
-boxplot(hist[,2])
-stripchart(pred.dat[,2], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,c(2:4)])
+stripchart(pred.dat[,c(2:4)], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,1])
+stripchart(pred.dat[,1], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
 
-boxplot(hist[,6:9])
-stripchart(pred.dat[,6:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,5:6])
+stripchart(pred.dat[,5:6], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+
+boxplot(hist[,7:9])
+stripchart(pred.dat[,7:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
 
 #These do NOT WORK 
 # #Multiple Water Years plotted on one figure
@@ -340,7 +343,8 @@ ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear)) +
   ylab("Big Wood Hailey Streamflow (cfs)")+
   xlab("Day of Year")+
   scale_x_date(date_labels = "%b")+
-  theme_bw()
+  theme_bw()+
+  ylim(50,500)
 
 
 
