@@ -21,9 +21,9 @@ wint_t_cols<-grep('nj_t', colnames(var))
 aj_t_cols<-grep('aj_t', colnames(var))
 irr_vol_cols<- grep('irr_vol', colnames(var))
 tot_vol_cols<- grep('tot_vol', colnames(var))
-snodas_cols<- c(grep('wint', colnames(var)), grep('runoff', colnames(var)), grep('snow', colnames(var)), grep('swe_total', colnames(var)))
+snodas_cols<- c(grep('wint', colnames(var)), grep('snow', colnames(var)), grep('swe_total', colnames(var)))
 wq_cols<- grep('wq', colnames(var))
-
+runoff_cols<- grep('runoff', colnames(var))
 #par(mar=c(1, 1, 1, 1))
 #pairs(c(var[swe_cols[1:8]], var[snodas_cols[1:10]]))
 
@@ -40,7 +40,7 @@ vol_model<-function(site, sites, max_var){
   '
   site_vars<- grep(paste(sites, collapse="|"), colnames(var))
   hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
-              all_of(swe_cols), all_of(wint_t_cols), -all_of(c(tot_vol_cols, wq_cols))) %>% filter(complete.cases(.))
+              all_of(swe_cols), all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols))) %>% filter(complete.cases(.))
   name<- paste0(site, ".irr_vol")
   #id column names that should be removed from the modeling set
   irr_vols<- colnames(hist)[grep('irr_vol', colnames(hist))]
@@ -139,7 +139,7 @@ cm_model<-function(site, sites, max_var){
   '
   site_vars<- grep(paste(sites, collapse="|"), colnames(var))
   hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
-                all_of(swe_cols), all_of(aj_t_cols), -all_of(irr_vol_cols), -all_of(tot_vol_cols)) %>% filter(complete.cases(.))
+                all_of(swe_cols), all_of(aj_t_cols), -all_of(c(tot_vol_cols, runoff_cols, irr_vol_cols))) %>% filter(complete.cases(.))
   name<- paste0(site, ".cm")
   #id column names that should be removed from the modeling set
   vol_col<-grep(name, colnames(hist))
