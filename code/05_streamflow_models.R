@@ -99,7 +99,7 @@ vol_model<-function(site, sites, max_var){
 
 # Create Volume Models for each USGS gage
 bwh_vol_mod<- vol_model("bwh", "bwh", 9)
-bws_vol_mod<- vol_model("bws", c("bwh", "bws"), 9)
+bws_vol_mod<- vol_model("bws", c("bws"), 9)
 cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), 9)
 sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 9)
 
