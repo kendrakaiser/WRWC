@@ -59,14 +59,13 @@ rownames(mod_sum)<-c("bwh","bws","cc","sc")
 # an additional function can be made to clean these up now that they are all automated
 # ------------------------------------------------------------------------------ # 
 
-modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
+modOut<- function(mod, pred.dat, wq.cur, wq, vol, lastQ){
   '
   mod:     input model
   pred.dat: data.frame of prediction variables
   wq.cur:   this years winter baseflow
   wq:       array of historic winter flows (e.g. hist$cc.wq)
   vol:      array of historic april-sept volumes  (hist$cc.vol)
-  hist.swe: mean(arrays of historic SWE from ws snotel sites) #mean(hist$ccd+hist$sr, na.rm=T)
   lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$wateryear == pred.yr-1] 
   '
 
@@ -77,13 +76,12 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
 # hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.irr_vol, vol_mod_sum$cc$vars) %>% filter(complete.cases(.))
 # vol<- hist$cc.irr_vol
 # swe_cols <- hist %>% dplyr::select(contains('swe'))
-# hist.swe<- mean(colMeans(swe_cols, na.rm=T))
+
 # lastQ<- var$cc.irr_vol[var$wateryear == pred.yr-1]
   
   pred.params.vol<-array(NA,c(1,4))
   output.vol<-array(NA,c(1,3))
   
-  meanSWE <- mean(hist.swe, trim=0, na.rm=TRUE)
   sig<-summary(mod)$sigma
   pred.params.vol[1,2]<-sig #^2/2 #lognormal residuals
   #predict this years total volume at 95 % confidence
@@ -106,14 +104,13 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, hist.swe, lastQ){
 # --------------------------------------------------
 # Subset Big Wood Variables
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bwh.irr_vol, vol_mod_sum$bwh$vars)) %>% filter(complete.cases(.))
-swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #Prediction Data
 pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars) 
 
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol_models$bwh_mod)$adj.r.squared
-mod_out<- modOut(vol_models$bwh_mod, pred.dat, var$bwh.wq[var$wateryear == pred.yr], var$bwh.wq[var$wateryear < pred.yr], hist$bwh.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$bwh.irr_vol[var$wateryear == pred.yr-1])
+mod_out<- modOut(vol_models$bwh_mod, pred.dat, var$bwh.wq[var$wateryear == pred.yr], var$bwh.wq[var$wateryear < pred.yr], hist$bwh.irr_vol, var$bwh.irr_vol[var$wateryear == pred.yr-1])
 #these could be formatted differently to be saved to the global env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
@@ -121,14 +118,13 @@ pred.params.vol[1,] <- mod_out[[2]]
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bws.irr_vol, vol_mod_sum$bws$vars)) %>% filter(complete.cases(.))
-swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #  bws Prediction Data 
 pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bws$vars) 
 
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol_models$bws_mod)$adj.r.squared
-mod_out<- modOut(vol_models$bws_mod, pred.dat, var$bws.wq[var$wateryear == pred.yr], var$bws.wq[var$wateryear < pred.yr], hist$bws.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$bws.irr_vol[var$wateryear == pred.yr-1])
+mod_out<- modOut(vol_models$bws_mod, pred.dat, var$bws.wq[var$wateryear == pred.yr], var$bws.wq[var$wateryear < pred.yr], hist$bws.irr_vol, var$bws.irr_vol[var$wateryear == pred.yr-1])
 output.vol[2,] <- mod_out[[1]] #prediction plus sigma^2
 mod_out[[2]][,2]<- mod_out[[2]][,2]^2 #manually lognormalizing the sigma
 pred.params.vol[2,] <- mod_out[[2]]
@@ -136,28 +132,26 @@ pred.params.vol[2,] <- mod_out[[2]]
 # --------------------------------------------------
 # Subset Silver Creek 
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(sc.irr_vol, vol_mod_sum$sc$vars)) %>% filter(complete.cases(.))
-swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 # SC Prediction Data 
 pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars) 
 
 # Silver Creek Model output
 mod_sum[4,1]<-summary(vol_models$sc_mod)$adj.r.squared
-mod_out<- modOut(vol_models$sc_mod, pred.dat, var$sc.wq[var$wateryear == pred.yr], var$sc.wq[var$wateryear < pred.yr], hist$sc.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$sc.irr_vol[var$wateryear == pred.yr-1])
+mod_out<- modOut(vol_models$sc_mod, pred.dat, var$sc.wq[var$wateryear == pred.yr], var$sc.wq[var$wateryear < pred.yr], hist$sc.irr_vol, var$sc.irr_vol[var$wateryear == pred.yr-1])
 output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection 
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.irr_vol, vol_mod_sum$cc$vars) %>% filter(complete.cases(.))
-swe_cols <- hist %>% dplyr::select(contains('swe'))
 
 #CC Prediction Data 
 pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars)
 
 # Camas Creek Model output
 mod_sum[3,1]<-summary(vol_models$cc_mod)$adj.r.squared
-mod_out<- modOut(vol_models$cc_mod, pred.dat, var$cc.wq[var$wateryear == pred.yr], var$cc.wq[var$wateryear < pred.yr], hist$cc.irr_vol, mean(colMeans(swe_cols, na.rm=T)), var$cc.irr_vol[var$wateryear == pred.yr-1])
+mod_out<- modOut(vol_models$cc_mod, pred.dat, var$cc.wq[var$wateryear == pred.yr], var$cc.wq[var$wateryear < pred.yr], hist$cc.irr_vol, var$cc.irr_vol[var$wateryear == pred.yr-1])
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
