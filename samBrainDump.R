@@ -1,7 +1,6 @@
 #run the model scripts through 04, then run this stuff
 
 #################---------- data wrangling copied from 05_streamflow, simplified to bws for this example ------------
-require(parallel) || require(snow)
 library(MuMIn)
 
 swe_cols<-grep("(?!swe_)_?swe", colnames(var), perl = TRUE, value = TRUE)
@@ -19,8 +18,8 @@ runoff_cols<- grep('runoff', colnames(var))
 # cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), 9)
 # sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 9)
 
-site="bws"
-sites="bws"
+site="bws" #this site
+sites="bws" # used for variable selection
 
 site_vars<- grep(paste(sites, collapse="|"), colnames(var))
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
@@ -34,7 +33,7 @@ cms<- colnames(hist)[grep('cm', colnames(hist))]
 ########################------------Model selection, starting with the functions from 05_streamflow
 max_var=15 # I set this pretty high to test the model selection criteria
 
-#regsubsets is insainly fast for what it does - the other approach I was considering takes a few hours to run.
+#regsubsets is stupid fast for what it does - the other approach I was considering takes a few hours to run.
 tryCatch({regsubsets.out<-regsubsets(log(hist[[vol_col]])~., 
                                      data=hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE], 
                                      nbest=1, nvmax=max_var, really.big=T)}, 
@@ -132,10 +131,11 @@ for(m in 1:nrow(allModels_linear)){
   allModels_linear$cv_meanAbsError_kaf[m]=mean(abs(errors_kaf))
   allModels_linear$cv_worstError_kaf[m]=max(abs(errors_kaf))
 }
+
 #compare allModels_linear to allModels_log
-#r2, bic, and aic are not compareable, but the error terms are in real units and are compareable
-#in terms of mean error, the linear models are better!
-#in terms of max error, they are less scary - because there is less potential for a small (combination of) change(s) in the variables
+#r2, bic, and aic are not comparable, but the error terms are in real units and are comparable
+#in terms of mean error, the linear models are as good or, in some cases, better!
+#in terms of max error, they are way less scary - because there is less potential for a small (combination of) change(s) in the variables
 # to cause a massive change in the response
 
 #also, bic is still useless, aicc is better but not exactly good
