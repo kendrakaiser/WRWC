@@ -33,6 +33,21 @@ runoff_cols<- grep('runoff', colnames(var))
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
 
+#function to make an easier to read df with some info on the models
+getRegModelSummary=function(regSum=reg_sum,f_fitDF=fitDF, response="iv" ){
+  outDF=data.frame(form=character(),r2=numeric(),bic=numeric(),aicc=numeric())
+  for(i in 1:nrow(regSum$which)){
+    thisRegSumWhich=regSum$which[i,]
+    addDF=data.frame(form=deparse1(reformulate(names(thisRegSumWhich)[thisRegSumWhich][-1], response=response)),
+                     r2=regSum$rsq[i],
+                     bic=regSum$bic[i],
+                     aicc=AICc(lm(reformulate(names(thisRegSumWhich)[thisRegSumWhich][-1], response=response), data=f_fitDF ))
+    )
+    outDF=rbind(outDF,addDF)
+  }
+  return(outDF)
+}
+
 vol_model<-function(site, sites, max_var){
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
@@ -54,16 +69,34 @@ vol_model<-function(site, sites, max_var){
             error= function(e) {print(paste(site,"volume model did not work"))})
   reg_sum<- summary(regsubsets.out)
   rm(regsubsets.out)
-  # which set of variables have the lowest BIC
-  vars<-reg_sum$which[which.min(reg_sum$bic),]
-  #vars<-reg_sum$which[which.max(reg_sum$adjr2),]
-  mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
- 
-   #fit the regression model and use LOOCV to evaluate performance
-  form<- paste(paste("log(", name, ")~ "), paste(mod_sum$vars, collapse=" + "), sep = "")
   
+  fitDF_linear=cbind(data.frame(iv=hist[[vol_col]],hist[, !names(hist) %in% c("wateryear", irr_vols, cms)]))
+  
+  allModels_linear=getRegModelSummary(regSum=reg_sum,f_fitDF=fitDF_linear, response="iv" )
+  
+  allModels_linear$cv_meanAbsError_kaf=0
+  allModels_linear$cv_worstError_kaf=0
+  for(m in 1:nrow(allModels_linear)){
+    #k=nrow(fitDF_linear) # loocv
+    k=10  #k-fold cv
+    thisModel=lm(allModels_linear$form[m],fitDF_linear)
+    errors_kaf=numeric()
+    for(i in 1:1000){
+      holdout=sample(1:nrow(fitDF_linear),nrow(fitDF_linear)/k)
+      lko_lm=lm(reformulate(names(thisModel$coefficients)[-1],response="iv"),fitDF_linear[-holdout,])
+      lko_iv=predict(lko_lm, newdata=fitDF_linear[holdout,])
+      errors_kaf=c(errors_kaf,fitDF_linear[holdout,"iv"]/1000-lko_iv/1000)
+    }
+    #hist(errors_kaf)
+    allModels_linear$cv_meanAbsError_kaf[m]=mean(abs(errors_kaf))
+    allModels_linear$cv_worstError_kaf[m]=max(abs(errors_kaf))
+  }
+  
+  # which formula has the lowest AICC
+  form<-gsub("iv", name, allModels_linear$form[which.min(allModels_linear$aicc)])
+
+  mod_sum<- allModels_linear[which.min(allModels_linear$aicc),]
   mod<-lm(form, data=hist)
-  mod_sum$lm<-summary(mod)$adj.r.squared
   
   #put coefficients into DF to save across runs
   coef<- signif(mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
@@ -72,12 +105,6 @@ vol_model<-function(site, sites, max_var){
   model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
   mod_sum$loocv<- model$results
   #check residuals mod.red<- resid(model)
-  
-  #linear model of logged prediction v.s. observed for a more accurate r2
-  pred<-exp(model$pred$pred)/1000
-  obs<- exp(model$pred$obs)/1000
-  r2<- lm(pred ~obs)
-  mod_sum$true.r2<-summary(r2)$adj.r.squared
   
   # calculate the correlations
   #r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
@@ -89,7 +116,7 @@ vol_model<-function(site, sites, max_var){
       width = 5.5, height = 5.5,units = "in", pointsize = 12,
       bg = "white", res = 600) 
   
-  plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, 
+  plot(model$pred$obs/1000, model$pred$pred/1000, pch=19, 
        xlab="Observed Irrigation Season KAF", ylab="Predicted Irrigation Season KAF")
   abline(0,1,col="gray50",lty=1)
   dev.off()
@@ -98,10 +125,10 @@ vol_model<-function(site, sites, max_var){
 }
 
 # Create Volume Models for each USGS gage
-bwh_vol_mod<- vol_model("bwh", "bwh", 9)
-bws_vol_mod<- vol_model("bws", c("bws"), 9)
-cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), 9)
-sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 9)
+bwh_vol_mod<- vol_model("bwh", "bwh", 10)
+bws_vol_mod<- vol_model("bws", c("bws"), 10)
+cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), 10)
+sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 10)
 
 
 # EXPORT VOL MODEL DETAILS
@@ -122,7 +149,7 @@ colnames(r2s)<-c("AdjR2", "Loocv R2", "MAE")
 rownames(r2s)<-c("BWH", "BWS", "SC", "CC")
 r2s[,1]<- round(c(bwh_vol_mod[[1]]$true.r2, bws_vol_mod[[1]]$true.r2, sc_vol_mod[[1]]$true.r2,cc_vol_mod[[1]]$true.r2)*100, 2)
 r2s[,2]<- round(c(bwh_vol_mod[[1]]$loocv$Rsquared, bws_vol_mod[[1]]$loocv$Rsquared,sc_vol_mod[[1]]$loocv$Rsquared,cc_vol_mod[[1]]$loocv$Rsquared)*100, 2)
-r2s[,3]<- round(c(exp(bwh_vol_mod[[1]]$loocv$MAE), exp(bws_vol_mod[[1]]$loocv$MAE), exp(sc_vol_mod[[1]]$loocv$MAE), exp(cc_vol_mod[[1]]$loocv$MAE)), 2)
+r2s[,3]<- round(c(bwh_vol_mod[[1]]$loocv$MAE, bws_vol_mod[[1]]$loocv$MAE, sc_vol_mod[[1]]$loocv$MAE, cc_vol_mod[[1]]$loocv$MAE), 2)
 
 png(file.path("r2s.png"), height = 25*nrow(r2s), width = 80*ncol(r2s))
 grid.table(r2s)
