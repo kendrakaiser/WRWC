@@ -94,9 +94,9 @@ modOut<- function(mod, pred.dat, wq.cur, wq, vol, lastQ){
   output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,0)
   
   # back-transformation of log-transformed data to expected value in original units; 183 is the number of days between April-Sept and 1.98 converts back to cfs
-  output.vol[1,2]<-round(exp(predictions$fit[1])/1000,0) #+sig^2/2 , with lognormal residuals
+  output.vol[1,2]<-round(predictions$fit[1]/1000,0) #+sig^2/2 , with lognormal residuals
   #Division by long-term mean to generate % of average volume
-  output.vol[1,3]<-round(exp(predictions$fit[1])/mean(vol, na.rm=TRUE) *100,0) # +sig^2/2 , with lognormal residuals
+  output.vol[1,3]<-round(predictions$fit[1]/mean(vol, na.rm=TRUE) *100,0) # +sig^2/2 , with lognormal residuals
   
   return(list(output.vol, pred.params.vol))
 }
