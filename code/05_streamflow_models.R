@@ -98,11 +98,13 @@ vol_model<-function(site, sites, max_var){
   
   # which formula has the lowest AICC
   form<-gsub("iv", name, allModels_linear$form[which.min(allModels_linear$aicc)])
-
+  # pulling variable names out so they can be subset in 06
   mod_sum<- as.list(allModels_linear[which.min(allModels_linear$aicc),])
   mod_sum$form <-form
   vrs<- unlist(strsplit(form, "\\s*[~]\\s*"))[[2]]
   mod_sum$vars<-unlist(strsplit(vrs, "\\s*\\+\\s*"))
+  
+  # run model
   mod<-lm(form, data=hist)
   
   #put coefficients into DF to save across runs --- removed rounding signif(mod$coefficients, 2)
@@ -133,14 +135,16 @@ vol_model<-function(site, sites, max_var){
 
 # Create Volume Models for each USGS gage
 bwh_vol_mod<- vol_model("bwh", "bwh", 10)
-bws_vol_mod<- vol_model("bws", c("bws"), 10)
+bws_vol_mod<- vol_model("bws", c("bws", "bwh"), 10)
 cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), 10)
 sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 10)
 
 
 # EXPORT VOL MODEL DETAILS
 # ----------------------
+# formula, vars and summary stats
 vol_mod_sum<- list(bwh = bwh_vol_mod[[1]], bws = bws_vol_mod[[1]], sc = sc_vol_mod[[1]], cc = cc_vol_mod[[1]])
+#lm and coefficients
 vol_models<- list(bwh_mod = bwh_vol_mod[[2]], bws_mod = bws_vol_mod[[2]], sc_mod = sc_vol_mod[[2]], cc_mod = cc_vol_mod[[2]])
 #vol_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod[[3]])
 
