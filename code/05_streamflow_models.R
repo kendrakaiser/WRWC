@@ -63,7 +63,7 @@ vol_model<-function(site, sites, max_var){
   cms<- colnames(hist)[grep('cm', colnames(hist))]
   
   #use regsubsets to assess the results
-  tryCatch({regsubsets.out<-regsubsets(log(hist[[vol_col]])~., 
+  tryCatch({regsubsets.out<-regsubsets(hist[[vol_col]]~., 
             data=hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE], 
             nbest=1, nvmax=max_var, really.big=T)}, 
             error= function(e) {print(paste(site,"volume model did not work"))})
@@ -146,7 +146,7 @@ vol_models<- list(bwh_mod = bwh_vol_mod[[2]], bws_mod = bws_vol_mod[[2]], sc_mod
 #list.save(vol_mod_sum, file.path(data_dir, vol_sum)) #.Rdata summary stats
 #list.save(vol_models, file.path(data_dir, vol_mods)) #actual model structure
 
-# Pull out R2 for summary stats
+# Pull out R2 for summary stats --- just save table from Sams code
 r2s<- data.frame(matrix(ncol = 3, nrow = 4))
 colnames(r2s)<-c("AdjR2", "Loocv R2", "MAE")
 rownames(r2s)<-c("BWH", "BWS", "SC", "CC")
