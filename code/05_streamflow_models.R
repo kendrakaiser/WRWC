@@ -53,9 +53,9 @@ vol_model<-function(site, sites, max_var){
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
-  site= "bwh"
-  sites= "bwh"
-  max_var = 10
+  # site= "bwh"
+  # sites= "bwh"
+  # max_var = 10
   
   site_vars<- grep(paste(sites, collapse="|"), colnames(var))
   hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
@@ -102,11 +102,11 @@ vol_model<-function(site, sites, max_var){
   mod_sum<- as.list(allModels_linear[which.min(allModels_linear$aicc),])
   mod_sum$form <-form
   vrs<- unlist(strsplit(form, "\\s*[~]\\s*"))[[2]]
-  mod_sum$vars<-unlist(strsplit(vars, "\\s*\\+\\s*"))
+  mod_sum$vars<-unlist(strsplit(vrs, "\\s*\\+\\s*"))
   mod<-lm(form, data=hist)
   
-  #put coefficients into DF to save across runs
-  coef<- signif(mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
+  #put coefficients into DF to save across runs --- removed rounding signif(mod$coefficients, 2)
+  coef<- mod$coefficients %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
   
   #save summary of LOOCV
   model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
@@ -117,7 +117,7 @@ vol_model<-function(site, sites, max_var){
   #r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
   #ggcorrplot(r)
   
-  #Plot modeled data for visual evaluation 
+  #Plot (LOOCV) modeled data for visual evaluation 
   fig_name = paste0(site, ".vol_modelFit.png")
   png(filename = file.path(fig_dir_mo, fig_name),
       width = 5.5, height = 5.5,units = "in", pointsize = 12,
