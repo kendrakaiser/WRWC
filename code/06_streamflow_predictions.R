@@ -50,21 +50,6 @@ rownames(mod_sum)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver 
 # April-Sept Volume Predictions
 # an additional function can be made to clean these up now that they are all automated
 # ------------------------------------------------------------------------------ # 
-#, wq.cur, wq, vol, lastQ
-# var$bwh.wq[var$wateryear == pred.yr], var$bwh.wq[var$wateryear < pred.yr], hist$bwh.irr_vol, var$bwh.irr_vol[var$wateryear == pred.yr-1]
-# wq.cur:   this years winter baseflow
-# wq:       array of historic winter flows (e.g. hist$cc.wq)
-# vol:      array of historic april-sept volumes  (hist$cc.vol)
-# lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$wateryear == pred.yr-1]
-#wq.cur<-var$bwh.wq[var$wateryear == pred.yr]
-#wq<-var$bwh.wq[var$wateryear < pred.yr]
-
-#This years percent of mean winter flow
-#output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,0)
-#Division by long-term mean to generate % of average volume
-#output.vol[1,3]<-round(predictions$fit[1]/mean(vol, na.rm=TRUE) *100,0) 
-#swe_cols <- hist %>% dplyr::select(contains('swe'))
-# lastQ<- var$cc.irr_vol[var$wateryear == pred.yr-1]
 
 modOut<- function(mod, pred.dat){
   '
@@ -72,10 +57,10 @@ modOut<- function(mod, pred.dat){
   pred.dat: data.frame of prediction variables
   '
 # Test Data
-  mod<- vol_models$bwh_mod
-  pred.dat<- var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars)
- hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.irr_vol, vol_mod_sum$bwh$vars) %>% filter(complete.cases(.))
-  vol<- hist$bwh.irr_vol
+ #  mod<- vol_models$bwh_mod
+ #  pred.dat<- var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars)
+ # hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.irr_vol, vol_mod_sum$bwh$vars) %>% filter(complete.cases(.))
+ #  vol<- hist$bwh.irr_vol
 
   pred.params.vol<-array(NA,c(1,4))
   
@@ -101,6 +86,7 @@ pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars)
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol_models$bwh_mod)$adj.r.squared
 mod_out<- modOut(vol_models$bwh_mod, pred.dat)
+
 #these could be formatted differently to be saved to the global env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
@@ -379,3 +365,21 @@ var.fore<- pred.params.vol[,2] + samp.sd
 #grid.table(vol_prob)
 #dev.off()
 
+#--------------
+# additional variables to summarize in comparison to previous years
+
+#, wq.cur, wq, vol, lastQ
+# var$bwh.wq[var$wateryear == pred.yr], var$bwh.wq[var$wateryear < pred.yr], hist$bwh.irr_vol, var$bwh.irr_vol[var$wateryear == pred.yr-1]
+# wq.cur:   this years winter baseflow
+# wq:       array of historic winter flows (e.g. hist$cc.wq)
+# vol:      array of historic april-sept volumes  (hist$cc.vol)
+# lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$wateryear == pred.yr-1]
+#wq.cur<-var$bwh.wq[var$wateryear == pred.yr]
+#wq<-var$bwh.wq[var$wateryear < pred.yr]
+
+#This years percent of mean winter flow
+#output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,0)
+#Division by long-term mean to generate % of average volume
+#output.vol[1,3]<-round(predictions$fit[1]/mean(vol, na.rm=TRUE) *100,0) 
+#swe_cols <- hist %>% dplyr::select(contains('swe'))
+# lastQ<- var$cc.irr_vol[var$wateryear == pred.yr-1]
