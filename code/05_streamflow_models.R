@@ -59,8 +59,13 @@ vol_model<-function(site, sites, max_var){
   
   site_vars<- grep(paste(sites, collapse="|"), colnames(var))
   hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
-              all_of(swe_cols), all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols))) %>% filter(complete.cases(.))
+                                                          all_of(swe_cols), all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols)))
+  
   name<- paste0(site, ".irr_vol")
+  hist=hist[,names(hist) %in% c(name, names(var)[!is.na(var[var$wateryear == pred.yr,])] )] #exclude predictors which are not available for pred.yr
+  
+  hist=hist[complete.cases(hist),]
+  
   #id column names that should be removed from the modeling set
   irr_vols<- colnames(hist)[grep('irr_vol', colnames(hist))]
   vol_col<-grep(name, colnames(hist))

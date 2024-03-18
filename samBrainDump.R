@@ -18,101 +18,87 @@ runoff_cols<- grep('runoff', colnames(var))
 # cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), 9)
 # sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 9)
 
-site="bwh" #this site
-sites="bwh" # used for variable selection
+site="sc" #this site
+sites=c("bwh", "sc") # used for variable selection
 
 site_vars<- grep(paste(sites, collapse="|"), colnames(var))
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
-                                                        all_of(swe_cols), all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols))) %>% filter(complete.cases(.))
-
+                                                        all_of(swe_cols), all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols)))
+  
 name<- paste0(site, ".irr_vol")
+hist=hist[,names(hist) %in% c(name, names(var)[!is.na(var[var$wateryear == pred.yr,])] )] #exclude predictors which are not available for pred.yr
+
+hist=hist[complete.cases(hist),]
+
 #id column names that should be removed from the modeling set
 irr_vols<- colnames(hist)[grep('irr_vol', colnames(hist))]
 vol_col<-grep(name, colnames(hist))
 cms<- colnames(hist)[grep('cm', colnames(hist))]
 
 ########################------------Model selection, starting with the functions from 05_streamflow
-max_var=15 # I set this pretty high to test the model selection criteria
-
-#regsubsets is stupid fast for what it does - the other approach I was considering takes a few hours to run.
-tryCatch({regsubsets.out<-regsubsets(log(hist[[vol_col]])~., 
-                                     data=hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE], 
-                                     nbest=1, nvmax=max_var, really.big=T)}, 
-         error= function(e) {print(paste(site,"volume model did not work"))})
-reg_sum<- summary(regsubsets.out)
-rm(regsubsets.out)
-
-#get the fitted df 
-fitDF=cbind(data.frame(log_iv=log(hist[[vol_col]]),hist[, !names(hist) %in% c("wateryear", irr_vols, cms)]))
-
-#function to make an easier to read df with some iinfo on the models
-getRegModelSummary=function(regSum=reg_sum,f_fitDF=fitDF, response="log_iv" ){
-  outDF=data.frame(form=character(),r2=numeric(),bic=numeric(),aicc=numeric())
-  for(i in 1:nrow(regSum$which)){
-    thisRegSumWhich=regSum$which[i,]
-    addDF=data.frame(form=deparse1(reformulate(names(thisRegSumWhich)[thisRegSumWhich][-1], response=response)),
-                     r2=regSum$rsq[i],
-                     bic=regSum$bic[i],
-                     aicc=AICc(lm(reformulate(names(thisRegSumWhich)[thisRegSumWhich][-1], response=response), data=f_fitDF ))
-    )
-    outDF=rbind(outDF,addDF)
-  }
-  return(outDF)
-}
-
-#run the function
-allModels_log=getRegModelSummary()
-#look at allModels_log
-#  My takeaways here - BIC absolutely does not work for model selection.  
-#  This must be at least partially because of the small dataset
-#AICc is a bit better (at least it indicates that some models are overfit!) but I still dont blindly trust it
-
-
-#moving on from the bic and aicc selection metrics, I want to think about the cross validation metrics in real terms (actual prediction error in KAF)
-#there are some issues with doing the cross validation this way - it would be better to cross validate the model selection
-#but regsubsets is so fast i dont want to fuck with that part
-
-#stupid (and slow) loop for cross validation.  Note that it can do leav one out (loocv) or k-fold.  
-#Not really sure why but I think k-fold is a better test of predictive power, and i choose k=10 for basically no reason at all
-allModels_log$cv_meanAbsError_kaf=0
-allModels_log$cv_worstError_kaf=0
-for(m in 1:nrow(allModels_log)){
-  #k=nrow(fitDF) # loocv
-  k=10  #k-fold cv
-  thisModel=lm(allModels_log$form[m],fitDF)
-  errors_kaf=numeric()
-  
-  for(i in 1:1000){
-    holdout=sample(1:nrow(fitDF),nrow(fitDF)/k)
-    lko_lm=lm(reformulate(names(thisModel$coefficients)[-1],response="log_iv"),fitDF[-holdout,])
-    lko_log_iv=predict(lko_lm, newdata=fitDF[holdout,])
-    errors_kaf=c(errors_kaf,exp(fitDF[holdout,"log_iv"])/1000-exp(lko_log_iv)/1000)
-  }
-  #hist(errors_kaf)
-  allModels_log$cv_meanAbsError_kaf[m]=mean(abs(errors_kaf))
-  allModels_log$cv_worstError_kaf[m]=max(abs(errors_kaf))
-  
-}
-
-#Pulled code from 06 to try to recreate the predictions to see if the log is less wile
-# which formula has the lowest AICC
-form<-gsub("log_iv", paste0("log(", name, ")"), allModels_log$form[which.min(allModels_log$aicc)])
-# pulling variable names out so they can be subset in 06
-mod_sum<- as.list(allModels_log[which.min(allModels_log$aicc),])
-mod_sum$form <-form
-vrs<- unlist(strsplit(form, "\\s*[~]\\s*"))[[2]]
-mod_sum$vars<-unlist(strsplit(vrs, "\\s*\\+\\s*"))
-
-# create model
-mod<-lm(form, data=hist)
-# Subset Big Wood Variables
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bwh.irr_vol, mod_sum$vars)) %>% filter(complete.cases(.))
-#Prediction Data
-pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(mod_sum$vars) 
-#predict it
-predictions<-predict(mod, newdata=pred.dat, se.fit=TRUE, interval="prediction",level=0.95)
-
-#nope - even more insane
+max_var=10
+# 
+# 
+# #regsubsets is stupid fast for what it does - the other approach I was considering takes a few hours to run.
+# tryCatch({regsubsets.out<-regsubsets(log(hist[[vol_col]])~., 
+#                                      data=hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE], 
+#                                      nbest=1, nvmax=max_var, really.big=T)}, 
+#          error= function(e) {print(paste(site,"volume model did not work"))})
+# reg_sum<- summary(regsubsets.out)
+# rm(regsubsets.out)
+# 
+# #get the fitted df 
+# fitDF=cbind(data.frame(log_iv=log(hist[[vol_col]]),hist[, !names(hist) %in% c("wateryear", irr_vols, cms)]))
+# 
+# #function to make an easier to read df with some iinfo on the models
+# getRegModelSummary=function(regSum=reg_sum,f_fitDF=fitDF, response="log_iv" ){
+#   outDF=data.frame(form=character(),r2=numeric(),bic=numeric(),aicc=numeric())
+#   for(i in 1:nrow(regSum$which)){
+#     thisRegSumWhich=regSum$which[i,]
+#     addDF=data.frame(form=deparse1(reformulate(names(thisRegSumWhich)[thisRegSumWhich][-1], response=response)),
+#                      r2=regSum$rsq[i],
+#                      bic=regSum$bic[i],
+#                      aicc=AICc(lm(reformulate(names(thisRegSumWhich)[thisRegSumWhich][-1], response=response), data=f_fitDF ))
+#     )
+#     outDF=rbind(outDF,addDF)
+#   }
+#   return(outDF)
+# }
+# 
+# #run the function
+# allModels_log=getRegModelSummary()
+# #look at allModels_log
+# #  My takeaways here - BIC absolutely does not work for model selection.  
+# #  This must be at least partially because of the small dataset
+# #AICc is a bit better (at least it indicates that some models are overfit!) but I still dont blindly trust it
+# 
+# 
+# #moving on from the bic and aicc selection metrics, I want to think about the cross validation metrics in real terms (actual prediction error in KAF)
+# #there are some issues with doing the cross validation this way - it would be better to cross validate the model selection
+# #but regsubsets is so fast i dont want to fuck with that part
+# 
+# #stupid (and slow) loop for cross validation.  Note that it can do leav one out (loocv) or k-fold.  
+# #Not really sure why but I think k-fold is a better test of predictive power, and i choose k=10 for basically no reason at all
+# allModels_log$cv_meanAbsError_kaf=0
+# allModels_log$cv_worstError_kaf=0
+# for(m in 1:nrow(allModels_log)){
+#   #k=nrow(fitDF) # loocv
+#   k=10  #k-fold cv
+#   thisModel=lm(allModels_log$form[m],fitDF)
+#   errors_kaf=numeric()
+#   
+#   for(i in 1:1000){
+#     holdout=sample(1:nrow(fitDF),nrow(fitDF)/k)
+#     lko_lm=lm(reformulate(names(thisModel$coefficients)[-1],response="log_iv"),fitDF[-holdout,])
+#     lko_log_iv=predict(lko_lm, newdata=fitDF[holdout,])
+#     errors_kaf=c(errors_kaf,exp(fitDF[holdout,"log_iv"])/1000-exp(lko_log_iv)/1000)
+#   }
+#   #hist(errors_kaf)
+#   allModels_log$cv_meanAbsError_kaf[m]=mean(abs(errors_kaf))
+#   allModels_log$cv_worstError_kaf[m]=max(abs(errors_kaf))
+#   
+# }
+# 
 
 #Now look at allModels_log - it has the mean error in real units, and the max error from the cross validation set
 #this max error is intended to indicate model behavior when faced with an unusual year beyond the bounds of the fitted dataset
@@ -168,6 +154,49 @@ for(m in 1:nrow(allModels_linear)){
 
 
 
+######--------------apply models to current wy dataset:---------
+#Pulled code from 06 to try to recreate the predictions to see if the log is less wile
+# which formula has the lowest AICC
+form<-gsub("log_iv", paste0("log(", name, ")"), allModels_log$form[which.min(allModels_log$aicc)])
+# pulling variable names out so they can be subset in 06
+mod_sum<- as.list(allModels_log[which.min(allModels_log$aicc),])
+mod_sum$form <-form
+vrs<- unlist(strsplit(form, "\\s*[~]\\s*"))[[2]]
+mod_sum$vars<-unlist(strsplit(vrs, "\\s*\\+\\s*"))
+
+# create model
+mod<-lm(form, data=hist)
+summary(mod)
+#Prediction Data
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(mod_sum$vars) 
+#predict it
+predictions<-predict(mod, newdata=pred.dat, se.fit=TRUE, interval="prediction",level=0.95)
+
+predVol_log=exp(predict(mod,newdata=pred.dat))/1000
+
+boxplot(hist[names(hist)==name]/1000)
+points(1,predVol_log, pch="*",cex=3)
+
+var[,names(var) %in% c('wateryear',names(mod$coefficients))]
+
+
+
+#linear model prediction
+form<-gsub("iv", name, allModels_linear$form[which.min(allModels_linear$aicc)])
+mod_linear=lm(form, hist)
+predVol=predict(mod_linear,newdata=var[var$wateryear == pred.yr,])/1000
+
+summary(mod_linear)
+
+boxplot(hist[names(hist)==name]/1000)
+points(1,predVol, pch="*",cex=3)
+
+var[,names(var) %in% c('wateryear',names(mod_linear$coefficients))]
+
+
+
+
+
 
 #stepwise aicc selection - doesn't appear to be useful just yet
 # thisModel=lm(iv~1,data=fitDF_linear)
@@ -177,6 +206,15 @@ for(m in 1:nrow(allModels_linear)){
 #   a1=add1(object=thisModel,scope=lm(iv~.,data=fitDF_linear))
 #   thisModel=lm(reformulate(c(names(thisModel$coefficients)[-1],rownames(a1)[which.min(a1$RSS)]),response="iv"),data=fitDF_linear)
 # }
+
+
+
+
+
+
+
+
+
 
 
 
