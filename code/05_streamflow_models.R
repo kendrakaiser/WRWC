@@ -53,6 +53,10 @@ vol_model<-function(site, sites, max_var){
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
+  site= "bwh"
+  sites= "bwh"
+  max_var = 10
+  
   site_vars<- grep(paste(sites, collapse="|"), colnames(var))
   hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
               all_of(swe_cols), all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols))) %>% filter(complete.cases(.))
@@ -98,7 +102,7 @@ vol_model<-function(site, sites, max_var){
   mod_sum<- as.list(allModels_linear[which.min(allModels_linear$aicc),])
   mod_sum$form <-form
   vrs<- unlist(strsplit(form, "\\s*[~]\\s*"))[[2]]
-  mod_sum$vars<-unlist(strsplit(vrs, "\\s*\\+\\s*"))
+  mod_sum$vars<-unlist(strsplit(vars, "\\s*\\+\\s*"))
   mod<-lm(form, data=hist)
   
   #put coefficients into DF to save across runs
