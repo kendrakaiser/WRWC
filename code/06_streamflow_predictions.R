@@ -24,14 +24,13 @@ colnames(wy)<-c("Date","day")
 # ------------------------------------------------------------------------------ # 
 
 # volumes
-output.vol<-array(NA,c(length(stream.id),3))
-rownames(output.vol)<-stream.id
-colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol (KAF)", "Pred. Vol \n% of mean")
+output.vol<-array(NA,c(length(stream.id),1))
+colnames(output.vol)<-c("Pred. Vol (KAF)")
 rownames(output.vol)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
 pred.params.vol<-array(NA,c(4,4))
 rownames(pred.params.vol)<-c("bwh.irr_vol","bws.irr_vol","cc.irr_vol","sc.irr_vol")
-colnames(pred.params.vol)<-c("log.irr_vol","sigma", "low.log.irr_vol", "upp.log.irr_vol")
+colnames(pred.params.vol)<-c("irr_vol","sigma", "low.irr_vol", "upp.irr_vol")
 
 # center of mass
 output.cm<-data.frame(array(NA,c(4,4)))
@@ -45,7 +44,7 @@ colnames(pred.params.cm)<-c("cm","sigma")
 # summary stats
 mod_sum<-data.frame(array(NA,c(4,2)))
 colnames(mod_sum)<-c("Irr Vol Adj-R2", "CM Adj-R2")
-rownames(mod_sum)<-c("bwh","bws","cc","sc")
+rownames(mod_sum)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
 # ------------------------------------------------------------------------------  
 # April-Sept Volume Predictions
@@ -73,11 +72,11 @@ modOut<- function(mod, pred.dat){
   pred.dat: data.frame of prediction variables
   '
 # Test Data
- mod<- vol_models$bwh_mod
- pred.dat<- var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars)
-
- hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.irr_vol, vol_mod_sum$bwh$vars) %>% filter(complete.cases(.))
- vol<- hist$bwh.irr_vol
+ # mod<- vol_models$bwh_mod
+ # pred.dat<- var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars)
+ # 
+ # hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.irr_vol, vol_mod_sum$bwh$vars) %>% filter(complete.cases(.))
+ # vol<- hist$bwh.irr_vol
 
   pred.params.vol<-array(NA,c(1,4))
   
@@ -281,8 +280,8 @@ pred.params.cm[3,] <- mod_out[[2]]
 
 ### Save model outputs 
 # --------------------
-png(file.path(fig_dir_mo,"pred.volumes.png"), height = 25*nrow(output.vol), width = 130*ncol(t(output.vol[,2:3])))
-grid.table(t(output.vol[,2:3]))
+png(file.path(fig_dir_mo,"pred.volumes.png"), height = 25*nrow(output.vol), width = 130*ncol(t(output.vol)))
+grid.table(t(output.vol))
 dev.off()
 
 png(file.path(fig_dir_mo,"pred.cm.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
