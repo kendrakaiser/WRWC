@@ -18,12 +18,13 @@ runoff_cols<- grep('runoff', colnames(var))
 # cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), 9)
 # sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 9)
 
-site="bws" #this site
-sites="bws" # used for variable selection
+site="bwh" #this site
+sites="bwh" # used for variable selection
 
 site_vars<- grep(paste(sites, collapse="|"), colnames(var))
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
                                                         all_of(swe_cols), all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols))) %>% filter(complete.cases(.))
+
 name<- paste0(site, ".irr_vol")
 #id column names that should be removed from the modeling set
 irr_vols<- colnames(hist)[grep('irr_vol', colnames(hist))]
@@ -92,6 +93,26 @@ for(m in 1:nrow(allModels_log)){
   allModels_log$cv_worstError_kaf[m]=max(abs(errors_kaf))
   
 }
+
+#Pulled code from 06 to try to recreate the predictions to see if the log is less wile
+# which formula has the lowest AICC
+form<-gsub("log_iv", paste0("log(", name, ")"), allModels_log$form[which.min(allModels_log$aicc)])
+# pulling variable names out so they can be subset in 06
+mod_sum<- as.list(allModels_log[which.min(allModels_log$aicc),])
+mod_sum$form <-form
+vrs<- unlist(strsplit(form, "\\s*[~]\\s*"))[[2]]
+mod_sum$vars<-unlist(strsplit(vrs, "\\s*\\+\\s*"))
+
+# create model
+mod<-lm(form, data=hist)
+# Subset Big Wood Variables
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bwh.irr_vol, mod_sum$vars)) %>% filter(complete.cases(.))
+#Prediction Data
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(mod_sum$vars) 
+#predict it
+predictions<-predict(mod, newdata=pred.dat, se.fit=TRUE, interval="prediction",level=0.95)
+
+#nope - even more insane
 
 #Now look at allModels_log - it has the mean error in real units, and the max error from the cross validation set
 #this max error is intended to indicate model behavior when faced with an unusual year beyond the bounds of the fitted dataset
