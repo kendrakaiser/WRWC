@@ -72,11 +72,10 @@ modOut<- function(mod, pred.dat){
   pred.dat: data.frame of prediction variables
   '
 # Test Data
- # mod<- vol_models$bwh_mod
- # pred.dat<- var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars)
- # 
- # hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.irr_vol, vol_mod_sum$bwh$vars) %>% filter(complete.cases(.))
- # vol<- hist$bwh.irr_vol
+  mod<- vol_models$bwh_mod
+  pred.dat<- var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars)
+ hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.irr_vol, vol_mod_sum$bwh$vars) %>% filter(complete.cases(.))
+  vol<- hist$bwh.irr_vol
 
   pred.params.vol<-array(NA,c(1,4))
   
@@ -117,8 +116,7 @@ pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bws$vars)
 mod_sum[2,1]<-summary(vol_models$bws_mod)$adj.r.squared
 
 mod_out<- modOut(vol_models$bws_mod, pred.dat)
-output.vol[2,] <- mod_out[[1]] #prediction plus sigma^2
-mod_out[[2]][,2]<- mod_out[[2]][,2]^2 #manually lognormalizing the sigma
+output.vol[2,] <- mod_out[[1]] 
 pred.params.vol[2,] <- mod_out[[2]]
 
 # --------------------------------------------------
@@ -234,7 +232,6 @@ pred.params.cm[2,] <- mod_out[[2]]
 
 # --------------------
 # Silver Creek Center of Mass
-#
 # added 'if' statement here because March SC CM doesn't use aj temperatures
 if (is.integer(grep('aj', cm_mod_sum$sc$vars))){ 
   sub_params<- cm_mod_sum$sc$vars[-grep('aj', cm_mod_sum$sc$vars)]
@@ -249,7 +246,7 @@ if (is.integer(grep('aj', cm_mod_sum$sc$vars))){
 
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(sc.cm, cm_mod_sum$sc$vars) %>% filter(complete.cases(.))
 
-# Silver Creek  Model output
+# Silver Creek CM Model output
 mod_sum[4,2]<-summary(cm_models$sc_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm_models$sc_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
                    (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
@@ -315,17 +312,12 @@ cov.mat<-cor.mat*outer.prod
 # Draw flow volumes using multivariate normal distribution (ac-ft)
 vol.sample<-data.frame(mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4]))
 colnames(vol.sample)<-c("Big Wood Hailey", "Big Wood Stanton","Camas Creek","Silver Creek")
-#write.csv(exp(vol.sample), file.path(model_out,paste0("vol.sample-", end_date,".csv")),row.names=F)
 
 # save correlation matrix for model details report
 cor.mat.out<-as.data.frame(round(cor.mat,2))
 png(file.path(fig_dir_mo,"correlation_matrix.png"), height = 25*nrow(cor.mat.out), width = 80*ncol(cor.mat.out))
 grid.table(cor.mat.out)
 dev.off()
-
-# save output from correlations
-#write.csv(cov.mat, file.path(model_out,"cov.mat.csv"),row.names=T)
-#write.csv(pred.pars, file.path(model_out,"pred.pars.csv"),row.names=T)
 
 
 # ------------------------------------------------------------------------------
