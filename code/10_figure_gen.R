@@ -186,7 +186,12 @@ summary(tst)
 #-------------------------------------------------------------------------------
 ### SModel variable plots with current conditions
 #-------------------------------------------------------------------------------
-
+### initial Grouping of vars based on value 
+# boxplot(var[2:13])
+# boxplot(var[c(19:29, 36,38)])
+# boxplot(var[c(50:60)])
+# boxplot(var[c(61:72)])
+# boxplot(var[c(73:78)])
 # Silver Creek
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars) %>% filter(complete.cases(.))
 hist$lwd.log_swe<- exp(hist$lwd.log_swe)

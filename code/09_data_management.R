@@ -22,9 +22,9 @@ writeModelQuery=DBI::sqlInterpolate(conn, sql="INSERT INTO volumemodels (modelda
 dbExecute(conn,writeModelQuery)
 
 # How you pull models from db
-#dbModel=dbGetQuery(conn, "SELECT * FROM volumemodels") #WHERE...
-#rm(volModels_db)# the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
-#eval(parse(text=dbModel$models[1]))
+# dbModel=dbGetQuery(conn, "SELECT * FROM volumemodels") #WHERE...
+# rm(volModels_db)# the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
+# vol_mods<-eval(parse(text=dbModel$models[1]))
 
 # ------------------------------------------------------------------------------
 # write the prediction intervals for daily streamflow output
