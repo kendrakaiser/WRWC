@@ -196,14 +196,28 @@ cm_model<-function(site, sites, max_var){
            error= function(e) {print(paste(site,"center of mass model did not work"))}) #error catch
   reg_sum<- summary(regsubsets.out)
   rm(regsubsets.out)
-  # which set of variables have the lowest BIC
-  vars<-reg_sum$which[which.min(reg_sum$bic),]
-  #vars<-reg_sum$which[which.max(reg_sum$adjr2),]
-  mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+  fitDF=cbind(data.frame(cm=hist[[vol_col]],hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE]))
+  allModelSummary=getRegModelSummary(reg_sum,f_fitDF = fitDF,response="cm")
+                     
+  form<-gsub("cm", name, allModelSummary$form[which.min(allModelSummary$aicc)])
   
+  # pulling variable names out so they can be subset in 06
+  mod_sum<- as.list(allModelSummary[which.min(allModelSummary$aicc),])
+  mod_sum$form <-form
+  vrs<- unlist(strsplit(form, "\\s*[~]\\s*"))[[2]]
+  mod_sum$vars<-unlist(strsplit(vrs, "\\s*\\+\\s*"))
+  
+  # run model
+  # mod<-lm(form, data=hist)
+  
+  # # which set of variables have the lowest BIC
+  # vars<-reg_sum$which[which.min(reg_sum$bic),]
+  # #vars<-reg_sum$which[which.max(reg_sum$adjr2),]
+  # mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+  # 
   #fit the regression model and use LOOCV to evaluate performance
-  form<- paste(paste(name, "~ "), paste(mod_sum$vars, collapse=" + "), sep = "")
-  
+  # form<- paste(paste(name, "~ "), paste(mod_sum$vars, collapse=" + "), sep = "")
+  # 
   mod<-lm(form, data=hist)
   mod_sum$lm<-summary(mod)$adj.r.squared
   
@@ -229,10 +243,10 @@ cm_model<-function(site, sites, max_var){
 }
 
 # Create Center of Mass Models for each site
-bwh_cm_mod<- cm_model("bwh", "bwh", 9)
-bws_cm_mod<- cm_model("bws", "bws", 9)
-sc_cm_mod<- cm_model("sc", c("bwh","sc"), 9)
-cc_cm_mod<- cm_model("cc", "cc", 9)
+bwh_cm_mod<- cm_model("bwh", "bwh", 6)
+bws_cm_mod<- cm_model("bws", "bws", 6)
+sc_cm_mod<- cm_model("sc", c("bwh","sc"),6)
+cc_cm_mod<- cm_model("cc", "cc", 6)
 
 # ---------------------------------------------------------------------------- # 
 ### EXPORT Center of Mass MODEL DETAILS
