@@ -13,12 +13,6 @@
 # Import Data ------------------------------------------------------------------  
 stream.id<-c("bwh", "bws", "cc", "sc") #automate to no be hard coded
 
-# Load the models and parameters from all the models 
-#vol_mod_sum <<- list.load(file.path(data_dir, vol_sum)) 
-#vol_models <<- list.load(file.path(data_dir, vol_mods))
-#cm_mod_sum <<- list.load(file.path(data_dir,cm_sum))
-#cm_models<<- list.load(file.path(data_dir, cm_mods))
-
 # ------------------------------------------------------------------------------  
 # Create sequence of non-leap year dates, changed to start at the beginning of year in accordance with my calculation of cm, consider changing to day of wy
 wy<-seq(as.Date(paste(pred.yr,"-01-01",sep="")),as.Date(paste(pred.yr,"-09-30",sep="")),"day")
@@ -30,14 +24,13 @@ colnames(wy)<-c("Date","day")
 # ------------------------------------------------------------------------------ # 
 
 # volumes
-output.vol<-array(NA,c(length(stream.id),3))
-rownames(output.vol)<-stream.id
-colnames(output.vol)<-c("Winter Vol\n% of mean", "Pred. Vol (KAF)", "Pred. Vol \n% of mean")
+output.vol<-array(NA,c(length(stream.id),1))
+colnames(output.vol)<-c("Pred. Vol (KAF)")
 rownames(output.vol)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
 pred.params.vol<-array(NA,c(4,4))
 rownames(pred.params.vol)<-c("bwh.irr_vol","bws.irr_vol","cc.irr_vol","sc.irr_vol")
-colnames(pred.params.vol)<-c("log.irr_vol","sigma", "low.log.irr_vol", "upp.log.irr_vol")
+colnames(pred.params.vol)<-c("irr_vol","sigma", "low.irr_vol", "upp.irr_vol")
 
 # center of mass
 output.cm<-data.frame(array(NA,c(4,4)))
@@ -51,52 +44,34 @@ colnames(pred.params.cm)<-c("cm","sigma")
 # summary stats
 mod_sum<-data.frame(array(NA,c(4,2)))
 colnames(mod_sum)<-c("Irr Vol Adj-R2", "CM Adj-R2")
-rownames(mod_sum)<-c("bwh","bws","cc","sc")
+rownames(mod_sum)<-c("Big Wood Hailey","Big Wood Stanton","Camas Creek","Silver Creek")
 
 # ------------------------------------------------------------------------------  
-#
 # April-Sept Volume Predictions
 # an additional function can be made to clean these up now that they are all automated
 # ------------------------------------------------------------------------------ # 
 
-modOut<- function(mod, pred.dat, wq.cur, wq, vol, lastQ){
+modOut<- function(mod, pred.dat){
   '
   mod:     input model
   pred.dat: data.frame of prediction variables
-  wq.cur:   this years winter baseflow
-  wq:       array of historic winter flows (e.g. hist$cc.wq)
-  vol:      array of historic april-sept volumes  (hist$cc.vol)
-  lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$wateryear == pred.yr-1] 
   '
+# Test Data
+ #  mod<- vol_models$bwh_mod
+ #  pred.dat<- var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars)
+ # hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.irr_vol, vol_mod_sum$bwh$vars) %>% filter(complete.cases(.))
+ #  vol<- hist$bwh.irr_vol
 
-# mod<- vol_models$cc_mod
-# pred.dat<- var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars)
-# wq.cur<-var$cc.wq[var$wateryear == pred.yr]
-# wq<-var$cc.wq[var$wateryear < pred.yr]
-# hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.irr_vol, vol_mod_sum$cc$vars) %>% filter(complete.cases(.))
-# vol<- hist$cc.irr_vol
-# swe_cols <- hist %>% dplyr::select(contains('swe'))
-
-# lastQ<- var$cc.irr_vol[var$wateryear == pred.yr-1]
-  
   pred.params.vol<-array(NA,c(1,4))
-  output.vol<-array(NA,c(1,3))
   
-  sig<-summary(mod)$sigma
-  pred.params.vol[1,2]<-sig #^2/2 #lognormal residuals
   #predict this years total volume at 95 % confidence
-  predictions<-predict(mod,newdata=pred.dat,se.fit=TRUE,interval="prediction",level=0.95)
+  predictions<-predict(mod, newdata=pred.dat, se.fit=TRUE, interval="prediction",level=0.95)
   pred.params.vol[1,1]<-predictions$fit[1] #mean prediction 
+  pred.params.vol[1,2]<-summary(mod)$sigma 
   pred.params.vol[1,3]<-predictions$fit[2] #lower prediction interval
   pred.params.vol[1,4]<-predictions$fit[3] #upper prediction interval
-  
-  #This years percent of mean winter flow
-  output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,0)
-  
-  # back-transformation of log-transformed data to expected value in original units; 183 is the number of days between April-Sept and 1.98 converts back to cfs
-  output.vol[1,2]<-round(exp(predictions$fit[1])/1000,0) #+sig^2/2 , with lognormal residuals
-  #Division by long-term mean to generate % of average volume
-  output.vol[1,3]<-round(exp(predictions$fit[1])/mean(vol, na.rm=TRUE) *100,0) # +sig^2/2 , with lognormal residuals
+
+  output.vol<-round(predictions$fit[1]/1000,0) 
   
   return(list(output.vol, pred.params.vol))
 }
@@ -110,7 +85,8 @@ pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars)
 
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol_models$bwh_mod)$adj.r.squared
-mod_out<- modOut(vol_models$bwh_mod, pred.dat, var$bwh.wq[var$wateryear == pred.yr], var$bwh.wq[var$wateryear < pred.yr], hist$bwh.irr_vol, var$bwh.irr_vol[var$wateryear == pred.yr-1])
+mod_out<- modOut(vol_models$bwh_mod, pred.dat)
+
 #these could be formatted differently to be saved to the global env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
@@ -124,9 +100,9 @@ pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bws$vars)
 
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol_models$bws_mod)$adj.r.squared
-mod_out<- modOut(vol_models$bws_mod, pred.dat, var$bws.wq[var$wateryear == pred.yr], var$bws.wq[var$wateryear < pred.yr], hist$bws.irr_vol, var$bws.irr_vol[var$wateryear == pred.yr-1])
-output.vol[2,] <- mod_out[[1]] #prediction plus sigma^2
-mod_out[[2]][,2]<- mod_out[[2]][,2]^2 #manually lognormalizing the sigma
+
+mod_out<- modOut(vol_models$bws_mod, pred.dat)
+output.vol[2,] <- mod_out[[1]] 
 pred.params.vol[2,] <- mod_out[[2]]
 
 # --------------------------------------------------
@@ -138,7 +114,7 @@ pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars)
 
 # Silver Creek Model output
 mod_sum[4,1]<-summary(vol_models$sc_mod)$adj.r.squared
-mod_out<- modOut(vol_models$sc_mod, pred.dat, var$sc.wq[var$wateryear == pred.yr], var$sc.wq[var$wateryear < pred.yr], hist$sc.irr_vol, var$sc.irr_vol[var$wateryear == pred.yr-1])
+mod_out<- modOut(vol_models$sc_mod, pred.dat)
 output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
@@ -151,12 +127,12 @@ pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars)
 
 # Camas Creek Model output
 mod_sum[3,1]<-summary(vol_models$cc_mod)$adj.r.squared
-mod_out<- modOut(vol_models$cc_mod, pred.dat, var$cc.wq[var$wateryear == pred.yr], var$cc.wq[var$wateryear < pred.yr], hist$cc.irr_vol, var$cc.irr_vol[var$wateryear == pred.yr-1])
+mod_out<- modOut(vol_models$cc_mod, pred.dat)
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
 #error catch for NA in pred params
-#TODO: Move this into the fucntion and add model name into error
+#TODO: Move this into the function and add model name into error
 try(if(any(is.na(pred.params.vol))) stop("NA in Predicted Parameters"))
 
 tryCatch({is.integer(pred.params.vol)}, error = function(e) {message("error:\n", "NA in Predicted Parameters")})
@@ -190,13 +166,26 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, 
   #output.cm[1,1]<-mean(apply(hist.temps, MARGIN=2, mean)) 
   #output.cm[1,2]<-as.list(round(cur.temps,3))
 
-  output.cm[1,1]<-  if (length(grep('swe',names(mod.cm$coefficients))) >0) {
+  output.cm[1,1]<-  if (length(grep('swe',mod.cm$coefnames )) >0) {
     round(mean(as.matrix(pred.swe), na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =TRUE),3)*100
     } else {'No SWE Param'}
     #round(sum(pred.swe, na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =T),3) 
-  output.cm[1,2]<-round(mean(predictions),0) 
-  output.cm[1,3]<-round(mean(predictions)-mean(hist.cm,na.rm=TRUE),0) 
-  output.cm[1,4]<-format(wy$Date[wy$day==round(mean(predictions, na.rm=TRUE),0)],"%b-%d")
+
+  
+  cm_predict=round(mean(predictions,na.rm=T))
+  
+  #limit cm predictions to the observed range
+  # if(all(cm_predict>hist.cm)){
+  #   cm_predict=round(max(hist.cm, na.rm = T))
+  # }
+  # 
+  # if(all(cm_predict<hist.cm)){
+  #   cm_predict=round(min(hist.cm, na.rm=T))
+  # }
+  # 
+  output.cm[1,2]<-cm_predict
+  output.cm[1,3]<-cm_predict-mean(hist.cm) 
+  output.cm[1,4]<-format(wy$Date[wy$day==cm_predict],"%b-%d")
   
   return(list(output.cm, pred.params.cm))
 }
@@ -242,9 +231,8 @@ pred.params.cm[2,] <- mod_out[[2]]
 
 # --------------------
 # Silver Creek Center of Mass
-#
 # added 'if' statement here because March SC CM doesn't use aj temperatures
-if (is.integer(grep('aj', cm_mod_sum$sc$vars))){ 
+if (any(grepl('aj', cm_mod_sum$sc$vars))){ 
   sub_params<- cm_mod_sum$sc$vars[-grep('aj', cm_mod_sum$sc$vars)]
   aj_params<-cm_mod_sum$sc$vars[grep('aj', cm_mod_sum$sc$vars)]
   # Prediction Data with modeled temperature data
@@ -257,7 +245,7 @@ if (is.integer(grep('aj', cm_mod_sum$sc$vars))){
 
 hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(sc.cm, cm_mod_sum$sc$vars) %>% filter(complete.cases(.))
 
-# Silver Creek  Model output
+# Silver Creek CM Model output
 mod_sum[4,2]<-summary(cm_models$sc_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm_models$sc_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
                    (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
@@ -288,8 +276,8 @@ pred.params.cm[3,] <- mod_out[[2]]
 
 ### Save model outputs 
 # --------------------
-png(file.path(fig_dir_mo,"pred.volumes.png"), height = 25*nrow(output.vol), width = 130*ncol(t(output.vol[,2:3])))
-grid.table(t(output.vol[,2:3]))
+png(file.path(fig_dir_mo,"pred.volumes.png"), height = 25*nrow(output.vol), width = 130*ncol(t(output.vol)))
+grid.table(t(output.vol))
 dev.off()
 
 png(file.path(fig_dir_mo,"pred.cm.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
@@ -323,17 +311,12 @@ cov.mat<-cor.mat*outer.prod
 # Draw flow volumes using multivariate normal distribution (ac-ft)
 vol.sample<-data.frame(mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4]))
 colnames(vol.sample)<-c("Big Wood Hailey", "Big Wood Stanton","Camas Creek","Silver Creek")
-#write.csv(exp(vol.sample), file.path(model_out,paste0("vol.sample-", end_date,".csv")),row.names=F)
 
 # save correlation matrix for model details report
 cor.mat.out<-as.data.frame(round(cor.mat,2))
 png(file.path(fig_dir_mo,"correlation_matrix.png"), height = 25*nrow(cor.mat.out), width = 80*ncol(cor.mat.out))
 grid.table(cor.mat.out)
 dev.off()
-
-# save output from correlations
-#write.csv(cov.mat, file.path(model_out,"cov.mat.csv"),row.names=T)
-#write.csv(pred.pars, file.path(model_out,"pred.pars.csv"),row.names=T)
 
 
 # ------------------------------------------------------------------------------
@@ -394,4 +377,24 @@ var.fore<- pred.params.vol[,2] + samp.sd
 #png(file.path(fig_dir_mo,"vol_prob.png"), height = 50*nrow(vol_prob), width = 200*ncol(vol_prob))
 #grid.table(vol_prob)
 #dev.off()
+
+#--------------
+# additional variables to summarize in comparison to previous years
+
+#, wq.cur, wq, vol, lastQ
+# var$bwh.wq[var$wateryear == pred.yr], var$bwh.wq[var$wateryear < pred.yr], hist$bwh.irr_vol, var$bwh.irr_vol[var$wateryear == pred.yr-1]
+# wq.cur:   this years winter baseflow
+# wq:       array of historic winter flows (e.g. hist$cc.wq)
+# vol:      array of historic april-sept volumes  (hist$cc.vol)
+# lastQ:    last years summer streamflow volume (ac-ft) #var$cc.vol[var$wateryear == pred.yr-1]
+#wq.cur<-var$bwh.wq[var$wateryear == pred.yr]
+#wq<-var$bwh.wq[var$wateryear < pred.yr]
+
+#This years percent of mean winter flow
+#output.vol[1,1]<-round(wq.cur/mean(wq, na.rm=TRUE)*100,0)
+#Division by long-term mean to generate % of average volume
+#output.vol[1,3]<-round(predictions$fit[1]/mean(vol, na.rm=TRUE) *100,0) 
+#swe_cols <- hist %>% dplyr::select(contains('swe'))
+# lastQ<- var$cc.irr_vol[var$wateryear == pred.yr-1]
+#output.cm
 

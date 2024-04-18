@@ -59,10 +59,10 @@ for(k in 1:ns){
   sc<- sc.wy[sc.wy$wateryear == year, "value"]
   cc <- cc.wy[cc.wy$wateryear == year, "value"]
   
-  bwh.flow.s[,k]<-sim.flow(bwh, exp(vol$bwh.irr_vol))
-  bws.flow.s[,k]<-sim.flow(bws, exp(vol$bws.irr_vol))
-  sc.flow.s[,k]<-sim.flow(sc, exp(vol$sc.irr_vol))
-  cc.flow.s[,k]<-sim.flow(cc, exp(vol$cc.irr_vol))
+  bwh.flow.s[,k]<-sim.flow(bwh, vol$bwh.irr_vol)
+  bws.flow.s[,k]<-sim.flow(bws, vol$bws.irr_vol)
+  sc.flow.s[,k]<-sim.flow(sc, vol$sc.irr_vol)
+  cc.flow.s[,k]<-sim.flow(cc, vol$cc.irr_vol)
 }
 # TODO: add an error catch if the output is NA
 
