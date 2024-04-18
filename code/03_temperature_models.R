@@ -15,20 +15,10 @@
 agrimet<- dbGetQuery(conn, "SELECT date AS date_time, day_mean_t AS temperature_mean, site_name AS site_name, month AS mo, y AS y, wy AS wy FROM daily_air_temperature;")
 #renamed agrimet columns to match snotel for calculations
 
-#agrimet_nj<- dbGetQuery(conn, "SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempF 
- #   FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-  #  WHERE metric = 'temperature mean' AND qcstatus = 'true' AND 
-   # (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
-    #GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
-
-# saving to local directory
-write.csv(agrimet, file.path('~/agri_metT.csv'), row.names = FALSE)
-
 #remove values that are erroneous
 agrimet$temperature_mean[agrimet$temperature_mean < -90] <- NA
 agrimet$temperature_mean[agrimet$temperature_mean > 130] <- NA
 
-#TODone NEED to add IF statement that reqiures the record length to be at least 88 
 #Mean Nov- Jan Temp
 snotel.nj_temp=dbGetQuery(conn,"SELECT count(value) AS n_obs, wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempf, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
@@ -149,3 +139,19 @@ nboot<-5000
 aj.pred.temps<- data.frame(mvrnorm(nboot, new.data$aj_tempf, site.cov) )
 #write.csv(aj.pred.temps, file.path(data_dir, 'aj_pred.temps.csv'), row.names=FALSE)
 
+plot(input$aj_tempf, input$fitted)
+
+png(filename = file.path(fig_dir,"ModeledTemps.png"),
+    width = 5.5, height = 3.5,units = "in", pointsize = 12,
+     bg = "white", res = 600) 
+
+ggplot(input, aes(x=aj_tempf, y=fitted, color=sitenote)) + 
+    geom_abline(intercept=0,lty=1)+
+    geom_point()+
+    xlim(2, 11.5)+
+    ylim(2,11.5) +
+    xlab('Observed Mean April - June Temperature (F)') +
+    ylab('Predicted Mean April - June Temperature (F)') +
+    theme_bw()
+
+dev.off()
