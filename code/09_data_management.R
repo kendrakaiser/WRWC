@@ -22,10 +22,9 @@ writeModelQuery=DBI::sqlInterpolate(conn, sql="INSERT INTO volumemodels (modelda
 dbExecute(conn,writeModelQuery)
 
 # How you pull models from db
-dbModel=dbGetQuery(conn, "SELECT * FROM volumemodels") #WHERE...
-
-rm(volModels_db)# the returned models list will have the same name as it head when it was written to the db - in this case volModels_db.
-eval(parse(text=dbModel$models[1]))
+# dbModel=dbGetQuery(conn, "SELECT * FROM volumemodels") #WHERE...
+# rm(volModels_db)# the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
+# vol_mods<-eval(parse(text=dbModel$models[1]))
 
 # ------------------------------------------------------------------------------
 # write the prediction intervals for daily streamflow output
@@ -70,14 +69,17 @@ writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
   }
   #return(statDF)
   
+  dbExecute(conn,paste0("DELETE FROM summarystatistics WHERE site = '",site,"' AND metric = '",metric,
+                        "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
+  
   dbWriteTable(conn,"summarystatistics",statDF,append=T)
 }
 
 # push model output to database
-writeSummaryStats(x=exp(vol.sample$bwh.irr_vol), site.metric="bwh.irr_vol",simDate=end_date)
-writeSummaryStats(x=exp(vol.sample$bws.irr_vol), site.metric="bws.irr_vol",simDate=end_date)
-writeSummaryStats(x=exp(vol.sample$cc.irr_vol), site.metric="cc.irr_vol",simDate=end_date)
-writeSummaryStats(x=exp(vol.sample$sc.irr_vol), site.metric="sc.irr_vol",simDate=end_date)
+writeSummaryStats(x=vol.sample$bwh.irr_vol, site.metric="bwh.irr_vol",simDate=end_date)
+writeSummaryStats(x=vol.sample$bws.irr_vol, site.metric="bws.irr_vol",simDate=end_date)
+writeSummaryStats(x=vol.sample$cc.irr_vol, site.metric="cc.irr_vol",simDate=end_date)
+writeSummaryStats(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=end_date)
 
 # ------------------------------------------------------------------------------
 #Sample code to show how to make bxplt from db
@@ -159,7 +161,7 @@ exceed.probs<- function(vols, probs){
 # Exceedance probs from NWRFC
 prb<- c(0.1, 0.25, 0.5, 0.75, 0.9)
 # Calculate exceedance probabilities and save table with labels
-ex.vols<- round(apply(exp(vol.sample), 2, exceed.probs, prb)/1000) %>% as.data.frame()
+ex.vols<- round(apply(vol.sample, 2, exceed.probs, prb)/1000) %>% as.data.frame()
 ex.vols$Exceedance <- c('90%', '75%', '50%', '25%', '10%') 
 ex.vols<- ex.vols%>% relocate(Exceedance)
 

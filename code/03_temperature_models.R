@@ -12,7 +12,8 @@
 # Pull AGRIMET Data from database
 # -----------------------------------------------------------------------------
 # TODO: automate pulling the averaged agrimet data from db - test code aint workin
-agrimet<- dbGetQuery(conn, "SELECT * FROM daily_air_temperature;")
+agrimet<- dbGetQuery(conn, "SELECT date AS date_time, day_mean_t AS temperature_mean, site_name AS site_name, month AS mo, y AS y, wy AS wy FROM daily_air_temperature;")
+#renamed agrimet columns to match snotel for calculations
 
 #agrimet_nj<- dbGetQuery(conn, "SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempF 
  #   FROM data LEFT JOIN locations ON data.locationid = locations.locationid
@@ -23,27 +24,31 @@ agrimet<- dbGetQuery(conn, "SELECT * FROM daily_air_temperature;")
 # saving to local directory
 write.csv(agrimet, file.path('~/agri_metT.csv'), row.names = FALSE)
 
-#renaming agrimet columns to match snotel for calculations
-colnames(agrimet)<- c("date_time","temperature_mean", "site_name", "mo", "y", "wy")
-agrimet$date_time<- as.Date(agrimet$date_time)
 #remove values that are erroneous
 agrimet$temperature_mean[agrimet$temperature_mean < -90] <- NA
-agrimet$temperature_mean[agrimet$temperature_mean > 150] <- NA
+agrimet$temperature_mean[agrimet$temperature_mean > 130] <- NA
 
-#TODO NEED to add IF statement that requires the record length to be at least 88 
+
+#TODone NEED to add IF statement that reqiures the record length to be at least 88 
 #Mean Nov- Jan Temp
-snotel.nj_temp=dbGetQuery(conn,"SELECT * FROM (SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempF, data.locationid, name, sitenote, COUNT(DISTINCT(dataid)) AS days_in_record
+snotel.nj_temp=dbGetQuery(conn,"SELECT count(value) AS n_obs, wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempf, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND 
-           (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
-           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear) AS njtemp 
-                          WHERE days_in_record >= 80;")
+           WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND sitenote != 'ccd'
+           AND (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) <= 1) 
+           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 
-snotel.aj_temp=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, avg(value) AS aj_tempF, data.locationid, name, sitenote
+#Also, ccd has 83 obs in 2017...  including it here drops the whole year later, which kinda sucks considering how many other temperatures are available
+
+snotel.nj_temp=snotel.nj_temp[snotel.nj_temp$n_obs>=86,-1] #all 2024 data has at most 86 observations, so if I use 88 as a threshold 2024 is excluded entirely.  
+
+
+snotel.aj_temp=dbGetQuery(conn,"SELECT count(value) AS n_obs, wateryear(datetime) AS wateryear, metric, avg(value) AS aj_tempf, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND 
            (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) <= 6)
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+
+snotel.aj_temp=snotel.aj_temp[snotel.aj_temp$n_obs>=90,-1]    # much less missing data in this period
 
 
 #TODO make a SQL query for agrimet data so that its all streamlined??
@@ -103,8 +108,8 @@ aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% piv
 
 
 #compile data into one wide table
-all.temp.dat <- aj.snot %>% merge(nj.snot , by= 'wateryear') %>% 
-  merge(tdata.wide, by= 'wateryear') 
+all.temp.dat <- nj.snot %>% merge(aj.snot , by= 'wateryear', all.x=TRUE) %>% 
+  merge(tdata.wide, by= 'wateryear', all.x=TRUE) 
 
 #write.csv(all.temp.dat, file.path(data_dir,"temp_dat.csv"), row.names=FALSE)
 

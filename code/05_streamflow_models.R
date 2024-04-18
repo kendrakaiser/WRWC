@@ -21,9 +21,9 @@ wint_t_cols<-grep('nj_t', colnames(var))
 aj_t_cols<-grep('aj_t', colnames(var))
 irr_vol_cols<- grep('irr_vol', colnames(var))
 tot_vol_cols<- grep('tot_vol', colnames(var))
-snodas_cols<- c(grep('wint', colnames(var)), grep('runoff', colnames(var)), grep('snow', colnames(var)), grep('swe_total', colnames(var)))
+snodas_cols<- c(grep('wint', colnames(var)), grep('snow', colnames(var)), grep('swe_total', colnames(var)))
 wq_cols<- grep('wq', colnames(var))
-
+runoff_cols<- grep('runoff', colnames(var))
 #par(mar=c(1, 1, 1, 1))
 #pairs(c(var[swe_cols[1:8]], var[snodas_cols[1:10]]))
 
@@ -33,63 +33,104 @@ wq_cols<- grep('wq', colnames(var))
 #specify the cross-validation method
 ctrl <- trainControl(method = "LOOCV")
 
+#function to make an easier to read df with some info on the models
+getRegModelSummary=function(regSum=reg_sum,f_fitDF=fitDF, response="iv" ){
+  outDF=data.frame(form=character(),r2=numeric(),bic=numeric(),aicc=numeric())
+  for(i in 1:nrow(regSum$which)){
+    thisRegSumWhich=regSum$which[i,]
+    addDF=data.frame(form=deparse1(reformulate(names(thisRegSumWhich)[thisRegSumWhich][-1], response=response)),
+                     r2=regSum$rsq[i],
+                     bic=regSum$bic[i],
+                     aicc=AICc(lm(reformulate(names(thisRegSumWhich)[thisRegSumWhich][-1], response=response), data=f_fitDF ))
+    )
+    outDF=rbind(outDF,addDF)
+  }
+  return(outDF)
+}
+
 vol_model<-function(site, sites, max_var){
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
+  # site= "bwh"
+  # sites= "bwh"
+  # max_var = 10
+  
   site_vars<- grep(paste(sites, collapse="|"), colnames(var))
   hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
-              all_of(swe_cols), all_of(wint_t_cols), -all_of(c(tot_vol_cols, wq_cols))) %>% filter(complete.cases(.))
+                                                          all_of(swe_cols), all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols)))
+  
   name<- paste0(site, ".irr_vol")
+  hist=hist[,names(hist) %in% c(name, names(var)[!is.na(var[var$wateryear == pred.yr,])] )] #exclude predictors which are not available for pred.yr
+  
+  hist=hist[complete.cases(hist),]
+  
   #id column names that should be removed from the modeling set
   irr_vols<- colnames(hist)[grep('irr_vol', colnames(hist))]
   vol_col<-grep(name, colnames(hist))
   cms<- colnames(hist)[grep('cm', colnames(hist))]
   
   #use regsubsets to assess the results
-  tryCatch({regsubsets.out<-regsubsets(log(hist[[vol_col]])~., 
+  tryCatch({regsubsets.out<-regsubsets(hist[[vol_col]]~., 
             data=hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE], 
             nbest=1, nvmax=max_var, really.big=T)}, 
             error= function(e) {print(paste(site,"volume model did not work"))})
   reg_sum<- summary(regsubsets.out)
   rm(regsubsets.out)
-  # which set of variables have the lowest BIC
-  vars<-reg_sum$which[which.min(reg_sum$bic),]
-  #vars<-reg_sum$which[which.max(reg_sum$adjr2),]
-  mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
- 
-   #fit the regression model and use LOOCV to evaluate performance
-  form<- paste(paste("log(", name, ")~ "), paste(mod_sum$vars, collapse=" + "), sep = "")
   
+  fitDF_linear=cbind(data.frame(iv=hist[[vol_col]],hist[, !names(hist) %in% c("wateryear", irr_vols, cms)]))
+  
+  allModels_linear=getRegModelSummary(regSum=reg_sum,f_fitDF=fitDF_linear, response="iv" )
+  
+  allModels_linear$cv_meanAbsError_kaf=0
+  allModels_linear$cv_worstError_kaf=0
+  for(m in 1:nrow(allModels_linear)){
+    #k=nrow(fitDF_linear) # loocv
+    k=10  #k-fold cv
+    thisModel=lm(allModels_linear$form[m],fitDF_linear)
+    errors_kaf=numeric()
+    for(i in 1:1000){
+      holdout=sample(1:nrow(fitDF_linear),nrow(fitDF_linear)/k)
+      lko_lm=lm(reformulate(names(thisModel$coefficients)[-1],response="iv"),fitDF_linear[-holdout,])
+      lko_iv=predict(lko_lm, newdata=fitDF_linear[holdout,])
+      errors_kaf=c(errors_kaf,fitDF_linear[holdout,"iv"]/1000-lko_iv/1000)
+    }
+    #hist(errors_kaf)
+    allModels_linear$cv_meanAbsError_kaf[m]=mean(abs(errors_kaf))
+    allModels_linear$cv_worstError_kaf[m]=max(abs(errors_kaf))
+  }
+  
+  # which formula has the lowest AICC
+  form<-gsub("iv", name, allModels_linear$form[which.min(allModels_linear$aicc)])
+  # pulling variable names out so they can be subset in 06
+  mod_sum<- as.list(allModels_linear[which.min(allModels_linear$aicc),])
+  mod_sum$form <-form
+  vrs<- unlist(strsplit(form, "\\s*[~]\\s*"))[[2]]
+  mod_sum$vars<-unlist(strsplit(vrs, "\\s*\\+\\s*"))
+  
+  # run model
   mod<-lm(form, data=hist)
-  mod_sum$lm<-summary(mod)$adj.r.squared
   
-  #put coefficients into DF to save across runs
-  coef<- signif(mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
+  #put coefficients into DF to save across runs --- removed rounding signif(mod$coefficients, 2)
+  coef<- mod$coefficients %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
   
   #save summary of LOOCV
   model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
   mod_sum$loocv<- model$results
   #check residuals mod.red<- resid(model)
   
-  #linear model of logged prediction v.s. observed for a more accurate r2
-  pred<-exp(model$pred$pred)/1000
-  obs<- exp(model$pred$obs)/1000
-  r2<- lm(pred ~obs)
-  mod_sum$true.r2<-summary(r2)$adj.r.squared
-  
   # calculate the correlations
   #r <- round(cor(hist[bwh_sum$vars], use="complete.obs"),2)
   #ggcorrplot(r)
   
-  #Plot modeled data for visual evaluation 
+  #Plot (LOOCV) modeled data for visual evaluation 
   fig_name = paste0(site, ".vol_modelFit.png")
-  png(filename = file.path(fig_dir, fig_name),
+  png(filename = file.path(fig_dir_mo, fig_name),
       width = 5.5, height = 5.5,units = "in", pointsize = 12,
       bg = "white", res = 600) 
   
-  plot(exp(model$pred$obs)/1000, exp(model$pred$pred)/1000, pch=19, 
+  plot(model$pred$obs/1000, model$pred$pred/1000, pch=19, 
        xlab="Observed Irrigation Season KAF", ylab="Predicted Irrigation Season KAF")
   abline(0,1,col="gray50",lty=1)
   dev.off()
@@ -98,17 +139,19 @@ vol_model<-function(site, sites, max_var){
 }
 
 # Create Volume Models for each USGS gage
-bwh_vol_mod<- vol_model("bwh", "bwh", 9)
-bws_vol_mod<- vol_model("bws", c("bwh", "bws"), 9)
-cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), 9)
-sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 9)
+bwh_vol_mod<- vol_model("bwh", "bwh", 10)
+bws_vol_mod<- vol_model("bws", c("bws", "bwh"), 10)
+cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), 10)
+sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 10)
 
 
 # EXPORT VOL MODEL DETAILS
 # ----------------------
+# formula, vars and summary stats
 vol_mod_sum<- list(bwh = bwh_vol_mod[[1]], bws = bws_vol_mod[[1]], sc = sc_vol_mod[[1]], cc = cc_vol_mod[[1]])
+#lm and coefficients
 vol_models<- list(bwh_mod = bwh_vol_mod[[2]], bws_mod = bws_vol_mod[[2]], sc_mod = sc_vol_mod[[2]], cc_mod = cc_vol_mod[[2]])
-vol_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod[[3]])
+#vol_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod[[3]])
 
 #write.csv(vol_coef, file.path(model_out,'vol_coeff.csv'), row.names = FALSE)
 #write.list(vol_mod_sum, file.path(data_dir, vol.summary)) #.csv
@@ -116,15 +159,18 @@ vol_coef<- cbind(bwh_vol_mod[[3]], bws_vol_mod[[3]], sc_vol_mod[[3]], cc_vol_mod
 #list.save(vol_mod_sum, file.path(data_dir, vol_sum)) #.Rdata summary stats
 #list.save(vol_models, file.path(data_dir, vol_mods)) #actual model structure
 
-# Pull out R2 for summary stats
+# Pull out R2 for summary stats --- just save table from Sams code
 r2s<- data.frame(matrix(ncol = 3, nrow = 4))
 colnames(r2s)<-c("AdjR2", "Loocv R2", "MAE")
 rownames(r2s)<-c("BWH", "BWS", "SC", "CC")
 r2s[,1]<- round(c(bwh_vol_mod[[1]]$true.r2, bws_vol_mod[[1]]$true.r2, sc_vol_mod[[1]]$true.r2,cc_vol_mod[[1]]$true.r2)*100, 2)
 r2s[,2]<- round(c(bwh_vol_mod[[1]]$loocv$Rsquared, bws_vol_mod[[1]]$loocv$Rsquared,sc_vol_mod[[1]]$loocv$Rsquared,cc_vol_mod[[1]]$loocv$Rsquared)*100, 2)
-r2s[,3]<- round(c(exp(bwh_vol_mod[[1]]$loocv$MAE), exp(bws_vol_mod[[1]]$loocv$MAE), exp(sc_vol_mod[[1]]$loocv$MAE), exp(cc_vol_mod[[1]]$loocv$MAE)), 2)
+r2s[,3]<- round(c(bwh_vol_mod[[1]]$loocv$MAE, bws_vol_mod[[1]]$loocv$MAE, sc_vol_mod[[1]]$loocv$MAE, cc_vol_mod[[1]]$loocv$MAE), 2)
 
+png(file.path("r2s.png"), height = 25*nrow(r2s), width = 80*ncol(r2s))
 grid.table(r2s)
+dev.off()
+
 
 # ---------------------------------------------------------------------------- # 
 # Evaluate alternative model combinations for Center of Mass Predictions
@@ -136,7 +182,7 @@ cm_model<-function(site, sites, max_var){
   '
   site_vars<- grep(paste(sites, collapse="|"), colnames(var))
   hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
-                all_of(swe_cols), all_of(aj_t_cols), -all_of(irr_vol_cols), -all_of(tot_vol_cols)) %>% filter(complete.cases(.))
+                all_of(swe_cols), all_of(aj_t_cols), -all_of(c(tot_vol_cols, runoff_cols, irr_vol_cols))) %>% filter(complete.cases(.))
   name<- paste0(site, ".cm")
   #id column names that should be removed from the modeling set
   vol_col<-grep(name, colnames(hist))
@@ -150,14 +196,28 @@ cm_model<-function(site, sites, max_var){
            error= function(e) {print(paste(site,"center of mass model did not work"))}) #error catch
   reg_sum<- summary(regsubsets.out)
   rm(regsubsets.out)
-  # which set of variables have the lowest BIC
-  vars<-reg_sum$which[which.min(reg_sum$bic),]
-  #vars<-reg_sum$which[which.max(reg_sum$adjr2),]
-  mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+  fitDF=cbind(data.frame(cm=hist[[vol_col]],hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE]))
+  allModelSummary=getRegModelSummary(reg_sum,f_fitDF = fitDF,response="cm")
+                     
+  form<-gsub("cm", name, allModelSummary$form[which.min(allModelSummary$aicc)])
   
+  # pulling variable names out so they can be subset in 06
+  mod_sum<- as.list(allModelSummary[which.min(allModelSummary$aicc),])
+  mod_sum$form <-form
+  vrs<- unlist(strsplit(form, "\\s*[~]\\s*"))[[2]]
+  mod_sum$vars<-unlist(strsplit(vrs, "\\s*\\+\\s*"))
+  
+  # run model
+  # mod<-lm(form, data=hist)
+  
+  # # which set of variables have the lowest BIC
+  # vars<-reg_sum$which[which.min(reg_sum$bic),]
+  # #vars<-reg_sum$which[which.max(reg_sum$adjr2),]
+  # mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+  # 
   #fit the regression model and use LOOCV to evaluate performance
-  form<- paste(paste(name, "~ "), paste(mod_sum$vars, collapse=" + "), sep = "")
-  
+  # form<- paste(paste(name, "~ "), paste(mod_sum$vars, collapse=" + "), sep = "")
+  # 
   mod<-lm(form, data=hist)
   mod_sum$lm<-summary(mod)$adj.r.squared
   
@@ -177,14 +237,16 @@ cm_model<-function(site, sites, max_var){
   abline(0,1,col="gray50",lty=1)
   dev.off()
   
+  print(paste(name, "model complete"))
+  
   return(list(mod_sum, model, coef))
 }
 
 # Create Center of Mass Models for each site
-bwh_cm_mod<- cm_model("bwh", "bwh", 9)
-bws_cm_mod<- cm_model("bws", "bws", 9)
-sc_cm_mod<- cm_model("sc", c("bwh","sc"), 9)
-cc_cm_mod<- cm_model("cc", "cc", 9)
+bwh_cm_mod<- cm_model("bwh", "bwh", 6)
+bws_cm_mod<- cm_model("bws", "bws", 6)
+sc_cm_mod<- cm_model("sc", c("bwh","sc"),6)
+cc_cm_mod<- cm_model("cc", "cc", 6)
 
 # ---------------------------------------------------------------------------- # 
 ### EXPORT Center of Mass MODEL DETAILS

@@ -2,12 +2,15 @@
 # July 13th, 2022
 # Kendra Kaiser
 # ---------------------------------
+library(dplyr)
+library(viridis)
+library(ggnewscale)
 
-#import data -- MOVE from local machine to github
+#import data 
 wr_og<-read.csv(file.path(input_dir,'WD37__01192021 Irrigation rights Big Wood Above Magic.csv'))
 
-#subset to relevant colums
-wr<- wr_og %>% select('Right.ID', 'Priority.Date', 'PD.Sort.Key', "Overall.Max.Diversion.Rate.cfs.", 
+#subset to relevant columns
+wr<- wr_og %>% dplyr::select('Right.ID', 'Priority.Date', 'PD.Sort.Key', "Overall.Max.Diversion.Rate.cfs.", 
                       "Overall.Max.Diversion.Volume.af.") %>% mutate(priority.date=
                       as.Date(Priority.Date, format ="%m/%d/%Y")) 
 
@@ -31,8 +34,7 @@ ggplot(wr.sub, aes(priority.date, cuml.cfs))+
 # Identify when curtailments will occur based on mean simulated streamflow
 # ------------------------------------------------------------------------------
 
-# Big Wood Water Rights -- should this be using flow at stanton, 
-# or cumulative flow going into Magic?
+# Big Wood Water Rights 
 
 # big wood stanton mean simulated flow 
 wr.cutoffs<- data.frame("date" = array(NA,c(183)))
@@ -79,7 +81,6 @@ wr.ts<- function(wr.co, flow, sitename="name"){
   return(wr.co)
 }
 #wr.cutoffs<- wr.ts(wr.cutoffs, pi[,"bwh.med"], sitename = "bws.medQ")
-
 
 ggplot(data=wr.cutoffs) + 
   geom_point(aes(x=date, y=bwh.hiQ, color= as.factor(ymo.hi)), show.legend = FALSE)+

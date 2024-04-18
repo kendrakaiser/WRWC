@@ -16,12 +16,29 @@ conn=scdbConnect()
 # calculate hydrologic metrics for each year for each station 
 # winter "baseflow" (wb), Apr - Sept irrigation volume (irr_vol), total Volume (tot_vol), and center of mass (cm)
 # ------------------------------------------------------------------------------
+source(file.path(git_dir,'code/fxn_baseflowA.r'))
+#Average Winter Flow - doesnt work properly bc needs filtered, retaining so code doesnt break
+# avgBaseflow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, AVG(value) AS wq, data.locationid, name, sitenote
+#            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+#            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
+#            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 
-#Average Winter Flow 
-avgBaseflow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, AVG(value) AS wq, data.locationid, name, sitenote
+#pull winter flow to do filter on
+wint_flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
-           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
+                     ORDER BY datetime;")
+
+bf_wrapper=function(wy, lid, wint_flow_df){
+  thisQ=wint_flow_df[wint_flow_df$wateryear == wy & wint_flow_df$locationid == lid,"flow"]
+  bf=baseflowA(thisQ)
+  return(mean(bf$bf))
+}
+
+avgBaseflow=unique(wint_flow[,c("wateryear","metric","locationid","name","sitenote")])
+
+avgBaseflow$wq = mapply(bf_wrapper, wy=avgBaseflow$wateryear, lid=avgBaseflow$locationid, MoreArgs = list(wint_flow_df=wint_flow))
+
 # pivot data wider
 baseflow<-pivot_wider(data=avgBaseflow[,c("wateryear","wq","sitenote")],names_from = c(sitenote),values_from = c(wq), names_glue = "{sitenote}.wq")
 
@@ -102,6 +119,7 @@ winterSWE_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, 
 # pivot data wider
 swe_apr<-pivot_wider(data=winterSWE_apr[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
 
+#TODO - set this to query the SWE based on 
 #Grab Todays SWE
 todaySWE_=dbGetQuery(conn,"SELECT DISTINCT ON (locationid) datetime, wateryear(datetime) AS wateryear, metric AS swe, value, locations.locationid, locations.name 
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
@@ -120,8 +138,6 @@ todaySWE_=dbGetQuery(conn,"SELECT DISTINCT ON (locationid) datetime, wateryear(d
 #sp = 805 #  Swede Peak (Upper Muldoon Creek 0301)
 #sm = 792 # Stickney Mill
 #bc = 320 # Bear Canyon
-#snotel_sites = c(cg, g, gs, hc, lwd, ds, ccd, sr, ga, sp, sm, bc)
-#snotel_abrv <- c("cg.swe", "g.swe", "gs.swe", "hc.swe", "lwd.swe", "ds.swe", "ccd.swe", "sr.swe", "ga.swe", "sp.swe", "sm.swe", "bc.swe")
 
 #------------------------------------------------------------------------------
 # Get SNODAS from Database 
@@ -147,28 +163,30 @@ winterSums_apr=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric,
 # pivot data wider
 snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
 
+#TODO - set this to query the SNODAS for specific simulation date
+
 #------------------------------------------------------------------------------
 # Integrate & EXPORT Data: USGS SNOTEL SNODAS
 #------------------------------------------------------------------------------
 
 #February data for modeling
-alldat_feb <- swe_feb %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
-  merge(irr_vol, by= 'wateryear', all.x=TRUE) %>% merge(cm_wide, by= 'wateryear', all.x=TRUE) %>% 
-  merge(snodas_feb, by= 'wateryear')
+alldat_feb <- swe_feb %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(tot_vol, by= 'wateryear') %>% 
+  merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
+  merge(snodas_feb, by= 'wateryear', all=T)
 
 #write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
 #March data for modeling
-alldat_mar <- swe_mar %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
-  merge(irr_vol, by= 'wateryear', all.x=TRUE) %>% merge(cm_wide, by= 'wateryear', all.x=TRUE) %>% 
-  merge(snodas_march, by= 'wateryear')
+alldat_mar <- swe_mar %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(tot_vol, by= 'wateryear', all=T) %>% 
+  merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
+  merge(snodas_march, by= 'wateryear', all=T)
 
 #write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
 #April data for modeling
-alldat_april <- swe_apr %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
-  merge(irr_vol, by= 'wateryear', all.x=TRUE) %>% merge(cm_wide, by= 'wateryear', all.x=TRUE) %>% 
-  merge(snodas_april, by= 'wateryear')
+alldat_april <- swe_apr %>% merge(baseflow, by= 'wateryear',all=T) %>% merge(tot_vol, by= 'wateryear') %>% 
+  merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
+  merge(snodas_april, by= 'wateryear',all=T)
 
 #write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 

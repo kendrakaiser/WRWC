@@ -8,13 +8,15 @@
 
 # Set input parameters and directories in global environment for each model run
 # GitHub File Path
-git_dir=getwd()
+#git_dir=getwd()
+git_dir="/home/sam/Documents/R\ Workspace/WRWC_cronTask"
 
 # Output file paths
 fig_dir <<- file.path(git_dir, 'figures') # github
 input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
-# set end date for AgriMet Data download
+# TODO simdate v.s. run date
+# set end date 
 end_date <<-Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
 
 # ------------------------------------------------------------------------------
@@ -66,7 +68,8 @@ source(file.path(git_dir, 'code/06_streamflow_predictions.R'))
 # Simulate the Irrigation Season Hydrograph
 source(file.path(git_dir, 'code/07_streamflow_simulation.R'))
 
-# Develop curtailment models and make curtailment date predictions - not tested yet
+# Develop curtailment models and make curtailment date predictions 
+# TODO: test with previous years hydrographs to see how accurate
 #source(file.path(git_dir, 'code/08_curtailment_predictions.R'))
 
 # manage data and push necessary outputs to db

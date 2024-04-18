@@ -1,41 +1,9 @@
 # Figures and tables for data analysis and model output from wood river streamflow forecasting
 
 #------------------------------------------------------------------------------
-# Historic condition data
-#TODO: update
- 
-wq<- alldat %>% select("year", "bwh.wq", "bws.wq", "cc.wq", "sc.wq") %>% pivot_longer(!year, names_to = "site", values_to = "winterFlow")
-
-# Boxplots of Historic Conditions
-sitelabs<- c( "Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")
-wq_box<- ggplot(wq %>% filter(year < pred.yr), aes(x=factor(site), y=winterFlow))+
-  geom_boxplot(alpha=0.8)+
-  theme_bw()+
-  xlab("USGS Site")+
-  ylab("Average Nov-Jan Winter Flow (cfs)")+
-  geom_point(data = wq %>% filter(year == pred.yr),  aes(x=factor(site), y=winterFlow), color="blue", size=3, shape=15)+
-  scale_x_discrete(labels= sitelabs)
-
-png(filename = file.path(fig_dir,"wq_box.png"),
-    width = 5.5, height = 5.5,units = "in", pointsize = 12,
-    bg = "white", res = 600) 
-print(wq_box)
-dev.off()
 
 #------------------------------------------------------------------------------
 
-#model output version
-vol.sample<-read.csv(file.path(model_out,"vol.sample.csv"))
-#database input version
-volumes<-vol.sample
-colnames(volumes)<-c("bwh.vol", "bws.vol","cc.vol", "sc.vol") #this has already been read in via the streamflow simulation script; re-consider re-reading it in
-volumes.sampleLong<- volumes %>% pivot_longer(everything(), names_to = "site_name", values_to = "vol_af") 
-
-#model output
-var<-read.csv(file.path(model_out,'all_vars.csv'))
-#database input
-all_vars_long <- var %>% pivot_longer(cols = -c('year'), names_to = "variable", values_to = "value")
-write.csv(all_vars_long, file.path(data_dir,'all_vars_long.csv'), row.names=FALSE)
 # ------------------------------------------------------------------------------
 # Calculate Exceedance Probabilities
 # ------------------------------------------------------------------------------
@@ -174,12 +142,11 @@ print(pc)
 dev.off()
 
 
-
 #-------------------------------------------------------------------------------
 ### Streamflow Simulation Figures
 #-------------------------------------------------------------------------------
 
-#This one works 
+# This one works  --- need to replicate for all sites
 
 sc.wy$Date <- as.Date(sc.wy$datetime)
 sc.wy$doy <- yday(sc.wy$Date)
@@ -204,94 +171,60 @@ legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
 dev.off()
 
+options(scipen = 999)
 
-#These do NOT WORK
+ggplot(var, aes(x=bwh.irr_vol/1000, y=sc.irr_vol/1000))+
+  geom_abline(intercept=24.17,slope=.06781, lty=1, color="lightgrey")+
+  geom_point()+
+  theme_bw()+
+  xlab("Big Wood Hailey Apr-Oct Volume (KAF)")+
+  ylab("Silver Creek Apr-Oct Volume (KAF)")
 
-# #Calculate day of water-year
-# water_year_begin <- ymd('1987-10-01')-1
-# #deal with leap years
-# streamflow_data$doWY<- ((streamflow_data$doy - yday(water_year_begin)) %% ifelse(leap_year(year(streamflow_data$Date)), 366, 365)) +1
-# 
-# 
-# data <- streamflow_data %>% filter(abv == 'bwh') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(value, na.rm=TRUE))
-# 
-# minBW=min(pi[,1], pi[,5],data$meanQ[457:639])
-# maxBW=max(pi[,2], pi[,6],data$meanQ[457:639])
-# # Big Wood @ Hailey
-# png(filename = file.path(fig_dir_mo, "bwh_Simulation.png"),
-#     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-#     bg = "white", res = 600) 
-# plot(dates, pi[,3], type="n", xlab="Date", ylab ="Flow (cfs)",
-#      main = "Big Wood River Streamflow at Hailey", ylim=c(minBW, maxBW))
-# polygon(c(dates[1], dates, rev(dates)), c(pi[1,1], pi[,2], rev(pi[,1])), 
-#         col = "gray90", border = NA)
-# lines(dates,data$meanQ[457:639],lwd=1.5,col="black")
-# lines(dates,pi[,3],lwd=2.5,col="blue")
-# legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
-#        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
-# #flow= bwh.wy[bwh.wy$wy == pred.yr, "bwh.nat.q"]
-# #lines(dates,flow[183:365], lwd=2, col="green")
-# dev.off()
-# 
-# # Big Wood @ Stanton
-# data <- streamflow_data %>% filter(abv == 'bws') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(value, na.rm=TRUE))
-# # Big Wood @ Stanton
-# png(filename = file.path(fig_dir_mo, "BWS_Simulation.png"),
-#     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-#     bg = "white", res = 600) 
-# plot(dates, pi[,7], type="n", xlab="Date", ylab ="Flow (cfs)",
-#      main = "Big Wood Streamflow at Stanton Crossing", ylim=c(minBW, maxBW))
-# polygon(c(dates[1], dates, rev(dates)), c(pi[1,5], pi[,6], rev(pi[,5])), 
-#         col = "gray90", border = NA)
-# lines(dates,data$meanQ[196:378],lwd=1.5,col="black")
-# lines(dates,pi[,7],lwd=2.5,col="blue")
-# legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
-#        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
-# #flow= bws.wy[bws.wy$wy == pred.yr, "bws.nat.q"]
-# #lines(dates,flow[183:365], lwd=2, col="green")
-# dev.off()
-# 
-# # Silver Creek
-# data <- streamflow_data %>% filter(abv == 'sc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(value, na.rm=TRUE))
-# 
-# # Silver Creek
-# png(filename = file.path(fig_dir_mo, "SC_Simulation.png"),
-#     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-#     bg = "white", res = 600) 
-# plot(dates, pi[,11], type="n", xlab="Date", ylab ="Flow (cfs)",
-#      main = "Silver Creek Streamflow Simulation", ylim=c(min(pi[,9]), max(pi[,10])))
-# polygon(c(dates[1], dates, rev(dates) ), c(pi[1,9], pi[,10], rev(pi[,9])), 
-#         col = "gray90", border = NA)
-# lines(dates,data$meanQ[91:273],lwd=1.5,col="black")
-# lines(dates,pi[,11],lwd=2.5,col="blue")
-# legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
-#        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
-# #flow= sc.wy[sc.wy$wy == pred.yr, "sc.nat"]
-# #lines(dates,flow[183:365], lwd=2, col="green")
-# dev.off()
-# 
-# # Camas Creek
-# 
-# data <- streamflow_data %>% filter(abv == 'cc') %>% group_by(doWY) %>% dplyr::mutate(meanQ=mean(value, na.rm=TRUE))
-# mincc=min(pi[,13], data$meanQ[91:273])
-# maxcc=max(pi[,14], data$meanQ[91:273])
-# # Camas Creek
-# png(filename = file.path(fig_dir_mo, "CC_Simulation.png"),
-#     width = 5.5, height = 5.5,units = "in", pointsize = 12,
-#     bg = "white", res = 600) 
-# plot(dates,pi[,15], type="n", xlab="Date", ylab ="Flow (cfs)",
-#      main = "Camas Creek Streamflow Simulation", ylim=c(mincc, maxcc))
-# polygon(c(dates[1], dates, rev(dates) ), c(pi[1,13], pi[,14], rev(pi[,13])), 
-#         col = "gray90", border = NA)
-# lines(dates,data$meanQ[91:273],lwd=1.5,col="black")
-# lines(dates,pi[,15],lwd=2.5,col="blue")
-# legend("topright", inset=.02, legend=c("Historic Avg.", "Avg Simulation"),
-#        col=c("black", "blue"), lty=1:1, lwd=1:2.5,cex=0.8, box.lty=0)
-# #flow= cc.wy[cc.wy$wy == pred.yr, "Flow"]
-# #lines(dates,flow[183:365], lwd=2, col="green")
-# dev.off()
-# 
-# 
+tst<-lm(var$sc.irr_vol ~ var$bwh.irr_vol)
+summary(tst)
+
+#-------------------------------------------------------------------------------
+### SModel variable plots with current conditions
+#-------------------------------------------------------------------------------
+### initial Grouping of vars based on value 
+# boxplot(var[2:13])
+# boxplot(var[c(19:29, 36,38)])
+# boxplot(var[c(50:60)])
+# boxplot(var[c(61:72)])
+# boxplot(var[c(73:78)])
+# Silver Creek
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars) %>% filter(complete.cases(.))
+hist$lwd.log_swe<- exp(hist$lwd.log_swe)
+#SC Prediction Data 
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars)
+pred.dat$lwd.log_swe<-exp(pred.dat$lwd.log_swe)
+
+boxplot(hist[,1])
+stripchart(pred.dat[,1], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,c(3:6)])
+stripchart(pred.dat[,c(3:6)], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,7:9])
+stripchart(pred.dat[,7:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+
+#CC historic data
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars) %>% filter(complete.cases(.))
+#hist$ga.log_swe<- exp(hist$ga.log_swe)
+#CC Prediction Data 
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars)
+#pred.dat$ga.log_swe<-exp(pred.dat$ga.log_swe)
+
+boxplot(hist[,c(2:4)])
+stripchart(pred.dat[,c(2:4)], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,1])
+stripchart(pred.dat[,1], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+
+boxplot(hist[,5:6])
+stripchart(pred.dat[,5:6], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+
+boxplot(hist[,7:9])
+stripchart(pred.dat[,7:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+
+#These do NOT WORK 
 # #Multiple Water Years plotted on one figure
 # plot(dates, bwh.wy$value[bwh.wy$wy == 2006][183:365], xlab="Date", ylab ="Flow (cfs)", type='l', col="black", ylim=c(0,6650))
 # lines(dates,bwh.wy$value[bwh.wy$wy == 2014][183:365], lwd=1, col="black")
@@ -302,14 +235,15 @@ dev.off()
 # 
 # #matplot(bwh.flow.s, type='l',col = "gray90" )
 # #matplot(sc.flow.s, type='l',col = "gray90" )
-# 
+
+
+
 # # TEMP data and MODEL FIGURES
 # #TODO: update with new naming conventions
 # 
 # #---------------
 # #TODO: All of these figures will have to be updated using either new format
-# #from above if static or db format if we are going to have them on the website
-# 
+#
 # #plot all data
 # png(filename = file.path(fig_dir,"SpringTemps.png"),
 #     width = 5.5, height = 5.5,units = "in", pointsize = 12,
@@ -377,5 +311,46 @@ dev.off()
 #   xlab('Observed Mean April - June Temperature (F)') +
 #   ylab('Predicted Mean April - June Temperature (F)')+
 #   theme_bw()
-# 
-# 
+
+flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'streamflow' AND qcstatus = 'true' ORDER BY datetime;")
+
+#seq dates starting with the beginning of water year
+flow <- flow %>% mutate(wyF=factor(wateryear)) %>%
+  mutate(plot_date=as.Date(paste0(ifelse(month(datetime) < 10, pred.yr, pred.yr-1),
+                              "-", month(datetime), "-", day(datetime))))
+
+flow_hist<- flow[flow$wateryear < pred.yr,]
+flow_ytd<- flow[flow$wateryear == pred.yr,]
+
+# New facet label names for supp variable
+site.labs <- c("Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")
+names(site.labs) <- c("bwh", "bws", "cc", "sc")
+                      
+#facet wrap of all sites
+ggplot(flow, aes(x = plot_date, y = flow, group = wateryear)) +
+  geom_line(color = 'lightgrey', lwd = 0.5)+
+  geom_line(data=flow_ytd,  aes(x = plot_date, y = flow, group = wateryear), lwd = 0.5, color='dodgerblue2')+
+  facet_wrap(~sitenote, scales = "free", labeller = labeller(sitenote = site.labs)) +
+  scale_x_date(date_labels = "%b")+
+  theme_bw()+
+  theme(strip.background=element_rect(fill="white"))
+  
+
+#subset to BWH for single plot
+flow_bwh<- flow_hist[flow_hist$sitenote== 'bwh',] 
+flow_bwh_ytd<- flow_ytd[flow_ytd$sitenote== 'bwh',] 
+
+ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear)) +
+  geom_line(lwd = 0.5, color='lightgrey')+
+  geom_line(data=flow_bwh_ytd,  aes(x = plot_date, y = flow, group = wateryear), lwd = 0.5, color='dodgerblue2')+
+  ylab("Big Wood Hailey Streamflow (cfs)")+
+  xlab("Day of Year")+
+  scale_x_date(date_labels = "%b")+
+  theme_bw()+
+  ylim(50,500)
+
+
+
+

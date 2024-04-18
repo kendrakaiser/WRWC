@@ -1,7 +1,8 @@
 #db updater
-git_dir <<- '~/github/WRWC'
+#git_dir <<- '~/github/WRWC'
 #sam's computer: 
-git_dir <<- getwd()
+#git_dir <<- getwd()
+
 source(file.path(git_dir, 'code/init_db.R'))
 source(file.path(git_dir, 'code/01_packages.R'))
 source(paste0(git_dir,"/code/fxn_dbIntakeTools.R")) 
