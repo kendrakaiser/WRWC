@@ -170,7 +170,7 @@ snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum
 #------------------------------------------------------------------------------
 
 #February data for modeling
-alldat_feb <- swe_feb %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(tot_vol, by= 'wateryear') %>% 
+alldat_feb <- swe_feb %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(tot_vol, by= 'wateryear', all=TRUE) %>% 
   merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
   merge(snodas_feb, by= 'wateryear', all=T)
 
@@ -181,7 +181,7 @@ alldat_mar <- swe_mar %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(tot_
 #write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
 #April data for modeling
-alldat_april <- swe_apr %>% merge(baseflow, by= 'wateryear',all=T) %>% merge(tot_vol, by= 'wateryear') %>% 
+alldat_april <- swe_apr %>% merge(baseflow, by= 'wateryear',all=T) %>% merge(tot_vol, by= 'wateryear', all=TRUE) %>% 
   merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
   merge(snodas_april, by= 'wateryear',all=T)
 
