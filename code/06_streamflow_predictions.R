@@ -327,7 +327,7 @@ cm.data = var[var$wateryear >= 1997 & var$wateryear < pred.yr,]
 cm.data = cm.data %>% dplyr::select(wateryear, bwh.cm, bws.cm,cc.cm, sc.cm) 
 cm.data$prob<-NA
 
-samp.sd.cm<- c(sd(var$bwh.cm[var$wateryear < pred.yr]), sd(var$bws.cm[var$wateryear < pred.yr]), sd(var$cc.cm[var$wateryear < pred.yr]), sd(var$sc.cm[var$wateryear < pred.yr]))
+samp.sd.cm<- c(sd(cm.data$bwh.cm[cm.data$wateryear < pred.yr]), sd(cm.data$bws.cm[cm.data$wateryear < pred.yr]), sd(cm.data$cc.cm[cm.data$wateryear < pred.yr]), sd(cm.data$sc.cm[cm.data$wateryear < pred.yr]))
 var.fore.cm<- pred.params.cm[,2] + samp.sd.cm
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
