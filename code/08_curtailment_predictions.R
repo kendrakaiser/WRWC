@@ -72,7 +72,7 @@ wr.quants<-quantile(wr.sub$cuml.cfs, probs=seq(0,1,.05))
 wr.sub$wr.group<- wr.quants[which.min(abs(wr.sub$cuml.cfs - wr.quants))] 
 
 
-
+wr.sub$grp<- ecdf(wr.sub$cuml.cfs)
 
 
 wr.cutoffs$low.grp=NA
