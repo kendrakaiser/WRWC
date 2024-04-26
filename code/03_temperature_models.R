@@ -98,8 +98,8 @@ aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% piv
 
 
 #compile data into one wide table
-all.temp.dat <- nj.snot %>% merge(aj.snot , by= 'wateryear', all.x=TRUE) %>% 
-  merge(tdata.wide, by= 'wateryear', all.x=TRUE) 
+all.temp.dat <- nj.snot %>% merge(aj.snot , by= 'wateryear', all=TRUE) %>% 
+  merge(tdata.wide, by= 'wateryear', all=TRUE) 
 
 #write.csv(all.temp.dat, file.path(data_dir,"temp_dat.csv"), row.names=FALSE)
 
