@@ -84,7 +84,7 @@ bq.long<- bq %>% pivot_longer(cols=c(2:5), names_to ="site",  values_to="wq") %>
 irr_vol.long<- irr_vol %>% pivot_longer(cols=c(2:5), names_to = "site", values_to="irr_vol") %>% mutate(site = sub("\\..*", "", site)) 
 
 
-wint.bq.gw.long<- merge(bq.long, wint.avg.gw, by="wateryear")
+wint.bq.gw.long<- merge(bq.long, wint.avg.gw.idwr, by="wateryear")
 vols_bq<- merge(wint.bq.gw.long, irr_vol.long, by=c("wateryear", "site"))
 vols_bq<- merge(vols_bq, sp.swe, by=c("wateryear"))
 
@@ -120,10 +120,10 @@ ggplot(sc.baseline, aes(x = wq, y = sp.swe, color = site, size=irr_vol)) +
   scale_size_continuous(name = "Irrigation Season Volume (KAF)", range = c(1, 9), breaks = c(80000, 150000, 210000, 230000, 400000))
 
 ### BWH - LABRADOR
-
-bwh.labrador.N <-vols_bq %>% filter(name %in% c("USGS-Labrador North Well")) %>% filter(site %in% c("bwh"))
+#
+bwh.labrador.N <-vols_bq %>% filter(name %in% c("USGS-Labrador South", "Labrador North")) %>% filter(site %in% c("bwh"))
 # Comparison of average winter groundwater levels and baseflows by site
-ggplot(bwh.labrador.N , aes(x = wq, y = average_value, color = site)) +
+ggplot(bwh.labrador.N , aes(x = wq, y = average_value, color = name)) +
   geom_point() +
   labs(x = "Average Winter Baseflow (cfs)", y = "Average Winter Depth to Groundwater (ft) \n USGS Labrador North Well")+
   theme_bw()+
