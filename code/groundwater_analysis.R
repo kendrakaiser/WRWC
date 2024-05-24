@@ -12,9 +12,26 @@ library(DBI)
 source(file.path(git_dir, 'code/init_db.R')) 
 #connect to database
 conn=scdbConnect() 
-
 git_dir=getwd()
 
+## IDWR DATA MANAGEMENT
+gw.idwr<- read_csv(file.path(git_dir, 'input/Water_Level_Export_2024-05-23.csv')) %>% as.data.frame()
+idwr.meta<- read_csv(file.path(git_dir, 'input/IDWR_StationMetaData.csv')) %>% as.data.frame()
+idwr.gw<- merge(gw.idwr, idwr.meta, by='Station Name') %>% dplyr::select(c('Date and Time', 'Value', 'Station Long Name'))
+colnames(idwr.gw)<- c('datetime', 'value', 'name')
+idwr.gw$date <- as.Date(idwr.gw$datetime, "%m/%d/%y")
+idwr.gw$mo<-month(idwr.gw$date)
+idwr.gw$wateryear<- waterYear(idwr.gw$date)
+
+#select only winter months for comparison to winter baseflow (11-1)
+winter.gw.idwr <- idwr.gw[idwr.gw$mo>10 | idwr.gw$mo <2,]
+
+#average the flows across those months based on water year
+wint.avg.gw.idwr <- winter.gw.idwr %>%
+  group_by(name, wateryear) %>%
+  summarise(average_value = mean(value))
+
+#### BASEFLOW
 #baseflow fucntion and wrapper
 bf_wrapper=function(wy, lid, wint_flow_df){
   thisQ=wint_flow_df[wint_flow_df$wateryear == wy & wint_flow_df$locationid == lid,"flow"]
@@ -125,6 +142,7 @@ ggplot(baseline.bq, aes(x = wq, y = average_value, color = site)) +
   scale_y_reverse()
 
 labN.bq<-vols_bq %>% filter(name %in% c("USGS-Labrador North Well"))
+labN.gw<-winter.gw %>% filter(name %in% c("USGS-Labrador North Well"))
 
 ggplot(labN.bq, aes(x = wq, y = average_value, color = site)) +
   geom_point() +
