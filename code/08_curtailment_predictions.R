@@ -7,7 +7,7 @@ library(viridis)
 library(ggnewscale)
 
 #import data 
-wr_og<-read.csv(file.path(input_dir,'WD37__01192021 Irrigation rights Big Wood Above Magic.csv'))
+wr_og<-read.csv(file.path(input_dir,'WD37_Irrigation rights Big Wood Above Magic.csv'))
 
 #subset to relevant columns
 wr<- wr_og %>% dplyr::select('Right.ID', 'Priority.Date', 'PD.Sort.Key', "Overall.Max.Diversion.Rate.cfs.", 
@@ -62,14 +62,33 @@ wr.cutoffs$cut.wr.med<-Reduce(c, lapply(wr.cutoffs$bwh.medQ, cutoff, wr.sub))
 wr.cutoffs$cut.wr.low<-Reduce(c, lapply(wr.cutoffs$bwh.lowQ, cutoff, wr.sub))
 #wr.cutoffs$cut.wr.low[1:which(wr.cutoffs$bwh.lowQ == max(wr.cutoffs$bwh.lowQ))]<-NA #ignore cutoffs before peak
 
-wr.cutoffs$ymo.hi<- zoo::as.yearmon(wr.cutoffs$cut.wr.hi)
-wr.cutoffs$ymo.med<- zoo::as.yearmon(wr.cutoffs$cut.wr.med)
-wr.cutoffs$ymo.low<- zoo::as.yearmon(wr.cutoffs$cut.wr.low)
-
+#wr.cutoffs$ymo.hi<- zoo::as.yearmon(wr.cutoffs$cut.wr.hi)
+#wr.cutoffs$ymo.med<- zoo::as.yearmon(wr.cutoffs$cut.wr.med)
+#wr.cutoffs$ymo.low<- zoo::as.yearmon(wr.cutoffs$cut.wr.low)
 ymo.list<-unique(c(wr.cutoffs$ymo.hi,wr.cutoffs$ymo.med,wr.cutoffs$ymo.low))
 ymo.list<- ymo.list[order(ymo.list)]
 
+wr.quants<-quantile(wr.sub$cuml.cfs, probs=seq(0,1,.05))
+wr.sub$wr.group<- wr.quants[which.min(abs(wr.sub$cuml.cfs - wr.quants))] 
 
+
+wr.sub$grp<- ecdf(wr.sub$cuml.cfs)
+
+
+wr.cutoffs$low.grp=NA
+wr.cutoffs$med.grp=NA
+wr.cutoffs$hi.grp=NA
+
+for (i in 1:nrow(wr.cutoffs)){
+  wr.cutoffs$low.grp[i]<- wr.sub$wr.group[wr.sub$priority.date == wr.cutoffs$cut.wr.low[i]]
+  wr.cutoffs$med.grp[i]<- wr.sub$wr.group[wr.sub$priority.date == wr.cutoffs$cut.wr.med[i]]
+  wr.cutoffs$hi.grp[i]<- wr.sub$wr.group[wr.sub$priority.date == wr.cutoffs$cut.wr.hi[i]]
+}
+
+
+gr.min<-aggregate(priority.date~ wr.group, data=wr.sub, FUN=min)
+gr.max<-aggregate(priority.date~ wr.group, data=wr.sub, FUN=max) #this is the one to use to label
+grp.labels<-merge(gr.min, gr.max, by='wr.group', suffixes=c('.min', '.max'))
 
 wr.ts<- function(wr.co, flow, sitename="name"){
   wr.co[sitename]<- flow
@@ -83,14 +102,14 @@ wr.ts<- function(wr.co, flow, sitename="name"){
 #wr.cutoffs<- wr.ts(wr.cutoffs, pi[,"bwh.med"], sitename = "bws.medQ")
 
 ggplot(data=wr.cutoffs) + 
-  geom_point(aes(x=date, y=bwh.hiQ, color= as.factor(ymo.hi)), show.legend = FALSE)+
-  scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(ymo.list))+ 
+  geom_point(aes(x=date, y=bwh.hiQ, color= as.factor(hi.grp)), show.legend = FALSE)+
+  scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(unique(wr.sub$wr.group)))+ 
   new_scale_colour() +
-  geom_point(aes(x=date, y=bwh.medQ, color= as.factor(ymo.med)), show.legend = FALSE)+
-  scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(ymo.list))+  
+  geom_point(aes(x=date, y=bwh.medQ, color= as.factor(med.grp)), show.legend = FALSE)+
+  scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(unique(wr.sub$wr.group)))+  
   new_scale_colour() +
-  geom_point(aes(x=date, y=bwh.lowQ, color= as.factor(ymo.low)))+
-  scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(ymo.list))+  
+  geom_point(aes(x=date, y=bwh.lowQ, color= as.factor(low.grp)))+
+  scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(unique(wr.sub$wr.group)))+  
   theme_bw()+
   scale_y_continuous(n.breaks=8)+
   scale_x_date(date_breaks = "weeks" , date_labels = "%m/%d", limits=c(wr.cutoffs$date[1], wr.cutoffs$date[183]))+

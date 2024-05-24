@@ -18,5 +18,5 @@ if (month(end_date) == 2){
 swe_q[swe_q == 0] <- 0.01 # change zeros to a value so lm works 
 
 # combine discharge & SWE with temp data
-var = swe_q %>% merge(all.temp.dat, by ="wateryear", all.x=TRUE)
+var = swe_q %>% merge(all.temp.dat, by ="wateryear", all=TRUE)
 

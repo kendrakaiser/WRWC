@@ -170,23 +170,20 @@ snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum
 #------------------------------------------------------------------------------
 
 #February data for modeling
-alldat_feb <- swe_feb %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
-  merge(irr_vol, by= 'wateryear', all.x=TRUE) %>% merge(cm_wide, by= 'wateryear', all.x=TRUE) %>% 
-  merge(snodas_feb, by= 'wateryear')
+alldat_feb <- swe_feb %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(tot_vol, by= 'wateryear', all=TRUE) %>% 
+  merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
+  merge(snodas_feb, by= 'wateryear', all=T)
 
-#write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
-
-#March data for modeling
-alldat_mar <- swe_mar %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
-  merge(irr_vol, by= 'wateryear', all.x=TRUE) %>% merge(cm_wide, by= 'wateryear', all.x=TRUE) %>% 
-  merge(snodas_march, by= 'wateryear')
+alldat_mar <- swe_mar %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(tot_vol, by= 'wateryear', all=T) %>% 
+  merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
+  merge(snodas_march, by= 'wateryear', all=T)
 
 #write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
 #April data for modeling
-alldat_april <- swe_apr %>% merge(baseflow, by= 'wateryear') %>% merge(tot_vol, by= 'wateryear') %>% 
-  merge(irr_vol, by= 'wateryear', all.x=TRUE) %>% merge(cm_wide, by= 'wateryear', all.x=TRUE) %>% 
-  merge(snodas_april, by= 'wateryear')
+alldat_april <- swe_apr %>% merge(baseflow, by= 'wateryear',all=T) %>% merge(tot_vol, by= 'wateryear', all=TRUE) %>% 
+  merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
+  merge(snodas_april, by= 'wateryear',all=T)
 
 #write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 

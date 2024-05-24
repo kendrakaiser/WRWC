@@ -166,13 +166,26 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, 
   #output.cm[1,1]<-mean(apply(hist.temps, MARGIN=2, mean)) 
   #output.cm[1,2]<-as.list(round(cur.temps,3))
 
-  output.cm[1,1]<-  if (length(grep('swe',names(mod.cm$coefficients))) >0) {
+  output.cm[1,1]<-  if (length(grep('swe',mod.cm$coefnames )) >0) {
     round(mean(as.matrix(pred.swe), na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =TRUE),3)*100
     } else {'No SWE Param'}
     #round(sum(pred.swe, na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =T),3) 
-  output.cm[1,2]<-round(mean(predictions),0) 
-  output.cm[1,3]<-round(mean(predictions)-mean(hist.cm,na.rm=TRUE),0) 
-  output.cm[1,4]<-format(wy$Date[wy$day==round(mean(predictions, na.rm=TRUE),0)],"%b-%d")
+
+  
+  cm_predict=round(mean(predictions,na.rm=T))
+  
+  #limit cm predictions to the observed range
+  # if(all(cm_predict>hist.cm)){
+  #   cm_predict=round(max(hist.cm, na.rm = T))
+  # }
+  # 
+  # if(all(cm_predict<hist.cm)){
+  #   cm_predict=round(min(hist.cm, na.rm=T))
+  # }
+  # 
+  output.cm[1,2]<-cm_predict
+  output.cm[1,3]<-cm_predict-mean(hist.cm) 
+  output.cm[1,4]<-format(wy$Date[wy$day==cm_predict],"%b-%d")
   
   return(list(output.cm, pred.params.cm))
 }
@@ -219,7 +232,7 @@ pred.params.cm[2,] <- mod_out[[2]]
 # --------------------
 # Silver Creek Center of Mass
 # added 'if' statement here because March SC CM doesn't use aj temperatures
-if (is.integer(grep('aj', cm_mod_sum$sc$vars))){ 
+if (any(grepl('aj', cm_mod_sum$sc$vars))){ 
   sub_params<- cm_mod_sum$sc$vars[-grep('aj', cm_mod_sum$sc$vars)]
   aj_params<-cm_mod_sum$sc$vars[grep('aj', cm_mod_sum$sc$vars)]
   # Prediction Data with modeled temperature data
@@ -314,7 +327,7 @@ cm.data = var[var$wateryear >= 1997 & var$wateryear < pred.yr,]
 cm.data = cm.data %>% dplyr::select(wateryear, bwh.cm, bws.cm,cc.cm, sc.cm) 
 cm.data$prob<-NA
 
-samp.sd.cm<- c(sd(var$bwh.cm[var$wateryear < pred.yr]), sd(var$bws.cm[var$wateryear < pred.yr]), sd(var$cc.cm[var$wateryear < pred.yr]), sd(var$sc.cm[var$wateryear < pred.yr]))
+samp.sd.cm<- c(sd(cm.data$bwh.cm[cm.data$wateryear < pred.yr]), sd(cm.data$bws.cm[cm.data$wateryear < pred.yr]), sd(cm.data$cc.cm[cm.data$wateryear < pred.yr]), sd(cm.data$sc.cm[cm.data$wateryear < pred.yr]))
 var.fore.cm<- pred.params.cm[,2] + samp.sd.cm
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
@@ -383,3 +396,5 @@ var.fore<- pred.params.vol[,2] + samp.sd
 #output.vol[1,3]<-round(predictions$fit[1]/mean(vol, na.rm=TRUE) *100,0) 
 #swe_cols <- hist %>% dplyr::select(contains('swe'))
 # lastQ<- var$cc.irr_vol[var$wateryear == pred.yr-1]
+#output.cm
+
