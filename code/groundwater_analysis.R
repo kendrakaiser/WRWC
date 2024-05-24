@@ -14,23 +14,30 @@ source(file.path(git_dir, 'code/init_db.R'))
 conn=scdbConnect() 
 
 git_dir=getwd()
-#gw.idwr<- read_csv(file.path(git_dir, 'input/gw-idwr.csv')) 
 
-#calculate baseflow values for the entire year
-baseflow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
-           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'streamflow' AND qcstatus = 'true' 
-                     ORDER BY datetime;")
-
+#baseflow fucntion and wrapper
 bf_wrapper=function(wy, lid, wint_flow_df){
   thisQ=wint_flow_df[wint_flow_df$wateryear == wy & wint_flow_df$locationid == lid,"flow"]
   bf=baseflowA(thisQ)
   return(mean(bf$bf))
 }
 
-avgBaseflow=unique(baseflow[,c("wateryear","metric","locationid","name","sitenote")])
+#pull winter flow to do baseflow filter on
+wint_flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
+                     ORDER BY datetime;")
 
-avgBaseflow$wq = mapply(bf_wrapper, wy=avgBaseflow$wateryear, lid=avgBaseflow$locationid, MoreArgs = list(wint_flow_df=baseflow))
+avgBaseflow=unique(wint_flow[,c("wateryear","metric","locationid","name","sitenote")])
+avgBaseflow$wq = mapply(bf_wrapper, wy=avgBaseflow$wateryear, lid=avgBaseflow$locationid, MoreArgs = list(wint_flow_df=wint_flow))
+
+#calculate baseflow values for the entire year
+flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'streamflow' AND qcstatus = 'true' 
+                     ORDER BY datetime;")
+avg.annaual.bq=unique(flow[,c("wateryear","metric","locationid","name","sitenote")])
+avg.annaual.bq$wq = mapply(bf_wrapper, wy=avg.annaual.bq$wateryear, lid=avg.annaual.bq$locationid, MoreArgs = list(wint_flow_df=flow))
 
 
 # Pull GW data out of database
@@ -47,11 +54,6 @@ winter.gw$wateryear<- waterYear(winter.gw$datetime)
 wint.avg.gw <- winter.gw %>%
   group_by(name, wateryear) %>%
   summarise(average_value = mean(value))
-
-# Transform WIDE
-wint.avg.gwW<- wint.avg.gw %>%
-  pivot_wider(names_from = name, values_from = average_value)
-
 
 # SUBSET all the WRWC model variables to only winter baseflow (wq)
 # this will only run after the model has been run through #04 which produces var
@@ -100,46 +102,32 @@ ggplot(sc.baseline, aes(x = wq, y = sp.swe, color = site, size=irr_vol)) +
   theme_bw()+
   scale_size_continuous(name = "Irrigation Season Volume (KAF)", range = c(1, 9), breaks = c(80000, 150000, 210000, 230000, 400000))
 
+### BWH - LABRADOR
+
+bwh.labrador.N <-vols_bq %>% filter(name %in% c("USGS-Labrador North Well")) %>% filter(site %in% c("bwh"))
 # Comparison of average winter groundwater levels and baseflows by site
-ggplot(wint, aes(x = wq, y = average_value, color = site)) +
+ggplot(bwh.labrador.N , aes(x = wq, y = average_value, color = site)) +
+  geom_point() +
+  labs(x = "Average Winter Baseflow (cfs)", y = "Average Winter Depth to Groundwater (ft) \n USGS Labrador North Well")+
+  theme_bw()+
+  scale_y_reverse()
+
+
+#### ALL SITES
+# Comparison of average winter groundwater levels and baseflows by site
+
+baseline.bq<-vols_bq %>% filter(name %in% c("USGS-Baseline Well"))
+
+ggplot(baseline.bq, aes(x = wq, y = average_value, color = site)) +
   geom_point() +
   labs(x = "Average Winter Baseflow (cfs)", y = "Average Winter Depth to Groundwater (ft) \n USGS Baseline Well")+
   theme_bw()+
   scale_y_reverse()
 
-simplot<-vols_bq %>% filter(name %in% c("USGS-Simplot Cutoff Rd South Well"))
+labN.bq<-vols_bq %>% filter(name %in% c("USGS-Labrador North Well"))
 
-ggplot(simplot, aes(x = wq, y = average_value, color = site)) +
+ggplot(labN.bq, aes(x = wq, y = average_value, color = site)) +
   geom_point() +
-  labs(x = "Average Winter Baseflow (cfs)", y = "Average Winter Depth to Groundwater (ft) \n USGS Simplot Well")+
+  labs(x = "Average Winter Baseflow (cfs)", y = "Average Winter Depth to Groundwater (ft) \n USGS Baseline Well")+
   theme_bw()+
   scale_y_reverse()
-
-
-plot.bq <-vols_bq %>% filter(name %in% c("USGS-Labrador North Well"))
-# Comparison of average winter groundwater levels and baseflows by site
-ggplot(plot.bq, aes(x = wq, y = average_value, color = site)) +
-  geom_point() +
-  labs(x = "Average Winter Baseflow (cfs)", y = "Average Winter Depth to Groundwater (ft) \n USGS Labrador North Well")+
-  theme_bw()+
-  scale_y_reverse()
-
-
-plot.bq<-vols_bq %>% filter(name %in% c("USGS-Labrador South Well"))
-
-# Comparison of average winter groundwater levels and baseflows by site
-ggplot(plot.bq, aes(x = wq, y = average_value, color = site)) +
-  geom_point() +
-  labs(x = "Average Winter Baseflow (cfs)", y = "Average Winter Depth to Groundwater (ft) \n USGS Labrador South Well")+
-  theme_bw()+
-  scale_y_reverse()
-
-
-
-# Comparison of average winter groundwater levels and baseflows by site
-ggplot(plot.bq, aes(x = wq, y = average_value, color = site)) +
-  geom_point() +
-  labs(x = "Average Winter Baseflow (cfs)", y = "Average Winter Depth to Groundwater (ft) \n USGS Labrador North Well")+
-  theme_bw()+
-  scale_y_reverse()
-
