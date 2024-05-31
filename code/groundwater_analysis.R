@@ -94,12 +94,6 @@ vols_bq<- merge(vols_bq, sp.swe, by=c("wateryear"))
 # c("IDWR-Greyhawk Village Well", "USGS-Labrador North Well", "USGS Stocker Creek Well", "USGS-Baseline Well")
 
 sc.baseline<-vols_bq %>% filter(name %in% c("USGS-Baseline")) %>% filter(site %in% c("sc"))
-
-ylim.prim=c(25, 65)
-ylim.sec =c(-10,-30)
-
-b <- diff(ylim.prim)/diff(ylim.sec)
-a <- ylim.prim[1] - b*ylim.sec[1]
                                
 sc.baseline%>% filter(complete.cases(.)) %>%
 ggplot()+
