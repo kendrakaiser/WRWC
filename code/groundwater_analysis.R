@@ -19,7 +19,8 @@ gw.idwr<- read_csv(file.path(git_dir, 'input/Water_Level_Export_2024-05-23.csv')
 idwr.meta<- read_csv(file.path(git_dir, 'input/IDWR_StationMetaData.csv')) %>% as.data.frame()
 idwr.gw<- merge(gw.idwr, idwr.meta, by='Station Name') %>% dplyr::select(c('Date and Time', 'Value', 'Station Long Name'))
 colnames(idwr.gw)<- c('datetime', 'value', 'name')
-idwr.gw$date <- as.Date(idwr.gw$datetime, "%m/%d/%y")
+#idwr.gw$date <- as.Date(idwr.gw$datetime, "%m/%d/%y")
+idwr.gw$date <- as.Date(idwr.gw$datetime)
 idwr.gw$mo<-month(idwr.gw$date)
 idwr.gw$wateryear<- waterYear(idwr.gw$date)
 
@@ -75,7 +76,7 @@ wint.avg.gw <- winter.gw %>%
 # SUBSET all the WRWC model variables to only winter baseflow (wq)
 # this will only run after the model has been run through #04 which produces var
 bq<-var[,c("wateryear", "cc.wq", "sc.wq", "bwh.wq", "bws.wq")]
-wint.bq.gw<- merge(bq, wint.avg.gwW, by="wateryear")
+wint.bq.gw<- merge(bq, wint.avg.gw, by="wateryear")
 irr_vol<-var[,c("wateryear", "cc.irr_vol", "sc.irr_vol", "bwh.irr_vol", "bws.irr_vol")]
 sp.swe<- var[,c("wateryear","sp.swe")]
 
@@ -92,9 +93,31 @@ vols_bq<- merge(vols_bq, sp.swe, by=c("wateryear"))
 # Wells since 1987
 # c("IDWR-Greyhawk Village Well", "USGS-Labrador North Well", "USGS Stocker Creek Well", "USGS-Baseline Well")
 
-sc.baseline<-vols_bq %>% filter(name %in% c("USGS-Baseline Well")) %>% filter(site %in% c("sc"))
+sc.baseline<-vols_bq %>% filter(name %in% c("USGS-Baseline")) %>% filter(site %in% c("sc"))
+
+ylim.prim=c(25, 65)
+ylim.sec =c(-10,-30)
+
+b <- diff(ylim.prim)/diff(ylim.sec)
+a <- ylim.prim[1] - b*ylim.sec[1]
+                               
+sc.baseline%>% filter(complete.cases(.)) %>%
+ggplot()+
+  geom_bar(aes(x= wateryear, y=irr_vol/1000), stat="identity", fill ='grey')+
+  geom_point(aes(x= wateryear, y = -average_value+60), color ='black', size=2)+
+  scale_y_continuous(
+    # Features of the first axis
+    name = "Irrigation Streamflow Volume \n at Silver Creek (KAF)",
+    # Add a second axis and specify its features
+    sec.axis = sec_axis(~ .-60, name="Average Winter Depth to Groundwater \n USGS Baseline Well (ft)"))+
+  labs(x = "Water Year")+
+  theme_bw()
+
+ggplot(sc.baseline)+
+  geom_point(aes(x= wateryear, y=average_value*-1), color ='black', size=2)
 
 sc.bq<-lm(sc.baseline$wq~sc.baseline$average_value) #Adj R2 86%
+
 
 # comparison of baseflow, irrigation season volume and snowpack
 ggplot(sc.baseline, aes(x = wq, y = average_value)) +
@@ -125,7 +148,7 @@ bwh.labrador.N <-vols_bq %>% filter(name %in% c("USGS-Labrador South", "Labrador
 # Comparison of average winter groundwater levels and baseflows by site
 ggplot(bwh.labrador.N , aes(x = wq, y = average_value, color = name)) +
   geom_point() +
-  labs(x = "Average Winter Baseflow (cfs)", y = "Average Winter Depth to Groundwater (ft) \n USGS Labrador North Well")+
+  labs(x = "Average Winter Baseflow - Big Wood Hailey (cfs)", y = "Average Winter Depth to Groundwater (ft) \n USGS Labrador North Well")+
   theme_bw()+
   scale_y_reverse()
 
