@@ -11,8 +11,9 @@
 
 # Pull AGRIMET Data from database
 # -----------------------------------------------------------------------------
-# TODO: automate pulling the averaged agrimet data from db - test code aint workin
-agrimet<- dbGetQuery(conn, "SELECT date AS date_time, day_mean_t AS temperature_mean, site_name AS site_name, month AS mo, y AS y, wy AS wy FROM daily_air_temperature;")
+agrimet<- dbGetQuery(conn, paste0("SELECT date AS date_time, day_mean_t AS temperature_mean, site_name AS site_name, month AS mo, y AS y, wy AS wy 
+                                  FROM daily_air_temperature
+                                  WHERE date <= '",end_date,"';"))
 #renamed agrimet columns to match snotel for calculations
 
 #remove values that are erroneous
@@ -21,27 +22,28 @@ agrimet$temperature_mean[agrimet$temperature_mean > 130] <- NA
 
 
 #Mean Nov- Jan Temp
-snotel.nj_temp=dbGetQuery(conn,"SELECT count(value) AS n_obs, wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempf, data.locationid, name, sitenote
+snotel.nj_temp=dbGetQuery(conn,paste0("SELECT count(value) AS n_obs, wateryear(datetime) AS wateryear, metric, avg(value) AS nj_tempf, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND sitenote != 'ccd'
            AND (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) <= 1) 
-           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+           AND datetime <= '",end_date,"'
+           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
 
 #Also, ccd has 83 obs in 2017...  including it here drops the whole year later, which kinda sucks considering how many other temperatures are available
 
 snotel.nj_temp=snotel.nj_temp[snotel.nj_temp$n_obs>=86,-1] #all 2024 data has at most 86 observations, so if I use 88 as a threshold 2024 is excluded entirely.  
 
 
-snotel.aj_temp=dbGetQuery(conn,"SELECT count(value) AS n_obs, wateryear(datetime) AS wateryear, metric, avg(value) AS aj_tempf, data.locationid, name, sitenote
+snotel.aj_temp=dbGetQuery(conn,paste0("SELECT count(value) AS n_obs, wateryear(datetime) AS wateryear, metric, avg(value) AS aj_tempf, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND 
            (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) <= 6)
-           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
+           AND datetime <= '",end_date,"'
+           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
 
 snotel.aj_temp=snotel.aj_temp[snotel.aj_temp$n_obs>=90,-1]    # much less missing data in this period
 
 
-#TODO make a SQL query for agrimet data so that its all streamlined??
 
 # Analyze and Predict temperature trend ----
 # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993

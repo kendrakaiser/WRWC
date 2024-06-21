@@ -13,18 +13,41 @@
 # dbExecute(conn, "CREATE TABLE volumemodels(modelid SERIAL PRIMARY KEY,
 #         modeldate DATE, devdate DATE, models TEXT);")
 
-volModels_db=vol_models
 
-writeModelQuery=DBI::sqlInterpolate(conn, sql="INSERT INTO volumemodels (modeldate, devdate, models) VALUES (?modDate, ?devDate, ?models );",
-                                    modDate=as.Date(paste0(year(end_date), "/", month(end_date), "/", 1)),
-                                    devDate=Sys.Date(),
-                                    models=capture.output(cat(capture.output(dump("volModels_db",file="")),file="",sep="")))
-dbExecute(conn,writeModelQuery)
 
+modelFromDB=dbGetQuery(conn,paste0("SELECT * FROM volumemodels WHERE modeldate = '",as.Date(paste0(year(end_date), "/", month(end_date), "/", 1)),"';"))
+rm(volModels_db) # the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
+
+anyModelsEqual=F
+for(i in 1:nrow(modelFromDB)){
+  eval(parse(text=modelFromDB$models[i])) #comes through as volModels_db)
+  
+  for(n in names(vol_models)){
+    allModelsEqual=T
+    dbCoef=coef(volModels_db[[n]])
+    thisCoef=coef(vol_models[[n]])
+    allModelsEqual=allModelsEqual & identical(dbCoef,thisCoef)
+  }
+  if(allModelsEqual=T){
+    anyModelsEqual=T
+  }
+}
+
+if(!anyModelsEqual){
+  volModels_db=vol_models
+  
+  writeModelQuery=DBI::sqlInterpolate(conn, sql="INSERT INTO volumemodels (modeldate, devdate, models) VALUES (?modDate, ?devDate, ?models );",
+                                      modDate=as.Date(paste0(year(end_date), "/", month(end_date), "/", 1)),
+                                      devDate=Sys.Date(),
+                                      models=capture.output(cat(capture.output(dump("volModels_db",file="")),file="",sep="")))
+  dbExecute(conn,writeModelQuery)
+}
 # How you pull models from db
 # dbModel=dbGetQuery(conn, "SELECT * FROM volumemodels") #WHERE...
-# rm(volModels_db)# the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
+# rm(volModels_db) # the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
 # vol_mods<-eval(parse(text=dbModel$models[1]))
+
+
 
 # ------------------------------------------------------------------------------
 # write the prediction intervals for daily streamflow output
@@ -32,6 +55,9 @@ dbExecute(conn,writeModelQuery)
 pi_date=pi
 pi_date$date=as.Date(rownames(pi))
 dbWriteTable(conn,"predictionintervals",pi_date,overwrite=T)
+
+dbGetQuery(conn,"SELECT * FROM predictionintervals;")
+
 
 # ------------------------------------------------------------------------------
 # write Curtailment model output
@@ -113,23 +139,23 @@ writeSummaryStats(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=end_
 #   
 #   return(bpData)
 # }
-  #boxplot wants:
-  # Value
-  # List with the following components:
-  # stats	
-  #  a matrix, each column contains the extreme of the lower whisker, the lower hinge, the median, the upper hinge and 
-  # the extreme of the upper whisker for one group/plot. If all the inputs have the same class attribute, so will this component.
-  # n	
-  #  a vector with the number of (non-NA) observations in each group.
-  # conf	
-  #  a matrix where each column contains the lower and upper extremes of the notch.
-  # out	
-  #  the values of any data points which lie beyond the extremes of the whiskers.
-  # group	
-  #  a vector of the same length as out whose elements indicate to which group the outlier belongs.
-  # names	
-  #  a vector of names for the groups.
-  
+#boxplot wants:
+# Value
+# List with the following components:
+# stats	
+#  a matrix, each column contains the extreme of the lower whisker, the lower hinge, the median, the upper hinge and 
+# the extreme of the upper whisker for one group/plot. If all the inputs have the same class attribute, so will this component.
+# n	
+#  a vector with the number of (non-NA) observations in each group.
+# conf	
+#  a matrix where each column contains the lower and upper extremes of the notch.
+# out	
+#  the values of any data points which lie beyond the extremes of the whiskers.
+# group	
+#  a vector of the same length as out whose elements indicate to which group the outlier belongs.
+# names	
+#  a vector of names for the groups.
+
 
 
 # SAMPLE code to show how to make boxplot from data stored in db - mmove to shiny
@@ -169,5 +195,7 @@ my_table_theme <- ttheme_default(core=list(fg_params = list(col = c("red","darko
 grid.table(ex.vols, theme = my_table_theme, rows = NULL)
 
 # Write exceedance prob to db
+
 dbWriteTable(conn,"exceednaceprobabilities",ex.vols,overwrite=T)
+
 
