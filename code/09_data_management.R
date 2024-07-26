@@ -28,7 +28,7 @@ for(i in 1:nrow(modelFromDB)){
     thisCoef=coef(vol_models[[n]])
     allModelsEqual=allModelsEqual & identical(dbCoef,thisCoef)
   }
-  if(allModelsEqual=T){
+  if(allModelsEqual==T){
     anyModelsEqual=T
   }
 }
