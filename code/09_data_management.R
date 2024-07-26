@@ -19,17 +19,20 @@ modelFromDB=dbGetQuery(conn,paste0("SELECT * FROM volumemodels WHERE modeldate =
 rm(volModels_db) # the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
 
 anyModelsEqual=F
-for(i in 1:nrow(modelFromDB)){
-  eval(parse(text=modelFromDB$models[i])) #comes through as volModels_db)
-  
-  for(n in names(vol_models)){
-    allModelsEqual=T
-    dbCoef=coef(volModels_db[[n]])
-    thisCoef=coef(vol_models[[n]])
-    allModelsEqual=allModelsEqual & identical(dbCoef,thisCoef)
-  }
-  if(allModelsEqual==T){
-    anyModelsEqual=T
+
+if(nrow(modelFromDB)>0){
+  for(i in 1:nrow(modelFromDB)){
+    eval(parse(text=modelFromDB$models[i])) #comes through as volModels_db)
+    
+    for(n in names(vol_models)){
+      allModelsEqual=T
+      dbCoef=coef(volModels_db[[n]])
+      thisCoef=coef(vol_models[[n]])
+      allModelsEqual=allModelsEqual & identical(dbCoef,thisCoef)
+    }
+    if(allModelsEqual==T){
+      anyModelsEqual=T
+    }
   }
 }
 

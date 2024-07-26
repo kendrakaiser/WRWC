@@ -57,7 +57,7 @@ vol_model<-function(site, sites, max_var){
   # site= "bwh"
   # sites= "bwh"
   # max_var = 10
-  
+
   site_vars<- grep(paste(sites, collapse="|"), colnames(var))
   hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
                                                           all_of(swe_cols), all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols)))

@@ -27,7 +27,7 @@ source(file.path(git_dir,'code/fxn_baseflowA.r'))
 wint_flow=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
-           AND datetime <= '",end_date,"'
+           AND datetime::date <= '",end_date,"'::date
            ORDER BY datetime;")
                      )
 
@@ -45,11 +45,13 @@ avgBaseflow$wq = mapply(bf_wrapper, wy=avgBaseflow$wateryear, lid=avgBaseflow$lo
 baseflow<-pivot_wider(data=avgBaseflow[,c("wateryear","wq","sitenote")],names_from = c(sitenote),values_from = c(wq), names_glue = "{sitenote}.wq")
 
 #Total Irrigation Season April-September streamflow in AF [1.98 #convert from cfs to ac-ft]
-irr_AF=dbGetQuery(conn,paste0("SELECT * FROM (SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS irr_vol, data.locationid, name, sitenote, COUNT(DISTINCT( dataid)) AS days_in_record
-           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 10)
-           AND datetime <= '",end_date,"'
-           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear) as histvols WHERE days_in_record > 180;"))  # complete record is 183 days
+irr_AF=dbGetQuery(conn,paste0("SELECT * FROM (
+            SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS irr_vol, data.locationid, name, sitenote, COUNT(DISTINCT(dataid)) AS days_in_record
+            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 10)
+            AND datetime::date <= '",end_date,"'::date
+            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear
+          ) as histvols WHERE days_in_record > 180;"))  # complete record is 183 days
 
 #TODO  DO WE NEED A SIMILAR CATCH FOR cases (current year) where tot_af and cm_dat return an incomplete dataset?
 
@@ -59,7 +61,7 @@ irr_vol<-pivot_wider(data=irr_AF[,c("wateryear","irr_vol","sitenote")],names_fro
 #Total Water Year volume in AF [1.98 #convert from cfs to ac-ft]
 tot_AF=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS tot_vol, data.locationid, name, sitenote
           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-          WHERE metric = 'streamflow' AND qcstatus = 'true' AND datetime <= '",end_date,"'
+          WHERE metric = 'streamflow' AND qcstatus = 'true' AND datetime::date <= '",end_date,"'::date
           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
 
 tot_AF$wy1<-tot_AF$wateryear-1
@@ -73,7 +75,7 @@ tot_vol<-pivot_wider(data=totAF[,c("wateryear","tot_vol","ly_vol","sitenote")], 
 cm_dat=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS flow, data.locationid, name, sitenote,  EXTRACT(doy FROM datetime) AS doy 
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 8)
-           AND datetime <= '",end_date,"'
+           AND datetime::date <= '",end_date,"'::date
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote, doy) ORDER BY wateryear;"))
 
 years<- min(cm_dat$wateryear):max(cm_dat$wateryear)
@@ -100,7 +102,7 @@ print('Streamflow Metrics Complete')
 winterSWE_feb=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
            (EXTRACT(day FROM datetime) = 1 AND EXTRACT(month FROM datetime) = 2)
-           AND metric = 'swe' AND qcstatus = 'true' AND datetime <= '",end_date,"'
+           AND metric = 'swe' AND qcstatus = 'true' AND datetime::date <= '",end_date,"'::date
            ORDER BY wateryear;"))
 # pivot data wider
 swe_feb<-pivot_wider(data=winterSWE_feb[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
@@ -109,7 +111,7 @@ swe_feb<-pivot_wider(data=winterSWE_feb[,c("wateryear","metric","swe","sitenote"
 winterSWE_mar=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
            (EXTRACT(day FROM datetime) = 1 AND EXTRACT(month FROM datetime) = 3)
-           AND metric = 'swe' AND qcstatus = 'true' AND datetime <= '",end_date,"'
+           AND metric = 'swe' AND qcstatus = 'true' AND datetime::date <= '",end_date,"'::date
            ORDER BY wateryear;"))
 # pivot data wider
 swe_mar<-pivot_wider(data=winterSWE_mar[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
@@ -118,7 +120,7 @@ swe_mar<-pivot_wider(data=winterSWE_mar[,c("wateryear","metric","swe","sitenote"
 winterSWE_apr=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
            (EXTRACT(day FROM datetime) = 1 AND EXTRACT(month FROM datetime) = 4)
-           AND metric = 'swe' AND qcstatus = 'true' AND datetime <= '",end_date,"'
+           AND metric = 'swe' AND qcstatus = 'true' AND datetime::date <= '",end_date,"'::date
            ORDER BY wateryear;"))
 # pivot data wider
 swe_apr<-pivot_wider(data=winterSWE_apr[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
@@ -127,7 +129,7 @@ swe_apr<-pivot_wider(data=winterSWE_apr[,c("wateryear","metric","swe","sitenote"
 #Grab Todays SWE
 todaySWE_=dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid) datetime, wateryear(datetime) AS wateryear, metric AS swe, value, locations.locationid, locations.name 
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'swe' AND qcstatus = true AND datetime <= '",end_date,"' 
+           WHERE metric = 'swe' AND qcstatus = true AND datetime::date <= '",end_date,"'::date 
            ORDER BY locationid, datetime DESC;"))
 
 # SNOTEL Sites ----
@@ -150,7 +152,7 @@ todaySWE_=dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid) datetime, wate
 #FEBRUARY
 winterSums_feb=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS winterSum, snodasdata.locationid, name, sitenote
            FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-           WHERE datetime <= '",end_date,"' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
+           WHERE datetime::date <= '",end_date,"'::date::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
            GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
 # pivot data wider
 snodas_feb<-pivot_wider(data=winterSums_feb[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
@@ -158,7 +160,7 @@ snodas_feb<-pivot_wider(data=winterSums_feb[,c("wateryear","metric","wintersum",
 #MARCH
 winterSums_mar=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS winterSum, snodasdata.locationid, name, sitenote
            FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-           WHERE datetime <= '",end_date,"' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3)
+           WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3)
            GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
 # pivot data wider
 snodas_march<-pivot_wider(data=winterSums_mar[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
@@ -166,7 +168,7 @@ snodas_march<-pivot_wider(data=winterSums_mar[,c("wateryear","metric","wintersum
 #APRIL
 winterSums_apr=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS winterSum, snodasdata.locationid, name, sitenote
            FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-           WHERE datetime <= '",end_date,"' AND ( EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 4 )
+           WHERE datetime::date <= '",end_date,"'::date AND ( EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 4 )
            GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
 # pivot data wider
 snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")

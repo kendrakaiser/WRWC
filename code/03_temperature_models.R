@@ -13,7 +13,7 @@
 # -----------------------------------------------------------------------------
 agrimet<- dbGetQuery(conn, paste0("SELECT date AS date_time, day_mean_t AS temperature_mean, site_name AS site_name, month AS mo, y AS y, wy AS wy 
                                   FROM daily_air_temperature
-                                  WHERE date <= '",end_date,"';"))
+                                  WHERE date::date <= '",end_date,"'::date;"))
 #renamed agrimet columns to match snotel for calculations
 
 #remove values that are erroneous
@@ -26,7 +26,7 @@ snotel.nj_temp=dbGetQuery(conn,paste0("SELECT count(value) AS n_obs, wateryear(d
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND sitenote != 'ccd'
            AND (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) <= 1) 
-           AND datetime <= '",end_date,"'
+           AND datetime::date <= '",end_date,"'::date
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
 
 #Also, ccd has 83 obs in 2017...  including it here drops the whole year later, which kinda sucks considering how many other temperatures are available
@@ -38,7 +38,7 @@ snotel.aj_temp=dbGetQuery(conn,paste0("SELECT count(value) AS n_obs, wateryear(d
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'mean daily temperature' AND qcstatus = 'true' AND 
            (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) <= 6)
-           AND datetime <= '",end_date,"'
+           AND datetime::date <= '",end_date,"'::date
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
 
 snotel.aj_temp=snotel.aj_temp[snotel.aj_temp$n_obs>=90,-1]    # much less missing data in this period
