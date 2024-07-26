@@ -24,6 +24,7 @@ tot_vol_cols<- grep('tot_vol', colnames(var))
 snodas_cols<- c(grep('wint', colnames(var)), grep('snow', colnames(var)), grep('swe_total', colnames(var)))
 wq_cols<- grep('wq', colnames(var))
 runoff_cols<- grep('runoff', colnames(var))
+cm_cols <- grep('cm', colnames(var))
 #par(mar=c(1, 1, 1, 1))
 #pairs(c(var[swe_cols[1:8]], var[snodas_cols[1:10]]))
 
@@ -183,7 +184,7 @@ cm_model<-function(site, sites, max_var){
   site_vars<- grep(paste(sites, collapse="|"), colnames(var))
   #remove variables from predictor set that don't have data for this year
   pred.avail<- var [var$wateryear == pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars), all_of(swe_cols), 
-        all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols, irr_vol_cols)))# %>% filter(complete.cases(.))
+        all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols, irr_vol_cols, cm_cols)))# %>% filter(complete.cases(.))
   na.vars<- names(pred.avail)[is.na(pred.avail[1,])] 
   
   hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
