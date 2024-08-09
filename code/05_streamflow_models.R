@@ -229,7 +229,7 @@ cm_model<-function(site, sites, max_var){
   # form<- paste(paste(name, "~ "), paste(mod_sum$vars, collapse=" + "), sep = "")
   # 
   mod<-lm(form, data=hist)
-  mod_sum$lm<-summary(mod)$adj.r.squared
+  mod_sum$adjr2<-summary(mod)$adj.r.squared
   
   #put coefficients into DF to save across runs
   coef<- signif(mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
