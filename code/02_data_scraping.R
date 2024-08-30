@@ -84,7 +84,7 @@ cm$wateryear<- rep(years, times=4)
 cm$sitenote<- rep(unique(cm_dat$sitenote), each=length(years))
 
 for(sitename in unique(cm$sitenote)){
-  sub <- cm_dat %>% filter(sitenote == sitename)
+  sub <- cm_dat %>% dplyr::filter(sitenote == sitename)
   for (wy in unique(cm$wateryear)){
     sub2 <- sub %>% filter(wateryear == wy)
     ix= which(cm$wateryear== wy & cm$sitenote == sitename) 

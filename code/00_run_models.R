@@ -17,8 +17,11 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
 # TODO simdate v.s. run date
 # set end date 
-end_date <<-Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
-#end_date=as.Date("2023-02-01")
+#end_date <<-Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
+end_date=as.Date("2023-02-01")
+
+model_n=10
+
 # ------------------------------------------------------------------------------
 # Run Model
 # ------------------------------------------------------------------------------
@@ -51,7 +54,7 @@ if (month(end_date) == 2){
 # ------------------------------------------------------------------------------
 # Compile Data Based on Run Date
 # ------------------------------------------------------------------------------
-source(file.path(git_dir,'code/005_db_update.R'))
+#source(file.path(git_dir,'code/005_db_update.R'))
 source(file.path(git_dir, 'code/02_data_scraping.R'))
 source(file.path(git_dir, 'code/03_temperature_models.R')) 
 source(file.path(git_dir, 'code/04_data_integration.R'))  
@@ -75,7 +78,13 @@ source(file.path(git_dir, 'code/07_streamflow_simulation.R'))
 #source(file.path(git_dir, 'code/08_curtailment_predictions.R'))
 
 # manage data and push necessary outputs to db
-source(file.path(git_dir, 'code/09_data_management.R'))
+#source(file.path(git_dir, 'code/09_data_management.R'))
 
 
+bxpData=var[,c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol","wateryear")]
+bxpData=reshape(bxpData,direction="long", v.names="irrVol", times=c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol"),varying=list(c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol")))
+boxplot(bxpData$irrVol/1000~bxpData$time)
+points(1:4,output.vol,pch="*",cex=3)
+
+output.vol
 
