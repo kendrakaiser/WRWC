@@ -86,5 +86,5 @@ bxpData=reshape(bxpData,direction="long", v.names="irrVol", times=c("bwh.irr_vol
 boxplot(bxpData$irrVol/1000~bxpData$time)
 points(1:4,output.vol,pch="*",cex=3)
 
-output.vol
+
 

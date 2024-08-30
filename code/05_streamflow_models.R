@@ -608,7 +608,7 @@ cm_model<-function(site, sites, max_var){
 bwh_cm_mod<- cm_model("bwh", "bwh", 6)
 bws_cm_mod<- cm_model("bws", "bws", 6)
 sc_cm_mod<- cm_model("sc", c("bwh","sc"),6)
-cc_cm_mod<- cm_model("cc", "cc", 6)
+cc_cm_mod<- cm_model("cc", "cc\\.", 6)
 
 # ---------------------------------------------------------------------------- # 
 ### EXPORT Center of Mass MODEL DETAILS
