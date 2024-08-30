@@ -464,12 +464,10 @@ vol_model<-function(site, sites, max_var, pred.year = pred.yr, volVars=var, useP
   mod_sum$form <- paste(responseName," ~ ", paste(names(bestByType$coefficients)[-1],collapse=" + "))
   mod_sum$vars<-names(bestByType$coefficients)[-1]
   
-<<<<<<< HEAD
-=======
-  # run model
-  mod<-lm(form, data=hist)
-  mod_sum$adjr2<-summary(mod)$adj.r.squared
->>>>>>> 4b3afee708f1f482eef679240e20e18a19dd8e95
+  # # run model
+  # mod<-lm(form, data=hist)
+  # mod_sum$adjr2<-summary(mod)$adj.r.squared
+
   
   #put coefficients into DF to save across runs --- removed rounding signif(mod$coefficients, 2)
   #coef<- mod$coefficients %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
@@ -514,7 +512,7 @@ vol_models<- list(bwh_mod = bwh_vol_mod, bws_mod = bws_vol_mod, sc_mod = sc_vol_
 #write.csv(vol_coef, file.path(model_out,'vol_coeff.csv'), row.names = FALSE)
 
 # Pull out R2 for summary stats --- just save table from Sams code
-<<<<<<< HEAD
+
 # r2s<- data.frame(matrix(ncol = 3, nrow = 4))
 # colnames(r2s)<-c("AdjR2", "Loocv R2", "MAE")
 # rownames(r2s)<-c("BWH", "BWS", "SC", "CC")
@@ -525,18 +523,6 @@ vol_models<- list(bwh_mod = bwh_vol_mod, bws_mod = bws_vol_mod, sc_mod = sc_vol_
 # png(file.path("r2s.png"), height = 25*nrow(r2s), width = 80*ncol(r2s))
 # grid.table(r2s)
 # dev.off()
-=======
-r2s<- data.frame(matrix(ncol = 3, nrow = 4))
-colnames(r2s)<-c("AdjR2", "Loocv R2", "MAE")
-rownames(r2s)<-c("BWH", "BWS", "SC", "CC")
-r2s[,1]<- round(c(bwh_vol_mod[[1]]$adjr2, bws_vol_mod[[1]]$adjr2, sc_vol_mod[[1]]$adjr2,cc_vol_mod[[1]]$adjr2)*100, 2)
-r2s[,2]<- round(c(bwh_vol_mod[[1]]$loocv$Rsquared, bws_vol_mod[[1]]$loocv$Rsquared,sc_vol_mod[[1]]$loocv$Rsquared,cc_vol_mod[[1]]$loocv$Rsquared)*100, 2)
-r2s[,3]<- round(c(bwh_vol_mod[[1]]$loocv$MAE, bws_vol_mod[[1]]$loocv$MAE, sc_vol_mod[[1]]$loocv$MAE, cc_vol_mod[[1]]$loocv$MAE), 2)
-
-png(file.path("r2s.png"), height = 25*nrow(r2s), width = 80*ncol(r2s))
-grid.table(r2s)
-dev.off()
->>>>>>> 4b3afee708f1f482eef679240e20e18a19dd8e95
 
 
 # ---------------------------------------------------------------------------- # 

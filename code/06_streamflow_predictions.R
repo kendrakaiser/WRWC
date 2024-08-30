@@ -65,23 +65,24 @@ modOut<- function(mod, pred.dat){
   pred.params.vol<-array(NA,c(1,4))
   
   #predict this years total volume at 95 % confidence
-  predictions<-predict(mod, newdata=pred.dat, se.fit=TRUE, interval="prediction",level=0.95)
+  predictions<-predict(mod, newdata=pred.dat, se.fit=TRUE, interval="prediction",level=0.90)
+
   pred.params.vol[1,1]<-predictions$fit[1] #mean prediction 
   pred.params.vol[1,2]<-summary(mod)$sigma 
   pred.params.vol[1,3]<-predictions$fit[2] #lower prediction interval
   pred.params.vol[1,4]<-predictions$fit[3] #upper prediction interval
 
-  output.vol<-round(predictions$fit[1]/1000,0) 
+  output.vol<-predictions$fit[1]
   
   return(list(output.vol, pred.params.vol))
 }
 
 # --------------------------------------------------
 # Subset Big Wood Variables
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bwh.irr_vol, vol_mod$bwh_mod$vars)) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bwh.irr_vol, vol_models$bwh_mod$vars)) %>% filter(complete.cases(.))
 
 #Prediction Data
-pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod$bwh_mod$vars) 
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_models$bwh_mod$vars) 
 
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol_models$bwh_mod)$adj.r.squared
@@ -93,10 +94,10 @@ pred.params.vol[1,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bws.irr_vol, vol_mod$bws_mod$vars)) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bws.irr_vol, vol_models$bws_mod$vars)) %>% filter(complete.cases(.))
 
 #  bws Prediction Data 
-pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod$bws_mod$vars) 
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_models$bws_mod$vars) 
 
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol_models$bws_mod)$adj.r.squared
@@ -107,10 +108,10 @@ pred.params.vol[2,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Silver Creek 
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(sc.irr_vol, vol_mod$sc_mod$vars)) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(sc.irr_vol, vol_models$sc_mod$vars)) %>% filter(complete.cases(.))
 
 # SC Prediction Data 
-pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod$sc_mod$vars) 
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_models$sc_mod$vars) 
 
 # Silver Creek Model output
 mod_sum[4,1]<-summary(vol_models$sc_mod)$adj.r.squared
@@ -120,10 +121,10 @@ pred.params.vol[4,] <- mod_out[[2]]
 
 # --------------------------------------------------
 # Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection 
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.irr_vol, vol_mod$cc_mod$vars) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.irr_vol, vol_models$cc_mod$vars) %>% filter(complete.cases(.))
 
 #CC Prediction Data 
-pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod$cc_mod$vars)
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_models$cc_mod$vars)
 
 # Camas Creek Model output
 mod_sum[3,1]<-summary(vol_models$cc_mod)$adj.r.squared
@@ -274,15 +275,7 @@ mod_out<- modOutcm(cm_models$cc_cm.mod, pred.data, hist%>% dplyr::select(contain
 output.cm[3,] <- mod_out[[1]]
 pred.params.cm[3,] <- mod_out[[2]]
 
-### Save model outputs 
-# --------------------
-png(file.path(fig_dir_mo,"pred.volumes.png"), height = 25*nrow(output.vol), width = 130*ncol(t(output.vol)))
-grid.table(t(output.vol))
-dev.off()
 
-png(file.path(fig_dir_mo,"pred.cm.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
-grid.table(output.cm)
-dev.off()
 
 #write.csv(output.vol, file.path(model_out,"pred.output.vol.csv"),row.names=T)
 #write.csv(pred.params.vol, file.path(model_out,"pred.params.vol.csv"),row.names=T)
@@ -305,7 +298,7 @@ cor.mat<-cor(cbind(flow.data[c(1,3,5,7)],flow.data[c(2,4,6,8)]),use="pairwise.co
 
 # create covariance matrix by multiplying by each models standard error
 pred.pars<-rbind(pred.params.vol[,1:2], pred.params.cm)
-outer.prod<-as.matrix(pred.pars[,2])%*%t(as.matrix(pred.pars[,2]))
+outer.prod<-as.matrix(pred.pars[,2]) %*% t(as.matrix(pred.pars[,2]))
 cov.mat<-cor.mat*outer.prod
 
 # Draw flow volumes using multivariate normal distribution (ac-ft)
@@ -316,6 +309,20 @@ colnames(vol.sample)<-c("Big Wood Hailey", "Big Wood Stanton","Camas Creek","Sil
 cor.mat.out<-as.data.frame(round(cor.mat,2))
 png(file.path(fig_dir_mo,"correlation_matrix.png"), height = 25*nrow(cor.mat.out), width = 80*ncol(cor.mat.out))
 grid.table(cor.mat.out)
+dev.off()
+
+########### transform outputs from log to linear space ##############
+output.vol=exp(output.vol)/1000
+vol.sample=exp(vol.sample)/1000
+
+### Save model outputs 
+# --------------------
+png(file.path(fig_dir_mo,"pred.volumes.png"), height = 25*nrow(output.vol), width = 130*ncol(t(output.vol)))
+grid.table(t(output.vol))
+dev.off()
+
+png(file.path(fig_dir_mo,"pred.cm.png"), height = 30*nrow(output.vol), width = 90*ncol(output.vol))
+grid.table(output.cm)
 dev.off()
 
 
