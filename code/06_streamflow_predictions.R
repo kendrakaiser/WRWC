@@ -78,12 +78,8 @@ modOut<- function(mod, pred.dat){
 }
 
 # --------------------------------------------------
-# Subset Big Wood Variables
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bwh.irr_vol, vol_models$bwh_mod$vars)) %>% filter(complete.cases(.))
-
-#Prediction Data
-pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_models$bwh_mod$vars) 
-
+#bwh Prediction Data
+pred.dat = current_data[,names(current_data) %in% c('wateryear',vol_models$bwh_mod$vars)]
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol_models$bwh_mod)$adj.r.squared
 mod_out<- modOut(vol_models$bwh_mod, pred.dat)
@@ -93,11 +89,8 @@ output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
 
 # --------------------------------------------------
-# Subset Big Wood at Stanton Winter flows, Snotel from Galena & Galena Summit, Hyndman
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(bws.irr_vol, vol_models$bws_mod$vars)) %>% filter(complete.cases(.))
-
 #  bws Prediction Data 
-pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_models$bws_mod$vars) 
+pred.dat = current_data[,names(current_data) %in% c('wateryear',vol_models$bws_mod$vars)]
 
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol_models$bws_mod)$adj.r.squared
@@ -107,11 +100,8 @@ output.vol[2,] <- mod_out[[1]]
 pred.params.vol[2,] <- mod_out[[2]]
 
 # --------------------------------------------------
-# Subset Silver Creek 
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(c(sc.irr_vol, vol_models$sc_mod$vars)) %>% filter(complete.cases(.))
-
 # SC Prediction Data 
-pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_models$sc_mod$vars) 
+pred.dat = current_data[,names(current_data) %in% c('wateryear',vol_models$sc_mod$vars)]
 
 # Silver Creek Model output
 mod_sum[4,1]<-summary(vol_models$sc_mod)$adj.r.squared
@@ -120,11 +110,8 @@ output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
 # --------------------------------------------------
-# Subset Camas Creek Winter flows, Snotel from Soldier Ranger Station, camas creek divide was not included in model selection 
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.irr_vol, vol_models$cc_mod$vars) %>% filter(complete.cases(.))
-
 #CC Prediction Data 
-pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_models$cc_mod$vars)
+pred.dat = current_data[,names(current_data) %in% c('wateryear',vol_models$cc_mod$vars)]
 
 # Camas Creek Model output
 mod_sum[3,1]<-summary(vol_models$cc_mod)$adj.r.squared

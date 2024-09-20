@@ -103,6 +103,10 @@ aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% piv
 all.temp.dat <- nj.snot %>% merge(aj.snot , by= 'wateryear', all=TRUE) %>% 
   merge(tdata.wide, by= 'wateryear', all=TRUE) 
 
+##### add temop data to current_data
+
+current_data=merge(current_data,all.temp.dat, by='wateryear',all=F)
+
 #write.csv(all.temp.dat, file.path(data_dir,"temp_dat.csv"), row.names=FALSE)
 
 #-------------------------------------------------------------------------------
