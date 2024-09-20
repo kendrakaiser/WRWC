@@ -29,7 +29,7 @@ wint_flow=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, datet
            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
            AND datetime::date <= '",end_date,"'::date
            ORDER BY datetime;")
-                     )
+)
 
 bf_wrapper=function(wy, lid, wint_flow_df){
   thisQ=wint_flow_df[wint_flow_df$wateryear == wy & wint_flow_df$locationid == lid,"flow"]
@@ -125,12 +125,28 @@ winterSWE_apr=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, m
 # pivot data wider
 swe_apr<-pivot_wider(data=winterSWE_apr[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
 
-#TODO - set this to query the SWE based on 
 #Grab Todays SWE
-todaySWE_=dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid) datetime, wateryear(datetime) AS wateryear, metric AS swe, value, locations.locationid, locations.name 
+todaysSWE=dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid) datetime, wateryear(datetime) AS wateryear, metric, value AS swe, locations.locationid, locations.name, locations.sitenote 
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'swe' AND qcstatus = true AND datetime::date <= '",end_date,"'::date 
-           ORDER BY locationid, datetime DESC;"))
+           ORDER BY locationid, datetime DESC;"))  #returns the latest value w/ DISTINCT ON (locationid) and ORDER BY datetime
+
+todaysSWE=pivot_wider(data=todaysSWE[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
+
+
+
+todaysSnodas=dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid, metric) wateryear(datetime) AS wateryear, metric, 
+            CASE WHEN (metric = 'liquid_precip') THEN sum(value) ELSE max(value) END AS wintersum_todate, 
+            snodasdata.locationid, name, sitenote
+           FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
+           WHERE datetime::date <= '",end_date,"'::date  
+           GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY locationid, metric, wateryear DESC;"))
+
+head(todaysSnodas)
+
+# pivot data wider
+todaysSnodas<-pivot_wider(data=todaysSnodas[,c("wateryear","metric","wintersum_todate","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum_todate),names_sep=".")
+
 
 # SNOTEL Sites ----
 #cg = 895 #  Chocolate Gulch (0301)
@@ -150,15 +166,20 @@ todaySWE_=dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid) datetime, wate
 # Get SNODAS from Database 
 #------------------------------------------------------------------------------
 #FEBRUARY
-winterSums_feb=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS winterSum, snodasdata.locationid, name, sitenote
+
+winterSums_feb=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, 
+CASE WHEN (metric = 'liquid_precip') THEN sum(value) ELSE max(value) END AS wintersum, 
+snodasdata.locationid, name, sitenote
            FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-           WHERE datetime::date <= '",end_date,"'::date::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
+           WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
            GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
 # pivot data wider
 snodas_feb<-pivot_wider(data=winterSums_feb[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
 
 #MARCH
-winterSums_mar=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS winterSum, snodasdata.locationid, name, sitenote
+winterSums_mar=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, 
+CASE WHEN (metric = 'liquid_precip') THEN sum(value) ELSE max(value) END AS wintersum,
+snodasdata.locationid, name, sitenote
            FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
            WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3)
            GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
@@ -166,7 +187,9 @@ winterSums_mar=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, 
 snodas_march<-pivot_wider(data=winterSums_mar[,c("wateryear","metric","wintersum","sitenote")],names_from = c(sitenote, metric),values_from = c(wintersum),names_sep=".")
 
 #APRIL
-winterSums_apr=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, sum(value) AS winterSum, snodasdata.locationid, name, sitenote
+winterSums_apr=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, 
+CASE WHEN (metric = 'liquid_precip') THEN sum(value) ELSE max(value) END AS wintersum,
+snodasdata.locationid, name, sitenote
            FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
            WHERE datetime::date <= '",end_date,"'::date AND ( EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 4 )
            GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
@@ -176,7 +199,7 @@ snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","wintersum
 #------------------------------------------------------------------------------
 # Integrate & EXPORT Data: USGS SNOTEL SNODAS
 #------------------------------------------------------------------------------
-
+todays_data<- todaysSWE %>% merge(baseflow, by= 'wateryear', all=F) %>% merge(todaysSnodas, by= 'wateryear', all=F)
 #February data for modeling
 alldat_feb <- swe_feb %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(tot_vol, by= 'wateryear', all=TRUE) %>% 
   merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
