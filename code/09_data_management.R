@@ -195,7 +195,7 @@ ex.vols$Exceedance <- c('90%', '75%', '50%', '25%', '10%')
 ex.vols<- ex.vols%>% relocate(Exceedance)
 
 my_table_theme <- ttheme_default(core=list(fg_params = list(col = c("red","darkorange","green3","deepskyblue", "blue3"), col=NA)))
-grid.table(ex.vols, theme = my_table_theme, rows = NULL)
+#grid.table(ex.vols, theme = my_table_theme, rows = NULL)
 
 # Write exceedance prob to db
 

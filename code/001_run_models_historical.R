@@ -81,6 +81,7 @@ for( dateIndex in 1:length(runDates)){
   boxplot(bxpData$irrVol/1000~bxpData$time, main=end_date)
   points(1:4,output.vol,pch="*",cex=3)
   
+  print(output.vol)
   
 }
 

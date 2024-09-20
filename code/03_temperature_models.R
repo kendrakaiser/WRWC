@@ -143,7 +143,7 @@ nboot<-5000
 aj.pred.temps<- data.frame(mvrnorm(nboot, new.data$aj_tempf, site.cov) )
 #write.csv(aj.pred.temps, file.path(data_dir, 'aj_pred.temps.csv'), row.names=FALSE)
 
-plot(input$aj_tempf, input$fitted)
+#plot(input$aj_tempf, input$fitted)
 
 png(filename = file.path(fig_dir,"ModeledTemps.png"),
     width = 5.5, height = 3.5,units = "in", pointsize = 12,

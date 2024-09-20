@@ -496,10 +496,10 @@ vol_model<-function(site, sites, max_var, pred.year = pred.yr, volVars=var, useP
 }
 
 # Create Volume Models for each USGS gage
-bwh_vol_mod<- vol_model("bwh", "bwh", model_n)
-bws_vol_mod<- vol_model("bws", c("bws", "bwh"), model_n)
-cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), model_n)
-sc_vol_mod<- vol_model("sc", c("bwh", "sc"), model_n)
+bwh_vol_mod<- vol_model("bwh", "bwh", 10)
+bws_vol_mod<- vol_model("bws", c("bws", "bwh"), 10)
+cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), 10)
+sc_vol_mod<- vol_model("sc", c("bwh", "sc"), 10)
 
 
 # EXPORT VOL MODEL DETAILS
