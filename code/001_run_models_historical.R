@@ -82,6 +82,5 @@ for( dateIndex in 1:length(runDates)){
   points(1:4,output.vol,pch="*",cex=3)
   
   print(output.vol)
-  
 }
 

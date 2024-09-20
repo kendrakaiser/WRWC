@@ -50,7 +50,7 @@ getRegModelSummary=function(regSum=reg_sum,f_fitDF=fitDF, response="iv" ){
   return(outDF)
 }
 
-vol_model<-function(site, sites, max_var, pred.year = pred.yr, volVars=var, usePredTypes=c("wq", "ly_vol","liquid_precip","snow_covered_area","swe_total","swe","nj_t")){
+vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVars=var, usePredTypes=c("wq", "ly_vol","liquid_precip","snow_covered_area","swe_total","swe","nj_t")){
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
@@ -291,7 +291,7 @@ vol_model<-function(site, sites, max_var, pred.year = pred.yr, volVars=var, useP
         thisModel=lm(f,data=modelDF)
         
         addDF=data.frame(formula=f,
-                         n=length(thisModel$coefficients),
+                         n=length(thisModel$coefficients)-1, #just count vars, not intercept
                          r2=summary(thisModel)$r.squared,
                          BIC=BIC(thisModel)
                          #max_vif=getMaxVif(thisModel)
@@ -301,9 +301,11 @@ vol_model<-function(site, sites, max_var, pred.year = pred.yr, volVars=var, useP
     }
   } 
   
+
   modelCompareDF=modelCompareDF[modelCompareDF$n <= max_var,]
+  modelCompareDF=modelCompareDF[modelCompareDF$n >= min_var,]
   modelCompareDF=modelCompareDF[order(modelCompareDF[,"BIC"]),]
-  #head(modelCompareDF)
+  #print(head(modelCompareDF))
   bestByType=lm(modelCompareDF$formula[1],data=modelDF,na.action=na.fail)
   #summary(bestByType)
   #check_model(bestByType)
