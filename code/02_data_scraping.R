@@ -232,7 +232,7 @@ currentSnodas=rbind(currentSnodas,
 # pivot data wider
 currentSnodas<-pivot_wider(data=currentSnodas[,c("wateryear","metric","value","sitenote")],names_from = c(sitenote, metric),values_from = c(value),names_sep=".")
 
-current_data<- currentSWE %>% merge(baseflow, by= 'wateryear', all=F) %>% merge(currentSnodas, by= 'wateryear', all=F)
+current_data<- currentSWE %>% merge(baseflow, by= 'wateryear', all=F) %>% merge(currentSnodas, by= 'wateryear', all=F) %>% merge(tot_vol, by= 'wateryear', all=F)
 
 #------------------------------------------------------------------------------
 # Integrate & EXPORT Data: USGS SNOTEL SNODAS
