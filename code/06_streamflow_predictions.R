@@ -288,7 +288,7 @@ pred.pars<-rbind(pred.params.vol[,1:2], pred.params.cm)
 outer.prod<-as.matrix(pred.pars[,2]) %*% t(as.matrix(pred.pars[,2]))
 cov.mat<-cor.mat*outer.prod
 
-# Draw flow volumes using multivariate normal distribution (ac-ft)
+# Draw flow volumes using multivariate normal distribution (logged; ac-ft)
 vol.sample<-data.frame(mvrnorm(n=5000,mu=(pred.params.vol[,1]),Sigma=cov.mat[1:4,1:4]))
 colnames(vol.sample)<-c("Big Wood Hailey", "Big Wood Stanton","Camas Creek","Silver Creek")
 
