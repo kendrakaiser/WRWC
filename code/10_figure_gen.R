@@ -28,7 +28,7 @@ exceed.probs<- function(vols, probs){
 # Exceedance probs from NWRFC
 prb<- c(0.1, 0.25, 0.5, 0.75, 0.9)
 
-# Calculate exceedance probabilities and save table with labels (vol.sample is from database in KAF)
+# Calculate exceedance probabilities and save table with labels (vol.sample is from database as logged AF)
 ex.vols<- round(apply(exp(vol.sample)/1000, 2, exceed.probs, prb)) %>% as.data.frame()
 ex.vols$Exceedance <- c('90%', '75%', '50%', '25%', '10%') 
 ex.vols<- ex.vols%>% relocate(Exceedance)
