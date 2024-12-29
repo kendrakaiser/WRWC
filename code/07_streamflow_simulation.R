@@ -24,6 +24,7 @@ bws.wy<-irr_cfs[irr_cfs$sitenote == "bws", ]
 cc.wy<-irr_cfs[irr_cfs$sitenote == "cc", ]
 sc.wy<-irr_cfs[irr_cfs$sitenote == "sc", ]
 
+#rename the vol.sample columns (Logged-AF from L292 in 06)
 colnames(vol.sample)<-c("bwh.irr_vol", "bws.irr_vol","cc.irr_vol", "sc.irr_vol")
 
 # ------------------------------------------------------------------------------
@@ -52,7 +53,7 @@ sim.flow <- function(irr.seas.flow, vol){
 for(k in 1:ns){ 
   # Simulate flow supply at the four gages
   year<-CMyear.sample[k] # year sample
-  vol<-vol.sample[k,] # volume sample
+  vol<-exp(vol.sample[k,]) # volume sample
 
   bwh<- bwh.wy[bwh.wy$wateryear == year, "value"]
   bws<- bws.wy[bws.wy$wateryear == year, "value"]
