@@ -1,9 +1,8 @@
+#------------------------------------------------------------------------------
 # Figures and tables for data analysis and model output from wood river streamflow forecasting
-
 #------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
-#test
+
 # ------------------------------------------------------------------------------
 # Calculate Exceedance Probabilities
 # ------------------------------------------------------------------------------
@@ -45,8 +44,8 @@ ex.vols3$t<- "Predicted"
 # ------------------------------------------------------------------------------
 # Plot boxplots of total annual flow from each model
 # ------------------------------------------------------------------------------
-# Subset for plotting
-vol.hist<- as.data.frame(var[var$wateryear < pred.yr ,] %>% dplyr::select(c(bwh.irr_vol, bws.irr_vol, cc.irr_vol)) %>% `colnames<-`(c("Big Wood Hailey Hist", "Big Wood Stanton Hist","Camas Creek Hist")) %>%pivot_longer(everything(),  names_to = "site", values_to = "value") )
+# Subset data for plotting
+vol.hist<- as.data.frame(var[var$wateryear < pred.yr ,] %>% dplyr::select(c(bwh.irr_vol, bws.irr_vol)) %>% `colnames<-`(c("Big Wood Hailey Hist", "Big Wood Stanton Hist")) %>%pivot_longer(everything(),  names_to = "site", values_to = "value") )
 vol.hist$value<-vol.hist$value/1000
 vol.hist$t<- "Historic"
 
@@ -64,25 +63,25 @@ vol.sm$site<-factor(vol.sm$site,levels = c("Silver Creek Hist","sc.irr_vol"), or
 
 vol.cc<- rbind(vol.hist[vol.hist$site == "Camas Creek Hist",], vol.pred[vol.pred$site == "Camas Creek",])
 vol.cc$t <- factor(vol.cc$t)
-
-vol.big<- rbind(vol.hist, vol.pred[vol.pred$site != "sc.irr_vol",])
-vol.big$t <- factor(vol.big$t)
-vol.big$site<-factor(vol.big$site,levels = c("Big Wood Hailey Hist","bwh.irr_vol", "Big Wood Stanton Hist", "bws.irr_vol", "Camas Creek Hist", "cc.irr_vol"), ordered = TRUE)
-
 vol.cc$site<-factor(vol.cc$site,levels = c("Camas Creek Hist", "Camas Creek" ), ordered = TRUE)
 
+vol.big<- rbind(vol.hist, vol.pred[vol.pred$site  =="bwh.irr_vol" | vol.pred$site =="bws.irr_vol",])
+vol.big$t <- factor(vol.big$t)
+vol.big$site<-factor(vol.big$site,levels = c("Big Wood Hailey Hist","bwh.irr_vol", "Big Wood Stanton Hist", "bws.irr_vol"), ordered = TRUE)
 
+# color ramp
 colfunc<-colorRampPalette(c("red","darkorange","green3","deepskyblue", "blue3"))
 
 # Plot boxplots of total annual flow from each model with exceedance probabilities
 
+# Big Wood Hailey and Stanton
 p<-ggplot(vol.big, aes(x=site, y=value, fill=t), alpha=0.6) +
   geom_boxplot(outlier.alpha = 0.3) +
   scale_fill_manual(values=c("royalblue3", "grey90")) +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
   scale_y_continuous(breaks = round(seq(0, max(vol.big$value, na.rm=TRUE), by = 50),1))+
   
-  geom_point(data=ex.vols3[ex.vols3$site !="sc.irr_vol",], aes(x=site, y=value, color=as.factor(Exceedance)), size=2, shape=15)+
+  geom_point(data=ex.vols3[ex.vols3$site =="bwh.irr_vol" | ex.vols3$site =="bws.irr_vol",], aes(x=site, y=value, color=as.factor(Exceedance)), size=2, shape=15)+
   scale_color_manual(values=c("blue3", "deepskyblue", "green3","darkorange","red"))+
   theme_bw(base_size = 14)+
   ggtitle("Historic & Modeled Irrigation Season Volumes (April-Sept.)") +
@@ -98,12 +97,14 @@ dev.off()
 
 saveRDS(p, file.path(fig_dir_mo,"sampled_volumes.rds"))
 
+#Silver Creek
 ps<- ggplot(vol.sm, aes(x=site, y=value, fill=site), alpha=0.6) +
   geom_boxplot(outlier.alpha = 0.3) +
   scale_fill_manual(values=c("royalblue3", "grey90")) +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
   scale_y_continuous(breaks = round(seq(0, max(vol.sm$value, na.rm=TRUE), by = 10),1))+
-  geom_point(data=ex.vols3[ex.vols3$site =="Silver Creek",], aes(x=site, y=value, color=as.factor(Exceedance)), size=2, shape=15)+
+  
+  geom_point(data=ex.vols3[ex.vols3$site =="sc.irr_vol",], aes(x=site, y=value, color=as.factor(Exceedance)), size=2, shape=15)+
   scale_color_manual(values=c("blue3", "deepskyblue", "green3","darkorange","red"))+
   
   theme_bw(base_size = 18)+
@@ -121,12 +122,14 @@ dev.off()
 
 saveRDS(ps, file = file.path(fig_dir_mo, paste0("sampled_sc_vol-", end_date, ".rds")))
 
+#Camas Creek
 pc<- ggplot(vol.cc, aes(x=site, y=value, fill=site), alpha=0.6) +
   geom_boxplot(outlier.alpha = 0.3) +
   scale_fill_manual(values=c("royalblue3", "grey90")) +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
   scale_y_continuous(breaks = round(seq(0, max(vol.cc$value, na.rm=TRUE), by = 20),1))+
-  geom_point(data=ex.vols3[ex.vols3$site =="Camas Creek",], aes(x=site, y=value, color=as.factor(Exceedance)), size=2, shape=15)+
+  
+  geom_point(data=ex.vols3[ex.vols3$site =="cc.irr_vol",], aes(x=site, y=value, color=as.factor(Exceedance)), size=2, shape=15)+
   scale_color_manual(values=c("red","darkorange","green3","deepskyblue", "blue3"))+
   
   theme_bw()+
@@ -176,7 +179,7 @@ options(scipen = 999)
 
 
 #-------------------------------------------------------------------------------
-### Model variable plots with current conditions
+### BOXPLOT of Model variable plots with current conditions
 #TODO: make these work automatically!
 # 1) select variables from current model - working
 # 2) make boxplots of each variable in the model - grouping by values that are 
@@ -262,28 +265,12 @@ ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear)) +
 
 
 
+# -----------------------------------------------------------------------------
+# Temperature data and MODEL FIGURES
+# TODO: update with new naming conventions & database structure - select two for data exploration tab
+# -----------------------------------------------------------------------------
 
-#These do NOT WORK 
-# #Multiple Water Years plotted on one figure
-# plot(dates, bwh.wy$value[bwh.wy$wy == 2006][183:365], xlab="Date", ylab ="Flow (cfs)", type='l', col="black", ylim=c(0,6650))
-# lines(dates,bwh.wy$value[bwh.wy$wy == 2014][183:365], lwd=1, col="black")
-# lines(dates,bwh.wy$value[bwh.wy$wy == 2013][183:365], lwd=1, col="black")
-# lines(dates,bwh.wy$value[bwh.wy$wy == 2019][183:365], lwd=1, col="blue")
-# lines(dates,bwh.wy$value[bwh.wy$wy == 1998][183:365], lwd=1, col="red")
-# 
-# 
-# #matplot(bwh.flow.s, type='l',col = "gray90" )
-# #matplot(sc.flow.s, type='l',col = "gray90" )
-
-
-
-# # TEMP data and MODEL FIGURES
-# #TODO: update with new naming conventions
-# 
-# #---------------
-# #TODO: All of these figures will have to be updated using either new format
-#
-# #plot all data
+# #plot all spring temperature data
 # png(filename = file.path(fig_dir,"SpringTemps.png"),
 #     width = 5.5, height = 5.5,units = "in", pointsize = 12,
 #     bg = "white", res = 600) 
@@ -293,7 +280,7 @@ ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear)) +
 # ggplot(tdata[tdata$site == "fairfield" | tdata$site == "picabo",], aes(x=wateryear, y=spring.tempF, color=site)) +geom_point()
 # ggplot(tdata[tdata$site == "camas creek divide" | tdata$site == "chocolate gulch",], aes(x=wateryear, y=spring.tempF, color=site)) +geom_point()
 # 
-# #plot all data
+# #plot all summer temp data
 # png(filename = file.path(fig_dir,"SummerTemps.png"),
 #     width = 5.5, height = 5.5,units = "in", pointsize = 12,
 #     bg = "white", res = 600) 
@@ -302,6 +289,7 @@ ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear)) +
 # 
 # wt<-ggplot(tdata[tdata$site != "fairfield" & tdata$site != "picabo",], aes(x=wateryear, y=wint.tempF, color=site)) +geom_point()
 # 
+#plot all winter temps
 # png(filename = file.path(fig_dir,"WinterTemps.png"),
 #     width = 5.5, height = 5.5,units = "in", pointsize = 12,
 #     bg = "white", res = 600) 
@@ -327,6 +315,7 @@ ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear)) +
 # #---------------
 # 
 # # TODO: make a plot that represents the model better
+#
 # #plot the observed versus fitted 
 # png(filename = file.path(fig_dir,"ModeledTemps.png"),
 #     width = 5.5, height = 3.5,units = "in", pointsize = 12,
@@ -351,9 +340,8 @@ ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear)) +
 #   ylab('Predicted Mean April - June Temperature (F)')+
 #   theme_bw()
 
-
-
 #----------------------
+# Data Exploration tab example figure
 # Relationship between Big Wood at Hailey Irrigation flow and Silver Creek
 
 ggplot(var, aes(x=bwh.irr_vol/1000, y=sc.irr_vol/1000))+
