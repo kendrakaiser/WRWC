@@ -27,8 +27,9 @@ exceed.probs<- function(vols, probs){
 
 # Exceedance probs from NWRFC
 prb<- c(0.1, 0.25, 0.5, 0.75, 0.9)
-# Calculate exceedance probabilities and save table with labels
-ex.vols<- round(apply(vol.sample, 2, exceed.probs, prb)/1000) %>% as.data.frame()
+
+# Calculate exceedance probabilities and save table with labels (vol.sample is from database in KAF)
+ex.vols<- round(apply(exp(vol.sample)/1000, 2, exceed.probs, prb)) %>% as.data.frame()
 ex.vols$Exceedance <- c('90%', '75%', '50%', '25%', '10%') 
 ex.vols<- ex.vols%>% relocate(Exceedance)
 
@@ -173,44 +174,33 @@ dev.off()
 
 options(scipen = 999)
 
-ggplot(var, aes(x=bwh.irr_vol/1000, y=sc.irr_vol/1000))+
-  geom_abline(intercept=24.17,slope=.06781, lty=1, color="lightgrey")+
-  geom_point()+
-  theme_bw()+
-  xlab("Big Wood Hailey Apr-Oct Volume (KAF)")+
-  ylab("Silver Creek Apr-Oct Volume (KAF)")
-
-tst<-lm(var$sc.irr_vol ~ var$bwh.irr_vol)
-summary(tst)
 
 #-------------------------------------------------------------------------------
-### SModel variable plots with current conditions
+### Model variable plots with current conditions
+#TODO: make these work automatically!
+# 1) select variables from current model - working
+# 2) make boxplots of each variable in the model - grouping by values that are 
+# similar would reduce the number of plots, but seems like a facet wrap would work better so each can be on it's own scale?
 #-------------------------------------------------------------------------------
-### initial Grouping of vars based on value 
-# boxplot(var[2:13])
-# boxplot(var[c(19:29, 36,38)])
-# boxplot(var[c(50:60)])
-# boxplot(var[c(61:72)])
-# boxplot(var[c(73:78)])
+
 # Silver Creek
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars) %>% filter(complete.cases(.))
-hist$lwd.log_swe<- exp(hist$lwd.log_swe)
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(volModels_db$sc_mod$vars) %>% filter(complete.cases(.))
 #SC Prediction Data 
-pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$sc$vars)
-pred.dat$lwd.log_swe<-exp(pred.dat$lwd.log_swe)
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(volModels_db$sc_mod$vars)
+pred.dat$lwd.log_swe<-exp(pred.dat$lwd.log_swe) #we dont have logged swe anymore correct?
 
 boxplot(hist[,1])
 stripchart(pred.dat[,1], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
-boxplot(hist[,c(3:6)])
-stripchart(pred.dat[,c(3:6)], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
-boxplot(hist[,7:9])
-stripchart(pred.dat[,7:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,c(4:5)])
+stripchart(pred.dat[,c(4:5)], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+boxplot(hist[,3])
+stripchart(pred.dat[,3], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
 
 #CC historic data
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(volModels_db$cc_mod$vars) %>% filter(complete.cases(.))
 #hist$ga.log_swe<- exp(hist$ga.log_swe)
 #CC Prediction Data 
-pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$cc$vars)
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(volModels_db$cc_mod$vars)
 #pred.dat$ga.log_swe<-exp(pred.dat$ga.log_swe)
 
 boxplot(hist[,c(2:4)])
@@ -223,6 +213,55 @@ stripchart(pred.dat[,5:6], pch = 19, col = 4,vertical = TRUE, add = TRUE)
 
 boxplot(hist[,7:9])
 stripchart(pred.dat[,7:9], pch = 19, col = 4,vertical = TRUE, add = TRUE) 
+
+# ------------------------------------------------------------------------------
+# Plot Year to date streamflow on top of historic traces
+# TODO : make these interactive to toggle between variables for comparison
+# automatically shows the 3 statistically closest water years wrt timing ('cm_prob')
+# provide option to look at three years with similar baseflow? 
+# individual plots will be better than the facet wrap? allow user to select which basin
+# ------------------------------------------------------------------------------
+flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
+           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+           WHERE metric = 'streamflow' AND qcstatus = 'true' ORDER BY datetime;")
+
+#seq dates starting with the beginning of water year
+flow <- flow %>% mutate(wyF=factor(wateryear)) %>%
+  mutate(plot_date=as.Date(paste0(ifelse(month(datetime) < 10, pred.yr, pred.yr-1),
+                                  "-", month(datetime), "-", day(datetime))))
+
+flow_hist<- flow[flow$wateryear < pred.yr,]
+flow_ytd<- flow[flow$wateryear == pred.yr,]
+
+# New facet label names for supp variable
+site.labs <- c("Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")
+names(site.labs) <- c("bwh", "bws", "cc", "sc")
+
+#FIGURE 1 facet wrap of all sites
+ggplot(flow, aes(x = plot_date, y = flow, group = wateryear)) +
+  geom_line(color = 'lightgrey', lwd = 0.5)+
+  geom_line(data=flow_ytd,  aes(x = plot_date, y = flow, group = wateryear), lwd = 0.5, color='dodgerblue2')+
+  facet_wrap(~sitenote, scales = "free", labeller = labeller(sitenote = site.labs)) +
+  scale_x_date(date_labels = "%b")+
+  theme_bw()+
+  theme(strip.background=element_rect(fill="white"))
+
+
+#single plot subset example with bwh
+flow_bwh<- flow_hist[flow_hist$sitenote== 'bwh',] 
+flow_bwh_ytd<- flow_ytd[flow_ytd$sitenote== 'bwh',] 
+
+ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear)) +
+  geom_line(lwd = 0.5, color='lightgrey')+
+  geom_line(data=flow_bwh_ytd,  aes(x = plot_date, y = flow, group = wateryear), lwd = 0.5, color='dodgerblue2')+
+  ylab("Big Wood Hailey Streamflow (cfs)")+
+  xlab("Day of Year")+
+  scale_x_date(date_labels = "%b")+
+  theme_bw()+
+  ylim(50,5000)
+
+
+
 
 #These do NOT WORK 
 # #Multiple Water Years plotted on one figure
@@ -312,45 +351,19 @@ stripchart(pred.dat[,7:9], pch = 19, col = 4,vertical = TRUE, add = TRUE)
 #   ylab('Predicted Mean April - June Temperature (F)')+
 #   theme_bw()
 
-flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
-           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'streamflow' AND qcstatus = 'true' ORDER BY datetime;")
 
-#seq dates starting with the beginning of water year
-flow <- flow %>% mutate(wyF=factor(wateryear)) %>%
-  mutate(plot_date=as.Date(paste0(ifelse(month(datetime) < 10, pred.yr, pred.yr-1),
-                              "-", month(datetime), "-", day(datetime))))
 
-flow_hist<- flow[flow$wateryear < pred.yr,]
-flow_ytd<- flow[flow$wateryear == pred.yr,]
+#----------------------
+# Relationship between Big Wood at Hailey Irrigation flow and Silver Creek
 
-# New facet label names for supp variable
-site.labs <- c("Big Wood Hailey", "Big Wood Stanton", "Camas Creek", "Silver Creek")
-names(site.labs) <- c("bwh", "bws", "cc", "sc")
-                      
-#facet wrap of all sites
-ggplot(flow, aes(x = plot_date, y = flow, group = wateryear)) +
-  geom_line(color = 'lightgrey', lwd = 0.5)+
-  geom_line(data=flow_ytd,  aes(x = plot_date, y = flow, group = wateryear), lwd = 0.5, color='dodgerblue2')+
-  facet_wrap(~sitenote, scales = "free", labeller = labeller(sitenote = site.labs)) +
-  scale_x_date(date_labels = "%b")+
+ggplot(var, aes(x=bwh.irr_vol/1000, y=sc.irr_vol/1000))+
+  geom_abline(intercept=24.17,slope=.06781, lty=1, color="lightgrey")+
+  geom_point()+
   theme_bw()+
-  theme(strip.background=element_rect(fill="white"))
-  
+  xlab("Big Wood Hailey Apr-Oct Volume (KAF)")+
+  ylab("Silver Creek Apr-Oct Volume (KAF)")
 
-#subset to BWH for single plot
-flow_bwh<- flow_hist[flow_hist$sitenote== 'bwh',] 
-flow_bwh_ytd<- flow_ytd[flow_ytd$sitenote== 'bwh',] 
-
-ggplot(flow_bwh, aes(x = plot_date, y = flow, group = wateryear)) +
-  geom_line(lwd = 0.5, color='lightgrey')+
-  geom_line(data=flow_bwh_ytd,  aes(x = plot_date, y = flow, group = wateryear), lwd = 0.5, color='dodgerblue2')+
-  ylab("Big Wood Hailey Streamflow (cfs)")+
-  xlab("Day of Year")+
-  scale_x_date(date_labels = "%b")+
-  theme_bw()+
-  ylim(50,500)
-
-
+tst<-lm(var$sc.irr_vol ~ var$bwh.irr_vol)
+summary(tst)
 
 
