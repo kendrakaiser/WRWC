@@ -9,7 +9,7 @@ source(paste0(git_dir,"/code/fxn_dbIntakeTools.R"))
 source(paste0(git_dir,"/code/fxn_get_snow.R")) 
 source(paste0(git_dir,"/code/fxn_SNODASR_functions.R")) 
 #connect to database
-conn=scdbConnect() 
+#conn=scdbConnect() # done in init_db.R
 
 # ------------------------------------------------------------------------------
 # USGS Gages Data & Metrics
@@ -17,25 +17,27 @@ conn=scdbConnect()
 # winter "baseflow" (wb), Apr - Sept irrigation volume (irr_vol), total Volume (tot_vol), and center of mass (cm)
 # ------------------------------------------------------------------------------
 source(file.path(git_dir,'code/fxn_baseflowA.r'))
-#Average Winter Flow - doesnt work properly bc needs filtered, retaining so code doesnt break
+#Average Winter flow - doesnt work properly bc needs filtered, retaining so code doesnt break
 # avgBaseflow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, AVG(value) AS wq, data.locationid, name, sitenote
 #            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-#            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
+#            WHERE metric = 'flow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
 #            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
 
 #pull winter flow to do filter on
 wint_flow=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
+           WHERE metric = 'flow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
            AND datetime::date <= '",end_date,"'::date
+           AND locations.name IN ('BIG WOOD RIVER AT HAILEY', 'BIG WOOD RIVER AT STANTON CROSSING', 'CAMAS CREEK NR BLAINE ID', 'SILVER CREEK AT SPORTSMAN ACCESS' )
            ORDER BY datetime;")
 )
 
 bf_wrapper=function(wy, lid, wint_flow_df){
   thisQ=wint_flow_df[wint_flow_df$wateryear == wy & wint_flow_df$locationid == lid,"flow"]
-  bf=baseflowA(thisQ)
-  return(mean(bf$bf))
+    bf=baseflowA(thisQ)
+    return(mean(bf$bf))
 }
+
 
 avgBaseflow=unique(wint_flow[,c("wateryear","metric","locationid","name","sitenote")])
 
@@ -44,12 +46,13 @@ avgBaseflow$wq = mapply(bf_wrapper, wy=avgBaseflow$wateryear, lid=avgBaseflow$lo
 # pivot data wider
 baseflow<-pivot_wider(data=avgBaseflow[,c("wateryear","wq","sitenote")],names_from = c(sitenote),values_from = c(wq), names_glue = "{sitenote}.wq")
 
-#Total Irrigation Season April-September streamflow in AF [1.98 #convert from cfs to ac-ft]
+#Total Irrigation Season April-September flow in AF [1.98 #convert from cfs to ac-ft]
 irr_AF=dbGetQuery(conn,paste0("SELECT * FROM (
             SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS irr_vol, data.locationid, name, sitenote, COUNT(DISTINCT(dataid)) AS days_in_record
             FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-            WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 10)
+            WHERE metric = 'flow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 10)
             AND datetime::date <= '",end_date,"'::date
+            AND locations.name IN ('BIG WOOD RIVER AT HAILEY', 'BIG WOOD RIVER AT STANTON CROSSING', 'CAMAS CREEK NR BLAINE ID', 'SILVER CREEK AT SPORTSMAN ACCESS' )
             GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear
           ) as histvols WHERE days_in_record > 180;"))  # complete record is 183 days
 
@@ -61,7 +64,8 @@ irr_vol<-pivot_wider(data=irr_AF[,c("wateryear","irr_vol","sitenote")],names_fro
 #Total Water Year volume in AF [1.98 #convert from cfs to ac-ft]
 tot_AF=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS tot_vol, data.locationid, name, sitenote
           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-          WHERE metric = 'streamflow' AND qcstatus = 'true' AND datetime::date <= '",end_date,"'::date
+          WHERE metric = 'flow' AND qcstatus = 'true' AND datetime::date <= '",end_date,"'::date
+          AND locations.name IN ('BIG WOOD RIVER AT HAILEY', 'BIG WOOD RIVER AT STANTON CROSSING', 'CAMAS CREEK NR BLAINE ID', 'SILVER CREEK AT SPORTSMAN ACCESS' )
           GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
 
 tot_AF$wy1<-tot_AF$wateryear-1
@@ -74,8 +78,9 @@ tot_vol<-pivot_wider(data=totAF[,c("wateryear","tot_vol","ly_vol","sitenote")], 
 #CENTER of MASS between April 1 and July 31
 cm_dat=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, SUM(value)*1.98 AS flow, data.locationid, name, sitenote,  EXTRACT(doy FROM datetime) AS doy 
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 8)
+           WHERE metric = 'flow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 8)
            AND datetime::date <= '",end_date,"'::date
+           AND locations.name IN ('BIG WOOD RIVER AT HAILEY', 'BIG WOOD RIVER AT STANTON CROSSING', 'CAMAS CREEK NR BLAINE ID', 'SILVER CREEK AT SPORTSMAN ACCESS' )
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote, doy) ORDER BY wateryear;"))
 
 years<- min(cm_dat$wateryear):max(cm_dat$wateryear)
@@ -93,7 +98,7 @@ for(sitename in unique(cm$sitenote)){
 
 cm_wide<- cm %>% pivot_wider(names_from = sitenote, values_from = cm, names_glue = "{sitenote}.cm" )
 
-print('Streamflow Metrics Complete')
+print('flow Metrics Complete')
 
 # ------------------------------------------------------------------------------
 # Retrieve Snotel Data 
@@ -222,7 +227,7 @@ currentSnodas=dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid, metric, na
 #^^^^ this gets the sum for liquid precip (all liquid precip for the period)
 
 currentSnodas=rbind(currentSnodas,
-                     dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid, metric) wateryear(datetime) AS wateryear, datetime, metric, value, locations.locationid, locations.name, locations.sitenote 
+                    dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid, metric) wateryear(datetime) AS wateryear, datetime, metric, value, locations.locationid, locations.name, locations.sitenote 
                  FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
                  WHERE datetime::date <= '",end_date,"'::date 
                  AND metric != 'liquid_precip'
@@ -256,4 +261,4 @@ alldat_april <- swe_apr %>% merge(baseflow, by= 'wateryear',all=T) %>% merge(tot
 
 #write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
-print("All streamflow and snow data saved")
+print("All flow and snow data saved")

@@ -226,7 +226,7 @@ stripchart(pred.dat[,7:9], pch = 19, col = 4,vertical = TRUE, add = TRUE)
 # ------------------------------------------------------------------------------
 flow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'streamflow' AND qcstatus = 'true' ORDER BY datetime;")
+           WHERE metric = 'flow' AND qcstatus = 'true' ORDER BY datetime;")
 
 #seq dates starting with the beginning of water year
 flow <- flow %>% mutate(wyF=factor(wateryear)) %>%

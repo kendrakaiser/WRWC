@@ -412,7 +412,7 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
       
       
       #write to db
-      dbWriteData(metric="streamflow",value=streamflow$Flow,datetime=streamflow$Date,locationID=locationID,sourceName="USGS",qcStatus=streamflow$qcStatus,qcDetails=streamflow$Flow_cd)
+      dbWriteData(metric="flow",value=streamflow$Flow,datetime=streamflow$Date,locationID=locationID,sourceName="USGS",qcStatus=streamflow$qcStatus,qcDetails=streamflow$Flow_cd)
       
     }
     
@@ -520,10 +520,10 @@ update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30
 
 
 ##########-----------update streamflow data ------------------
-updateDbData(metric="streamflow", location="BIG WOOD RIVER AT HAILEY", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
-updateDbData(metric="streamflow", location="BIG WOOD RIVER AT STANTON CROSSING", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
-updateDbData(metric="streamflow", location="SILVER CREEK AT SPORTSMAN ACCESS", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
-updateDbData(metric="streamflow", location="CAMAS CREEK NR BLAINE ID", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
+updateDbData(metric="flow", location="BIG WOOD RIVER AT HAILEY", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
+updateDbData(metric="flow", location="BIG WOOD RIVER AT STANTON CROSSING", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
+updateDbData(metric="flow", location="SILVER CREEK AT SPORTSMAN ACCESS", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
+updateDbData(metric="flow", location="CAMAS CREEK NR BLAINE ID", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
 
 
 ###########------------------update snotel data-----------------

@@ -9,11 +9,6 @@
 # ------------------------------------------------------------------------------
 
 
-# generate initial table structure
-# dbExecute(conn, "CREATE TABLE volumemodels(modelid SERIAL PRIMARY KEY,
-#         modeldate DATE, devdate DATE, models TEXT);")
-
-
 
 modelFromDB=dbGetQuery(conn,paste0("SELECT * FROM volumemodels WHERE modeldate = '",as.Date(paste0(year(end_date), "/", month(end_date), "/", 1)),"';"))
 rm(volModels_db) # the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
@@ -59,7 +54,7 @@ pi_date=pi
 pi_date$date=as.Date(rownames(pi))
 dbWriteTable(conn,"predictionintervals",pi_date,overwrite=T)
 
-dbGetQuery(conn,"SELECT * FROM predictionintervals;")
+#dbGetQuery(conn,"SELECT * FROM predictionintervals;")
 
 
 # ------------------------------------------------------------------------------

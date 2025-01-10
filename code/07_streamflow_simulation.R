@@ -14,9 +14,11 @@ dates<-seq(as.Date(paste(pred.yr,"-04-01",sep="")),as.Date(paste(pred.yr,"-09-30
 # timeseries of flow at each gage 
 
 #Irrigation Season April-September streamflow in cfs
-irr_cfs=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, value, data.locationid, name, sitenote
+irr_cfs=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, datetime, metric, avg(value) AS value, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'streamflow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 10) 
+           WHERE metric = 'flow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 10) 
+           AND locations.name IN ('BIG WOOD RIVER AT HAILEY', 'BIG WOOD RIVER AT STANTON CROSSING', 'CAMAS CREEK NR BLAINE ID', 'SILVER CREEK AT SPORTSMAN ACCESS' )
+           GROUP BY wateryear, datetime, metric, data.locationid, name, sitenote
            ORDER BY datetime;")
 
 bwh.wy<-irr_cfs[irr_cfs$sitenote == "bwh", ]
