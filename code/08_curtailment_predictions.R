@@ -52,7 +52,7 @@ cutoff<- function(flow, wr_array){
   return(cut.wr)
 }
 
-#clean this up to shorten this 
+#TODO: clean this up to shorten this 
 wr.cutoffs$cut.wr.hi<-Reduce(c, lapply(wr.cutoffs$bwh.hiQ, cutoff, wr.sub))
 #wr.cutoffs$cut.wr.hi[1:which(wr.cutoffs$bwh.hiQ == max(wr.cutoffs$bwh.hiQ))]<-NA #ignore cutoffs before peak
 
