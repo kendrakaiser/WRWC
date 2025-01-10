@@ -57,9 +57,9 @@ tdata<-data.frame(array(NA,c(length(site.key)*nyrs,5)))
 
 
 elev<- structure(list(sitenote = c("lwd", "bc", "sr", "g", "gs", "hc", "ds", "ga", "sp", 
-                "sm", "ccd", "cg", "picabo", "fairfield"), elev = c(7900L, 7900L, 5740L, 7470L, 
-                8780L, 7620L, 8420L, 6560L, 7640L, 7430L,5710L, 6310L, 4900L, 5038L)), 
-               class = "data.frame", row.names = c(NA,-14L))
+                                   "sm", "ccd", "cg", "picabo", "fairfield"), elev = c(7900L, 7900L, 5740L, 7470L, 
+                                                                                       8780L, 7620L, 8420L, 6560L, 7640L, 7430L,5710L, 6310L, 4900L, 5038L)), 
+                 class = "data.frame", row.names = c(NA,-14L))
 #tdata$elev<-rep(elev$elev, each=nyrs)
 
 #summer temp july-sept, winter temp NDJFM
@@ -71,21 +71,21 @@ tdata$sitenote<-rep(site.key, each=nyrs)
 for(i in 1:2){ 
   for (y in first.yr:last.yr){
     #subset to indv. site and year
-      sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$wy==y,])
+    sub<- na.omit(agrimet[agrimet$site_name == site.key[i] & agrimet$wy==y,])
     #average april - june temps
     #if length is greater than 95% of the desired period calculate the mean
     if (length(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"]) > 88) {
-        aj.mean.temp <- mean(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"], na.rm=TRUE)
-        } else (aj.mean.temp <- NA)
+      aj.mean.temp <- mean(sub[sub$mo == 4 | sub$mo ==5 | sub$mo ==6 , "temperature_mean"], na.rm=TRUE)
+    } else (aj.mean.temp <- NA)
     #average summer temps July Aug Sept
     if (length(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "temperature_mean"]) > 88) {
       sum.mean.temp <- mean(sub[sub$mo == 7 | sub$mo ==8 | sub$mo ==9 , "temperature_mean"], na.rm=TRUE)
-      } else (sum.mean.temp <- NA)
+    } else (sum.mean.temp <- NA)
     #average nov-jan temps
     if (length(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"]) > 88) {
-       nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"], na.rm=TRUE)
-        } else (nj.mean.temp <- NA)
-  
+      nj.mean.temp <- mean(sub[sub$mo == 11 | sub$mo ==12 | sub$mo ==1, "temperature_mean"], na.rm=TRUE)
+    } else (nj.mean.temp <- NA)
+    
     #save to tdata table
     tdata$aj_t[tdata$wateryear == y & tdata$site == site.key[i]] <- aj.mean.temp
     tdata$nj_t[tdata$wateryear == y & tdata$site == site.key[i]] <- nj.mean.temp
@@ -151,15 +151,15 @@ aj.pred.temps<- data.frame(mvrnorm(nboot, new.data$aj_tempf, site.cov) )
 
 png(filename = file.path(fig_dir,"ModeledTemps.png"),
     width = 5.5, height = 3.5,units = "in", pointsize = 12,
-     bg = "white", res = 600) 
+    bg = "white", res = 600) 
 
 ggplot(input, aes(x=aj_tempf, y=fitted, color=sitenote)) + 
-    geom_abline(intercept=0,lty=1)+
-    geom_point()+
-    xlim(2, 11.5)+
-    ylim(2,11.5) +
-    xlab('Observed Mean April - June Temperature (F)') +
-    ylab('Predicted Mean April - June Temperature (F)') +
-    theme_bw()
+  geom_abline(intercept=0,lty=1)+
+  geom_point()+
+  xlim(2, 11.5)+
+  ylim(2,11.5) +
+  xlab('Observed Mean April - June Temperature (F)') +
+  ylab('Predicted Mean April - June Temperature (F)') +
+  theme_bw()
 
 dev.off()

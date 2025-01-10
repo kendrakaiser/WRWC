@@ -55,9 +55,17 @@ if (month(end_date) == 2){
 # Compile Data Based on Run Date
 # ------------------------------------------------------------------------------
 source(file.path(git_dir,'code/005_db_update.R'))
-source(file.path(git_dir, 'code/02_data_scraping.R'))
-source(file.path(git_dir, 'code/03_temperature_models.R')) 
-source(file.path(git_dir, 'code/04_data_integration.R'))  
+
+# source(file.path(git_dir, 'code/02_data_scraping.R'))
+# source(file.path(git_dir, 'code/03_temperature_models.R')) 
+# source(file.path(git_dir, 'code/04_data_integration.R'))  
+source(file.path(git_dir, 'code/0234_makeVarFunction.R'))  
+
+dataList=makeDatasets(date=end_date)
+var=dataList$var
+aj.pred.temps=dataList$aj.pred.temps
+current_data=dataList$current_data
+rm(dataList)
 
 # Create Streamflow Models 
 #-------------------------------------------------------------------------------
