@@ -8,42 +8,25 @@
 # Write model structure to database
 # ------------------------------------------------------------------------------
 
-
-
-modelFromDB=dbGetQuery(conn,paste0("SELECT * FROM volumemodels WHERE modeldate = '",as.Date(paste0(year(end_date), "/", month(end_date), "/", 1)),"';"))
-rm(volModels_db) # the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
-
-anyModelsEqual=F
-
-if(nrow(modelFromDB)>0){
-  for(i in 1:nrow(modelFromDB)){
-    eval(parse(text=modelFromDB$models[i])) #comes through as volModels_db)
-    
-    for(n in names(vol_models)){
-      allModelsEqual=T
-      dbCoef=coef(volModels_db[[n]])
-      thisCoef=coef(vol_models[[n]])
-      allModelsEqual=allModelsEqual & identical(dbCoef,thisCoef)
-    }
-    if(allModelsEqual==T){
-      anyModelsEqual=T
-    }
-  }
-}
-
-if(!anyModelsEqual){
-  volModels_db=vol_models
+writeModel=function(model,modelName,enddate=end_date){
+  moddate=as.Date(paste0(year(enddate), "/", month(enddate), "/", 1))
+  rundate=Sys.Date()
   
-  writeModelQuery=DBI::sqlInterpolate(conn, sql="INSERT INTO volumemodels (modeldate, devdate, models) VALUES (?modDate, ?devDate, ?models );",
-                                      modDate=as.Date(paste0(year(end_date), "/", month(end_date), "/", 1)),
-                                      devDate=Sys.Date(),
-                                      models=capture.output(cat(capture.output(dump("volModels_db",file="")),file="",sep="")))
-  dbExecute(conn,writeModelQuery)
-}
-# How you pull models from db
-# dbModel=dbGetQuery(conn, "SELECT * FROM volumemodels") #WHERE...
-# rm(volModels_db) # the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
-# vol_mods<-eval(parse(text=dbModel$models[1]))
+  writeModelDF=data.frame(modelname=modelName,
+                          moddate=moddate,rundate=rundate,
+                          modelcoefjson=toJSON(data.frame(model$coefficients)),
+                          modeldatajson=toJSON(model$model)
+                          
+  )
+  
+  dbExecute(conn,paste0("DELETE FROM volumemodels WHERE modelname = '",modelName,
+                        "' AND rundate = '",rundate,"' AND moddate = '",moddate,"';"))
+  
+  dbWriteTable(conn,"volumemodels",writeModelDF,append=T)
+  
+}    
+
+mapply(writeModel,vol_models,names(vol_models))
 
 
 
@@ -103,18 +86,18 @@ writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
   'x:x is the sample for which summary stats will be written to db'
   simDate=as.Date(simDate)
   runDate=as.Date(runDate)
-
-
+  
+  
   if(length(strsplit(site.metric,"\\.")[[1]])!=2){
     stop(paste0("Invalid site.metric ",site.metric))
   }
-
+  
   site=strsplit(site.metric,"\\.")[[1]][1]
   metric=strsplit(site.metric,"\\.")[[1]][2]
-
-
+  
+  
   x.stats=boxplot.stats(x)
-
+  
   statDF=data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="n",value=x.stats$n)
   statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="min",value=x.stats$stats[[1]]))
   statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="lower_hinge",value=x.stats$stats[[2]]))
@@ -125,10 +108,10 @@ writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
     statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="outlier",value=x.stats$out))
   }
   #return(statDF)
-
+  
   dbExecute(conn,paste0("DELETE FROM summarystatistics WHERE site = '",site,"' AND metric = '",metric,
                         "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
-
+  
   dbWriteTable(conn,"summarystatistics",statDF,append=T)
 }
 
