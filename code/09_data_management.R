@@ -91,9 +91,11 @@ writeVolModelOutput(x=vol.sample$bws.irr_vol, site.metric="bws.irr_vol",simDate=
 writeVolModelOutput(x=vol.sample$cc.irr_vol, site.metric="cc.irr_vol",simDate=end_date)
 writeVolModelOutput(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=end_date)
 
+#pulling data back out:
+#lastForecasts=dbGetQuery(conn,"SELECT DISTINCT ON (simdate) forecastvolumes.* FROM forecastvolumes ORDER BY simdate, rundate DESC;")
+# unique(lastForecasts$rundate)
 
-
-
+#dbExecute(conn,"CREATE INDEX rundate_idx ON forecastvolumes (rundate);")
 # Write summary statistics for predicted irrigation season volumes
 # ------------------------------------------------------------------------------
 
@@ -103,18 +105,18 @@ writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
   'x:x is the sample for which summary stats will be written to db'
   simDate=as.Date(simDate)
   runDate=as.Date(runDate)
-
-
+  
+  
   if(length(strsplit(site.metric,"\\.")[[1]])!=2){
     stop(paste0("Invalid site.metric ",site.metric))
   }
-
+  
   site=strsplit(site.metric,"\\.")[[1]][1]
   metric=strsplit(site.metric,"\\.")[[1]][2]
-
-
+  
+  
   x.stats=boxplot.stats(x)
-
+  
   statDF=data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="n",value=x.stats$n)
   statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="min",value=x.stats$stats[[1]]))
   statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="lower_hinge",value=x.stats$stats[[2]]))
@@ -125,10 +127,10 @@ writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
     statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="outlier",value=x.stats$out))
   }
   #return(statDF)
-
+  
   dbExecute(conn,paste0("DELETE FROM summarystatistics WHERE site = '",site,"' AND metric = '",metric,
                         "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
-
+  
   dbWriteTable(conn,"summarystatistics",statDF,append=T)
 }
 
