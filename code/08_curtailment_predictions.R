@@ -25,21 +25,21 @@ library(ggnewscale)
 # 
 # dbWriteTable(conn,"waterrights",wr.sub)
 
-wr.sub=dbReadTable(conn,"waterrights")
-# Plot cumulative water rights
-ggplot(wr.sub, aes(priority.date, cuml.cfs))+
-  geom_point()+
-  theme_bw()+
-  xlab("Priority Date")+
-  ylab("Cumulative Water Rights in the Basin (cfs)")
+# # Plot cumulative water rights
+# ggplot(wr.sub, aes(priority.date, cuml.cfs))+
+#   geom_point()+
+#   theme_bw()+
+#   xlab("Priority Date")+
+#   ylab("Cumulative Water Rights in the Basin (cfs)")
 
 # ------------------------------------------------------------------------------
 # Identify when curtailments will occur based on mean simulated streamflow
 # ------------------------------------------------------------------------------
 
 # Big Wood Water Rights
+wr.sub=dbReadTable(conn,"waterrights")
 
-# big wood stanton mean simulated flow
+# big wood hailey mean simulated flow
 wr.cutoffs<- data.frame("date" = array(NA,c(183)))
 wr.cutoffs$date<- dates
 wr.cutoffs$doy<- yday(dates)
@@ -58,26 +58,10 @@ cutoff<- function(flow, wr_array){
 #TODO: clean this up to shorten this 
 wr.cutoffs$cut.wr.hi<-Reduce(c, lapply(wr.cutoffs$bwh.hiQ, cutoff, wr.sub))
 #wr.cutoffs$cut.wr.hi[1:which(wr.cutoffs$bwh.hiQ == max(wr.cutoffs$bwh.hiQ))]<-NA #ignore cutoffs before peak
-
 wr.cutoffs$cut.wr.med<-Reduce(c, lapply(wr.cutoffs$bwh.medQ, cutoff, wr.sub))
-#wr.cutoffs$cut.wr.med[1:which(wr.cutoffs$bwh.medQ == max(wr.cutoffs$bwh.medQ))]<-NA #ignore cutoffs before peak
-
 wr.cutoffs$cut.wr.low<-Reduce(c, lapply(wr.cutoffs$bwh.lowQ, cutoff, wr.sub))
-#wr.cutoffs$cut.wr.low[1:which(wr.cutoffs$bwh.lowQ == max(wr.cutoffs$bwh.lowQ))]<-NA #ignore cutoffs before peak
 
-#wr.cutoffs$ymo.hi<- zoo::as.yearmon(wr.cutoffs$cut.wr.hi)
-#wr.cutoffs$ymo.med<- zoo::as.yearmon(wr.cutoffs$cut.wr.med)
-#wr.cutoffs$ymo.low<- zoo::as.yearmon(wr.cutoffs$cut.wr.low)
-ymo.list<-unique(c(wr.cutoffs$ymo.hi,wr.cutoffs$ymo.med,wr.cutoffs$ymo.low))
-ymo.list<- ymo.list[order(ymo.list)]
-
-wr.quants<-quantile(wr.sub$cuml.cfs, probs=seq(0,1,.05))
-wr.sub$wr.group<- wr.quants[which.min(abs(wr.sub$cuml.cfs - wr.quants))] 
-
-
-wr.sub$grp<- ecdf(wr.sub$cuml.cfs)
-
-
+#combine the cutoffdates with the hi/med/low predictions for plotting  
 wr.cutoffs$low.grp=NA
 wr.cutoffs$med.grp=NA
 wr.cutoffs$hi.grp=NA
@@ -88,21 +72,6 @@ for (i in 1:nrow(wr.cutoffs)){
   wr.cutoffs$hi.grp[i]<- wr.sub$wr.group[wr.sub$priority.date == wr.cutoffs$cut.wr.hi[i]]
 }
 
-
-gr.min<-aggregate(priority.date~ wr.group, data=wr.sub, FUN=min)
-gr.max<-aggregate(priority.date~ wr.group, data=wr.sub, FUN=max) #this is the one to use to label
-grp.labels<-merge(gr.min, gr.max, by='wr.group', suffixes=c('.min', '.max'))
-
-wr.ts<- function(wr.co, flow, sitename="name"){
-  wr.co[sitename]<- flow
-  wr.co$cut.wr<-Reduce(c, lapply(wr.co[sitename], cutoff, wr.sub))
-  wr.co$cut.wr[1:which(wr.co[sitename] == max(wr.co[sitename]))]<-NA #ignore cutoffs before peak
-  wr.co$ymo<- zoo::as.yearmon(wr.co$cut.wr)
-  wr.co- wr.co[complete.cases(wr.co),]
-  
-  return(wr.co)
-}
-#wr.cutoffs<- wr.ts(wr.cutoffs, pi[,"bwh.med"], sitename = "bws.medQ")
 
 ggplot(data=wr.cutoffs) + 
   geom_point(aes(x=date, y=bwh.hiQ, color= as.factor(hi.grp)), show.legend = FALSE)+
@@ -125,5 +94,22 @@ ggsave(filename = file.path(fig_dir_mo, "curtailment_recession.png"),
        bg = "white") 
 
 #the big problem / question here is that the old water rights shouldnt get turned off, so I'm wondering which data should be used here??
-# Silver Creek 
 
+
+#wr.quants<-quantile(wr.sub$cuml.cfs, probs=seq(0,1,.05))
+#wr.sub$wr.group<- wr.quants[which.min(abs(wr.sub$cuml.cfs - wr.quants))] 
+
+#gr.min<-aggregate(priority.date~ wr.group, data=wr.sub, FUN=min)
+#gr.max<-aggregate(priority.date~ wr.group, data=wr.sub, FUN=max) #this is the one to use to label
+#grp.labels<-merge(gr.min, gr.max, by='wr.group', suffixes=c('.min', '.max'))
+
+# wr.ts<- function(wr.co, flow, sitename="name"){
+#   wr.co[sitename]<- flow
+#   wr.co$cut.wr<-Reduce(c, lapply(wr.co[sitename], cutoff, wr.sub))
+#   wr.co$cut.wr[1:which(wr.co[sitename] == max(wr.co[sitename]))]<-NA #ignore cutoffs before peak
+#   wr.co$ymo<- zoo::as.yearmon(wr.co$cut.wr)
+#   wr.co- wr.co[complete.cases(wr.co),]
+# 
+# return(wr.co)
+# }
+#wr.cutoffs<- wr.ts(wr.cutoffs, pi[,"bwh.med"], sitename = "bws.medQ")
