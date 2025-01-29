@@ -31,7 +31,7 @@ mapply(writeModel,vol_models,names(vol_models))
 
 
 # ------------------------------------------------------------------------------
-# write the prediction intervals for daily streamflow output
+# write the prediction intervals for daily streamflow output (cfs)
 # ------------------------------------------------------------------------------
 pi_date=pi
 pi_date$date=as.Date(rownames(pi))
@@ -46,7 +46,8 @@ dbWriteTable(conn,"predictionintervals",pi_date,overwrite=T)
 #curt.sampleLong<- curt.sample
 
 # ------------------------------------------------------------------------------
-
+# Volume model output, seasonal AF in logged units
+#TODO update how the logged output is managed
 writeVolModelOutput=function(x,site.metric,simDate,runDate=Sys.Date()){
   'x:x is the sample for which model output will be written to db'
   simDate=as.Date(simDate)
