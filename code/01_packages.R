@@ -16,7 +16,7 @@ library(tidyverse)
 #"dplyr","plyr","devtools","knitr","httr"
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load("MASS","mvtnorm","tidyverse","tidyr","dataRetrieval", "dplyr","snotelr","lubridate","gridExtra","ggplot2","nlme",
-               "fasstr","stringr","leaps","caret","RPostgres","raster", "terra", "sf", "MuMIn", "R.utils","selectr")
+               "fasstr","stringr","leaps","caret","RPostgres","raster", "terra", "sf", "MuMIn", "R.utils","selectr","jsonlite")
 
 
 

@@ -64,10 +64,23 @@ writeVolModelOutput=function(x,site.metric,simDate,runDate=Sys.Date()){
   modelOutputDF=data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,value=x)
   
   #dont allow duplicate entries (same run day and same simualted day)
-  dbExecute(conn,paste0("DELETE FROM forecastvolumes WHERE site = '",site,"' AND metric = '",metric,
+  # dbExecute(conn,paste0("DELETE FROM forecastvolumes WHERE site = '",site,"' AND metric = '",metric,
+  #                       "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
+  # 
+  # dbWriteTable(conn,"forecastvolumes",modelOutputDF,append=T)
+  # 
+  # 
+
+  #dont allow duplicate entries (same run day and same simualted day)
+  dbExecute(conn,paste0("DELETE FROM forecastvols WHERE site = '",site,"' AND metric = '",metric,
                         "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
   
-  dbWriteTable(conn,"forecastvolumes",modelOutputDF,append=T)
+  dbExecute(conn,paste0("INSERT INTO forecastvols (site, metric, rundate, simdate, values) VALUES ('",site,"', '",metric,"', '",runDate,"', '",simDate,
+                        "', '{",paste(x,collapse=","),"}');"
+                        )
+            )
+  
+  
 }
 
 writeVolModelOutput(x=vol.sample$bwh.irr_vol, site.metric="bwh.irr_vol",simDate=end_date)
