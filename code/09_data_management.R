@@ -72,10 +72,10 @@ writeVolModelOutput=function(x,site.metric,simDate,runDate=Sys.Date()){
   # 
 
   #dont allow duplicate entries (same run day and same simualted day)
-  dbExecute(conn,paste0("DELETE FROM forecastvols WHERE site = '",site,"' AND metric = '",metric,
+  dbExecute(conn,paste0("DELETE FROM forecastvolumes WHERE site = '",site,"' AND metric = '",metric,
                         "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
   
-  dbExecute(conn,paste0("INSERT INTO forecastvols (site, metric, rundate, simdate, values) VALUES ('",site,"', '",metric,"', '",runDate,"', '",simDate,
+  dbExecute(conn,paste0("INSERT INTO forecastvolumes (site, metric, rundate, simdate, values) VALUES ('",site,"', '",metric,"', '",runDate,"', '",simDate,
                         "', '{",paste(x,collapse=","),"}');"
                         )
             )
