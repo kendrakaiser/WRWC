@@ -61,55 +61,5 @@ wr.cutoffs$cut.wr.hi<-Reduce(c, lapply(wr.cutoffs$bwh.hiQ, cutoff, wr.sub))
 wr.cutoffs$cut.wr.med<-Reduce(c, lapply(wr.cutoffs$bwh.medQ, cutoff, wr.sub))
 wr.cutoffs$cut.wr.low<-Reduce(c, lapply(wr.cutoffs$bwh.lowQ, cutoff, wr.sub))
 
-#combine the cutoffdates with the hi/med/low predictions for plotting  
-wr.cutoffs$low.grp=NA
-wr.cutoffs$med.grp=NA
-wr.cutoffs$hi.grp=NA
+dbWriteTable(conn,"wr.cutoffs", wr.cutoffs, overwrite=TRUE)
 
-for (i in 1:nrow(wr.cutoffs)){
-  wr.cutoffs$low.grp[i]<- wr.sub$wr.group[wr.sub$priority.date == wr.cutoffs$cut.wr.low[i]]
-  wr.cutoffs$med.grp[i]<- wr.sub$wr.group[wr.sub$priority.date == wr.cutoffs$cut.wr.med[i]]
-  wr.cutoffs$hi.grp[i]<- wr.sub$wr.group[wr.sub$priority.date == wr.cutoffs$cut.wr.hi[i]]
-}
-
-
-ggplot(data=wr.cutoffs) + 
-  geom_point(aes(x=date, y=bwh.hiQ, color= as.factor(hi.grp)), show.legend = FALSE)+
-  scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(unique(wr.sub$wr.group)))+ 
-  new_scale_colour() +
-  geom_point(aes(x=date, y=bwh.medQ, color= as.factor(med.grp)), show.legend = FALSE)+
-  scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(unique(wr.sub$wr.group)))+  
-  new_scale_colour() +
-  geom_point(aes(x=date, y=bwh.lowQ, color= as.factor(low.grp)))+
-  scale_color_viridis(discrete = TRUE, option = "turbo", direction=-1, limits = as.factor(unique(wr.sub$wr.group)))+  
-  theme_bw()+
-  scale_y_continuous(n.breaks=8)+
-  scale_x_date(date_breaks = "weeks" , date_labels = "%m/%d", limits=c(wr.cutoffs$date[1], wr.cutoffs$date[183]))+
-  labs(color = "Surface Water Rights")+
-  ylab("Average Simulated Streamflow @ Hailey (cfs)")+
-  xlab("Date")
-
-ggsave(filename = file.path(fig_dir_mo, "curtailment_recession.png"),
-       width = 14.5, height = 5.5, units = "in", pointsize = 12,
-       bg = "white") 
-
-#the big problem / question here is that the old water rights shouldnt get turned off, so I'm wondering which data should be used here??
-
-
-#wr.quants<-quantile(wr.sub$cuml.cfs, probs=seq(0,1,.05))
-#wr.sub$wr.group<- wr.quants[which.min(abs(wr.sub$cuml.cfs - wr.quants))] 
-
-#gr.min<-aggregate(priority.date~ wr.group, data=wr.sub, FUN=min)
-#gr.max<-aggregate(priority.date~ wr.group, data=wr.sub, FUN=max) #this is the one to use to label
-#grp.labels<-merge(gr.min, gr.max, by='wr.group', suffixes=c('.min', '.max'))
-
-# wr.ts<- function(wr.co, flow, sitename="name"){
-#   wr.co[sitename]<- flow
-#   wr.co$cut.wr<-Reduce(c, lapply(wr.co[sitename], cutoff, wr.sub))
-#   wr.co$cut.wr[1:which(wr.co[sitename] == max(wr.co[sitename]))]<-NA #ignore cutoffs before peak
-#   wr.co$ymo<- zoo::as.yearmon(wr.co$cut.wr)
-#   wr.co- wr.co[complete.cases(wr.co),]
-# 
-# return(wr.co)
-# }
-#wr.cutoffs<- wr.ts(wr.cutoffs, pi[,"bwh.med"], sitename = "bws.medQ")
