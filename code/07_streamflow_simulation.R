@@ -44,10 +44,9 @@ rownames(cc.flow.s)<-rownames(bwh.flow.s)<-rownames(bws.flow.s)<-
 sim.flow <- function(irr.seas.flow, vol){
   "
   irr.seas.flow: streamflow from irrigation season of analog water year
-  vol: total volume from bootstrap sample (ac-ft) 
+  vol: total volume from bootstrap sample (KAF) 
   "
-  #TODO: check this - vol.sample is KAF, but above it says AF, need to make sure conversion is correct
-  pred <- irr.seas.flow*vol/(sum(irr.seas.flow)*1.98)
+  pred <- irr.seas.flow*(vol*1000)/(sum(irr.seas.flow)*1.98)
   return (pred)
 }
 
