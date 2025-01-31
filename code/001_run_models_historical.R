@@ -12,7 +12,7 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
 source(file.path(git_dir, 'code/01_packages.R'))
 source(file.path(git_dir, 'code/init_db.R'))
-#source(file.path(git_dir,'code/005_db_update.R'))
+source(file.path(git_dir,'code/005_db_update.R'))
 
 
 runDates=c(seq.Date(from=as.Date("2023-02-01"),to=as.Date("2023-04-30"),by="day"),
