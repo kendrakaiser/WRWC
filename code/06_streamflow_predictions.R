@@ -329,6 +329,8 @@ cm_prob<-as.data.frame(summary(as.factor(CMyear.sample))/5000)
 colnames(cm_prob)<- c("% of sample")
 cm_prob<- cm_prob*100
 
+cm_prob$year = rownames(cm_prob)
+
 dbWriteTable(conn,"cm_prob", cm_prob, overwrite=TRUE)
 
 png(file.path(fig_dir_mo,"CM_summary_prob.png"), height = 50*nrow(cm_prob), width = 200*ncol(cm_prob))
