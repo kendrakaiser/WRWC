@@ -33,9 +33,9 @@ rownames(pred.params.vol)<-c("bwh.irr_vol","bws.irr_vol","cc.irr_vol","sc.irr_vo
 colnames(pred.params.vol)<-c("irr_vol","sigma", "low.irr_vol", "upp.irr_vol")
 
 # center of mass
-output.cm<-data.frame(array(NA,c(4,4)))
+output.cm<-data.frame(array(NA,c(4,3)))
 rownames(output.cm)<-stream.id
-colnames(output.cm)<-c("SWE % of mean","cm","cm-mean","cm.date") #"Hist Nov-Jan Temp","Nov-Jan Temps",
+colnames(output.cm)<-c("cm","cm-mean","cm.date") #"Hist Nov-Jan Temp","Nov-Jan Temps",
 
 pred.params.cm<-array(NA,c(4,2))
 rownames(pred.params.cm)<-c("bwh.cm","bws.cm","cc.cm","sc.cm")
@@ -131,18 +131,17 @@ any(is.na(pred.params.vol))
 # Center of Mass Predictions
 #
 # ------------------------------------------------------------------------------ # 
-modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, hist.swe){
+modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm){
   '
   mod.cm:           input model
   pred.dat:         data.frame of prediction variables
   cur.temps:        numeric of winter temperatures
   hist.temps:       historic temperature data
   hist.cm:          historic cm
-  pred.swe:         current swe used for prediction
-  hist.swe:         historic swe
   '
+  
   pred.params.cm<-array(NA,c(1,2))
-  output.cm<-data.frame(percSWE=integer(), predCM=integer(), diffCM=integer(), dateCM=character())
+  output.cm<-data.frame(predCM=integer(), diffCM=integer(), dateCM=character())
   sig<-summary(mod.cm)$sigma
   
   predictions<-predict(mod.cm,newdata=pred.dat)
@@ -151,29 +150,22 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, 
   pred.params.cm[1,2]<-sqrt(sig^2+var(predictions)) 
   if (is.na(pred.params.cm[1,2])){pred.params.cm[1,2]<-sig}
   
-  #output.cm[1,1]<-mean(apply(hist.temps, MARGIN=2, mean)) 
-  #output.cm[1,2]<-as.list(round(cur.temps,3))
-
-  output.cm[1,1]<-  if (length(grep('swe',mod.cm$coefnames )) >0) {
-    round(mean(as.matrix(pred.swe), na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =TRUE),3)*100
-    } else {'No SWE Param'}
-    #round(sum(pred.swe, na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =T),3) 
-
-  
   cm_predict=round(mean(predictions,na.rm=T))
   
   #limit cm predictions to the observed range
-  # if(all(cm_predict>hist.cm)){
-  #   cm_predict=round(max(hist.cm, na.rm = T))
-  # }
-  # 
-  # if(all(cm_predict<hist.cm)){
-  #   cm_predict=round(min(hist.cm, na.rm=T))
-  # }
-  # 
-  output.cm[1,2]<-cm_predict
-  output.cm[1,3]<-cm_predict-mean(hist.cm) 
-  output.cm[1,4]<-format(wy$Date[wy$day==cm_predict],"%b-%d")
+  if(all(cm_predict>hist.cm)){
+    cm_predict=round(max(hist.cm, na.rm = T))
+    pred.params.cm[1,1]=round(max(hist.cm, na.rm = T))
+  }
+
+  if(all(cm_predict<hist.cm)){
+    cm_predict=round(min(hist.cm, na.rm=T))
+    pred.params.cm[1,1]=round(min(hist.cm, na.rm=T))
+  }
+
+  output.cm[1,1]<-cm_predict
+  output.cm[1,2]<-cm_predict-mean(hist.cm) 
+  output.cm[1,3]<-format(wy$Date[wy$day==cm_predict],"%b-%d")
   
   return(list(output.cm, pred.params.cm))
 }
@@ -192,8 +184,7 @@ pred.data[aj_params] <- aj.pred.temps[aj_params]
 mod_sum[1,2]<-summary(cm_models$bwh_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm_models$bwh_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
                    (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$bwh.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
-                   hist%>% dplyr::select(contains('swe')))
+                   hist$bwh.cm)
 output.cm[1,] <- mod_out[[1]]
 pred.params.cm[1,] <- mod_out[[2]]
 
@@ -212,8 +203,7 @@ pred.data[aj_params] <- aj.pred.temps[aj_params]
 mod_sum[2,2]<-summary(cm_models$bws_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm_models$bws_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
                    (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$bws.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
-                   hist%>% dplyr::select(contains('swe')))
+                   hist$bws.cm)
 output.cm[2,] <- mod_out[[1]]
 pred.params.cm[2,] <- mod_out[[2]]
 
@@ -237,8 +227,7 @@ hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(sc.cm, cm_mod_sum$sc$var
 mod_sum[4,2]<-summary(cm_models$sc_cm.mod)$adj.r.squared
 mod_out<- modOutcm(cm_models$sc_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
                    (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$sc.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
-                   hist%>% dplyr::select(contains('swe')))
+                   hist$sc.cm)
 output.cm[4,] <- mod_out[[1]]
 pred.params.cm[4,] <- mod_out[[2]]
 
@@ -252,13 +241,14 @@ hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.cm, cm_mod_sum$cc$var
 #Prediction Data with modeled temperature data
 pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
 pred.data[aj_params] <- aj.pred.temps[aj_params]
+# pred.data$ga.aj_t <-4.1
+# pred.data$sm.aj_t<- 8.5
 
 # Camas Creek Model output
 mod_sum[3,2]<-summary(cm_models$cc_cm.mod)$adj.r.squared
-mod_out<- modOutcm(cm_models$cc_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
+mod_out<- modOutcm(cm_models$cc_cm.mod, pred.data, hist %>% dplyr::select(contains('nj')), 
                    (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$cc.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
-                   hist%>% dplyr::select(contains('swe')))
+                   hist$cc.cm)
 output.cm[3,] <- mod_out[[1]]
 pred.params.cm[3,] <- mod_out[[2]]
 
