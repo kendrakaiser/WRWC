@@ -23,7 +23,7 @@ utils::globalVariables('i')
 
 download.SNODAS <- function(dates,
                             path = './SNODAS/',
-                            overwrite=FALSE,
+                            overwrite=TRUE,
                             masked=TRUE,
                             parallel=F,
                             ncores=2,
@@ -122,7 +122,7 @@ download.SNODAS <- function(dates,
 
 
 
-  } else {
+  } else { #not parallel
     foreach::"%do%"(foreach::foreach(i = 1:length(URLs)),  {
       if(!file.exists(paste0(path,filenames[i])) | overwrite==TRUE){
         tryCatch({
