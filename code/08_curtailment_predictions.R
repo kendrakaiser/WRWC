@@ -51,8 +51,7 @@ wr.cutoffs$bwh.lowQ<-pi[,"bwh.low"]
 
 # find the date of the most senior wr that is above the "current" flow
 cutoff<- function(flow, wr_array){
-  cut.wr<- wr_array$priority.date[min(which(wr_array$cuml.cfs > flow))] %>% filter()
-  
+  cut.wr<- wr_array$priority.date[min(which(wr_array$cuml.cfs > flow))]
   return(cut.wr)
 }
 
@@ -80,14 +79,20 @@ for (i in 1982:2022){
 selected_wr <- as.Date(c("1883-03-24", "1884-10-14", "1886-06-01"))
 #cut.hist.bw<- cut.hist %>% mutate(across(3:43, ~ ifelse(. %in% selected_wr, ., NA))) %>% filter(if_any(3:43, ~ !is.na(.)))
 
-
 #output dataframe will need to look like this
 wr_out<-data.frame(wateryear= rep(1982:2022, each = 3), 
                wr= rep(c("1883-03-24", "1884-10-14","1886-06-01"),length.out = length(1982:2022) * 3))
 
-cutoff.yr <- function(wateryear, wr_date, wr_sub){
+
+cutoff.yr <- function(wateryear, wr_date, wr.sub){
     wr_date<- as.Date(wr_date)
-    flow<- bwh.wy[bwh.wy$wateryear == wateryear, "value"]
-    ts <- cutoff(flow, wr_sub)
-    #mapply ? or for loop
-  }
+    doy<-yday(seq(as.Date(paste(wateryear,"-04-01",sep="")),as.Date(paste(wateryear,"-09-30",sep="")),"day"))
+    flow<- data.frame(cfs=bwh.wy[bwh.wy$wateryear == wateryear, "value"])
+    ts <- as.Date(Reduce(c, lapply(flow$cfs, cutoff, wr.sub)))
+    
+    if (length(which(ts == wr_date) > 0)){
+      cutoff.dates <- doy[which(ts == wr_date)]
+    } else {cutoff.dates <- NaN}
+}
+
+wr_out$cutoff_date <- mapply(cutoff.yr, wateryear = wr_out$wateryear, wr_date = wr_out$wr, MoreArgs = list(wr.sub = wr.sub))
