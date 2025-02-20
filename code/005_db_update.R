@@ -381,7 +381,7 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
       days=unique(c(days, streamflowindb$datetime))
       days=days[order(days)]
       
-
+      
       # Download data from this location
       streamflow <- readNWISdv(siteNumbers = thisLocation_sourceID, parameterCd = pCode, startDate = min(days), endDate = max(days) ) %>% renameNWISColumns() %>% data.frame
       
@@ -430,20 +430,20 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
       
       snotel_data = snotel_data[,c("date","snow_water_equivalent","temperature_mean")]
       
-      
-      
-      #process and write swe
-      snotel_data$sweQC=TRUE
-      snotel_data$snow_water_equivalent[is.na(snotel_data$snow_water_equivalent)]=-999
-      snotel_data$sweQC[snotel_data$snow_water_equivalent==-999]=FALSE
-      dbWriteData(metric="swe",value=snotel_data$snow_water_equivalent,datetime=snotel_data$date,locationID=locationID,sourceName = "snotel",qcStatus = snotel_data$sweQC)
-      
-      #process and write mean daily temperature
-      snotel_data$meanTQC=TRUE
-      snotel_data$temperature_mean[is.na(snotel_data$temperature_mean)]=-999
-      snotel_data$meanTQC[snotel_data$temperature_mean==-999]=FALSE
-      dbWriteData(metric="mean daily temperature",value=snotel_data$temperature_mean,datetime=snotel_data$date,locationID=locationID,sourceName = "snotel",qcStatus = snotel_data$meanTQC)
-      
+      if(nrow(snotel_data)>=1){
+        
+        #process and write swe
+        snotel_data$sweQC=TRUE
+        snotel_data$snow_water_equivalent[is.na(snotel_data$snow_water_equivalent)]=-999
+        snotel_data$sweQC[snotel_data$snow_water_equivalent==-999]=FALSE
+        dbWriteData(metric="swe",value=snotel_data$snow_water_equivalent,datetime=snotel_data$date,locationID=locationID,sourceName = "snotel",qcStatus = snotel_data$sweQC)
+        
+        #process and write mean daily temperature
+        snotel_data$meanTQC=TRUE
+        snotel_data$temperature_mean[is.na(snotel_data$temperature_mean)]=-999
+        snotel_data$meanTQC[snotel_data$temperature_mean==-999]=FALSE
+        dbWriteData(metric="mean daily temperature",value=snotel_data$temperature_mean,datetime=snotel_data$date,locationID=locationID,sourceName = "snotel",qcStatus = snotel_data$meanTQC)
+      }
     }
     
     sourceAgriMet=function(metricID, locationID, days){
