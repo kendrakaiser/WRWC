@@ -15,7 +15,7 @@ source(file.path(git_dir, 'code/init_db.R'))
 source(file.path(git_dir,'code/005_db_update.R'))
 
 
-runDates=c(seq.Date(from=as.Date("2025-02-13"),to=as.Date("2025-02-17"),by="day")
+runDates=c(seq.Date(from=as.Date("2025-02-16"),to=as.Date("2025-02-18"),by="day")
           # seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
           )
 
