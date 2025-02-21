@@ -49,11 +49,25 @@ getRegModelSummary=function(regSum=reg_sum,f_fitDF=fitDF, response="iv" ){
   return(outDF)
 }
 
-vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVars=var, usePredTypes=c("wq", "ly_vol","liquid_precip","snow_covered_area","swe_total","swe","nj_t")){
+# get formatted formulas out of a leap returned list
+getLeapFormulas=function(leapList,responseVarName){
+  leapList$label=leapList$label[-1] #drop '(Intercept)' from terms list
+  forms=character()
+  for(i in 1:nrow(leapList$which)){
+    varNames=leapList$label[leapList$which[i,]]
+    varNames=varNames[order(varNames)] #order the variables to simplify avoidance of fitting replicate models
+    forms = c(forms,paste( responseVarName," ~ ", paste(varNames,collapse=" + ")) )
+  }
+  return(forms)
+}
+
+vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVars=var){
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
+  usePredTypes=c("wq", "ly_vol","liquid_precip","snow_covered_area","swe_total","swe","nj_t")
+  
   offSiteTypes=c("swe","nj_t")
   
   # site= "bwh"
@@ -75,20 +89,6 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
   
   names(modelDF)[1]=responseName
   modelDF=modelDF[complete.cases(modelDF),]
-  
-  # fastest comprehensive search (still way too slow)
-  # with leaps / BIC to identify best model
-  getLeapFormulas=function(leapList){
-    leapList$label=leapList$label[-1] #drop '(Intercept)' from terms list
-    forms=character()
-    for(i in 1:nrow(leapList$which)){
-      varNames=leapList$label[leapList$which[i,]]
-      varNames=varNames[order(varNames)] #order the variables so simplify avoidance of fitting replicate models
-      forms = c(forms,paste(names(modelDF)[1]," ~ ", paste(varNames,collapse=" + ")))
-    }
-    return(forms)
-  }
-  
   
   ############################# log response ################################
   unloggedResponse=modelDF[,1]
@@ -113,8 +113,9 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
   modelCompareDF=data.frame(formula=character(),
                             n=numeric(),
                             r2=numeric(),
-                            BIC=numeric()
-                            #max_vif=numeric()
+                            BIC=numeric(),
+                            #max_vif=numeric(),
+                            AICc=numeric()
   )
   
   for(globalFormula in typeModels){
@@ -123,7 +124,10 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
     #leaps + fit method (faster)
     thisVars=names(coefficients(global_lm))[-1]
     leapList=leaps(x=modelDF[,thisVars],y=modelDF[,1],method="r2",nbest=1,names=thisVars)
-    forms=getLeapFormulas(leapList)
+    forms=getLeapFormulas(leapList,responseVarName=names(modelDF)[1]) 
+    formLength=sapply(strsplit(forms,"\\+"),length)
+    forms=forms[formLength>min_var & formLength<max_var]
+    
     for(f in forms){
       if(!f %in% modelCompareDF$formula){ #this sub model has not been tested, proceed...
         
@@ -132,8 +136,9 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
         addDF=data.frame(formula=f,
                          n=length(thisModel$coefficients)-1, #just count vars, not intercept
                          r2=summary(thisModel)$r.squared,
-                         BIC=BIC(thisModel)
-                         #max_vif=getMaxVif(thisModel)
+                         BIC=BIC(thisModel),
+                         #max_vif=getMaxVif(thisModel),
+                         AICc=AICc(thisModel)
         )
         modelCompareDF=rbind(modelCompareDF,addDF)
       }
@@ -187,106 +192,197 @@ vol_models<- list(bwh_mod = bwh_vol_mod, bws_mod = bws_vol_mod, sc_mod = sc_vol_
 # ---------------------------------------------------------------------------- # 
 # Evaluate alternative model combinations for Center of Mass Predictions
 # ---------------------------------------------------------------------------- # 
-cm_model<-function(site, sites, max_var){
+cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVars=var){
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
-  site_vars<- grep(paste(sites, collapse="|"), colnames(var))
-  #remove variables from predictor set that don't have data for this year
-  pred.avail<- var [var$wateryear == pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars), all_of(swe_cols), 
-                                                                 all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols, irr_vol_cols, cm_cols)))# %>% filter(complete.cases(.))
-  na.vars<- names(pred.avail)[is.na(pred.avail[1,])] 
+  usePredTypes=c("wq", "ly_vol","liquid_precip","snow_covered_area","swe_total","swe","nj_t","aj_t")
+  offSiteTypes=c("swe","nj_t","aj_t")
   
-  hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
-                                                          all_of(swe_cols), all_of(wint_t_cols), all_of(aj_t_cols), 
-                                                          -all_of(c(tot_vol_cols, runoff_cols, irr_vol_cols))) %>% filter(complete.cases(.))
-  hist<- hist[,!names(hist) %in% na.vars] #remove variables from the dataset that do not have data for this year
+  # site= "bws"
+  # sites= "bws"
+  # max_var = 6
+
+  responseName=paste0(site,".cm")
+  # classify predictors into groups based on naming convention (prevents duplicates from each type)
+  predTypeNames=sub(".*\\.","",names(volVars)) %in% usePredTypes
+  siteNames=grepl(paste(sites, collapse="|"), colnames(volVars))
+  onSiteNames=names(volVars)[predTypeNames & siteNames]
+  #variables that are not specific to the watershed (SWE & temp)
+  offSiteTypes=offSiteTypes[offSiteTypes %in% usePredTypes]
+  offSiteNames=names(volVars)[sub(".*\\.","",names(volVars))  %in% offSiteTypes]   
+  # select historic values
+  volVars=volVars[volVars$wateryear < pred.year,]
+  #recombine all possible terms
+  modelDF= cbind(volVars[,responseName],
+                 volVars[,c(onSiteNames, offSiteNames)])
+  
+  names(modelDF)[1]=responseName
+  modelDF=modelDF[complete.cases(modelDF),]
   
   
-  name<- paste0(site, ".cm")
-  #id column names that should be removed from the modeling set
-  vol_col<-grep(name, colnames(hist))
-  irr_vols<- colnames(hist)[grep('irr_vol', colnames(hist))]
-  cms<- colnames(hist)[grep('cm', colnames(hist))]
+  predTypes=as.factor(sub(".*\\.","",names(modelDF)[-1]))
   
-  #use regsubsets to assess the results
-  tryCatch({regsubsets.out<-regsubsets(hist[[vol_col]]~., 
-                                       data=hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE], 
-                                       nbest=1, nvmax=max_var, really.big=T)}, 
-           error= function(e) {print(paste(site,"center of mass model did not work"))}) #error catch
-  reg_sum<- summary(regsubsets.out)
-  rm(regsubsets.out)
-  fitDF=cbind(data.frame(cm=hist[[vol_col]],hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE]))
-  allModelSummary=getRegModelSummary(reg_sum,f_fitDF = fitDF,response="cm")
+  predTypeList=list()
+  for(i in 1:length(levels(predTypes))){
+    predTypeList[[i]]=names(modelDF)[-1][predTypes==levels(predTypes)[i]]
+    
+  }
+  names(predTypeList)=levels(predTypes)
+  predTypes = expand.grid(predTypeList[])
+  rm(predTypeList)
   
-  form<-gsub("cm", name, allModelSummary$form[which.min(allModelSummary$aicc)])
+  typeModels=paste(names(modelDF)[1],"~",apply(predTypes, 1, paste, collapse=' + '))
   
-  # pulling variable names out so they can be subset in 06
-  mod_sum<- as.list(allModelSummary[which.min(allModelSummary$aicc),])
-  mod_sum$form <-form
-  vrs<- unlist(strsplit(form, "\\s*[~]\\s*"))[[2]]
-  mod_sum$vars<-unlist(strsplit(vrs, "\\s*\\+\\s*"))
   
-  # run model
+  modelCompareDF=data.frame(formula=character(10),
+                            n=numeric(10),
+                            r2=numeric(10),
+                            BIC=numeric(10)
+                            #max_vif=numeric(),
+                            #AICc=numeric()
+  )
+  
+ 
+  #profvis({
+  for(globalFormula in typeModels){
+    global_lm=lm(globalFormula,data=modelDF,na.action=na.fail)
+    
+    #leaps + fit method (faster)
+    thisVars=names(coefficients(global_lm))[-1]
+    leapList=leaps(x=modelDF[,thisVars],y=modelDF[,1],method="r2",nbest=1,names=thisVars)
+    forms=getLeapFormulas(leapList,responseVarName=names(modelDF)[1])
+    formLength=sapply(strsplit(forms,"\\+"),length)
+    forms=forms[formLength>min_var & formLength<max_var]
+    for(f in forms){
+      if(!f %in% modelCompareDF$formula){ #this sub model has not been tested, proceed...
+        
+        thisModel=lm(f,data=modelDF)
+        
+        addDF=data.frame(formula=f,
+                         n=length(thisModel$coefficients)-1, #just count vars, not intercept
+                         r2=summary(thisModel)$r.squared,
+                         BIC=BIC(thisModel)
+                         #max_vif=getMaxVif(thisModel),
+                         #AICc=AICc(thisModel)
+        )
+        modelCompareDF=rbind(modelCompareDF,addDF)
+      }
+    }
+  } 
+  #})
+  
+  modelCompareDF=modelCompareDF[modelCompareDF$n <= max_var,]
+  modelCompareDF=modelCompareDF[modelCompareDF$n >= min_var,]
+  modelCompareDF=modelCompareDF[order(modelCompareDF[,"BIC"]),]
+  #print(head(modelCompareDF))
+  bestByType=lm(modelCompareDF$formula[1],data=modelDF,na.action=na.fail)
+  
+  mod_sum=bestByType
+  mod_sum$form <- paste(responseName," ~ ", paste(names(bestByType$coefficients)[-1],collapse=" + "))
+  mod_sum$vars<-names(bestByType$coefficients)[-1]
+  
+  return(mod_sum)
+  
+  # site_vars<- grep(paste(sites, collapse="|"), colnames(var))
+  # #remove variables from predictor set that don't have data for this year
+  # pred.avail<- var [var$wateryear == pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars), all_of(swe_cols), 
+  #                                                                all_of(wint_t_cols), -all_of(c(tot_vol_cols, runoff_cols, irr_vol_cols, cm_cols)))# %>% filter(complete.cases(.))
+  # na.vars<- names(pred.avail)[is.na(pred.avail[1,])] 
+  # 
+  # hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(wateryear, all_of(site_vars),
+  #                                                         all_of(swe_cols), all_of(wint_t_cols), all_of(aj_t_cols), 
+  #                                                         -all_of(c(tot_vol_cols, runoff_cols, irr_vol_cols))) %>% filter(complete.cases(.))
+  # hist<- hist[,!names(hist) %in% na.vars] #remove variables from the dataset that do not have data for this year
+  # 
+  # 
+  # name<- paste0(site, ".cm")
+  # #id column names that should be removed from the modeling set
+  # vol_col<-grep(name, colnames(hist))
+  # irr_vols<- colnames(hist)[grep('irr_vol', colnames(hist))]
+  # cms<- colnames(hist)[grep('cm', colnames(hist))]
+  # 
+  # #use regsubsets to assess the results
+  # tryCatch({regsubsets.out<-regsubsets(hist[[vol_col]]~., 
+  #                                      data=hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE], 
+  #                                      nbest=1, nvmax=max_var, really.big=T)}, 
+  #          error= function(e) {print(paste(site,"center of mass model did not work"))}) #error catch
+  # reg_sum<- summary(regsubsets.out)
+  # rm(regsubsets.out)
+  # fitDF=cbind(data.frame(cm=hist[[vol_col]],hist[, !names(hist) %in% c("wateryear", irr_vols, cms), drop = FALSE]))
+  # allModelSummary=getRegModelSummary(reg_sum,f_fitDF = fitDF,response="cm")
+  # 
+  # form<-gsub("cm", name, allModelSummary$form[which.min(allModelSummary$aicc)])
+  # 
+  # # pulling variable names out so they can be subset in 06
+  # mod_sum<- as.list(allModelSummary[which.min(allModelSummary$aicc),])
+  # mod_sum$form <-form
+  # vrs<- unlist(strsplit(form, "\\s*[~]\\s*"))[[2]]
+  # mod_sum$vars<-unlist(strsplit(vrs, "\\s*\\+\\s*"))
+  # 
+  # # run model
+  # # mod<-lm(form, data=hist)
+  # 
+  # # # which set of variables have the lowest BIC
+  # # vars<-reg_sum$which[which.min(reg_sum$bic),]
+  # # #vars<-reg_sum$which[which.max(reg_sum$adjr2),]
+  # # mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+  # # 
+  # #fit the regression model and use LOOCV to evaluate performance
+  # # form<- paste(paste(name, "~ "), paste(mod_sum$vars, collapse=" + "), sep = "")
+  # # 
   # mod<-lm(form, data=hist)
-  
-  # # which set of variables have the lowest BIC
-  # vars<-reg_sum$which[which.min(reg_sum$bic),]
-  # #vars<-reg_sum$which[which.max(reg_sum$adjr2),]
-  # mod_sum<- list(vars = names(vars)[vars==TRUE][-1], adjr2 = reg_sum$adjr2[which.min(reg_sum$bic)], bic=reg_sum$bic[which.min(reg_sum$bic)])
+  # mod_sum$adjr2<-summary(mod)$adj.r.squared
   # 
-  #fit the regression model and use LOOCV to evaluate performance
-  # form<- paste(paste(name, "~ "), paste(mod_sum$vars, collapse=" + "), sep = "")
+  # #put coefficients into DF to save across runs
+  # coef<- signif(mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
   # 
-  mod<-lm(form, data=hist)
-  mod_sum$adjr2<-summary(mod)$adj.r.squared
-  
-  #put coefficients into DF to save across runs
-  coef<- signif(mod$coefficients, 2) %>% as.data.frame() %>% tibble::rownames_to_column()  %>% `colnames<-`(c('params', 'coef'))
-  
-  #save summary of LOOCV
-  model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
-  mod_sum$loocv<- model$results
-  
-  #Save model result figures
-  fig_name = paste0(site, ".cm_modelFit.png")
-  png(filename = file.path(fig_dir_mo, fig_name),
-      width = 5.5, height = 5.5,units = "in", pointsize = 12,
-      bg = "white", res = 600) 
-  plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed CM", ylab="Predicted CM")
-  abline(0,1,col="gray50",lty=1)
-  dev.off()
-  
-  print(paste(name, "model complete"))
-  
-  return(list(mod_sum, model, coef))
+  # #save summary of LOOCV
+  # model <- train(as.formula(form), data = hist, method = "lm", trControl = ctrl)
+  # mod_sum$loocv<- model$results
+  # 
+  # #Save model result figures
+  # fig_name = paste0(site, ".cm_modelFit.png")
+  # png(filename = file.path(fig_dir_mo, fig_name),
+  #     width = 5.5, height = 5.5,units = "in", pointsize = 12,
+  #     bg = "white", res = 600) 
+  # plot(model$pred$obs, model$pred$pred, pch=19, xlab="Observed CM", ylab="Predicted CM")
+  # abline(0,1,col="gray50",lty=1)
+  # dev.off()
+  # 
+  # print(paste(name, "model complete"))
+  # 
+  # return(list(mod_sum, model, coef))
 }
 
 # Create Center of Mass Models for each site
-bwh_cm_mod<- cm_model("bwh", "bwh", 6)
-bws_cm_mod<- cm_model("bws", "bws", 6)
-sc_cm_mod<- cm_model("sc", c("bwh","sc"),6)
-cc_cm_mod<- cm_model("cc", "cc\\.", 6)
+bwh_cm_mod<- cm_model("bwh", "bwh", max_var=6)
+bws_cm_mod<- cm_model("bws", "bws", max_var=6)
+sc_cm_mod<- cm_model("sc", c("bwh","sc"),max_var=6)
+cc_cm_mod<- cm_model("cc", "cc\\.", max_var=6)
 
 # ---------------------------------------------------------------------------- # 
 ### EXPORT Center of Mass MODEL DETAILS
 # ----------------------------------------------------------------------------
 #compile all model details into one list to export
-cm_mod_sum<- list(bwh = bwh_cm_mod[[1]], bws = bws_cm_mod[[1]], sc = sc_cm_mod[[1]], cc = cc_cm_mod[[1]])
-cm_models<- list(bwh_cm.mod = bwh_cm_mod[[2]], bws_cm.mod = bws_cm_mod[[2]], sc_cm.mod = sc_cm_mod[[2]], cc_cm.mod = cc_cm_mod[[2]])
+#cm_mod_sum<- list(bwh = bwh_cm_mod[[1]], bws = bws_cm_mod[[1]], sc = sc_cm_mod[[1]], cc = cc_cm_mod[[1]])
+cm_models<- list(bwh_cm_mod = bwh_cm_mod, bws_cm_mod = bws_cm_mod, sc_cm_mod = sc_cm_mod, cc_cm_mod = cc_cm_mod)
 
 #write.list(cm_mod_sum, file.path(data_dir, cm.summary))
 
 #list.save(cm_mod_sum, file.path(data_dir, cm_sum))
 #list.save(cm_models, file.path(data_dir, cm_mods))
 
-r2s_cm<- data.frame(matrix(ncol = 2, nrow = 4))
-colnames(r2s_cm)<-c("AdjR2", "Loocv R2")
-rownames(r2s_cm)<-c("BWH", "BWS", "SC", "CC")
+sapply(cm_models,summary)
 
-r2s_cm[,1]<- round(c(bwh_cm_mod[[1]]$adjr2, bws_cm_mod[[1]]$adjr2, sc_cm_mod[[1]]$adjr2, cc_cm_mod[[1]]$adjr2)*100, 2)
-r2s_cm[,2]<- round(c(bwh_cm_mod[[1]]$loocv$Rsquared, bws_cm_mod[[1]]$loocv$Rsquared, sc_cm_mod[[1]]$loocv$Rsquared, cc_cm_mod[[1]]$loocv$Rsquared)*100, 2)
+getr2=function(model){
+  return(summary(model)$r.squared)
+}
+
+r2s_cm=data.frame(name=names(cm_models),
+                  r2=sapply(cm_models,getr2))
+
 
 png(file.path(fig_dir_mo,"r2s_cm.png"), height = 25*nrow(r2s_cm), width = 80*ncol(r2s_cm))
 grid.table(r2s_cm)

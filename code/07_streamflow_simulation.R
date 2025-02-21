@@ -77,8 +77,8 @@ meanQ<-data.frame(array(NA,c(183,4)))
 medQ<-data.frame(array(NA,c(183,4)))
 
 pred.int<-function(location){
-  lo<-apply(location,1,quantile,0.05, na.rm=TRUE)
-  hi<-apply(location,1,quantile,0.95, na.rm=TRUE)
+  lo<-apply(location,1,quantile,0.10, na.rm=TRUE)
+  hi<-apply(location,1,quantile,0.90, na.rm=TRUE)
   meanQ<-apply(location,1,mean, na.rm=TRUE)
   medQ<-apply(location,1,median, na.rm=TRUE)
   
