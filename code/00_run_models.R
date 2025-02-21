@@ -18,11 +18,8 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 # TODO simdate v.s. run date
 # set end date 
 #end_date <<-Sys.Date() #as.Date("2021-02-01") replace when testing historical time frame
-<<<<<<< HEAD
 end_date=as.Date("2025-02-21")
-=======
-end_date=as.Date("2025-02-10")
->>>>>>> caa0747e2a0c47961782cc414c91496d02e7534c
+
 
 model_n=10
 
