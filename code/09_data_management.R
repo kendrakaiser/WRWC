@@ -15,7 +15,8 @@ writeModel=function(model,modelName,enddate=end_date){
   writeModelDF=data.frame(modelname=modelName,
                           moddate=moddate,rundate=rundate,
                           modelcoefjson=toJSON(data.frame(model$coefficients)),
-                          modeldatajson=toJSON(model$model)
+                          modeldatajson=toJSON(model$model),
+                          modelpredictors=toJSON(model$predictors)
                           
   )
   
