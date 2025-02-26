@@ -2,9 +2,6 @@
 # July 13th, 2022
 # Kendra Kaiser
 # ---------------------------------
-library(dplyr)
-library(viridis)
-library(ggnewscale)
 
 # #import data
 # wr_og<-read.csv(file.path(input_dir,'WD37_Irrigation rights Big Wood Above Magic.csv'))
