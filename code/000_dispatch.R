@@ -19,7 +19,7 @@ try(
     print(paste("Run initiated at",Sys.time()))
     
     source("~/Documents/R Workspace/WRWC_cronTask/code/00_run_models.R")
-    
+    print("--------------Run Complete---------------")
   }
 )
 sink(type="message")
