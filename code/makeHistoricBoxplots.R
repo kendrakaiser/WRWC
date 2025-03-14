@@ -1,5 +1,6 @@
-febQ=dbGetQuery(conn,"SELECT DISTINCT ON (simdate, site) site, simdate, rundate, values FROM forecastvolumes WHERE site= 'bwh' AND simdate >= '2025-02-01' ORDER BY simdate DESC, site, rundate DESC;")
-febQ=febQ[order(febQ$simdate),]
+q25=dbGetQuery(conn,"SELECT DISTINCT ON (simdate, site) site, simdate, rundate, values FROM forecastvolumes WHERE site= 'bws' AND simdate >= '2025-02-01' ORDER BY simdate DESC, site, rundate DESC;")
+q25=q25[order(q25$simdate),]
+max(q25$simdate)
 
 pgArrayToNumeric=function(x){
   f=function(one_x){
@@ -8,10 +9,9 @@ pgArrayToNumeric=function(x){
   return(lapply(x,f))
 }
 
-
-qs=pgArrayToNumeric(febQ$values)
-febQ$medianQ=sapply(qs,median)
-boxplot(x=qs,names=febQ$simdate,ylim=c(0,1000),las=2)
+qs=pgArrayToNumeric(q25$values)
+q25$medianQ=sapply(qs,median)
+boxplot(x=qs,names=q25$simdate,ylim=c(0,1000),las=2)
 #hist(unlist(qs[1]))
 
 
