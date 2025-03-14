@@ -209,7 +209,7 @@ winterSums_apr=rbind(winterSums_apr,
 snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","value","sitenote")],names_from = c(sitenote, metric),values_from = c(value),names_sep=".")
 
 
-#------ generate dataset as of current (really end_date) for prediction
+#------ compile data for end_date - e.g. todays date of data for prediction
 #Grab current SWE
 currentSWE=dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid) datetime, wateryear(datetime) AS wateryear, metric, value AS swe, locations.locationid, locations.name, locations.sitenote 
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid

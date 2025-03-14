@@ -8,46 +8,30 @@
 # Write model structure to database
 # ------------------------------------------------------------------------------
 
-
-
-modelFromDB=dbGetQuery(conn,paste0("SELECT * FROM volumemodels WHERE modeldate = '",as.Date(paste0(year(end_date), "/", month(end_date), "/", 1)),"';"))
-rm(volModels_db) # the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
-
-anyModelsEqual=F
-
-if(nrow(modelFromDB)>0){
-  for(i in 1:nrow(modelFromDB)){
-    eval(parse(text=modelFromDB$models[i])) #comes through as volModels_db)
-    
-    for(n in names(vol_models)){
-      allModelsEqual=T
-      dbCoef=coef(volModels_db[[n]])
-      thisCoef=coef(vol_models[[n]])
-      allModelsEqual=allModelsEqual & identical(dbCoef,thisCoef)
-    }
-    if(allModelsEqual==T){
-      anyModelsEqual=T
-    }
-  }
-}
-
-if(!anyModelsEqual){
-  volModels_db=vol_models
+writeModel=function(model,modelName,enddate=end_date){
+  moddate=as.Date(paste0(year(enddate), "/", month(enddate), "/", 1))
+  rundate=Sys.Date()
   
-  writeModelQuery=DBI::sqlInterpolate(conn, sql="INSERT INTO volumemodels (modeldate, devdate, models) VALUES (?modDate, ?devDate, ?models );",
-                                      modDate=as.Date(paste0(year(end_date), "/", month(end_date), "/", 1)),
-                                      devDate=Sys.Date(),
-                                      models=capture.output(cat(capture.output(dump("volModels_db",file="")),file="",sep="")))
-  dbExecute(conn,writeModelQuery)
-}
-# How you pull models from db
-# dbModel=dbGetQuery(conn, "SELECT * FROM volumemodels") #WHERE...
-# rm(volModels_db) # the returned models list will have the same name as it head when it was written to the db - in this case volModels_db already exists in the workspace.
-# vol_mods<-eval(parse(text=dbModel$models[1]))
+  writeModelDF=data.frame(modelname=modelName,
+                          moddate=moddate,rundate=rundate,
+                          modelcoefjson=toJSON(data.frame(model$coefficients)),
+                          modeldatajson=toJSON(model$model),
+                          modelpredictors=toJSON(model$predictors)
+                          
+  )
+  
+  dbExecute(conn,paste0("DELETE FROM volumemodels WHERE modelname = '",modelName,
+                        "' AND rundate = '",rundate,"' AND moddate = '",moddate,"';"))
+  
+  dbWriteTable(conn,"volumemodels",writeModelDF,append=T)
+  
+}    
+
+mapply(writeModel,vol_models,names(vol_models))
 
 
 # ------------------------------------------------------------------------------
-# write the prediction intervals for daily streamflow output
+# write the prediction intervals for daily streamflow output (cfs)
 # ------------------------------------------------------------------------------
 pi_date=pi
 pi_date$date=as.Date(rownames(pi))
@@ -62,7 +46,8 @@ dbWriteTable(conn,"predictionintervals",pi_date,overwrite=T)
 #curt.sampleLong<- curt.sample
 
 # ------------------------------------------------------------------------------
-
+# Volume model output, seasonal AF in logged units
+#TODO update how the logged output is managed
 writeVolModelOutput=function(x,site.metric,simDate,runDate=Sys.Date()){
   'x:x is the sample for which model output will be written to db'
   simDate=as.Date(simDate)
@@ -79,10 +64,23 @@ writeVolModelOutput=function(x,site.metric,simDate,runDate=Sys.Date()){
   modelOutputDF=data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,value=x)
   
   #dont allow duplicate entries (same run day and same simualted day)
+  # dbExecute(conn,paste0("DELETE FROM forecastvolumes WHERE site = '",site,"' AND metric = '",metric,
+  #                       "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
+  # 
+  # dbWriteTable(conn,"forecastvolumes",modelOutputDF,append=T)
+  # 
+  # 
+
+  #dont allow duplicate entries (same run day and same simualted day)
   dbExecute(conn,paste0("DELETE FROM forecastvolumes WHERE site = '",site,"' AND metric = '",metric,
                         "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
   
-  dbWriteTable(conn,"forecastvolumes",modelOutputDF,append=T)
+  dbExecute(conn,paste0("INSERT INTO forecastvolumes (site, metric, rundate, simdate, values) VALUES ('",site,"', '",metric,"', '",runDate,"', '",simDate,
+                        "', '{",paste(x,collapse=","),"}');"
+                        )
+            )
+  
+  
 }
 
 writeVolModelOutput(x=vol.sample$bwh.irr_vol, site.metric="bwh.irr_vol",simDate=end_date)
@@ -220,7 +218,7 @@ exceed.probs<- function(vols, probs){
 # Exceedance probs from NWRFC
 prb<- c(0.1, 0.25, 0.5, 0.75, 0.9)
 # Calculate exceedance probabilities and save table with labels
-ex.vols<- round(apply(vol.sample, 2, exceed.probs, prb)/1000) %>% as.data.frame()
+ex.vols<- round(apply(vol.sample, 2, exceed.probs, prb)) %>% as.data.frame()
 ex.vols$Exceedance <- c('90%', '75%', '50%', '25%', '10%') 
 ex.vols<- ex.vols%>% relocate(Exceedance)
 

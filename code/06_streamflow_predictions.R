@@ -33,9 +33,9 @@ rownames(pred.params.vol)<-c("bwh.irr_vol","bws.irr_vol","cc.irr_vol","sc.irr_vo
 colnames(pred.params.vol)<-c("irr_vol","sigma", "low.irr_vol", "upp.irr_vol")
 
 # center of mass
-output.cm<-data.frame(array(NA,c(4,4)))
+output.cm<-data.frame(array(NA,c(4,3)))
 rownames(output.cm)<-stream.id
-colnames(output.cm)<-c("SWE % of mean","cm","cm-mean","cm.date") #"Hist Nov-Jan Temp","Nov-Jan Temps",
+colnames(output.cm)<-c("cm","cm-mean","cm.date") #"Hist Nov-Jan Temp","Nov-Jan Temps",
 
 pred.params.cm<-array(NA,c(4,2))
 rownames(pred.params.cm)<-c("bwh.cm","bws.cm","cc.cm","sc.cm")
@@ -64,7 +64,7 @@ modOut<- function(mod, pred.dat){
 
   pred.params.vol<-array(NA,c(1,4))
   
-  #predict this years total volume at 95 % confidence
+  #predict this years total volume at 90 % confidence
   predictions<-predict(mod, newdata=pred.dat, se.fit=TRUE, interval="prediction",level=0.90)
 
   pred.params.vol[1,1]<-predictions$fit[1] #mean prediction 
@@ -83,10 +83,12 @@ pred.dat = current_data[,names(current_data) %in% c('wateryear',vol_models$bwh_m
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol_models$bwh_mod)$adj.r.squared
 mod_out<- modOut(vol_models$bwh_mod, pred.dat)
+vol_models$bwh_mod$predictors=pred.dat
 
 #these could be formatted differently to be saved to the global env. within the function
 output.vol[1,] <- mod_out[[1]]
 pred.params.vol[1,] <- mod_out[[2]]
+
 
 # --------------------------------------------------
 #  bws Prediction Data 
@@ -94,8 +96,9 @@ pred.dat = current_data[,names(current_data) %in% c('wateryear',vol_models$bws_m
 
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol_models$bws_mod)$adj.r.squared
-
 mod_out<- modOut(vol_models$bws_mod, pred.dat)
+vol_models$bws_mod$predictors=pred.dat
+
 output.vol[2,] <- mod_out[[1]] 
 pred.params.vol[2,] <- mod_out[[2]]
 
@@ -106,6 +109,8 @@ pred.dat = current_data[,names(current_data) %in% c('wateryear',vol_models$sc_mo
 # Silver Creek Model output
 mod_sum[4,1]<-summary(vol_models$sc_mod)$adj.r.squared
 mod_out<- modOut(vol_models$sc_mod, pred.dat)
+vol_models$sc_mod$predictors=pred.dat
+
 output.vol[4,] <- mod_out[[1]]
 pred.params.vol[4,] <- mod_out[[2]]
 
@@ -116,6 +121,8 @@ pred.dat = current_data[,names(current_data) %in% c('wateryear',vol_models$cc_mo
 # Camas Creek Model output
 mod_sum[3,1]<-summary(vol_models$cc_mod)$adj.r.squared
 mod_out<- modOut(vol_models$cc_mod, pred.dat)
+vol_models$cc_mod$predictors=pred.dat
+
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
@@ -131,18 +138,17 @@ any(is.na(pred.params.vol))
 # Center of Mass Predictions
 #
 # ------------------------------------------------------------------------------ # 
-modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, hist.swe){
+modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm){
   '
   mod.cm:           input model
   pred.dat:         data.frame of prediction variables
   cur.temps:        numeric of winter temperatures
   hist.temps:       historic temperature data
   hist.cm:          historic cm
-  pred.swe:         current swe used for prediction
-  hist.swe:         historic swe
   '
+  
   pred.params.cm<-array(NA,c(1,2))
-  output.cm<-data.frame(percSWE=integer(), predCM=integer(), diffCM=integer(), dateCM=character())
+  output.cm<-data.frame(predCM=integer(), diffCM=integer(), dateCM=character())
   sig<-summary(mod.cm)$sigma
   
   predictions<-predict(mod.cm,newdata=pred.dat)
@@ -151,117 +157,116 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm, pred.swe, 
   pred.params.cm[1,2]<-sqrt(sig^2+var(predictions)) 
   if (is.na(pred.params.cm[1,2])){pred.params.cm[1,2]<-sig}
   
-  #output.cm[1,1]<-mean(apply(hist.temps, MARGIN=2, mean)) 
-  #output.cm[1,2]<-as.list(round(cur.temps,3))
-
-  output.cm[1,1]<-  if (length(grep('swe',mod.cm$coefnames )) >0) {
-    round(mean(as.matrix(pred.swe), na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =TRUE),3)*100
-    } else {'No SWE Param'}
-    #round(sum(pred.swe, na.rm=TRUE)/mean(as.matrix(hist.swe), na.rm =T),3) 
-
-  
   cm_predict=round(mean(predictions,na.rm=T))
   
   #limit cm predictions to the observed range
-  # if(all(cm_predict>hist.cm)){
-  #   cm_predict=round(max(hist.cm, na.rm = T))
-  # }
-  # 
-  # if(all(cm_predict<hist.cm)){
-  #   cm_predict=round(min(hist.cm, na.rm=T))
-  # }
-  # 
-  output.cm[1,2]<-cm_predict
-  output.cm[1,3]<-cm_predict-mean(hist.cm) 
-  output.cm[1,4]<-format(wy$Date[wy$day==cm_predict],"%b-%d")
+  if(all(cm_predict>hist.cm)){
+    cm_predict=round(max(hist.cm, na.rm = T))
+    pred.params.cm[1,1]=round(max(hist.cm, na.rm = T))
+  }
+
+  if(all(cm_predict<hist.cm)){
+    cm_predict=round(min(hist.cm, na.rm=T))
+    pred.params.cm[1,1]=round(min(hist.cm, na.rm=T))
+  }
+
+  output.cm[1,1]<-cm_predict
+  output.cm[1,2]<-cm_predict-mean(hist.cm) 
+  output.cm[1,3]<-format(wy$Date[wy$day==cm_predict],"%b-%d")
   
   return(list(output.cm, pred.params.cm))
 }
 
 #-------------------------------------------------------------------------------
 # Big Wood at Hailey center of mass
-sub_params<- cm_mod_sum$bwh$vars[-grep('aj', cm_mod_sum$bwh$vars)]
-aj_params<-cm_mod_sum$bwh$vars[grep('aj', cm_mod_sum$bwh$vars)]
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.cm, cm_mod_sum$bwh$vars) %>% filter(complete.cases(.))
+#cm_models$bwh_cm_mod
+sub_params<- cm_models$bwh_cm_mod$vars[-grep('aj', cm_models$bwh_cm_mod$vars)]
+aj_params<-cm_models$bwh_cm_mod$vars[grep('aj', cm_models$bwh_cm_mod$vars)]
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.cm, cm_models$bwh_cm_mod$vars) %>% filter(complete.cases(.))
 
 # Prediction Data with modeled temperature data
-pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::slice(rep(1:n(), 5000))
-pred.data[aj_params] <- aj.pred.temps[aj_params]
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::slice(rep(1:n(), 5000))
+pred.dat[aj_params] <- aj.pred.temps[aj_params]
 
 # Big Wood Hailey Model output
-mod_sum[1,2]<-summary(cm_models$bwh_cm.mod)$adj.r.squared
-mod_out<- modOutcm(cm_models$bwh_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
+mod_sum[1,2]<-summary(cm_models$bwh_cm_mod)$adj.r.squared
+mod_out<- modOutcm(cm_models$bwh_cm_mod, pred.dat, hist%>% dplyr::select(contains('nj')), 
                    (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$bwh.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
-                   hist%>% dplyr::select(contains('swe')))
+                   hist$bwh.cm)
 output.cm[1,] <- mod_out[[1]]
 pred.params.cm[1,] <- mod_out[[2]]
 
+cm_models$bwh_cm.mod$predictors=pred.dat
+
 # --------------------
 # Big Wood at Stanton
-# 
-sub_params<- cm_mod_sum$bws$vars[-grep('aj', cm_mod_sum$bws$vars)]
-aj_params<-cm_mod_sum$bws$vars[grep('aj', cm_mod_sum$bws$vars)]
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bws.cm, cm_mod_sum$bws$vars) %>% filter(complete.cases(.))
+#cm_models$bws_cm_mod
+sub_params<- cm_models$bws_cm_mod$vars[-grep('aj', cm_models$bws_cm_mod$vars)]
+aj_params<-cm_models$bws_cm_mod$vars[grep('aj', cm_models$bws_cm_mod$vars)]
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bws.cm, cm_models$bws_cm_mod$vars) %>% filter(complete.cases(.))
 
 # Prediction Data with modeled temperature data
-pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
-pred.data[aj_params] <- aj.pred.temps[aj_params]
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+pred.dat[aj_params] <- aj.pred.temps[aj_params]
 
 # Big Wood Stanton Model output
-mod_sum[2,2]<-summary(cm_models$bws_cm.mod)$adj.r.squared
-mod_out<- modOutcm(cm_models$bws_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
+mod_sum[2,2]<-summary(cm_models$bws_cm_mod)$adj.r.squared
+mod_out<- modOutcm(cm_models$bws_cm_mod, pred.dat, hist%>% dplyr::select(contains('nj')), 
                    (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$bws.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
-                   hist%>% dplyr::select(contains('swe')))
+                   hist$bws.cm)
 output.cm[2,] <- mod_out[[1]]
 pred.params.cm[2,] <- mod_out[[2]]
 
+cm_models$bws_cm.mod$predictors=pred.dat
+
 # --------------------
 # Silver Creek Center of Mass
+#cm_models$sc_cm_mod
 # added 'if' statement here because March SC CM doesn't use aj temperatures
-if (any(grepl('aj', cm_mod_sum$sc$vars))){ 
-  sub_params<- cm_mod_sum$sc$vars[-grep('aj', cm_mod_sum$sc$vars)]
-  aj_params<-cm_mod_sum$sc$vars[grep('aj', cm_mod_sum$sc$vars)]
+if (any(grepl('aj', cm_models$sc_cm_mod$vars))){ 
+  sub_params<- cm_models$sc_cm_mod$vars[-grep('aj', cm_models$sc_cm_mod$vars)]
+  aj_params<-cm_models$sc_cm_mod$vars[grep('aj', cm_models$sc_cm_mod$vars)]
   # Prediction Data with modeled temperature data
-  pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
-  pred.data[aj_params] <- aj.pred.temps[aj_params]
+  pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+  pred.dat[aj_params] <- aj.pred.temps[aj_params]
 } else {
-  sub_params<- cm_mod_sum$sc$vars
-  pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params))
+  sub_params<- cm_models$sc_cm_mod$vars
+  pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params))
 }
 
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(sc.cm, cm_mod_sum$sc$vars) %>% filter(complete.cases(.))
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(sc.cm, cm_models$sc_cm_mod$vars) %>% filter(complete.cases(.))
 
 # Silver Creek CM Model output
-mod_sum[4,2]<-summary(cm_models$sc_cm.mod)$adj.r.squared
-mod_out<- modOutcm(cm_models$sc_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
+mod_sum[4,2]<-summary(cm_models$sc_cm_mod)$adj.r.squared
+mod_out<- modOutcm(cm_models$sc_cm_mod, pred.dat, hist%>% dplyr::select(contains('nj')), 
                    (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$sc.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
-                   hist%>% dplyr::select(contains('swe')))
+                   hist$sc.cm)
 output.cm[4,] <- mod_out[[1]]
 pred.params.cm[4,] <- mod_out[[2]]
+cm_models$sc_cm.modpredictors=pred.dat
 
 # --------------------
 # Camas Creek Center of Mass
-
-sub_params<- cm_mod_sum$cc$vars[-grep('aj', cm_mod_sum$cc$vars)]
-aj_params<-cm_mod_sum$cc$vars[grep('aj', cm_mod_sum$cc$vars)]
-hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.cm, cm_mod_sum$cc$vars) %>% filter(complete.cases(.))
+#cm_models$cc_cm_mod
+sub_params<- cm_models$cc_cm_mod$vars[-grep('aj', cm_models$cc_cm_mod$vars)]
+aj_params<-cm_models$cc_cm_mod$vars[grep('aj', cm_models$cc_cm_mod$vars)]
+hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(cc.cm, cm_models$cc_cm_mod$vars) %>% filter(complete.cases(.))
 
 #Prediction Data with modeled temperature data
-pred.data<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
-pred.data[aj_params] <- aj.pred.temps[aj_params]
+pred.dat<-var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+pred.dat[aj_params] <- aj.pred.temps[aj_params]
+# pred.dat$ga.aj_t <-4.1
+# pred.dat$sm.aj_t<- 8.5
 
 # Camas Creek Model output
-mod_sum[3,2]<-summary(cm_models$cc_cm.mod)$adj.r.squared
-mod_out<- modOutcm(cm_models$cc_cm.mod, pred.data, hist%>% dplyr::select(contains('nj')), 
+mod_sum[3,2]<-summary(cm_models$cc_cm_mod)$adj.r.squared
+mod_out<- modOutcm(cm_models$cc_cm_mod, pred.dat, hist %>% dplyr::select(contains('nj')), 
                    (var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('nj'))), 
-                   hist$cc.cm, var[var$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::select(contains('swe')), 
-                   hist%>% dplyr::select(contains('swe')))
+                   hist$cc.cm)
 output.cm[3,] <- mod_out[[1]]
 pred.params.cm[3,] <- mod_out[[2]]
 
+cm_models$cc_cm.mod$predictors=pred.dat
 
 
 #write.csv(output.vol, file.path(model_out,"pred.output.vol.csv"),row.names=T)
@@ -313,6 +318,7 @@ grid.table(output.cm)
 dev.off()
 
 
+
 # ------------------------------------------------------------------------------
 # Create distribution and draw samples of CENTER of MASS & Volume
 # ------------------------------------------------------------------------------
@@ -337,6 +343,11 @@ CMyear.sample<-sample(cm.data$wateryear,5000,replace=TRUE, prob=cm.data$prob)
 cm_prob<-as.data.frame(summary(as.factor(CMyear.sample))/5000)
 colnames(cm_prob)<- c("% of sample")
 cm_prob<- cm_prob*100
+
+cm_prob$year = rownames(cm_prob)
+
+dbWriteTable(conn,"cm_prob", cm_prob, overwrite=TRUE)
+
 png(file.path(fig_dir_mo,"CM_summary_prob.png"), height = 50*nrow(cm_prob), width = 200*ncol(cm_prob))
 grid.table(cm_prob)
 dev.off()

@@ -103,7 +103,7 @@ aj.snot<-snotel.aj_temp %>% dplyr::select(wateryear, aj_tempf, sitenote) %>% piv
 all.temp.dat <- nj.snot %>% merge(aj.snot , by= 'wateryear', all=TRUE) %>% 
   merge(tdata.wide, by= 'wateryear', all=TRUE) 
 
-##### add temop data to current_data
+##### add temp data to current_data (data for todays date)
 
 current_data=merge(current_data,all.temp.dat, by='wateryear',all=F)
 

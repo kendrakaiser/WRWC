@@ -1,6 +1,7 @@
-#ovreall dispatch script, called by cron
+#overall dispatch script, called by cron
 runTask=T   #go/nogo flag
 wd="/home/sam/Documents/R\ Workspace/WRWC_cronTask"
+setwd(wd)
 
 logFile=file(file.path(wd,"log.txt"),open="a")
 sink(file=logFile,append=T,type="output")
@@ -18,7 +19,7 @@ try(
     print(paste("Run initiated at",Sys.time()))
     
     source("~/Documents/R Workspace/WRWC_cronTask/code/00_run_models.R")
-    
+    print("--------------Run Complete---------------")
   }
 )
 sink(type="message")
