@@ -1,12 +1,16 @@
 #function for getting var df depending on date
-makeDatasets=function(date){
+makeDatasets=function(end_date,useFirstOfMonth){
   
-  end_date=date
-  # ------------------------------------------------------------------------------
-  # Download and aggregate all available data for the Wood River Predictive Model
-  # Kendra Kaiser
-  # June 19, 2020
-  # ------------------------------------------------------------------------------
+  dataYear=format.Date(end_date,"%Y")
+  dataMonth=format.Date(end_date,"%m")
+  
+  if(useFirstOfMonth){
+    dataDay="01" #character for consistency w/ format.Date
+  } else {
+    dataDay=format.Date(end_date,"%d")
+  }
+  
+
   #tools to connect and write to database
   source(file.path(git_dir, 'code/init_db.R')) #terra sf RPostgres #R.utils raster
   source(paste0(git_dir,"/code/fxn_dbIntakeTools.R")) 
@@ -15,19 +19,13 @@ makeDatasets=function(date){
   #connect to database
   #conn=scdbConnect() # done in init_db.R
   
-  # ------------------------------------------------------------------------------
-  # USGS Gages Data & Metrics
+  # ----------------------------USGS Gage Data & Metrics------------------
   # calculate hydrologic metrics for each year for each station 
   # winter "baseflow" (wb), Apr - Sept irrigation volume (irr_vol), total Volume (tot_vol), and center of mass (cm)
-  # ------------------------------------------------------------------------------
+
   source(file.path(git_dir,'code/fxn_baseflowA.r'))
-  #Average Winter flow - doesnt work properly bc needs filtered, retaining so code doesnt break
-  # avgBaseflow=dbGetQuery(conn,"SELECT wateryear(datetime) AS wateryear, metric, AVG(value) AS wq, data.locationid, name, sitenote
-  #            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-  #            WHERE metric = 'flow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
-  #            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;")
-  
-  #pull winter flow to do filter on
+
+  #pull winter flow to filter on
   wint_flow=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
            WHERE metric = 'flow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 11 OR EXTRACT(month FROM datetime) < 2)
@@ -41,10 +39,8 @@ makeDatasets=function(date){
     bf=baseflowA(thisQ)
     return(mean(bf$bf))
   }
-  
-  
+
   avgBaseflow=unique(wint_flow[,c("wateryear","metric","locationid","name","sitenote")])
-  
   avgBaseflow$wq = mapply(bf_wrapper, wy=avgBaseflow$wateryear, lid=avgBaseflow$locationid, MoreArgs = list(wint_flow_df=wint_flow))
   
   # pivot data wider
@@ -102,38 +98,14 @@ makeDatasets=function(date){
   
   cm_wide<- cm %>% pivot_wider(names_from = sitenote, values_from = cm, names_glue = "{sitenote}.cm" )
   
-  print('flow Metrics Complete')
-  
-  # ------------------------------------------------------------------------------
-  # Retrieve Snotel Data 
-  # ------------------------------------------------------------------------------
-  #FEBRUARY
-  winterSWE_feb=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
+  # ---------------------Get Snotel from Database----------------
+  winterSWE=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
-           (EXTRACT(day FROM datetime) = 1 AND EXTRACT(month FROM datetime) = 2)
+           (EXTRACT(day FROM datetime) ='",dataDay,"'AND EXTRACT(month FROM datetime) = '",dataMonth,"')
            AND metric = 'swe' AND qcstatus = 'true' AND datetime::date <= '",end_date,"'::date
            ORDER BY wateryear;"))
-  # pivot data wider
-  swe_feb<-pivot_wider(data=winterSWE_feb[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
   
-  #March
-  winterSWE_mar=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
-           FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
-           (EXTRACT(day FROM datetime) = 1 AND EXTRACT(month FROM datetime) = 3)
-           AND metric = 'swe' AND qcstatus = 'true' AND datetime::date <= '",end_date,"'::date
-           ORDER BY wateryear;"))
-  # pivot data wider
-  swe_mar<-pivot_wider(data=winterSWE_mar[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
-  
-  #APRIL
-  winterSWE_apr=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, metric, value AS swe, data.locationid, name, sitenote
-           FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE 
-           (EXTRACT(day FROM datetime) = 1 AND EXTRACT(month FROM datetime) = 4)
-           AND metric = 'swe' AND qcstatus = 'true' AND datetime::date <= '",end_date,"'::date
-           ORDER BY wateryear;"))
-  # pivot data wider
-  swe_apr<-pivot_wider(data=winterSWE_apr[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
-  
+  winterSWE_wide=pivot_wider(data=winterSWE[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
   
   # SNOTEL Sites ----
   #cg = 895 #  Chocolate Gulch (0301)
@@ -149,140 +121,31 @@ makeDatasets=function(date){
   #sm = 792 # Stickney Mill
   #bc = 320 # Bear Canyon
   
-  #------------------------------------------------------------------------------
-  # Get SNODAS from Database 
-  #------------------------------------------------------------------------------
-  #FEBRUARY
-  winterSums_feb=dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric, name, sitenote) wateryear(datetime) AS wateryear, max(datetime) AS datetime, metric,
+  #----------------------------Get SNODAS from Database ------------------
+  winterSums=dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric, name, sitenote) wateryear(datetime) AS wateryear, max(datetime) AS datetime, metric,
            sum(value) as value, snodasdata.locationid, name, sitenote
            FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-           WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2) 
+           WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < '",dataMonth,"') 
            AND METRIC = 'liquid_precip'
            GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
   #^^^^ this gets the sum for liquid precip (all liquid precip for the period)
   
-  winterSums_feb=rbind(winterSums_feb,
+  winterSums=rbind(winterSums,
                        dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric) wateryear(datetime) AS wateryear, datetime, metric, value, locations.locationid, locations.name, locations.sitenote 
                  FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-                 WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 2)
+                 WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < '",dataMonth,"')
                  AND metric != 'liquid_precip'
                  ORDER BY locationid, metric, wateryear, datetime DESC;"))
   )###^^This adds the latest data within the period for runoff_total, snow_covered_area, swe_total
   
-  # pivot data wider
-  snodas_feb<-pivot_wider(data=winterSums_feb[,c("wateryear","metric","value","sitenote")],names_from = c(sitenote, metric),values_from = c(value),names_sep=".")
+  snodas_wide<-pivot_wider(data=winterSums[,c("wateryear","metric","value","sitenote")],names_from = c(sitenote, metric),values_from = c(value),names_sep=".")
   
-  #MARCH
-  winterSums_mar=dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric, name, sitenote) wateryear(datetime) AS wateryear, max(datetime) AS datetime, metric,
-           sum(value) as value, snodasdata.locationid, name, sitenote
-           FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-           WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3) 
-           AND METRIC = 'liquid_precip'
-           GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
-  #^^^^ this gets the sum for liquid precip (all liquid precip for the period)
-  
-  winterSums_mar=rbind(winterSums_mar,
-                       dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric) wateryear(datetime) AS wateryear, datetime, metric, value, locations.locationid, locations.name, locations.sitenote 
-                 FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-                 WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 3)
-                 AND metric != 'liquid_precip'
-                 ORDER BY locationid, metric, wateryear, datetime DESC;"))
-  )###^^This adds the latest data within the period for runoff_total, snow_covered_area, swe_total
-  
-  # pivot data wider
-  snodas_march<-pivot_wider(data=winterSums_mar[,c("wateryear","metric","value","sitenote")],names_from = c(sitenote, metric),values_from = c(value),names_sep=".")
-  
-  #APRIL
-  winterSums_apr=dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric, name, sitenote) wateryear(datetime) AS wateryear, max(datetime) AS datetime, metric,
-           sum(value) as value, snodasdata.locationid, name, sitenote
-           FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-           WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 4) 
-           AND METRIC = 'liquid_precip'
-           GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
-  #^^^^ this gets the sum for liquid precip (all liquid precip for the period)
-  
-  winterSums_apr=rbind(winterSums_apr,
-                       dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric) wateryear(datetime) AS wateryear, datetime, metric, value, locations.locationid, locations.name, locations.sitenote 
-                 FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-                 WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < 4)
-                 AND metric != 'liquid_precip'
-                 ORDER BY locationid, metric, wateryear, datetime DESC;"))
-  )###^^This adds the latest data within the period for runoff_total, snow_covered_area, swe_total
-  
-  # pivot data wider
-  snodas_april<-pivot_wider(data=winterSums_apr[,c("wateryear","metric","value","sitenote")],names_from = c(sitenote, metric),values_from = c(value),names_sep=".")
+  swe_q=winterSWE_wide %>% merge(snodas_wide, by= 'wateryear', all=F) %>% merge(baseflow, by= 'wateryear', all=F) %>% merge(irr_vol, by= 'wateryear', all=TRUE) %>% 
+    merge(cm_wide, by= 'wateryear', all=TRUE) %>% merge(tot_vol, by= 'wateryear', all=F)
   
   
-  
-  ######var compiles data for the first day of each month, while current_data compiles data for tme most recent day <= end_day
-  #------ generate dataset as of current (really end_date) for prediction
-  #Grab current SWE
-  currentSWE=dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid) datetime, wateryear(datetime) AS wateryear, metric, value AS swe, locations.locationid, locations.name, locations.sitenote 
-           FROM data LEFT JOIN locations ON data.locationid = locations.locationid
-           WHERE metric = 'swe' AND qcstatus = true AND datetime::date <= '",end_date,"'::date 
-           ORDER BY locationid, datetime DESC;"))  #returns the latest value w/ DISTINCT ON (locationid) and ORDER BY datetime
-  
-  currentSWE=pivot_wider(data=currentSWE[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
-  
-  currentSnodas=dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid, metric, name, sitenote) wateryear(datetime) AS wateryear, max(datetime) AS datetime, metric,
-           sum(value) as value, snodasdata.locationid, name, sitenote
-           FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-           WHERE datetime::date <= '",end_date,"'::date
-           AND METRIC = 'liquid_precip'
-           GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY locationid, metric, name, sitenote, datetime DESC;"))
-  #^^^^ this gets the sum for liquid precip (all liquid precip for the period)
-  
-  currentSnodas=rbind(currentSnodas,
-                      dbGetQuery(conn,paste0("SELECT DISTINCT ON (locationid, metric) wateryear(datetime) AS wateryear, datetime, metric, value, locations.locationid, locations.name, locations.sitenote 
-                 FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
-                 WHERE datetime::date <= '",end_date,"'::date 
-                 AND metric != 'liquid_precip'
-                 ORDER BY locationid, metric, datetime DESC;"))
-  )###^^This adds the latest data within the period for runoff_total, snow_covered_area, swe_total
-  
-  # pivot data wider
-  currentSnodas<-pivot_wider(data=currentSnodas[,c("wateryear","metric","value","sitenote")],names_from = c(sitenote, metric),values_from = c(value),names_sep=".")
-  
-  current_data<- currentSWE %>% merge(baseflow, by= 'wateryear', all=F) %>% merge(currentSnodas, by= 'wateryear', all=F) %>% merge(tot_vol, by= 'wateryear', all=F)
-  
-  #------------------------------------------------------------------------------
-  # Integrate & EXPORT Data: USGS SNOTEL SNODAS
-  #------------------------------------------------------------------------------
-  
-  #February data for modeling
-  alldat_feb <- swe_feb %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(tot_vol, by= 'wateryear', all=TRUE) %>% 
-    merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
-    merge(snodas_feb, by= 'wateryear', all=T)
-  
-  alldat_mar <- swe_mar %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(tot_vol, by= 'wateryear', all=T) %>% 
-    merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
-    merge(snodas_march, by= 'wateryear', all=T)
-  
-  #write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
-  
-  #April data for modeling
-  alldat_april <- swe_apr %>% merge(baseflow, by= 'wateryear',all=T) %>% merge(tot_vol, by= 'wateryear', all=TRUE) %>% 
-    merge(irr_vol, by= 'wateryear', all=TRUE) %>% merge(cm_wide, by= 'wateryear', all=TRUE) %>% 
-    merge(snodas_april, by= 'wateryear',all=T)
-  
-  #write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
-  
-  print("All flow and snow data saved")
-  
-  
-  
-  
-  
-  # ----------------------------------------------------------------------------- #
-  # Predictive Temperature Model for the Wood River Water Collaborative
-  # Kendra Kaiser
-  # December 21, 2020
-  # Creates Mixed-effects regression model to predict upcoming year temperature
-  # based on subsets of basins that preformed best in lm of center of mass etc
-  # ----------------------------------------------------------------------------- # 
-  
+  # ------------------------ Temperature Data and Temperature Models-----------------
   # Pull AGRIMET Data from database
-  # -----------------------------------------------------------------------------
   agrimet<- dbGetQuery(conn, paste0("SELECT date AS date_time, day_mean_t AS temperature_mean, site_name AS site_name, month AS mo, y AS y, wy AS wy 
                                   FROM daily_air_temperature
                                   WHERE date::date <= '",end_date,"'::date;"))
@@ -377,14 +240,11 @@ makeDatasets=function(date){
   
   ##### add temp data to current_data
   
-  current_data=merge(current_data,all.temp.dat, by='wateryear',all=F)
+  #current_data=merge(current_data,all.temp.dat, by='wateryear',all=F)
   
   #write.csv(all.temp.dat, file.path(data_dir,"temp_dat.csv"), row.names=FALSE)
   
-  #-------------------------------------------------------------------------------
-  # Bootstrap spring temperature predictions for each site
-  #TODO need to test a better model - this one sucks
-  #-------------------------------------------------------------------------------
+  #---------------------------------Bootstrap spring temperature predictions for each site------------------------------------
   # the soldier ranger station has some missing years that cut the record short - consider removing
   input<- snotel.aj_temp %>% merge(elev, by="sitenote")  %>% dplyr::select(wateryear, aj_tempf, sitenote, elev) %>% filter(complete.cases(.))
   lr.elev<- lm(aj_tempf~  elev+wateryear+sitenote, data=input)
@@ -419,29 +279,23 @@ makeDatasets=function(date){
   aj.pred.temps<- data.frame(mvrnorm(nboot, new.data$aj_tempf, site.cov) )
  
   
-  # Data Integration
-  # merge data from data scraping and temp models
-  # Kendra Kaiser
-  # 09-15-2023
-  
+
+  # --------------- merge data from data scraping and temp models--------------
+
   # Import & Compile Data -------------------------------------------------------# 
   # Streamflow, Current SWE, historic Temperature Data
   
-  # input data name 'alldat_mo.csv'
-  if (month(end_date) == 2){
-    swe_q  <<- alldat_feb
-  } else if (month(end_date) == 3){
-    swe_q  <<- alldat_mar
-  } else if (month(end_date) == 4){
-    swe_q  <<- alldat_april
-  }
-  
-  swe_q[swe_q == 0] <- 0.01 # change zeros to a value so lm works 
+  #swe_q[swe_q == 0] <- 0.01 # change zeros to a value so lm would work
   
   # combine discharge & SWE with temp data
-  var = swe_q %>% merge(all.temp.dat, by ="wateryear", all=TRUE)
+  allVar = swe_q %>% merge(all.temp.dat, by ="wateryear", all=TRUE)
   
-  outputList=list(var=var,aj.pred.temps=aj.pred.temps,current_data=current_data)
+  outputList=list(allVar=allVar,aj.pred.temps=aj.pred.temps)
+  
+  print(paste0("Dataset generated for ",dataYear,"-",dataMonth,"-",dataDay))
   
   return(outputList)
 }
+
+firstOfMonthData=makeDatasets(Sys.Date(),useFirstOfMonth = T)
+todayData=makeDatasets(Sys.Date(),useFirstOfMonth = F)
