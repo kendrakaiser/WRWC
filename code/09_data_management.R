@@ -8,7 +8,7 @@
 # Write model structure to database
 # ------------------------------------------------------------------------------
 
-writeModel=function(model,modelName,enddate=end_date){
+writeVolModel=function(model,modelName,enddate=end_date){
   moddate=as.Date(paste0(year(enddate), "/", month(enddate), "/", 1))
   rundate=Sys.Date()
   
@@ -27,7 +27,31 @@ writeModel=function(model,modelName,enddate=end_date){
   
 }    
 
-mapply(writeModel,vol_models,names(vol_models))
+mapply(writeVolModel,vol_models,names(vol_models))
+
+
+writeCmModel=function(model,modelName,enddate=end_date){
+  moddate=as.Date(paste0(year(enddate), "/", month(enddate), "/", 1))
+  rundate=Sys.Date()
+  
+  writeModelDF=data.frame(modelname=modelName,
+                          moddate=moddate,rundate=rundate,
+                          modelcoefjson=toJSON(data.frame(model$coefficients)),
+                          modeldatajson=toJSON(model$model),
+                          modelpredictors=toJSON(model$predictors)
+                          
+  )
+  
+  dbExecute(conn,paste0("DELETE FROM centermassmodels WHERE modelname = '",modelName,
+                        "' AND rundate = '",rundate,"' AND moddate = '",moddate,"';"))
+
+  dbWriteTable(conn,"centermassmodels",writeModelDF,append=T)
+  
+}    
+
+mapply(writeCmModel,cm_models,names(cm_models))
+
+
 
 
 # ------------------------------------------------------------------------------

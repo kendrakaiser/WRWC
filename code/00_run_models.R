@@ -17,12 +17,13 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
 # TODO simdate v.s. run date
 # set end date 
-end_date = as.Date("2021-02-20") 
+end_date = as.Date("2021-02-28") 
 #end_date=Sys.Date()
 
 
 model_n=10
-refitModelToToday=F
+refitModelToToday=T
+reuseMonthlyModels=T
 # ------------------------------------------------------------------------------
 # Run Model
 # ------------------------------------------------------------------------------
@@ -55,7 +56,7 @@ if (month(end_date) == 2){
 # ------------------------------------------------------------------------------
 # Compile Data Based on Run Date
 # ------------------------------------------------------------------------------
-source(file.path(git_dir,'code/005_db_update.R'))
+#source(file.path(git_dir,'code/005_db_update.R'))
 
 # source(file.path(git_dir, 'code/02_data_scraping.R'))
 # source(file.path(git_dir, 'code/03_temperature_models.R')) 

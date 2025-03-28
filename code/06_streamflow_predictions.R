@@ -79,7 +79,7 @@ modOut<- function(mod, pred.dat){
 
 # --------------------------------------------------
 #bwh Prediction Data
-pred.dat =todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',vol_models$bwh_mod$vars)]
+pred.dat =todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$bwh_mod$coefficients))]
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol_models$bwh_mod)$adj.r.squared
 mod_out<- modOut(vol_models$bwh_mod, pred.dat)
@@ -92,7 +92,7 @@ pred.params.vol[1,] <- mod_out[[2]]
 
 # --------------------------------------------------
 #  bws Prediction Data 
-pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',vol_models$bws_mod$vars)]
+pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$bws_mod$coefficients))]
 
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol_models$bws_mod)$adj.r.squared
@@ -103,20 +103,8 @@ output.vol[2,] <- mod_out[[1]]
 pred.params.vol[2,] <- mod_out[[2]]
 
 # --------------------------------------------------
-# SC Prediction Data 
-pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',vol_models$sc_mod$vars)]
-
-# Silver Creek Model output
-mod_sum[4,1]<-summary(vol_models$sc_mod)$adj.r.squared
-mod_out<- modOut(vol_models$sc_mod, pred.dat)
-vol_models$sc_mod$predictors=pred.dat
-
-output.vol[4,] <- mod_out[[1]]
-pred.params.vol[4,] <- mod_out[[2]]
-
-# --------------------------------------------------
 #CC Prediction Data 
-pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',vol_models$cc_mod$vars)]
+pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$cc_mod$coefficients))]
 
 # Camas Creek Model output
 mod_sum[3,1]<-summary(vol_models$cc_mod)$adj.r.squared
@@ -126,11 +114,22 @@ vol_models$cc_mod$predictors=pred.dat
 output.vol[3,] <- mod_out[[1]]
 pred.params.vol[3,] <- mod_out[[2]]
 
+# --------------------------------------------------
+# SC Prediction Data 
+pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$sc_mod$coefficients))]
+
+# Silver Creek Model output
+mod_sum[4,1]<-summary(vol_models$sc_mod)$adj.r.squared
+mod_out<- modOut(vol_models$sc_mod, pred.dat)
+vol_models$sc_mod$predictors=pred.dat
+
+output.vol[4,] <- mod_out[[1]]
+pred.params.vol[4,] <- mod_out[[2]]
+
+
 #error catch for NA in pred params
 #TODO: Move this into the function and add model name into error
-try(if(any(is.na(pred.params.vol))) stop("NA in Predicted Parameters"))
-
-tryCatch({is.integer(pred.params.vol)}, error = function(e) {message("error:\n", "NA in Predicted Parameters")})
+if(any(is.na(pred.params.vol))) stop("NA in Predicted Parameters")
 
 # ------------------------------------------------------------------------------  
 #
@@ -200,8 +199,8 @@ cm_models$bwh_cm.mod$predictors=pred.dat
 # --------------------
 # Big Wood at Stanton
 #cm_models$bws_cm_mod
-sub_params<- cm_models$bws_cm_mod$vars[-grep('aj', cm_models$bws_cm_mod$vars)]
-aj_params<-cm_models$bws_cm_mod$vars[grep('aj', cm_models$bws_cm_mod$vars)]
+sub_params<- cm_models$bws_cm_mod$vars[!grepl('aj', cm_models$bws_cm_mod$vars)]
+aj_params<-cm_models$bws_cm_mod$vars[grepl('aj', cm_models$bws_cm_mod$vars)]
 hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::select(bws.cm, cm_models$bws_cm_mod$vars) %>% filter(complete.cases(.))
 
 # Prediction Data with modeled temperature data

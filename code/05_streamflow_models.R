@@ -12,27 +12,28 @@
 defaultW <- getOption("warn") 
 options(warn = -1) 
 
-#------------------------------------------------------------------------------ # 
-# Import & Compile Data                                                        -# 
-#------------------------------------------------------------------------------ # 
 
-# # ID columns for subsetting
-# swe_cols<-grep("(?!swe_)_?swe", colnames(var), perl = TRUE, value = TRUE)
-# wint_t_cols<-grep('nj_t', colnames(var))
-# aj_t_cols<-grep('aj_t', colnames(var))
-# irr_vol_cols<- grep('irr_vol', colnames(var))
-# tot_vol_cols<- grep('tot_vol', colnames(var))
-# snodas_cols<- c(grep('wint', colnames(var)), grep('snow', colnames(var)), grep('swe_total', colnames(var)))
-# wq_cols<- grep('wq', colnames(var))
-# runoff_cols<- grep('runoff', colnames(var))
-# cm_cols <- grep('cm', colnames(var))
-# #par(mar=c(1, 1, 1, 1))
-
-#------------------------------------------------------------------------------ # 
-# Evaluate alternative model combinations for April-Sept Volume Predictions
-#------------------------------------------------------------------------------ # 
 #specify the cross-validation method
-ctrl <- trainControl(method = "LOOCV")
+#ctrl <- trainControl(method = "LOOCV")
+
+######functions##########
+refitModel=function(model,newData=todayData$allVar){
+  modelForm=formula(model)
+  responseName=names(model$model)[1] #first column of $model within model object is response
+  if(grepl("log.",responseName,fixed=T)){
+    unlogTermName=gsub("log.","",responseName)
+    newData$logResponse=log(newData[,names(newData)==unlogTermName])
+    names(newData)[names(newData)=="logResponse"]=responseName
+  }
+  newModel=lm(formula=modelForm,data=newData)
+  
+  # #pass along added elements to model object
+  # newModel$form=model$form
+  # newModel$vars=model$vars
+  newModel$vars=names(newModel$coefficients)[-1]
+  return(newModel)
+}
+
 
 #function to make an easier to read df with some info on the models
 getRegModelSummary=function(regSum=reg_sum,f_fitDF=fitDF, response="iv" ){
@@ -62,6 +63,7 @@ getLeapFormulas=function(leapList,responseVarName){
 }
 
 vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVars=firstOfMonthData$allVar){
+  
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
@@ -80,15 +82,29 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
   onSiteNames=names(volVars)[predTypeNames & siteNames]
   #variables that are not specific to the watershed (SWE & temp)
   offSiteTypes=offSiteTypes[offSiteTypes %in% usePredTypes]
-  offSiteNames=names(volVars)[sub(".*\\.","",names(volVars))  %in% offSiteTypes]   
+  offSiteNames=names(volVars)[sub(".*\\.","",names(volVars))  %in% offSiteTypes]  
+  
+  # save current values to check for presence in predictor dataset
+  currentVars=volVars[volVars$wateryear==pred.year,]
+  badVars=names(currentVars)[is.na(currentVars)] # no special treatment for aj_t ?
+  
   # select historic values
   volVars=volVars[volVars$wateryear < pred.year,]
+  
   #recombine all possible terms
+  modelDF=volVars[,c(onSiteNames, offSiteNames)]
+  
+  #drop vars which cant be used as predictors
+  modelDF=modelDF[,!names(modelDF) %in% badVars]
+  
+  #add response as first column
   modelDF= cbind(volVars[,responseName],
-                 volVars[,c(onSiteNames, offSiteNames)])
+                 modelDF)
   
   names(modelDF)[1]=responseName
   modelDF=modelDF[complete.cases(modelDF),]
+  
+
   
   ############################# log response ################################
   unloggedResponse=modelDF[,1]
@@ -148,7 +164,7 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
   } 
   #})
   
-
+  
   modelCompareDF=modelCompareDF[modelCompareDF$n <= max_var,]
   modelCompareDF=modelCompareDF[modelCompareDF$n >= min_var,]
   modelCompareDF=modelCompareDF[order(modelCompareDF[,"BIC"]),]
@@ -169,49 +185,9 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
   return(mod_sum)
 }
 
-# Create Volume Models for each USGS gage
-bwh_vol_mod<- vol_model("bwh", "bwh", model_n)
-bws_vol_mod<- vol_model("bws", c("bws", "bwh"), model_n)
-cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), model_n)
-sc_vol_mod<- vol_model("sc", c("bwh", "sc"), model_n)
 
-firstOfMonthVolModels<- list(bwh_mod = bwh_vol_mod, bws_mod = bws_vol_mod, sc_mod = sc_vol_mod, cc_mod = cc_vol_mod)
+cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, cmVars=firstOfMonthData$allVar){
 
-refitModel=function(model,newData=todayData$allVar){
-  modelForm=model$form # depends on $form added to model object.  could check first....
-  responseName=strsplit(modelForm,"[  |~]")[[1]][1] #get first term, divided by ' ' or '~'
-  if(grepl("log.",responseName,fixed=T)){
-    unlogTermName=gsub("log.","",responseName)
-    newData$logResponse=log(newData[,names(newData)==unlogTermName])
-    names(newData)[names(newData)=="logResponse"]=responseName
-  }
-  newModel=lm(formula=modelForm,data=newData)
-  
-  #pass along added elements to model object
-  newModel$form=model$form
-  newModel$vars=model$vars
-  return(newModel)
-}
-
-
-# EXPORT VOL MODEL DETAILS
-# ----------------------
-if(refitModelToToday){
-  bwh_vol_mod=refitModel(bwh_vol_mod)
-  bws_vol_mod=refitModel(bws_vol_mod)
-  sc_vol_mod=refitModel(sc_vol_mod)
-  cc_vol_mod=refitModel(cc_vol_mod)
-  vol_models=list(bwh_mod = bwh_vol_mod, bws_mod = bws_vol_mod, sc_mod = sc_vol_mod, cc_mod = cc_vol_mod)
-} else {
-  vol_models=firstOfMonthVolModels
-}
-
-
-
-# ---------------------------------------------------------------------------- # 
-# Evaluate alternative model combinations for Center of Mass Predictions
-# ---------------------------------------------------------------------------- # 
-cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVars=firstOfMonthData$allVar){
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
@@ -222,20 +198,33 @@ cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVars
   # site= "bws"
   # sites= "bws"
   # max_var = 6
-
+  
   responseName=paste0(site,".cm")
   # classify predictors into groups based on naming convention (prevents duplicates from each type)
-  predTypeNames=sub(".*\\.","",names(volVars)) %in% usePredTypes
-  siteNames=grepl(paste(sites, collapse="|"), colnames(volVars))
-  onSiteNames=names(volVars)[predTypeNames & siteNames]
+  predTypeNames=sub(".*\\.","",names(cmVars)) %in% usePredTypes
+  siteNames=grepl(paste(sites, collapse="|"), colnames(cmVars))
+  onSiteNames=names(cmVars)[predTypeNames & siteNames]
   #variables that are not specific to the watershed (SWE & temp)
   offSiteTypes=offSiteTypes[offSiteTypes %in% usePredTypes]
-  offSiteNames=names(volVars)[sub(".*\\.","",names(volVars))  %in% offSiteTypes]   
+  offSiteNames=names(cmVars)[sub(".*\\.","",names(cmVars))  %in% offSiteTypes]   
+  
+  # save current values to check for presence in predictor dataset
+  currentVars=cmVars[cmVars$wateryear==pred.year,]
+  badVars=names(currentVars)[is.na(currentVars) & !grepl("aj_t",names(currentVars),fixed = T)] # leave all aj_t in dataset
+  
+  
   # select historic values
-  volVars=volVars[volVars$wateryear < pred.year,]
-  #recombine all possible terms
-  modelDF= cbind(volVars[,responseName],
-                 volVars[,c(onSiteNames, offSiteNames)])
+  cmVars=cmVars[cmVars$wateryear < pred.year,]
+
+  #recombine all useable terms
+  
+  modelDF=cmVars[,c(onSiteNames, offSiteNames)]
+  #drop vars which cant be used as predictors
+  modelDF=modelDF[,!names(modelDF) %in% badVars]
+  
+  #add response as first col
+  modelDF= cbind(cmVars[,responseName],
+                 modelDF)
   
   names(modelDF)[1]=responseName
   modelDF=modelDF[complete.cases(modelDF),]
@@ -264,7 +253,7 @@ cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVars
                             #AICc=numeric(dfLength)
   )
   
-
+  
   i=1 
   #profvis({
   for(globalFormula in typeModels){
@@ -305,14 +294,92 @@ cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVars
   return(mod_sum)
 }
 
-# Create Center of Mass Models for each site
-bwh_cm_mod<- cm_model("bwh", "bwh", max_var=6)
-bws_cm_mod<- cm_model("bws", "bws", max_var=6)
-sc_cm_mod<- cm_model("sc", c("bwh","sc"),max_var=6)
-cc_cm_mod<- cm_model("cc", "cc\\.", max_var=6)
+
+
+
+#######check if new volume models are needed------------
+volModelJSON=dbGetQuery(conn,paste("SELECT DISTINCT ON (modelname) * FROM volumemodels WHERE EXTRACT(month from moddate) = ",format.Date(end_date,"%m"),"
+                                   AND EXTRACT(year from moddate) = ",format.Date(end_date,"%Y"),"
+                                   ORDER BY modelname, rundate DESC;" ))
+
+########note:::
+#there is the potential for some weird behavior here if the models are not re-fit for each simulation.
+#the point of this is to avoid re running the selection process, and rely on the terms already selected
+#But, it is probably best not to blindly trust model coefficients taken from the db 
+#without a way to be more specific about which model is grabbed 
+#currently uses the latest rundate for the correct moddate
+
+if(all(
+  reuseMonthlyModels,
+  c("bwh_mod", "bws_mod", "sc_mod",  "cc_mod" ) %in% volModelJSON$modelname,
+  format.Date(volModelJSON$rundate,"%m-%Y") == format.Date(Sys.Date(),"%m-%Y")# check that all models are from this month and year, 
+  #dont reuse older models when re running older simulations
+)){#Reuse Volume models
+  bwh_vol_mod=lm(log.bwh.irr_vol~., data=fromJSON(volModelJSON[volModelJSON$modelname=="bwh_mod",]$modeldatajson ))
+  bws_vol_mod=lm(log.bws.irr_vol~., data=fromJSON(volModelJSON[volModelJSON$modelname=="bws_mod",]$modeldatajson ))
+  cc_vol_mod=lm(log.cc.irr_vol~., data=fromJSON(volModelJSON[volModelJSON$modelname=="cc_mod",]$modeldatajson ))
+  sc_vol_mod=lm(log.sc.irr_vol~., data=fromJSON(volModelJSON[volModelJSON$modelname=="sc_mod",]$modeldatajson ))
+  
+} else { # reselect terms
+  # Create Volume Models for each site gage
+  print("Selecting new volume models....")
+  bwh_vol_mod<- vol_model("bwh", "bwh", model_n)
+  bws_vol_mod<- vol_model("bws", c("bws", "bwh"), model_n)
+  cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), model_n)
+  sc_vol_mod<- vol_model("sc", c("bwh", "sc"), model_n)
+}
+
+
+firstOfMonthVolModels<- list(bwh_mod = bwh_vol_mod, bws_mod = bws_vol_mod, sc_mod = sc_vol_mod, cc_mod = cc_vol_mod)
+
+if(refitModelToToday){ #refit models to latest data (no reselection of terms)
+  bwh_vol_mod=refitModel(bwh_vol_mod)
+  bws_vol_mod=refitModel(bws_vol_mod)
+  sc_vol_mod=refitModel(sc_vol_mod)
+  cc_vol_mod=refitModel(cc_vol_mod)
+  vol_models=list(bwh_mod = bwh_vol_mod, bws_mod = bws_vol_mod, sc_mod = sc_vol_mod, cc_mod = cc_vol_mod)
+} else {
+  bwh_vol_mod=refitModel(bwh_vol_mod,newData = firstOfMonthData$allVar)
+  bws_vol_mod=refitModel(bws_vol_mod,newData = firstOfMonthData$allVar)
+  sc_vol_mod=refitModel(sc_vol_mod,newData = firstOfMonthData$allVar)
+  cc_vol_mod=refitModel(cc_vol_mod,newData = firstOfMonthData$allVar)
+  vol_models=list(bwh_mod = bwh_vol_mod, bws_mod = bws_vol_mod, sc_mod = sc_vol_mod, cc_mod = cc_vol_mod)
+
+}
+
+
+
+
+#######check if new center of mass models are needed------------
+cmModelJSON=dbGetQuery(conn,paste("SELECT DISTINCT ON (modelname) * FROM centermassmodels WHERE EXTRACT(month from moddate) = ",format.Date(end_date,"%m"),"
+                                   AND EXTRACT(year from moddate) = ",format.Date(end_date,"%Y"),"
+                                   ORDER BY modelname, rundate DESC;" ))
+
+
+
+if(all(
+  reuseMonthlyModels,
+  c("bwh_cm_mod", "bws_cm_mod", "sc_cm_mod",  "cc_cm_mod" ) %in% cmModelJSON$modelname,
+  format.Date(cmModelJSON$rundate,"%m-%Y") == format.Date(Sys.Date(),"%m-%Y")# check that all models are from this month and year, 
+  #dont reuse older models when re running older simulations
+)){#Reuse CM models
+  bwh_cm_mod=lm(bwh.cm~., data=fromJSON(cmModelJSON[cmModelJSON$modelname=="bwh_cm_mod",]$modeldatajson ))
+  bws_cm_mod=lm(bws.cm~., data=fromJSON(cmModelJSON[cmModelJSON$modelname=="bws_cm_mod",]$modeldatajson ))
+  sc_cm_mod=lm(sc.cm~., data=fromJSON(cmModelJSON[cmModelJSON$modelname=="sc_cm_mod",]$modeldatajson ))
+  cc_cm_mod=lm(cc.cm~., data=fromJSON(cmModelJSON[cmModelJSON$modelname=="cc_cm_mod",]$modeldatajson ))
+  
+} else { #select new CM models
+  # Create Center of Mass Models for each site
+  print("Selecting new center of mass models....")
+  bwh_cm_mod<- cm_model("bwh", "bwh", max_var=6)
+  bws_cm_mod<- cm_model("bws", "bws", max_var=6)
+  sc_cm_mod<- cm_model("sc", c("bwh","sc"),max_var=6)
+  cc_cm_mod<- cm_model("cc", "cc\\.", max_var=6)
+}
+
 
 #compile all model details into one list to export
-firstOfMonthCMModels= list(bwh_cm_mod = bwh_cm_mod, bws_cm_mod = bws_cm_mod, sc_cm_mod = sc_cm_mod, cc_cm_mod = cc_cm_mod)
+firstOfMonthCmModels= list(bwh_cm_mod = bwh_cm_mod, bws_cm_mod = bws_cm_mod, sc_cm_mod = sc_cm_mod, cc_cm_mod = cc_cm_mod)
 
 if(refitModelToToday){
   bwh_cm_mod=refitModel(bwh_cm_mod)
@@ -321,7 +388,11 @@ if(refitModelToToday){
   cc_cm_mod=refitModel(cc_cm_mod)
   cm_models=list(bwh_cm_mod = bwh_cm_mod, bws_cm_mod = bws_cm_mod, sc_cm_mod = sc_cm_mod, cc_cm_mod = cc_cm_mod)
 } else {
-  cm_models=firstOfMonthCmModels
+  bwh_cm_mod=refitModel(bwh_cm_mod,newData=firstOfMonthData$allVar)
+  bws_cm_mod=refitModel(bws_cm_mod,newData=firstOfMonthData$allVar)
+  sc_cm_mod=refitModel(sc_cm_mod,newData=firstOfMonthData$allVar)
+  cc_cm_mod=refitModel(cc_cm_mod,newData=firstOfMonthData$allVar)
+  cm_models=list(bwh_cm_mod = bwh_cm_mod, bws_cm_mod = bws_cm_mod, sc_cm_mod = sc_cm_mod, cc_cm_mod = cc_cm_mod)
 }
 
 

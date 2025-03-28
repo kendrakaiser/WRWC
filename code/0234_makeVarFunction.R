@@ -297,5 +297,5 @@ makeDatasets=function(end_date,useFirstOfMonth){
   return(outputList)
 }
 
-firstOfMonthData=makeDatasets(Sys.Date(),useFirstOfMonth = T)
-todayData=makeDatasets(Sys.Date(),useFirstOfMonth = F)
+firstOfMonthData=makeDatasets(end_date,useFirstOfMonth = T)
+todayData=makeDatasets(end_date,useFirstOfMonth = F)
