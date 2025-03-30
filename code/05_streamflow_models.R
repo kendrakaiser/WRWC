@@ -75,6 +75,7 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
   # site= "bwh"
   # sites= "bwh"
   # max_var = 10
+  
   responseName=paste0(site,".irr_vol")
   # classify predictors into groups based on naming convention (prevents duplicates from each type)
   predTypeNames=sub(".*\\.","",names(volVars)) %in% usePredTypes
@@ -86,7 +87,7 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
   
   # save current values to check for presence in predictor dataset
   currentVars=volVars[volVars$wateryear==pred.year,]
-  badVars=names(currentVars)[is.na(currentVars)] # no special treatment for aj_t ?
+  badVars=names(currentVars)[is.na(currentVars)] # no special treatment for aj_t in vol models
   
   # select historic values
   volVars=volVars[volVars$wateryear < pred.year,]

@@ -17,10 +17,10 @@ source(file.path(git_dir,'code/005_db_update.R'))
 
 model_n=10
 refitModelToToday=F
-reuseMonthlyModels=F
+reuseMonthlyModels=T
 
 
-runDates=c(seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-02-02"),by="day")
+runDates=c(seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
           # seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
           )
 
@@ -76,7 +76,7 @@ for( dateIndex in 1:length(runDates)){
   # manage data and push necessary outputs to db
   source(file.path(git_dir, 'code/09_data_management.R'))
   
-  bxpData=var[,c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol","wateryear")]
+  bxpData=todayData$allVar[,c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol","wateryear")]
   bxpData=reshape(bxpData,direction="long", v.names="irrVol", times=c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol"),varying=list(c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol")))
   boxplot(bxpData$irrVol/1000~bxpData$time, main=end_date)
   points(1:4,output.vol,pch="*",cex=3)

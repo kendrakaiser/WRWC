@@ -107,6 +107,8 @@ makeDatasets=function(end_date,useFirstOfMonth){
   
   winterSWE_wide=pivot_wider(data=winterSWE[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
   
+
+  
   # SNOTEL Sites ----
   #cg = 895 #  Chocolate Gulch (0301)
   #g  = 489 #  Galena (0101)

@@ -10,6 +10,35 @@
 # Foundation by Rob VanKirk
 # -----------------------------------------------------------------------------  
 
+fillNullWithLastGoodValue=function(df,dataDate=end_date,maxDayDiff=7){
+  
+  for(r in 1:nrow(df)){
+    if(any(is.na(df[r,]))){
+      for(naName in names(df)[is.na(df[r,])])
+      site=strsplit(naName,".",fixed=T)[[1]][1]
+      metric=strsplit(naName,".",fixed=T)[[1]][2]
+      prevValue=  dbGetQuery(conn,paste0("SELECT datetime, wateryear(datetime) AS wateryear, metric, value, data.locationid, name, sitenote
+             FROM data LEFT JOIN locations ON data.locationid = locations.locationid
+             WHERE datetime <= '",dataDate,"' AND metric = '",metric,"' AND qcstatus = 'true' AND sitenote = '",site,"'
+                        ORDER BY datetime desc LIMIT 1;"))
+      
+      if((dataDate - as.Date(prevValue$datetime))<7){
+        df[r,names(df)==naName] = prevValue$value
+      } else {
+        stop(paste("No values found for",naName,"within 7 days prior to ",dataDate))
+      }
+      
+      
+    }
+  }
+  
+  return(df)
+  
+
+}
+
+
+
 # Import Data ------------------------------------------------------------------  
 stream.id<-c("bwh", "bws", "cc", "sc") #automate to no be hard coded
 
@@ -56,22 +85,22 @@ modOut<- function(mod, pred.dat){
   mod:     input model
   pred.dat: data.frame of prediction variables
   '
-# Test Data
- #  mod<- vol_models$bwh_mod
- #  pred.dat<- var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars)
- # hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.irr_vol, vol_mod_sum$bwh$vars) %>% filter(complete.cases(.))
- #  vol<- hist$bwh.irr_vol
-
+  # Test Data
+  #  mod<- vol_models$bwh_mod
+  #  pred.dat<- var[var$wateryear == pred.yr,] %>% dplyr::select(vol_mod_sum$bwh$vars)
+  # hist <- var[var$wateryear < pred.yr,] %>% dplyr::select(bwh.irr_vol, vol_mod_sum$bwh$vars) %>% filter(complete.cases(.))
+  #  vol<- hist$bwh.irr_vol
+  
   pred.params.vol<-array(NA,c(1,4))
   
   #predict this years total volume at 90 % confidence
   predictions<-predict(mod, newdata=pred.dat, se.fit=TRUE, interval="prediction",level=0.90)
-
+  
   pred.params.vol[1,1]<-predictions$fit[1] #mean prediction 
   pred.params.vol[1,2]<-summary(mod)$sigma 
   pred.params.vol[1,3]<-predictions$fit[2] #lower prediction interval
   pred.params.vol[1,4]<-predictions$fit[3] #upper prediction interval
-
+  
   output.vol<-predictions$fit[1]
   
   return(list(output.vol, pred.params.vol))
@@ -80,6 +109,8 @@ modOut<- function(mod, pred.dat){
 # --------------------------------------------------
 #bwh Prediction Data
 pred.dat =todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$bwh_mod$coefficients))]
+pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol_models$bwh_mod)$adj.r.squared
 mod_out<- modOut(vol_models$bwh_mod, pred.dat)
@@ -93,6 +124,7 @@ pred.params.vol[1,] <- mod_out[[2]]
 # --------------------------------------------------
 #  bws Prediction Data 
 pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$bws_mod$coefficients))]
+pred.dat=fillNullWithLastGoodValue(pred.dat)
 
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol_models$bws_mod)$adj.r.squared
@@ -105,6 +137,7 @@ pred.params.vol[2,] <- mod_out[[2]]
 # --------------------------------------------------
 #CC Prediction Data 
 pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$cc_mod$coefficients))]
+pred.dat=fillNullWithLastGoodValue(pred.dat)
 
 # Camas Creek Model output
 mod_sum[3,1]<-summary(vol_models$cc_mod)$adj.r.squared
@@ -117,6 +150,7 @@ pred.params.vol[3,] <- mod_out[[2]]
 # --------------------------------------------------
 # SC Prediction Data 
 pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$sc_mod$coefficients))]
+pred.dat=fillNullWithLastGoodValue(pred.dat)
 
 # Silver Creek Model output
 mod_sum[4,1]<-summary(vol_models$sc_mod)$adj.r.squared
@@ -162,12 +196,12 @@ modOutcm<- function(mod.cm, pred.dat, hist.temps, cur.temps, hist.cm){
     cm_predict=round(max(hist.cm, na.rm = T))
     pred.params.cm[1,1]=round(max(hist.cm, na.rm = T))
   }
-
+  
   if(all(cm_predict<hist.cm)){
     cm_predict=round(min(hist.cm, na.rm=T))
     pred.params.cm[1,1]=round(min(hist.cm, na.rm=T))
   }
-
+  
   output.cm[1,1]<-cm_predict
   output.cm[1,2]<-cm_predict-mean(hist.cm) 
   output.cm[1,3]<-format(wy$Date[wy$day==cm_predict],"%b-%d")
@@ -184,6 +218,8 @@ hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::selec
 
 # Prediction Data with modeled temperature data
 pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::slice(rep(1:n(), 5000))
+pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
 
 # Big Wood Hailey Model output
@@ -205,6 +241,8 @@ hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::selec
 
 # Prediction Data with modeled temperature data
 pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
 
 # Big Wood Stanton Model output
@@ -226,10 +264,13 @@ if (any(grepl('aj', cm_models$sc_cm_mod$vars))){
   aj_params<-cm_models$sc_cm_mod$vars[grep('aj', cm_models$sc_cm_mod$vars)]
   # Prediction Data with modeled temperature data
   pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+  pred.dat=fillNullWithLastGoodValue(pred.dat)
+  
   pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
 } else {
   sub_params<- cm_models$sc_cm_mod$vars
   pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params))
+  pred.dat=fillNullWithLastGoodValue(pred.dat)
 }
 
 hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::select(sc.cm, cm_models$sc_cm_mod$vars) %>% filter(complete.cases(.))
@@ -252,6 +293,8 @@ hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::selec
 
 #Prediction Data with modeled temperature data
 pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
+pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
 # pred.dat$ga.aj_t <-4.1
 # pred.dat$sm.aj_t<- 8.5
@@ -281,7 +324,7 @@ cm_models$cc_cm.mod$predictors=pred.dat
 
 # calculate correlations between flow conditions across the basins
 flow.data = todayData$allVar[todayData$allVar$wateryear >= 1997 & todayData$allVar$wateryear < pred.yr,] %>% dplyr::select(bwh.irr_vol, 
-      bwh.cm, bws.irr_vol, bws.cm, cc.irr_vol, cc.cm, sc.irr_vol, sc.cm) 
+                                                                                                                           bwh.cm, bws.irr_vol, bws.cm, cc.irr_vol, cc.cm, sc.irr_vol, sc.cm) 
 
 # calculate correlations between gages' total volume, diversions and center of mass
 cor.mat<-cor(cbind(flow.data[c(1,3,5,7)],flow.data[c(2,4,6,8)]),use="pairwise.complete")
@@ -333,7 +376,7 @@ for(i in 1:dim(cm.data)[1]){
   vec<-cm.data[i,2:5] # center of mass at each site for a given year
   cm.data$prob[i]<-pmvnorm(lower=as.numeric(vec)-(var.fore.cm), # use the location specific std @ 95% CI
                            upper=as.numeric(vec)+(var.fore.cm),mean=pred.params.cm[,1],sigma=cov.mat[5:8,5:8])[1] #need to adjust this to have the upper and lower limits be wider? e.g right now the upper and lowers are only one day off of the original??
-  }
+}
 
 # create normal distribution of years 
 CMyear.sample<-sample(cm.data$wateryear,5000,replace=TRUE, prob=cm.data$prob) 
@@ -365,12 +408,12 @@ var.fore<- pred.params.vol[,2] + samp.sd
 
 # pmvnorm calculates the distribution function of the multivariate normal distribution
 #for(i in 1:dim(vol.data)[1]){
- #   vec<-log(vol.data[i,2:5])
-    
-  #  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec-var.fore),  # pred.params.vol[,2] +/- standard error (pred.params.vol$sigma) would return effectively one year
-   #                           upper=as.numeric(vec+var.fore), #
-    #                          mean=pred.params.vol[,1],corr=cor.mat[1:4,1:4])[1]
-    #vol.diff<- rbind(vol.diff, exp(as.numeric(vec+var.fore)) - exp(as.numeric(vec-j)))
+#   vec<-log(vol.data[i,2:5])
+
+#  vol.data$prob[i]<-pmvnorm(lower=as.numeric(vec-var.fore),  # pred.params.vol[,2] +/- standard error (pred.params.vol$sigma) would return effectively one year
+#                           upper=as.numeric(vec+var.fore), #
+#                          mean=pred.params.vol[,1],corr=cor.mat[1:4,1:4])[1]
+#vol.diff<- rbind(vol.diff, exp(as.numeric(vec+var.fore)) - exp(as.numeric(vec-j)))
 #}
 
 # this part is broken

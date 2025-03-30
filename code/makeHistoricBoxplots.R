@@ -1,4 +1,5 @@
-q25=dbGetQuery(conn,"SELECT DISTINCT ON (simdate, site) site, simdate, rundate, values FROM forecastvolumes WHERE site= 'bws' AND simdate >= '2025-02-01' ORDER BY simdate DESC, site, rundate DESC;")
+q25=dbGetQuery(conn,"SELECT DISTINCT ON (simdate, site) site, simdate, rundate, values FROM forecastvolumes WHERE site= 'bws' 
+               AND simdate >= '2025-02-01' ORDER BY simdate DESC, site, rundate DESC;")
 q25=q25[order(q25$simdate),]
 max(q25$simdate)
 
@@ -17,7 +18,6 @@ boxplot(x=qs,names=q25$simdate,ylim=c(0,1000),las=2)
 
 dbModels=dbGetQuery(conn,"SELECT * FROM volumemodels WHERE rundate = (SELECT MAX(rundate) FROM volumemodels);")
 fromJSON(dbModels$modelcoefjson[1])
-boxplot(fromJSON(dbModels$modeldatajson[1])$bwh.snow_covered_area)
 fromJSON(dbModels$modelpredictors[1])
 
 
