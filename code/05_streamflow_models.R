@@ -62,31 +62,34 @@ getLeapFormulas=function(leapList,responseVarName){
   return(forms)
 }
 
-vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVars=firstOfMonthData$allVar){
+vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year = pred.yr, volVars=firstOfMonthData$allVar){
   
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
-  usePredTypes=c("wq", "ly_vol","liquid_precip","snow_covered_area","swe_total","swe","nj_t")
-  
+  usePredTypes=c("wq", "ly_vol","snow_covered_area","swe_total","swe","nj_t")
+  #dropped "liquid_precip"
   offSiteTypes=c("swe","nj_t")
   
+  #forceVars="bwh.wq"
   # site= "bwh"
   # sites= "bwh"
   # max_var = 10
-  
+  # 
   responseName=paste0(site,".irr_vol")
   # classify predictors into groups based on naming convention (prevents duplicates from each type)
   predTypeNames=sub(".*\\.","",names(volVars)) %in% usePredTypes
   siteNames=grepl(paste(sites, collapse="|"), colnames(volVars))
   onSiteNames=names(volVars)[predTypeNames & siteNames]
+  
   #variables that are not specific to the watershed (SWE & temp)
   offSiteTypes=offSiteTypes[offSiteTypes %in% usePredTypes]
   offSiteNames=names(volVars)[sub(".*\\.","",names(volVars))  %in% offSiteTypes]  
   
   # save current values to check for presence in predictor dataset
   currentVars=volVars[volVars$wateryear==pred.year,]
+  currentVars=fillNullWithLastGoodValue(currentVars)
   badVars=names(currentVars)[is.na(currentVars)] # no special treatment for aj_t in vol models
   
   # select historic values
@@ -105,7 +108,7 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
   names(modelDF)[1]=responseName
   modelDF=modelDF[complete.cases(modelDF),]
   
-
+  
   
   ############################# log response ################################
   unloggedResponse=modelDF[,1]
@@ -123,6 +126,17 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
   names(predTypeList)=levels(predTypes)
   predTypes = expand.grid(predTypeList[])
   rm(predTypeList)
+  
+  useForce=F
+  if(!is.null(forceVars)){
+    if(!is.na(forceVars)){
+      if(any(forceVars==predTypes)){
+        useForce=T
+      } else {
+        print(paste("forced var",forceVars,"not found in dataset"))
+      }
+    }
+  }
   
   typeModels=paste(names(modelDF)[1],"~",apply(predTypes, 1, paste, collapse=' + '))
   
@@ -147,6 +161,11 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
     thisVars=names(coefficients(global_lm))[-1]
     leapList=leaps(x=modelDF[,thisVars],y=modelDF[,1],method="r2",nbest=1,names=thisVars)
     forms=getLeapFormulas(leapList,responseVarName=names(modelDF)[1])
+    
+    if(useForce){
+      forms=forms[grepl(forceVars,forms,fixed=T)]
+    }
+    
     formLength=sapply(strsplit(forms,"\\+"),length)
     forms=forms[formLength>min_var & formLength<max_var]
     for(f in forms){
@@ -188,12 +207,13 @@ vol_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, volVar
 
 
 cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, cmVars=firstOfMonthData$allVar){
-
+  
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
-  usePredTypes=c("wq", "ly_vol","liquid_precip","snow_covered_area","swe_total","swe","nj_t","aj_t")
+  usePredTypes=c("wq", "ly_vol","snow_covered_area","swe_total","swe","nj_t","aj_t")
+  #dropped: "liquid_precip"
   offSiteTypes=c("swe","nj_t","aj_t")
   
   # site= "bws"
@@ -216,7 +236,7 @@ cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, cmVars=
   
   # select historic values
   cmVars=cmVars[cmVars$wateryear < pred.year,]
-
+  
   #recombine all useable terms
   
   modelDF=cmVars[,c(onSiteNames, offSiteNames)]
@@ -324,10 +344,10 @@ if(all(
 } else { # reselect terms
   # Create Volume Models for each site gage
   print("Selecting new volume models....")
-  bwh_vol_mod<- vol_model("bwh", "bwh", model_n)
-  bws_vol_mod<- vol_model("bws", c("bws", "bwh"), model_n)
+  bwh_vol_mod<- vol_model("bwh", "bwh", model_n,forceVars="bwh.wq")
+  bws_vol_mod<- vol_model("bws", c("bws", "bwh"), model_n,forceVars="bwh.wq")
   cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), model_n)
-  sc_vol_mod<- vol_model("sc", c("bwh", "sc"), model_n)
+  sc_vol_mod<- vol_model("sc", c("bwh", "sc"), model_n,forceVars="bwh.wq")
 }
 
 
@@ -345,7 +365,7 @@ if(refitModelToToday){ #refit models to latest data (no reselection of terms)
   sc_vol_mod=refitModel(sc_vol_mod,newData = firstOfMonthData$allVar)
   cc_vol_mod=refitModel(cc_vol_mod,newData = firstOfMonthData$allVar)
   vol_models=list(bwh_mod = bwh_vol_mod, bws_mod = bws_vol_mod, sc_mod = sc_vol_mod, cc_mod = cc_vol_mod)
-
+  
 }
 
 

@@ -8,6 +8,10 @@ makeDatasets=function(end_date,useFirstOfMonth){
     dataDay="01" #character for consistency w/ format.Date
   } else {
     dataDay=format.Date(end_date,"%d")
+    #leap year catch:
+    if( dataMonth == '02' & dataDay == '29'){
+      dataDay = '28'
+    }
   }
   
 

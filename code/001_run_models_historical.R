@@ -16,7 +16,7 @@ source(file.path(git_dir,'code/005_db_update.R'))
 
 
 model_n=10
-refitModelToToday=F
+refitModelToToday=T
 reuseMonthlyModels=T
 
 

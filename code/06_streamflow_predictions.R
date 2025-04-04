@@ -15,26 +15,24 @@ fillNullWithLastGoodValue=function(df,dataDate=end_date,maxDayDiff=7){
   for(r in 1:nrow(df)){
     if(any(is.na(df[r,]))){
       for(naName in names(df)[is.na(df[r,])])
-      site=strsplit(naName,".",fixed=T)[[1]][1]
+        site=strsplit(naName,".",fixed=T)[[1]][1]
       metric=strsplit(naName,".",fixed=T)[[1]][2]
       prevValue=  dbGetQuery(conn,paste0("SELECT datetime, wateryear(datetime) AS wateryear, metric, value, data.locationid, name, sitenote
              FROM data LEFT JOIN locations ON data.locationid = locations.locationid
              WHERE datetime <= '",dataDate,"' AND metric = '",metric,"' AND qcstatus = 'true' AND sitenote = '",site,"'
                         ORDER BY datetime desc LIMIT 1;"))
       
-      if((dataDate - as.Date(prevValue$datetime))<7){
-        df[r,names(df)==naName] = prevValue$value
-      } else {
-        stop(paste("No values found for",naName,"within 7 days prior to ",dataDate))
-      }
-      
-      
+      if(length(prevValue$datetime)>0){
+        if((dataDate - as.Date(prevValue$datetime))<7){
+          df[r,names(df)==naName] = prevValue$value
+        }
+      } 
     }
   }
   
   return(df)
   
-
+  
 }
 
 
