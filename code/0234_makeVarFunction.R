@@ -60,6 +60,7 @@ makeDatasets=function(end_date,useFirstOfMonth){
             GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear
           ) as histvols WHERE days_in_record > 180;"))  # complete record is 183 days
   
+  
   #TODO  DO WE NEED A SIMILAR CATCH FOR cases (current year) where tot_af and cm_dat return an incomplete dataset?
   
   # pivot data wider

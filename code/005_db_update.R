@@ -590,7 +590,7 @@ dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata")
 #             LANGUAGE SQL;")
 
 
-
+dbCleanUpProvisionalFlow()
 
 
 

@@ -133,13 +133,13 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
   writeMe$qcstatus[qcStatus]="true"
   writeMe$qcstatus[!qcStatus]="false"
   writeMe$qcdetails=qcDetails
- 
+  
   writeMe=writeMe[complete.cases(writeMe$value),]
   writeMe$datetime=format.Date(writeMe$datetime, format = "%Y-%m-%d %H:%M:%S")
   
   print(paste("Before DeDuplication:",nrow(writeMe),"records"))
   
-  potentialDups=dbGetQuery(conn, paste0("SELECT metricid, metric, value, datetime, locationid, simnumber FROM data WHERE metricid = '",metricID,
+  potentialDups=dbGetQuery(conn, paste0("SELECT metricid, metric, value, datetime, locationid, simnumber, FROM data WHERE metricid = '",metricID,
                                         "' AND locationid IN ('",paste(locationID,collapse="', '"),"') AND  datetime IN ('",
                                         paste(datetime,collapse="', '"),"');"))
   
@@ -147,6 +147,9 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
   
   
   potentialDups=rbind(potentialDups,writeMe[,c("metricid","metric","value","datetime","locationid","simnumber")])
+  
+  
+  
   
   moreDups=T
   while(moreDups){
@@ -314,6 +317,11 @@ dbWritePoints=function(writeDF,locationNameCol="Name",sourceNoteCol="",siteNoteC
 
 dbRemoveDuplicates=function(table, idCol, uniqueCols){
   
+  # table='data'
+  # idCol='dataid'
+  # uniqueCols=c("metricid","metric","value","datetime","locationid","simnumber")
+  
+  
   rmID=dbGetQuery(conn, paste0("SELECT ",paste0("a.",idCol)," FROM ", table, " a, ", table, " b WHERE ",
                                paste0("a.",uniqueCols, " = b.", uniqueCols, collapse = " AND "), " AND a.",
                                idCol," > b.",idCol,";"))[,1]
@@ -326,4 +334,35 @@ dbRemoveDuplicates=function(table, idCol, uniqueCols){
   return(paste("Removed",length(rmID),"duplicate(s) from table: ", table))
   #return(rmID)
 }
+
+dbCleanUpProvisionalFlow=function(){
+  
+  #first rm where qc = F
+  flowDups=dbGetQuery(conn, "SELECT a.dataid AS a_id, a.datetime AS a_datetime, a.value AS a_flow, a.qcstatus AS a_qcstatus, a.qcdetails AS a_qcdetails, a.batchid AS a_batchid,
+  b.dataid AS b_id, b.datetime AS b_datetime, b.value AS b_flow, b.qcstatus AS b_qcstatus, b.qcdetails AS b_qcdetails, b.batchid AS b_batchid
+  FROM data a, data b WHERE a.metric = 'flow'
+  AND a.metricid = b.metricid AND a.metric = b.metric AND a.datetime = b.datetime AND a.locationid = b.locationid AND a.simnumber = b.simnumber AND a.dataid > b.dataid ORDER BY a.datetime DESC ;")
+  
+  qcFalseData=flowDups$b_id[flowDups$b_qcstatus==F]
+  
+  if(length(qcFalseData)>1){
+    dbExecute(conn,paste0("DELETE FROM data WHERE data.dataid IN ('",paste0(qcFalseData,collapse="', '"),"');"))
+  }
+  #then for b where qcdetails for a is good
+  flowDups=dbGetQuery(conn, "SELECT a.dataid AS a_id, a.datetime AS a_datetime, a.value AS a_flow, a.qcstatus AS a_qcstatus, a.qcdetails AS a_qcdetails, a.batchid AS a_batchid,
+  b.dataid AS b_id, b.datetime AS b_datetime, b.value AS b_flow, b.qcstatus AS b_qcstatus, b.qcdetails AS b_qcdetails, b.batchid AS b_batchid
+  FROM data a, data b WHERE a.metric = 'flow'
+  AND a.metricid = b.metricid AND a.metric = b.metric AND a.datetime = b.datetime AND a.locationid = b.locationid AND a.simnumber = b.simnumber AND a.dataid > b.dataid ORDER BY a.datetime DESC ;")
+  
+  flowDups$a_qcdetails[is.na(flowDups$a_qcdetails)] = ""
+  
+  qcNoteRmData=flowDups$b_id[flowDups$a_qcdetails %in% c("", "A", "A e") ]
+  
+  if(length(qcNoteRmData)>1){
+    dbExecute(conn,paste0("DELETE FROM data WHERE data.dataid IN ('",paste0(qcNoteRmData,collapse="', '"),"');"))
+  }
+}
+
+
+
 
