@@ -81,7 +81,7 @@ modOut<- function(mod, pred.dat){
 # --------------------------------------------------
 #bwh Prediction Data
 pred.dat =todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$bwh_mod$coefficients))]
-pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 
 # Big Wood at Hailey Model output
 mod_sum[1,1]<-summary(vol_models$bwh_mod)$adj.r.squared
@@ -96,7 +96,7 @@ pred.params.vol[1,] <- mod_out[[2]]
 # --------------------------------------------------
 #  bws Prediction Data 
 pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$bws_mod$coefficients))]
-pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 
 # Big Wood at Stanton Flow Model output 
 mod_sum[2,1]<-summary(vol_models$bws_mod)$adj.r.squared
@@ -109,7 +109,7 @@ pred.params.vol[2,] <- mod_out[[2]]
 # --------------------------------------------------
 #CC Prediction Data 
 pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$cc_mod$coefficients))]
-pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 
 # Camas Creek Model output
 mod_sum[3,1]<-summary(vol_models$cc_mod)$adj.r.squared
@@ -122,7 +122,7 @@ pred.params.vol[3,] <- mod_out[[2]]
 # --------------------------------------------------
 # SC Prediction Data 
 pred.dat = todayData$allVar[todayData$allVar$wateryear == format.Date(end_date,"%Y"),names(todayData$allVar) %in% c('wateryear',names(vol_models$sc_mod$coefficients))]
-pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 
 # Silver Creek Model output
 mod_sum[4,1]<-summary(vol_models$sc_mod)$adj.r.squared
@@ -190,7 +190,7 @@ hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::selec
 
 # Prediction Data with modeled temperature data
 pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::slice(rep(1:n(), 5000))
-pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 
 pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
 
@@ -213,7 +213,7 @@ hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::selec
 
 # Prediction Data with modeled temperature data
 pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
-pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 
 pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
 
@@ -236,13 +236,13 @@ if (any(grepl('aj', cm_models$sc_cm_mod$vars))){
   aj_params<-cm_models$sc_cm_mod$vars[grep('aj', cm_models$sc_cm_mod$vars)]
   # Prediction Data with modeled temperature data
   pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
-  pred.dat=fillNullWithLastGoodValue(pred.dat)
+
   
   pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
 } else {
   sub_params<- cm_models$sc_cm_mod$vars
   pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params))
-  pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 }
 
 hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::select(sc.cm, cm_models$sc_cm_mod$vars) %>% filter(complete.cases(.))
@@ -265,7 +265,7 @@ hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::selec
 
 #Prediction Data with modeled temperature data
 pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
-pred.dat=fillNullWithLastGoodValue(pred.dat)
+
 
 pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
 # pred.dat$ga.aj_t <-4.1

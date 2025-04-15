@@ -2,11 +2,11 @@
 # All packages needed to run WRWC scripts
 # Once you have installed the packages locally, you can comment out the install packages lines with a #
 
- #install.packages(c('MASS', 'plotrix', 'mvtnorm', 'tidyverse', 'dataRetrieval', 
- #'snotelr', 'XML', 'httr', 'plyr', 'dplyr', 'devtools', 'readr', 'lubridate', 
- #'lfstat', 'gridExtra', 'varhandle', 'viridis', 'ggplot2', 'nlme', 'tidyr', 
- #'knitr', 'fasstr', 'stringr','kableExtra', 'leaps', 'rlist', 'caret', 'erer', 
- #'ggcorrplot', 'scales', 'terra', 'sf', 'RPostgres', 'R.utils', 'raster', 'ggnewscale'))
+#install.packages(c('MASS', 'plotrix', 'mvtnorm', 'tidyverse', 'dataRetrieval', 
+#'snotelr', 'XML', 'httr', 'plyr', 'dplyr', 'devtools', 'readr', 'lubridate', 
+#'lfstat', 'gridExtra', 'varhandle', 'viridis', 'ggplot2', 'nlme', 'tidyr', 
+#'knitr', 'fasstr', 'stringr','kableExtra', 'leaps', 'rlist', 'caret', 'erer', 
+#'ggcorrplot', 'scales', 'terra', 'sf', 'RPostgres', 'R.utils', 'raster', 'ggnewscale'))
 
 #remotes::install_github("USGS-R/smwrBase") 
 # load packages
@@ -69,19 +69,20 @@ fillNullWithLastGoodValue=function(df,dataDate=end_date,maxDayDiff=7){
   
   for(r in 1:nrow(df)){
     if(any(is.na(df[r,]))){
-      for(naName in names(df)[is.na(df[r,])])
+      for(naName in names(df)[is.na(df[r,])]){
         site=strsplit(naName,".",fixed=T)[[1]][1]
-      metric=strsplit(naName,".",fixed=T)[[1]][2]
-      prevValue=  dbGetQuery(conn,paste0("SELECT datetime, wateryear(datetime) AS wateryear, metric, value, data.locationid, name, sitenote
+        metric=strsplit(naName,".",fixed=T)[[1]][2]
+        prevValue=dbGetQuery(conn,paste0("SELECT datetime, wateryear(datetime) AS wateryear, metric, value, data.locationid, name, sitenote
              FROM data LEFT JOIN locations ON data.locationid = locations.locationid
              WHERE datetime <= '",dataDate,"' AND metric = '",metric,"' AND qcstatus = 'true' AND sitenote = '",site,"'
                         ORDER BY datetime desc LIMIT 1;"))
-      
-      if(length(prevValue$datetime)>0){
-        if((dataDate - as.Date(prevValue$datetime))<7){
-          df[r,names(df)==naName] = prevValue$value
-        }
-      } 
+        
+        if(length(prevValue$datetime)>0){
+          if((dataDate - as.Date(prevValue$datetime))<7){
+            df[r,names(df)==naName] = prevValue$value
+          }
+        } 
+      }
     }
   }
   

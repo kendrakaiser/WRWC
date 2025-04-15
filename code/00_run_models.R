@@ -17,7 +17,7 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
 # TODO simdate v.s. run date
 # set end date 
-end_date = as.Date("2021-02-28") 
+end_date = as.Date("2025-04-15") 
 #end_date=Sys.Date()
 
 

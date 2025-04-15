@@ -1,5 +1,5 @@
 #function for getting var df depending on date
-makeDatasets=function(end_date,useFirstOfMonth){
+makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T){
   
   dataYear=format.Date(end_date,"%Y")
   dataMonth=format.Date(end_date,"%m")
@@ -14,7 +14,7 @@ makeDatasets=function(end_date,useFirstOfMonth){
     }
   }
   
-
+  
   #tools to connect and write to database
   source(file.path(git_dir, 'code/init_db.R')) #terra sf RPostgres #R.utils raster
   source(paste0(git_dir,"/code/fxn_dbIntakeTools.R")) 
@@ -26,9 +26,9 @@ makeDatasets=function(end_date,useFirstOfMonth){
   # ----------------------------USGS Gage Data & Metrics------------------
   # calculate hydrologic metrics for each year for each station 
   # winter "baseflow" (wb), Apr - Sept irrigation volume (irr_vol), total Volume (tot_vol), and center of mass (cm)
-
+  
   source(file.path(git_dir,'code/fxn_baseflowA.r'))
-
+  
   #pull winter flow to filter on
   wint_flow=dbGetQuery(conn,paste0("SELECT wateryear(datetime) AS wateryear, datetime, metric, value AS flow, data.locationid, name, sitenote
            FROM data LEFT JOIN locations ON data.locationid = locations.locationid
@@ -43,7 +43,7 @@ makeDatasets=function(end_date,useFirstOfMonth){
     bf=baseflowA(thisQ)
     return(mean(bf$bf))
   }
-
+  
   avgBaseflow=unique(wint_flow[,c("wateryear","metric","locationid","name","sitenote")])
   avgBaseflow$wq = mapply(bf_wrapper, wy=avgBaseflow$wateryear, lid=avgBaseflow$locationid, MoreArgs = list(wint_flow_df=wint_flow))
   
@@ -112,7 +112,7 @@ makeDatasets=function(end_date,useFirstOfMonth){
   
   winterSWE_wide=pivot_wider(data=winterSWE[,c("wateryear","metric","swe","sitenote")],names_from = c(sitenote, metric),values_from = c(swe),names_sep=".")
   
-
+  
   
   # SNOTEL Sites ----
   #cg = 895 #  Chocolate Gulch (0301)
@@ -138,7 +138,7 @@ makeDatasets=function(end_date,useFirstOfMonth){
   #^^^^ this gets the sum for liquid precip (all liquid precip for the period)
   
   winterSums=rbind(winterSums,
-                       dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric) wateryear(datetime) AS wateryear, datetime, metric, value, locations.locationid, locations.name, locations.sitenote 
+                   dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric) wateryear(datetime) AS wateryear, datetime, metric, value, locations.locationid, locations.name, locations.sitenote 
                  FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
                  WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < '",dataMonth,"')
                  AND metric != 'liquid_precip'
@@ -147,8 +147,8 @@ makeDatasets=function(end_date,useFirstOfMonth){
   
   snodas_wide<-pivot_wider(data=winterSums[,c("wateryear","metric","value","sitenote")],names_from = c(sitenote, metric),values_from = c(value),names_sep=".")
   
-  swe_q=winterSWE_wide %>% merge(snodas_wide, by= 'wateryear', all=F) %>% merge(baseflow, by= 'wateryear', all=F) %>% merge(irr_vol, by= 'wateryear', all=TRUE) %>% 
-    merge(cm_wide, by= 'wateryear', all=TRUE) %>% merge(tot_vol, by= 'wateryear', all=F)
+  swe_q=winterSWE_wide %>% merge(snodas_wide, by= 'wateryear', all=F) %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(irr_vol, by= 'wateryear', all=TRUE) %>% 
+    merge(cm_wide, by= 'wateryear', all=TRUE) %>% merge(tot_vol, by= 'wateryear', all=T)
   
   
   # ------------------------ Temperature Data and Temperature Models-----------------
@@ -284,11 +284,11 @@ makeDatasets=function(end_date,useFirstOfMonth){
   # Draw stream temperatures using multivariate normal distribution
   nboot<-5000
   aj.pred.temps<- data.frame(mvrnorm(nboot, new.data$aj_tempf, site.cov) )
- 
   
-
+  
+  
   # --------------- merge data from data scraping and temp models--------------
-
+  
   # Import & Compile Data -------------------------------------------------------# 
   # Streamflow, Current SWE, historic Temperature Data
   
@@ -297,6 +297,10 @@ makeDatasets=function(end_date,useFirstOfMonth){
   # combine discharge & SWE with temp data
   allVar = swe_q %>% merge(all.temp.dat, by ="wateryear", all=TRUE)
   
+  recentRows=allVar$wateryear>=2004
+  if(fillNullsWithRecent){
+    allVar[recentRows,] = fillNullWithLastGoodValue(allVar[recentRows,])
+  }
   outputList=list(allVar=allVar,aj.pred.temps=aj.pred.temps)
   
   print(paste0("Dataset generated for ",dataYear,"-",dataMonth,"-",dataDay))

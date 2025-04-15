@@ -89,7 +89,7 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   
   # save current values to check for presence in predictor dataset
   currentVars=volVars[volVars$wateryear==pred.year,]
-  currentVars=fillNullWithLastGoodValue(currentVars)
+
   badVars=names(currentVars)[is.na(currentVars)] # no special treatment for aj_t in vol models
   
   # select historic values

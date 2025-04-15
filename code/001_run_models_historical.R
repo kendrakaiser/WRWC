@@ -20,7 +20,7 @@ refitModelToToday=T
 reuseMonthlyModels=T
 
 
-runDates=c(seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
+runDates=c(seq.Date(from=as.Date("2025-04-09"),to=as.Date("2025-04-14"),by="day")
           # seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
           )
 
