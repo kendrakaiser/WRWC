@@ -84,7 +84,7 @@ dbWriteTable(conn,"predictionintervals",pi_date,overwrite=T)
 # ------------------------------------------------------------------------------
 # Volume model output, seasonal AF in logged units
 #TODO update how the logged output is managed
-writeVolModelOutput=function(x,site.metric,simDate,runDate=Sys.Date()){
+writeVolModelOutput=function(x,site.metric,simDate,runDate=Sys.Date(),displayResult=displayModelResults){
   'x:x is the sample for which model output will be written to db'
   simDate=as.Date(simDate)
   runDate=as.Date(runDate)
@@ -111,8 +111,9 @@ writeVolModelOutput=function(x,site.metric,simDate,runDate=Sys.Date()){
   dbExecute(conn,paste0("DELETE FROM forecastvolumes WHERE site = '",site,"' AND metric = '",metric,
                         "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
   
-  dbExecute(conn,paste0("INSERT INTO forecastvolumes (site, metric, rundate, simdate, values) VALUES ('",site,"', '",metric,"', '",runDate,"', '",simDate,
-                        "', '{",paste(x,collapse=","),"}');"
+  dbExecute(conn,paste0("INSERT INTO forecastvolumes (site, metric, rundate, simdate, values, display) VALUES ('",site,"', '",metric,"', '",runDate,"', '",simDate,
+                        "', '{",paste(x,collapse=","),"}', '",
+                        displayResult,"');"
   )
   )
   

@@ -20,12 +20,21 @@ model_n=10
 refitModelToToday=T
 reuseMonthlyModels=T
 
+displayModelResults=F
+
+wtLowFlow=F
+######^^ work on this. It might work in 05_, but still needs to write/read weights to/from db
+#also test to see that it improves model performance at low flows
+# and what about validity/implementation of  BIC of weighted regression?
+
+
 hindCast=T
 #if hindCast, whole dataset to date is used, only excluding forecast year
 
 runDates=c(as.Date(apply(expand.grid(2005:2025,c("03","04","05"),c("01")),MARGIN=1,FUN=paste,collapse="-"))-1
           ,as.Date(apply(expand.grid(2005:2025,c("02","03","04"),c("01")),MARGIN=1,FUN=paste,collapse="-"))
           )
+runDates=runDates[3]
 
 # runDates=c(seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
 #            # seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")

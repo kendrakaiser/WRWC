@@ -62,7 +62,7 @@ getLeapFormulas=function(leapList,responseVarName){
   return(forms)
 }
 
-vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year = pred.yr, volVars=firstOfMonthData$allVar, hindCastModel=hindCast){
+vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year = pred.yr, volVars=firstOfMonthData$allVar, hindCastModel=hindCast, wtLowFlow=F){
   #print(site)
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
@@ -114,6 +114,14 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   
   
   
+  #weights
+    
+  w=rep(1,nrow(modelDF))
+  if(wtLowFlow){
+    w[modelDF[1,]>median(modelDF[1,])]=0.5
+  }
+  
+  
   ############################# log response ################################
   unloggedResponse=modelDF[,1]
   modelDF[,1]=log(modelDF[,1])
@@ -155,11 +163,12 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   )
   
   
+  
   i=1 
   #profvis({
   for(globalFormula in typeModels){
     
-    global_lm=lm(globalFormula,data=modelDF,na.action=na.fail)
+    global_lm=lm(globalFormula,data=modelDF,na.action=na.fail,weights=w)
     
     #leaps + fit method (faster)
     thisVars=names(coefficients(global_lm))[-1]
@@ -175,7 +184,7 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
     forms=forms[formLength>min_var & formLength<max_var]
     for(f in forms){
       if(!f %in% modelCompareDF$formula){ #this sub model has not been tested, proceed...
-        thisModel=lm(f,data=modelDF)
+        thisModel=lm(f,data=modelDF,weights=w)
         
         modelCompareDF$formula[i]=f
         modelCompareDF$n[i]=length(thisModel$coefficients)-1
@@ -198,7 +207,10 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   
   modelCompareDF=modelCompareDF[order(modelCompareDF[,"BIC"]),]
   #print(head(modelCompareDF))
-  bestByType=lm(modelCompareDF$formula[1],data=modelDF,na.action=na.fail)
+  
+ 
+  
+  bestByType=lm(modelCompareDF$formula[1],data=modelDF,na.action=na.fail,weights=w)
   #summary(bestByType)
   #check_model(bestByType)
   #vif(bestByType)
