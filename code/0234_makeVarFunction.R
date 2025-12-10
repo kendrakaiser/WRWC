@@ -1,8 +1,17 @@
 #function for getting var df depending on date
-makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T){
-  
+makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T,hindCastData=hindCast,pred.year=pred.yr){
+
+  if(hindCastData){
+    if(month(end_date)==2 & day(end_date)==29){
+      day(end_date)=28
+    }
+    year(end_date)=year(Sys.Date())+1
+  }
+  #pred.year=year(end_date)
+    
   dataYear=format.Date(end_date,"%Y")
   dataMonth=format.Date(end_date,"%m")
+  
   
   if(useFirstOfMonth){
     dataDay="01" #character for consistency w/ format.Date
@@ -173,7 +182,7 @@ makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T){
   
   #Also, ccd has 83 obs in 2017...  including it here drops the whole year later, which kinda sucks considering how many other temperatures are available
   
-  snotel.nj_temp=snotel.nj_temp[snotel.nj_temp$n_obs>=86,-1] #all 2024 data has at most 86 observations, so if I use 88 as a threshold 2024 is excluded entirely.  
+  snotel.nj_temp=snotel.nj_temp[snotel.nj_temp$n_obs>=85,-1] #all 2024 data has at most 86 observations, so if I use 88 as a threshold 2024 is excluded entirely.  
   
   
   snotel.aj_temp=dbGetQuery(conn,paste0("SELECT count(value) AS n_obs, wateryear(datetime) AS wateryear, metric, avg(value) AS aj_tempf, data.locationid, name, sitenote
@@ -183,7 +192,7 @@ makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T){
            AND datetime::date <= '",end_date,"'::date
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
   
-  snotel.aj_temp=snotel.aj_temp[snotel.aj_temp$n_obs>=90,-1]    # much less missing data in this period
+  snotel.aj_temp=snotel.aj_temp[snotel.aj_temp$n_obs>=85,-1]    # much less missing data in this period
   
   
   
@@ -191,7 +200,7 @@ makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T){
   # Starts in water year 1988 for common period of record.Camas comes in 1992 and chocolate gulch in 1993
   
   first.yr<-1988
-  last.yr<-pred.yr
+  last.yr<-year(end_date)
   nyrs<-last.yr-first.yr+1
   site.key <- c(as.character(unique(agrimet$site_name))) #as.character(unique(snotel.aj_temp$sitenote)), 
   #create a dataframe to store avg. Apr/Jun Temp for each site for period of record
@@ -271,7 +280,7 @@ makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T){
   all_site.key<-c(as.character(unique(snotel.aj_temp$sitenote)), site.key)
   new.data<-data.frame(array(NA,c(length(all_site.key),4)))
   colnames(new.data)<-c("wateryear","sitenote", "elev", "aj_tempf")
-  new.data$wateryear<-rep(last.yr+1,length(all_site.key))
+  new.data$wateryear<-rep(pred.year+1,length(all_site.key))
   new.data$sitenote<-(all_site.key)
   new.data$elev<-elev$elev
   
@@ -301,6 +310,10 @@ makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T){
   if(fillNullsWithRecent){
     allVar[recentRows,] = fillNullWithLastGoodValue(allVar[recentRows,])
   }
+  
+  allVar=allVar[allVar$wateryear<=year(Sys.Date()),]
+  
+  
   outputList=list(allVar=allVar,aj.pred.temps=aj.pred.temps)
   
   print(paste0("Dataset generated for ",dataYear,"-",dataMonth,"-",dataDay))

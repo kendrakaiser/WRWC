@@ -12,17 +12,24 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
 source(file.path(git_dir, 'code/01_packages.R'))
 source(file.path(git_dir, 'code/init_db.R'))
-source(file.path(git_dir,'code/005_db_update.R'))
-
+try({
+  source(file.path(git_dir,'code/005_db_update.R'))
+})
 
 model_n=10
 refitModelToToday=T
 reuseMonthlyModels=T
 
+hindCast=T
+#if hindCast, whole dataset to date is used, only excluding forecast year
 
-runDates=c(seq.Date(from=as.Date("2025-04-09"),to=as.Date("2025-04-14"),by="day")
-          # seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
+runDates=c(as.Date(apply(expand.grid(2005:2025,c("03","04","05"),c("01")),MARGIN=1,FUN=paste,collapse="-"))-1
+          ,as.Date(apply(expand.grid(2005:2025,c("02","03","04"),c("01")),MARGIN=1,FUN=paste,collapse="-"))
           )
+
+# runDates=c(seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
+#            # seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
+# )
 
 for( dateIndex in 1:length(runDates)){
   end_date=runDates[dateIndex]
@@ -83,4 +90,5 @@ for( dateIndex in 1:length(runDates)){
   
   print(output.vol)
 }
+
 

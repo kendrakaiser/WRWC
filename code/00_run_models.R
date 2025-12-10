@@ -17,7 +17,7 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
 # TODO simdate v.s. run date
 # set end date 
-end_date = as.Date("2025-04-15") 
+end_date = as.Date("2025-04-30") 
 #end_date=Sys.Date()
 
 
@@ -62,7 +62,6 @@ if (month(end_date) == 2){
 # source(file.path(git_dir, 'code/03_temperature_models.R')) 
 # source(file.path(git_dir, 'code/04_data_integration.R'))  
 source(file.path(git_dir, 'code/0234_makeVarFunction.R'))  
-
 
 # Create Streamflow Models 
 #-------------------------------------------------------------------------------

@@ -62,14 +62,14 @@ getLeapFormulas=function(leapList,responseVarName){
   return(forms)
 }
 
-vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year = pred.yr, volVars=firstOfMonthData$allVar){
-  
+vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year = pred.yr, volVars=firstOfMonthData$allVar, hindCastModel=hindCast){
+  #print(site)
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
-  usePredTypes=c("wq", "ly_vol","snow_covered_area","swe_total","swe","nj_t")
-  #dropped "liquid_precip"
+  usePredTypes=c("wq", "ly_vol","swe_total","swe","nj_t")
+  #dropped "liquid_precip","snow_covered_area"
   offSiteTypes=c("swe","nj_t")
   
   #forceVars="bwh.wq"
@@ -92,8 +92,12 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
 
   badVars=names(currentVars)[is.na(currentVars)] # no special treatment for aj_t in vol models
   
-  # select historic values
-  volVars=volVars[volVars$wateryear < pred.year,]
+
+  if(hindCastModel){
+    volVars=volVars[volVars$wateryear != pred.year,]
+  }else{
+    volVars=volVars[volVars$wateryear < pred.year,]
+  }
   
   #recombine all possible terms
   modelDF=volVars[,c(onSiteNames, offSiteNames)]
@@ -159,6 +163,7 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
     
     #leaps + fit method (faster)
     thisVars=names(coefficients(global_lm))[-1]
+    #print(modelDF[,thisVars])
     leapList=leaps(x=modelDF[,thisVars],y=modelDF[,1],method="r2",nbest=1,names=thisVars)
     forms=getLeapFormulas(leapList,responseVarName=names(modelDF)[1])
     
@@ -185,8 +190,12 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   #})
   
   
+  
   modelCompareDF=modelCompareDF[modelCompareDF$n <= max_var,]
   modelCompareDF=modelCompareDF[modelCompareDF$n >= min_var,]
+  modelCompareDF=modelCompareDF[!is.infinite(modelCompareDF$BIC),]
+  modelCompareDF=modelCompareDF[!is.infinite(modelCompareDF$AICc),]
+  
   modelCompareDF=modelCompareDF[order(modelCompareDF[,"BIC"]),]
   #print(head(modelCompareDF))
   bestByType=lm(modelCompareDF$formula[1],data=modelDF,na.action=na.fail)
@@ -206,14 +215,14 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
 }
 
 
-cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, cmVars=firstOfMonthData$allVar){
-  
+cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, cmVars=firstOfMonthData$allVar, hindCastModel=hindCast){
+  #print(site)
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
-  usePredTypes=c("wq", "ly_vol","snow_covered_area","swe_total","swe","nj_t","aj_t")
-  #dropped: "liquid_precip"
+  usePredTypes=c("wq", "ly_vol","swe","swe_total","nj_t","aj_t")
+  #dropped: "liquid_precip","snow_covered_area"
   offSiteTypes=c("swe","nj_t","aj_t")
   
   # site= "bws"
@@ -235,7 +244,14 @@ cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, cmVars=
   
   
   # select historic values
-  cmVars=cmVars[cmVars$wateryear < pred.year,]
+  #cmVars=cmVars[cmVars$wateryear < pred.year,]
+  
+  
+  if(hindCastModel){
+    cmVars=cmVars[cmVars$wateryear != pred.year,]
+  }else{
+    cmVars=cmVars[cmVars$wateryear < pred.year,]
+  }
   
   #recombine all useable terms
   

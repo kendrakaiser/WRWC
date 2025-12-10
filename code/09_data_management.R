@@ -8,9 +8,14 @@
 # Write model structure to database
 # ------------------------------------------------------------------------------
 
-writeVolModel=function(model,modelName,enddate=end_date){
-  moddate=as.Date(paste0(year(enddate), "/", month(enddate), "/", 1))
+writeVolModel=function(model,modelName,enddate=end_date,refitModelToToday){
   rundate=Sys.Date()
+  
+  if(refitModelToToday){
+    moddate = enddate
+  } else {
+    moddate=as.Date(paste0(year(enddate), "/", month(enddate), "/", 1))
+  }
   
   writeModelDF=data.frame(modelname=modelName,
                           moddate=moddate,rundate=rundate,
@@ -27,12 +32,19 @@ writeVolModel=function(model,modelName,enddate=end_date){
   
 }    
 
-mapply(writeVolModel,vol_models,names(vol_models))
+mapply(writeVolModel,vol_models,names(vol_models),MoreArgs = list(refitModelToToday=refitModelToToday))
 
 
-writeCmModel=function(model,modelName,enddate=end_date){
-  moddate=as.Date(paste0(year(enddate), "/", month(enddate), "/", 1))
+writeCmModel=function(model,modelName,enddate=end_date,refitModelToToday){
   rundate=Sys.Date()
+  
+  if(refitModelToToday){
+    moddate = enddate
+  } else {
+    moddate=as.Date(paste0(year(enddate), "/", month(enddate), "/", 1))
+  }
+  
+
   
   writeModelDF=data.frame(modelname=modelName,
                           moddate=moddate,rundate=rundate,
@@ -44,12 +56,12 @@ writeCmModel=function(model,modelName,enddate=end_date){
   
   dbExecute(conn,paste0("DELETE FROM centermassmodels WHERE modelname = '",modelName,
                         "' AND rundate = '",rundate,"' AND moddate = '",moddate,"';"))
-
+  
   dbWriteTable(conn,"centermassmodels",writeModelDF,append=T)
   
 }    
 
-mapply(writeCmModel,cm_models,names(cm_models))
+mapply(writeCmModel,cm_models,names(cm_models),MoreArgs = list(refitModelToToday=refitModelToToday))
 
 
 
@@ -94,15 +106,15 @@ writeVolModelOutput=function(x,site.metric,simDate,runDate=Sys.Date()){
   # dbWriteTable(conn,"forecastvolumes",modelOutputDF,append=T)
   # 
   # 
-
+  
   #dont allow duplicate entries (same run day and same simualted day)
   dbExecute(conn,paste0("DELETE FROM forecastvolumes WHERE site = '",site,"' AND metric = '",metric,
                         "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
   
   dbExecute(conn,paste0("INSERT INTO forecastvolumes (site, metric, rundate, simdate, values) VALUES ('",site,"', '",metric,"', '",runDate,"', '",simDate,
                         "', '{",paste(x,collapse=","),"}');"
-                        )
-            )
+  )
+  )
   
   
 }

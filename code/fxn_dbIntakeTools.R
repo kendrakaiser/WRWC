@@ -139,7 +139,7 @@ dbWriteData=function(metric,value,datetime,locationID,sourceName,units="",isPred
   
   print(paste("Before DeDuplication:",nrow(writeMe),"records"))
   
-  potentialDups=dbGetQuery(conn, paste0("SELECT metricid, metric, value, datetime, locationid, simnumber, FROM data WHERE metricid = '",metricID,
+  potentialDups=dbGetQuery(conn, paste0("SELECT metricid, metric, value, datetime, locationid, simnumber FROM data WHERE metricid = '",metricID,
                                         "' AND locationid IN ('",paste(locationID,collapse="', '"),"') AND  datetime IN ('",
                                         paste(datetime,collapse="', '"),"');"))
   
