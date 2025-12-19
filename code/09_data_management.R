@@ -132,48 +132,48 @@ writeVolModelOutput(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=en
 #dbExecute(conn,"CREATE INDEX rundate_idx ON forecastvolumes (rundate);")
 # Write summary statistics for predicted irrigation season volumes
 # ------------------------------------------------------------------------------
-
-#------------ THIS (below) is to be depreciated, replaced bu writeVolModelOutput above
-# Function to calculate summary statistics from model runs that can be used to generate irrigation season volume boxplots
-writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
-  'x:x is the sample for which summary stats will be written to db'
-  simDate=as.Date(simDate)
-  runDate=as.Date(runDate)
-  
-  
-  if(length(strsplit(site.metric,"\\.")[[1]])!=2){
-    stop(paste0("Invalid site.metric ",site.metric))
-  }
-  
-  site=strsplit(site.metric,"\\.")[[1]][1]
-  metric=strsplit(site.metric,"\\.")[[1]][2]
-  
-  
-  x.stats=boxplot.stats(x)
-  
-  statDF=data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="n",value=x.stats$n)
-  statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="min",value=x.stats$stats[[1]]))
-  statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="lower_hinge",value=x.stats$stats[[2]]))
-  statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="med",value=x.stats$stats[[3]]))
-  statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="upper_hinge",value=x.stats$stats[[4]]))
-  statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="max",value=x.stats$stats[[5]]))
-  if(length(x.stats$out)>0){
-    statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="outlier",value=x.stats$out))
-  }
-  #return(statDF)
-  
-  dbExecute(conn,paste0("DELETE FROM summarystatistics WHERE site = '",site,"' AND metric = '",metric,
-                        "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
-  
-  dbWriteTable(conn,"summarystatistics",statDF,append=T)
-}
-
-# push model output to database
-writeSummaryStats(x=vol.sample$bwh.irr_vol, site.metric="bwh.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$bws.irr_vol, site.metric="bws.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$cc.irr_vol, site.metric="cc.irr_vol",simDate=end_date)
-writeSummaryStats(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=end_date)
-
+# 
+# #------------ THIS (below) is to be depreciated, replaced bu writeVolModelOutput above
+# # Function to calculate summary statistics from model runs that can be used to generate irrigation season volume boxplots
+# writeSummaryStats=function(x,site.metric,simDate,runDate=Sys.Date()){
+#   'x:x is the sample for which summary stats will be written to db'
+#   simDate=as.Date(simDate)
+#   runDate=as.Date(runDate)
+#   
+#   
+#   if(length(strsplit(site.metric,"\\.")[[1]])!=2){
+#     stop(paste0("Invalid site.metric ",site.metric))
+#   }
+#   
+#   site=strsplit(site.metric,"\\.")[[1]][1]
+#   metric=strsplit(site.metric,"\\.")[[1]][2]
+#   
+#   
+#   x.stats=boxplot.stats(x)
+#   
+#   statDF=data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="n",value=x.stats$n)
+#   statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="min",value=x.stats$stats[[1]]))
+#   statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="lower_hinge",value=x.stats$stats[[2]]))
+#   statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="med",value=x.stats$stats[[3]]))
+#   statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="upper_hinge",value=x.stats$stats[[4]]))
+#   statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="max",value=x.stats$stats[[5]]))
+#   if(length(x.stats$out)>0){
+#     statDF=rbind(statDF,data.frame(site=site,metric=metric,rundate=runDate,simdate=simDate,stat="outlier",value=x.stats$out))
+#   }
+#   #return(statDF)
+#   
+#   dbExecute(conn,paste0("DELETE FROM summarystatistics WHERE site = '",site,"' AND metric = '",metric,
+#                         "' AND rundate = '",runDate,"' AND simdate = '",simDate,"';"))
+#   
+#   dbWriteTable(conn,"summarystatistics",statDF,append=T)
+# }
+# 
+# # push model output to database
+# writeSummaryStats(x=vol.sample$bwh.irr_vol, site.metric="bwh.irr_vol",simDate=end_date)
+# writeSummaryStats(x=vol.sample$bws.irr_vol, site.metric="bws.irr_vol",simDate=end_date)
+# writeSummaryStats(x=vol.sample$cc.irr_vol, site.metric="cc.irr_vol",simDate=end_date)
+# writeSummaryStats(x=vol.sample$sc.irr_vol, site.metric="sc.irr_vol",simDate=end_date)
+# 
 
 # ------------------------------------------------------------------------------
 #Sample code to show how to make bxplt from db

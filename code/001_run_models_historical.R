@@ -22,9 +22,7 @@ reuseMonthlyModels=F
 
 displayModelResults=F
 
-wtLowFlow=F
-######^^ work on this. It might work in 05_, but still needs to write/read weights to/from db
-#also test to see that it improves model performance at low flows
+wtLowFlow=T
 # and what about validity/implementation of  BIC of weighted regression?
 
 hindCast=T
