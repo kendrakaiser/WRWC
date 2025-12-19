@@ -50,10 +50,11 @@ back_vols=dbGetQuery(conn,paste0("SELECT site, metric, rundate, simdate, extract
 vols=pgArrayToNumeric(back_vols$values)
 names(vols) = back_vols$wateryear
 
-back_vols$med_kAF=sapply(vols,median) #median prediction volume
+back_vols$med_KAF=sapply(vols,median) #median prediction volume
 
-back_vols$lq_kAF=sapply(vols,quantile, probs = 0.10) #lower quantile
-back_vols$uq_kAF=sapply(vols,quantile, probs = 0.90) #upper quantile
+#### set lower and upper quantile definitions for plot here ###
+back_vols$lq_KAF=sapply(vols,quantile, probs = 0.10) #lower quantile
+back_vols$uq_KAF=sapply(vols,quantile, probs = 0.90) #upper quantile
 
 
 back_vols$values=NULL
@@ -71,35 +72,35 @@ obs_vols=dbGetQuery(conn,paste0("SELECT * FROM (
 
 
 
-obs_vols$obs_kAF=obs_vols$irr_vol/1000
+obs_vols$obs_KAF=obs_vols$irr_vol/1000
 head(obs_vols)
 
 volPerformance=merge(back_vols,obs_vols)
 head(volPerformance)
 
-plot(volPerformance$obs_kAF,volPerformance$med_kAF, 
+plot(volPerformance$obs_KAF,volPerformance$med_KAF, 
      main = paste0("2005 - 2025 Model Performance for ",unique(volPerformance$sitename)," \n (month=",month,", end of month=",endOfMonth,")"), cex.main = 1,
-     xlab = "Observed irrigation season volume (kAF)",
-     ylab = "Predicted irrigation season volume (kAF)")
+     xlab = "Observed irrigation season volume (KAF)",
+     ylab = "Predicted irrigation season volume (KAF)")
 abline(a=0,b=1)
 for(y in volPerformance$wateryear){
-  lines(x=rep(volPerformance$obs_kAF[volPerformance$wateryear==y],2),
-        y=c(volPerformance$lq_kAF[volPerformance$wateryear==y],volPerformance$uq_kAF[volPerformance$wateryear==y])
+  lines(x=rep(volPerformance$obs_KAF[volPerformance$wateryear==y],2),
+        y=c(volPerformance$lq_KAF[volPerformance$wateryear==y],volPerformance$uq_KAF[volPerformance$wateryear==y])
   )
 }
 
 
 
-getQuantile=function(yr,obs,preds=vols){
-  preds=preds[[as.character(yr)]]
-  pred_quantile=sum(obs>preds)/length(preds)
-  return(pred_quantile)
-}
-
-volPerformance$quantileOfPrediction=100*mapply(getQuantile,yr=volPerformance$wateryear,obs=volPerformance$obs_kAF)
-
-plot(volPerformance$quantileOfPrediction~volPerformance$obs_kAF)
-
+# getQuantile=function(yr,obs,preds=vols){
+#   preds=preds[[as.character(yr)]]
+#   pred_quantile=sum(obs>preds)/length(preds)
+#   return(pred_quantile)
+# }
+# 
+# volPerformance$quantileOfPrediction=100*mapply(getQuantile,yr=volPerformance$wateryear,obs=volPerformance$obs_KAF)
+# 
+# plot(volPerformance$quantileOfPrediction~volPerformance$obs_KAF)
+# 
 
 #forecasted center of mass is not stored in db
 

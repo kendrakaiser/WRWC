@@ -13,19 +13,38 @@ defaultW <- getOption("warn")
 options(warn = -1) 
 
 
+getWt=function(x){
+  w=rep(1,length(x))
+  w[x>median(x,na.rm=T)]=0.5 #if above median, w = 0.5
+  return(w)
+}
+
 #specify the cross-validation method
 #ctrl <- trainControl(method = "LOOCV")
 
 ######functions##########
 refitModel=function(model,newData=todayData$allVar){
   modelForm=formula(model)
+  environment(modelForm)=environment()
   responseName=names(model$model)[1] #first column of $model within model object is response
   if(grepl("log.",responseName,fixed=T)){
     unlogTermName=gsub("log.","",responseName)
     newData$logResponse=log(newData[,names(newData)==unlogTermName])
     names(newData)[names(newData)=="logResponse"]=responseName
   }
-  newModel=lm(formula=modelForm,data=newData)
+  
+  refitData=newData[,names(newData) %in% c(responseName,names(coef(model)))] #only columns used by model
+  refitData=refitData[complete.cases(refitData),]
+
+  
+  w=rep(1,nrow(refitData))
+  if("weights" %in% names(model)){
+    if(!all(model$weights==1)){
+      w=getWt(refitData[,responseName])
+    }
+  }
+
+  newModel=lm(formula=modelForm,data=refitData,weights=w)
   
   # #pass along added elements to model object
   # newModel$form=model$form
@@ -62,7 +81,7 @@ getLeapFormulas=function(leapList,responseVarName){
   return(forms)
 }
 
-vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year = pred.yr, volVars=firstOfMonthData$allVar, hindCastModel=hindCast, wtLowFlow=F){
+vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year = pred.yr, volVars=firstOfMonthData$allVar, hindCastModel=hindCast, f.wtLowFlow=wtLowFlow){
   #print(site)
   'site: site name as string
    sites: list of sites with relevant variables for prediction 
@@ -112,16 +131,7 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   names(modelDF)[1]=responseName
   modelDF=modelDF[complete.cases(modelDF),]
   
-  
-  
-  #weights
-    
-  w=rep(1,nrow(modelDF))
-  if(wtLowFlow){
-    w[modelDF[1,]>median(modelDF[1,])]=0.5
-  }
-  
-  
+
   ############################# log response ################################
   unloggedResponse=modelDF[,1]
   modelDF[,1]=log(modelDF[,1])
@@ -164,16 +174,25 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   
   
   
+  ###### weights ----------
+  w=rep(1,nrow(modelDF))# w = 1, or...
+  if(f.wtLowFlow){
+   w=getWt(modelDF[,1])
+  }
+  #add to modelDF
+  modelDF$w=w
+  
+  
   i=1 
   #profvis({
   for(globalFormula in typeModels){
-    
+    #print(w)
     global_lm=lm(globalFormula,data=modelDF,na.action=na.fail,weights=w)
     
     #leaps + fit method (faster)
     thisVars=names(coefficients(global_lm))[-1]
     #print(modelDF[,thisVars])
-    leapList=leaps(x=modelDF[,thisVars],y=modelDF[,1],method="r2",nbest=1,names=thisVars)
+    leapList=leaps(x=modelDF[,thisVars],y=modelDF[,1],method="r2",nbest=1,names=thisVars, wt=w) # add weights
     forms=getLeapFormulas(leapList,responseVarName=names(modelDF)[1])
     
     if(useForce){
