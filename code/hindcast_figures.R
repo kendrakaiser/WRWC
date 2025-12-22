@@ -31,7 +31,7 @@ if(endOfMonth){
 #rundate is hardcoded to the day I did all the hindcasting...
 #this one uses the flags set above....
 back_vols=dbGetQuery(conn,paste0("SELECT site, metric, rundate, simdate, extract(year FROM simdate) AS wateryear, values FROM forecastvolumes 
-                    WHERE rundate = '2025-12-09'
+                    WHERE rundate = '2025-12-19'
                     AND metric = 'irr_vol'
                     AND extract(day FROM simdate) ", d_char," '1'
                     AND extract(month FROM simdate) = '",month,"'

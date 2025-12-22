@@ -28,8 +28,8 @@ wtLowFlow=T
 hindCast=T
 #if hindCast, whole dataset to date is used, only excluding forecast year
 
-runDates=c(as.Date(apply(expand.grid(2005:2025,c("03","04","05"),c("01")),MARGIN=1,FUN=paste,collapse="-"))-1
-          ,as.Date(apply(expand.grid(2005:2025,c("02","03","04"),c("01")),MARGIN=1,FUN=paste,collapse="-"))
+runDates=c(#as.Date(apply(expand.grid(2005:2025,c("03","04","05"),c("01")),MARGIN=1,FUN=paste,collapse="-"))-1,
+          as.Date(apply(expand.grid(2005:2025,c("02","03","04"),c("01")),MARGIN=1,FUN=paste,collapse="-"))
           )
 
 #runDates=as.Date("2025-04-01")
