@@ -25,6 +25,12 @@ model_n=10
 refitModelToToday=T
 reuseMonthlyModels=T
 displayModelResults=T
+
+wtLowFlow=F #unweighted run done on 12/30/2025
+
+hindCast=F
+#if hindCast, whole dataset to date is used, only excluding forecast year
+
 # ------------------------------------------------------------------------------
 # Run Model
 # ------------------------------------------------------------------------------
