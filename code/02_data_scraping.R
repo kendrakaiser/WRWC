@@ -261,4 +261,6 @@ alldat_april <- swe_apr %>% merge(baseflow, by= 'wateryear',all=T) %>% merge(tot
 
 #write.csv(alldat, file.path(data_dir,input_data), row.names=FALSE)
 
+
+
 print("All flow and snow data saved")

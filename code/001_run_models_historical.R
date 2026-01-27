@@ -12,12 +12,32 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
 source(file.path(git_dir, 'code/01_packages.R'))
 source(file.path(git_dir, 'code/init_db.R'))
-source(file.path(git_dir,'code/005_db_update.R'))
+try({
+ source(file.path(git_dir,'code/005_db_update.R'))
+})
 
+model_n=10
+refitModelToToday=T
+reuseMonthlyModels=F
 
-runDates=c(seq.Date(from=as.Date("2025-03-08"),to=as.Date("2025-03-09"),by="day")
-          # seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
+displayModelResults=T
+
+wtLowFlow=F #unweighted run done on 12/30/2025
+# and what about validity/implementation of  BIC of weighted regression?
+
+hindCast=F
+#if hindCast, whole dataset to date is used, only excluding forecast year
+
+runDates=c(#as.Date(apply(expand.grid(2005:2025,c("03","04","05"),c("01")),MARGIN=1,FUN=paste,collapse="-"))-1,
+          as.Date(apply(expand.grid(2005:2025,c("02","03","04"),c("01")),MARGIN=1,FUN=paste,collapse="-"))
           )
+
+#runDates=as.Date("2025-04-01")
+# runDates=c(seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
+#            # seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
+# )
+
+runDates=as.Date(c("2025/04/26","2025/04/27","2025/04/28","2025/04/29","2025/04/30"))
 
 for( dateIndex in 1:length(runDates)){
   end_date=runDates[dateIndex]
@@ -52,14 +72,10 @@ for( dateIndex in 1:length(runDates)){
   # ------------------------------------------------------------------------------
   # Compile Data Based on Run Date
   # ------------------------------------------------------------------------------
-  source(file.path(git_dir, 'code/02_data_scraping.R'))
-  source(file.path(git_dir, 'code/03_temperature_models.R')) 
-  source(file.path(git_dir, 'code/04_data_integration.R'))  
-  
-  # Create Streamflow Models 
-  #-------------------------------------------------------------------------------
-  #TODO: 1) use sys.date to determine if these need to be run, 2) save mod files directly to db and have them read in here
-  #this only needs to be run after 10-1, the models will stay the same through the prediction season & take a long time to run
+  # source(file.path(git_dir, 'code/02_data_scraping.R'))
+  # source(file.path(git_dir, 'code/03_temperature_models.R')) 
+  # source(file.path(git_dir, 'code/04_data_integration.R'))  
+  source(file.path(git_dir, 'code/0234_makeVarFunction.R'))  
   
   suppressWarnings(source(file.path(git_dir, 'code/05_streamflow_models.R')))# warning messages are expected and okay
   
@@ -70,18 +86,17 @@ for( dateIndex in 1:length(runDates)){
   # Simulate the Irrigation Season Hydrograph
   source(file.path(git_dir, 'code/07_streamflow_simulation.R'))
   
-  # Develop curtailment models and make curtailment date predictions 
-  # TODO: test with previous years hydrographs to see how accurate
-  #source(file.path(git_dir, 'code/08_curtailment_predictions.R'))
+  source(file.path(git_dir, 'code/08_curtailment_predictions.R'))
   
   # manage data and push necessary outputs to db
   source(file.path(git_dir, 'code/09_data_management.R'))
   
-  bxpData=var[,c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol","wateryear")]
-  bxpData=reshape(bxpData,direction="long", v.names="irrVol", times=c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol"),varying=list(c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol")))
-  boxplot(bxpData$irrVol/1000~bxpData$time, main=end_date)
-  points(1:4,output.vol,pch="*",cex=3)
-  
+  # bxpData=todayData$allVar[,c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol","wateryear")]
+  # bxpData=reshape(bxpData,direction="long", v.names="irrVol", times=c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol"),varying=list(c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol")))
+  # boxplot(bxpData$irrVol/1000~bxpData$time, main=end_date)
+  # points(1:4,output.vol,pch="*",cex=3)
+  # 
   print(output.vol)
 }
+
 

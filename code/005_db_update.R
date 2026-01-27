@@ -41,7 +41,6 @@ update_ws_snow=function(ws_ids, dates, metric, rebuildAllMissingData=F){
   # the function is then matched to the metric in the 'switch' statement in the main function
   
   extract_ws_swe <- function(ws_id, ws_geoms, d){ 
-    
     # geometries of sub watershed to use to extract metrics of interest
     ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
     ws_extent = matrix(st_bbox(ws_geom_tr), nrow=2)
@@ -58,6 +57,9 @@ update_ws_snow=function(ws_ids, dates, metric, rebuildAllMissingData=F){
     tot_swe_m=tot_swe/1000 
     
     # add error catch to make sure there is data in here
+    
+    ##tot_swe is returned as the sum of swe measures across the snodas pixels
+    #divide by area in meters^2 to get an average value
     return(tot_swe_m)
   }
   #Extract total 24 hour melt (m)
@@ -590,7 +592,7 @@ dbExecute(conn, "REFRESH MATERIALIZED VIEW snodasdata")
 #             LANGUAGE SQL;")
 
 
-
+dbCleanUpProvisionalFlow()
 
 
 
