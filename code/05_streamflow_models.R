@@ -87,6 +87,7 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
+
   usePredTypes=c("wq", "ly_vol","swe_total","swe","nj_t")
   #dropped "liquid_precip","snow_covered_area"
   offSiteTypes=c("swe","nj_t")

@@ -15,7 +15,13 @@ pgArrayToNumeric=function(x){
 }
 
 #### set things here #####
-site = "bwh"
+
+dbGetQuery(conn,"SELECT DISTINCT(rundate) FROM forecastvolumes ORDER BY rundate DESC")
+# weighted backcasting runs: rundate 2025-12-19
+# unweighted backcasting runs: rundate 2025-12-30
+
+dbGetQuery(conn,"SELECT DISTINCT(site) FROM forecastvolumes;")
+site = "sc"
 month = "04"
 endOfMonth = F #model runs for first day or last day
 
@@ -31,7 +37,7 @@ if(endOfMonth){
 #rundate is hardcoded to the day I did all the hindcasting...
 #this one uses the flags set above....
 back_vols=dbGetQuery(conn,paste0("SELECT site, metric, rundate, simdate, extract(year FROM simdate) AS wateryear, values FROM forecastvolumes 
-                    WHERE rundate = '2025-12-19'
+                    WHERE rundate = '2025-12-30'
                     AND metric = 'irr_vol'
                     AND extract(day FROM simdate) ", d_char," '1'
                     AND extract(month FROM simdate) = '",month,"'
@@ -53,9 +59,14 @@ names(vols) = back_vols$wateryear
 back_vols$med_KAF=sapply(vols,median) #median prediction volume
 
 #### set lower and upper quantile definitions for plot here ###
-back_vols$lq_KAF=sapply(vols,quantile, probs = 0.10) #lower quantile
-back_vols$uq_KAF=sapply(vols,quantile, probs = 0.90) #upper quantile
+back_vols$lq_95=sapply(vols,quantile, probs = 0.025)
+back_vols$uq_95=sapply(vols,quantile, probs = 0.975)
 
+back_vols$lq_90=sapply(vols,quantile, probs = 0.05)
+back_vols$uq_90=sapply(vols,quantile, probs = 0.95)
+
+back_vols$lq_50=sapply(vols,quantile, probs = 0.25)
+back_vols$uq_50=sapply(vols,quantile, probs = 0.75)
 
 back_vols$values=NULL
 head(back_vols)
@@ -66,7 +77,7 @@ obs_vols=dbGetQuery(conn,paste0("SELECT * FROM (
             data.locationid, name AS sitename, sitenote AS site
             FROM data LEFT JOIN locations ON data.locationid = locations.locationid
             WHERE metric = 'flow' AND qcstatus = 'true' AND (EXTRACT(month FROM datetime) >= 4 AND EXTRACT(month FROM datetime) < 10)
-            AND locations.name IN ('BIG WOOD RIVER AT HAILEY', 'BIG WOOD RIVER AT STANTON CROSSING', 'CAMAS CREEK NR BLAINE ID', 'SILVER CREEK AT SPORTSMAN ACCESS' )
+            AND sitenote = '",site,"'
             GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear
           ) as histvols WHERE days_in_record > 180;"))  # complete record is 183 days
 
@@ -74,20 +85,46 @@ obs_vols=dbGetQuery(conn,paste0("SELECT * FROM (
 
 obs_vols$obs_KAF=obs_vols$irr_vol/1000
 head(obs_vols)
+hist(obs_vols$obs_KAF)
 
 volPerformance=merge(back_vols,obs_vols)
 head(volPerformance)
 
-plot(volPerformance$obs_KAF,volPerformance$med_KAF, 
+lowFlowCutoff= median(volPerformance$obs_KAF)
+volPerformance$lowFlow=volPerformance$obs_KAF<lowFlowCutoff
+
+
+plot(volPerformance$obs_KAF,volPerformance$med_KAF, pch=16,cex=1.5,
      main = paste0("2005 - 2025 Model Performance for ",unique(volPerformance$sitename)," \n (month=",month,", end of month=",endOfMonth,")"), cex.main = 1,
      xlab = "Observed irrigation season volume (KAF)",
      ylab = "Predicted irrigation season volume (KAF)")
 abline(a=0,b=1)
 for(y in volPerformance$wateryear){
+  #95% interval
   lines(x=rep(volPerformance$obs_KAF[volPerformance$wateryear==y],2),
-        y=c(volPerformance$lq_KAF[volPerformance$wateryear==y],volPerformance$uq_KAF[volPerformance$wateryear==y])
-  )
+        y=c(volPerformance$lq_95[volPerformance$wateryear==y],volPerformance$uq_95[volPerformance$wateryear==y]),
+        col="lightgrey",lwd=3)
+  
+  #90% interval
+  lines(x=rep(volPerformance$obs_KAF[volPerformance$wateryear==y],2),
+        y=c(volPerformance$lq_90[volPerformance$wateryear==y],volPerformance$uq_90[volPerformance$wateryear==y]),
+        col="darkgray",lwd=3)
+  
+  #50% interval
+  lines(x=rep(volPerformance$obs_KAF[volPerformance$wateryear==y],2),
+        y=c(volPerformance$lq_50[volPerformance$wateryear==y],volPerformance$uq_50[volPerformance$wateryear==y]),
+        col="darkblue",lwd=3)
 }
+
+points(volPerformance$obs_KAF,volPerformance$med_KAF, pch=16,cex=1.5)
+
+volPerformance$absErr=abs(volPerformance$med_KAF-volPerformance$obs_KAF)
+median(volPerformance$absErr) #wt: 3.2354, unwt: 3.6748
+median(volPerformance$absErr[volPerformance$lowFlow]) #wt: 3.2334, unwt: 4.34139
+
+volPerformance$pctErr=100 * (volPerformance$absErr/volPerformance$obs_KAF)
+median(volPerformance$pctErr)
+median(volPerformance$pctErr[volPerformance$lowFlow])
 
 
 
