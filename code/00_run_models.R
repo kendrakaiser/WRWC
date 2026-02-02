@@ -15,15 +15,23 @@ git_dir=getwd()
 fig_dir <<- file.path(git_dir, 'figures') # github
 input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
+<<<<<<< HEAD
 
 # set end date
 #end_date = as.Date("2025-04-15") 
 end_date=Sys.Date()
+=======
+# TODO simdate v.s. run date
+# set end date 
+end_date = as.Date("2025-02-01") 
+#end_date=Sys.Date()
+>>>>>>> 85f8a66a0d720dc28d9481229f93018299d6ea69
 
 
 model_n=10
 refitModelToToday=T
 reuseMonthlyModels=T
+displayModelResults=T
 # ------------------------------------------------------------------------------
 # Run Model
 # ------------------------------------------------------------------------------
@@ -56,13 +64,9 @@ if (month(end_date) == 2){
 # ------------------------------------------------------------------------------
 # Compile Data Based on Run Date
 # ------------------------------------------------------------------------------
-#source(file.path(git_dir,'code/005_db_update.R'))
+source(file.path(git_dir,'code/005_db_update.R'))
 
-# source(file.path(git_dir, 'code/02_data_scraping.R'))
-# source(file.path(git_dir, 'code/03_temperature_models.R')) 
-# source(file.path(git_dir, 'code/04_data_integration.R'))  
 source(file.path(git_dir, 'code/0234_makeVarFunction.R'))  
-
 
 # Create Streamflow Models 
 #-------------------------------------------------------------------------------

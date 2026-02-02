@@ -12,17 +12,32 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
 source(file.path(git_dir, 'code/01_packages.R'))
 source(file.path(git_dir, 'code/init_db.R'))
-source(file.path(git_dir,'code/005_db_update.R'))
-
+try({
+ source(file.path(git_dir,'code/005_db_update.R'))
+})
 
 model_n=10
 refitModelToToday=T
-reuseMonthlyModels=T
+reuseMonthlyModels=F
 
+displayModelResults=T
 
-runDates=c(seq.Date(from=as.Date("2025-04-09"),to=as.Date("2025-04-14"),by="day")
-          # seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
+wtLowFlow=F #unweighted run done on 12/30/2025
+# and what about validity/implementation of  BIC of weighted regression?
+
+hindCast=F
+#if hindCast, whole dataset to date is used, only excluding forecast year
+
+runDates=c(#as.Date(apply(expand.grid(2005:2025,c("03","04","05"),c("01")),MARGIN=1,FUN=paste,collapse="-"))-1,
+          as.Date(apply(expand.grid(2005:2025,c("02","03","04"),c("01")),MARGIN=1,FUN=paste,collapse="-"))
           )
+
+#runDates=as.Date("2025-04-01")
+# runDates=c(seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
+#            # seq.Date(from=as.Date("2024-02-01"),to=as.Date("2024-04-30"),by="day")
+# )
+
+runDates=as.Date(c("2025/04/26","2025/04/27","2025/04/28","2025/04/29","2025/04/30"))
 
 for( dateIndex in 1:length(runDates)){
   end_date=runDates[dateIndex]
@@ -76,11 +91,12 @@ for( dateIndex in 1:length(runDates)){
   # manage data and push necessary outputs to db
   source(file.path(git_dir, 'code/09_data_management.R'))
   
-  bxpData=todayData$allVar[,c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol","wateryear")]
-  bxpData=reshape(bxpData,direction="long", v.names="irrVol", times=c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol"),varying=list(c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol")))
-  boxplot(bxpData$irrVol/1000~bxpData$time, main=end_date)
-  points(1:4,output.vol,pch="*",cex=3)
-  
+  # bxpData=todayData$allVar[,c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol","wateryear")]
+  # bxpData=reshape(bxpData,direction="long", v.names="irrVol", times=c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol"),varying=list(c("bwh.irr_vol","sc.irr_vol","cc.irr_vol","bws.irr_vol")))
+  # boxplot(bxpData$irrVol/1000~bxpData$time, main=end_date)
+  # points(1:4,output.vol,pch="*",cex=3)
+  # 
   print(output.vol)
 }
+
 

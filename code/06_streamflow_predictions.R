@@ -192,7 +192,7 @@ hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::selec
 pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% dplyr::slice(rep(1:n(), 5000))
 
 
-pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
+pred.dat[,aj_params] <- todayData$aj.pred.temps[aj_params]
 
 # Big Wood Hailey Model output
 mod_sum[1,2]<-summary(cm_models$bwh_cm_mod)$adj.r.squared
@@ -215,7 +215,7 @@ hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::selec
 pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
 
 
-pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
+pred.dat[,aj_params] <- todayData$aj.pred.temps[aj_params]
 
 # Big Wood Stanton Model output
 mod_sum[2,2]<-summary(cm_models$bws_cm_mod)$adj.r.squared
@@ -232,13 +232,13 @@ cm_models$bws_cm.mod$predictors=pred.dat
 #cm_models$sc_cm_mod
 # added 'if' statement here because March SC CM doesn't use aj temperatures
 if (any(grepl('aj', cm_models$sc_cm_mod$vars))){ 
-  sub_params<- cm_models$sc_cm_mod$vars[-grep('aj', cm_models$sc_cm_mod$vars)]
-  aj_params<-cm_models$sc_cm_mod$vars[grep('aj', cm_models$sc_cm_mod$vars)]
+  sub_params<- cm_models$sc_cm_mod$vars[!grepl('aj', cm_models$sc_cm_mod$vars)]
+  aj_params<-cm_models$sc_cm_mod$vars[grepl('aj', cm_models$sc_cm_mod$vars)]
   # Prediction Data with modeled temperature data
   pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
 
   
-  pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
+  pred.dat[,aj_params] <- todayData$aj.pred.temps[aj_params]
 } else {
   sub_params<- cm_models$sc_cm_mod$vars
   pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params))
@@ -259,15 +259,15 @@ cm_models$sc_cm.modpredictors=pred.dat
 # --------------------
 # Camas Creek Center of Mass
 #cm_models$cc_cm_mod
-sub_params<- cm_models$cc_cm_mod$vars[-grep('aj', cm_models$cc_cm_mod$vars)]
-aj_params<-cm_models$cc_cm_mod$vars[grep('aj', cm_models$cc_cm_mod$vars)]
+sub_params<- cm_models$cc_cm_mod$vars[!grepl('aj', cm_models$cc_cm_mod$vars)]
+aj_params<-cm_models$cc_cm_mod$vars[grepl('aj', cm_models$cc_cm_mod$vars)]
 hist <- todayData$allVar[todayData$allVar$wateryear < pred.yr,] %>% dplyr::select(cc.cm, cm_models$cc_cm_mod$vars) %>% filter(complete.cases(.))
 
 #Prediction Data with modeled temperature data
 pred.dat<-todayData$allVar[todayData$allVar$wateryear == pred.yr,] %>% dplyr::select(all_of(sub_params)) %>% slice(rep(1:n(), 5000))
 
 
-pred.dat[aj_params] <- todayData$aj.pred.temps[aj_params]
+pred.dat[,aj_params] <- todayData$aj.pred.temps[aj_params]
 # pred.dat$ga.aj_t <-4.1
 # pred.dat$sm.aj_t<- 8.5
 

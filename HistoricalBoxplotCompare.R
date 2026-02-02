@@ -1,5 +1,5 @@
 q_daily=dbGetQuery(conn,"SELECT DISTINCT ON (simdate, site) site, simdate, rundate, values FROM forecastvolumes WHERE site= 'bwh' 
-               AND simdate >= '2024-02-01' AND simdate <= '2024-04-30' AND rundate = '2025-04-06' ORDER BY simdate DESC, site, rundate DESC;")
+               AND simdate >= '2025-02-01' AND simdate <= '2025-04-30' AND rundate = '2025-04-14' ORDER BY simdate DESC, site, rundate DESC;")
 q_daily=q_daily[order(q_daily$simdate),]
 
 pgArrayToNumeric=function(x){
