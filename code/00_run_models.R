@@ -15,10 +15,10 @@ git_dir=getwd()
 fig_dir <<- file.path(git_dir, 'figures') # github
 input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
-# TODO simdate v.s. run date
-# set end date 
-end_date = as.Date("2025-04-15") 
-#end_date=Sys.Date()
+
+# set end date
+#end_date = as.Date("2025-04-15") 
+end_date=Sys.Date()
 
 
 model_n=10

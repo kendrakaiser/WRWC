@@ -1,4 +1,4 @@
-q25=dbGetQuery(conn,"SELECT DISTINCT ON (simdate, site) site, simdate, rundate, values FROM forecastvolumes WHERE site= 'bws' 
+q25=dbGetQuery(conn,"SELECT DISTINCT ON (simdate, site) site, simdate, rundate, values FROM forecastvolumes WHERE site= 'bwh' 
                AND simdate >= '2025-02-01' ORDER BY simdate DESC, site, rundate DESC;")
 q25=q25[order(q25$simdate),]
 max(q25$simdate)
