@@ -15,7 +15,7 @@ options(warn = -1)
 
 getWt=function(x){
   w=rep(1,length(x))
-  w[x>median(x,na.rm=T)]=0.5 #if above median, w = 0.5
+  w[x>median(x)]=0.5 #if above median, w = 0.5
   return(w)
 }
 
@@ -23,33 +23,37 @@ getWt=function(x){
 #ctrl <- trainControl(method = "LOOCV")
 
 ######functions##########
-refitModel=function(model,newData=todayData$allVar){
+refitModel=function(model,newData=todayData$allVar,f.wtLowFlow=wtLowFlow){
   modelForm=formula(model)
   environment(modelForm)=environment()
   responseName=names(model$model)[1] #first column of $model within model object is response
+  
   if(grepl("log.",responseName,fixed=T)){
     unlogTermName=gsub("log.","",responseName)
     newData$logResponse=log(newData[,names(newData)==unlogTermName])
     names(newData)[names(newData)=="logResponse"]=responseName
   }
   
+  
   refitData=newData[,names(newData) %in% c(responseName,names(coef(model)))] #only columns used by model
   refitData=refitData[complete.cases(refitData),]
-
   
-  w=rep(1,nrow(refitData))
-  if("weights" %in% names(model)){
-    if(!all(model$weights==1)){
-      w=getWt(refitData[,responseName])
-    }
+  w=rep(1,nrow(refitData))# w = 1, or...
+  if(f.wtLowFlow){
+    w=getWt(refitData[,responseName])
   }
-
+  
+  #print(cbind(refitData,data.frame(weights=w)))
+  
   newModel=lm(formula=modelForm,data=refitData,weights=w)
   
   # #pass along added elements to model object
   # newModel$form=model$form
   # newModel$vars=model$vars
   newModel$vars=names(newModel$coefficients)[-1]
+  
+  # newModel$weights=NULL
+  # newModel$model$'(weights)'=NULL
   return(newModel)
 }
 
@@ -87,7 +91,7 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
-
+  
   usePredTypes=c("wq", "ly_vol","swe_total","swe","nj_t")
   #dropped "liquid_precip","snow_covered_area"
   offSiteTypes=c("swe","nj_t")
@@ -109,10 +113,10 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   
   # save current values to check for presence in predictor dataset
   currentVars=volVars[volVars$wateryear==pred.year,]
-
+  
   badVars=names(currentVars)[is.na(currentVars)] # no special treatment for aj_t in vol models
   
-
+  
   if(hindCastModel){
     volVars=volVars[volVars$wateryear != pred.year,]
   }else{
@@ -132,7 +136,7 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   names(modelDF)[1]=responseName
   modelDF=modelDF[complete.cases(modelDF),]
   
-
+  
   ############################# log response ################################
   unloggedResponse=modelDF[,1]
   modelDF[,1]=log(modelDF[,1])
@@ -178,8 +182,9 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   ###### weights ----------
   w=rep(1,nrow(modelDF))# w = 1, or...
   if(f.wtLowFlow){
-   w=getWt(modelDF[,1])
+    w=getWt(modelDF[,responseName])
   }
+  
   #add to modelDF
   modelDF$w=w
   
@@ -228,7 +233,7 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   modelCompareDF=modelCompareDF[order(modelCompareDF[,"BIC"]),]
   #print(head(modelCompareDF))
   
- 
+  
   
   bestByType=lm(modelCompareDF$formula[1],data=modelDF,na.action=na.fail,weights=w)
   #summary(bestByType)
@@ -243,6 +248,9 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
   mod_sum$form <- paste(responseName," ~ ", paste(names(bestByType$coefficients)[-1],collapse=" + "))
   mod_sum$vars<-names(bestByType$coefficients)[-1]
   
+  # #drop weights term from model structure
+  # mod_sum$weights=NULL
+  # mod_sum$model$`(weights)`=NULL
   return(mod_sum)
 }
 
@@ -378,7 +386,12 @@ volModelJSON=dbGetQuery(conn,paste("SELECT DISTINCT ON (modelname) * FROM volume
 #without a way to be more specific about which model is grabbed 
 #currently uses the latest rundate for the correct moddate
 
+
+
+
 if(all(
+  FALSE,
+  #### need to deal with weights here
   reuseMonthlyModels,
   c("bwh_mod", "bws_mod", "sc_mod",  "cc_mod" ) %in% volModelJSON$modelname,
   format.Date(volModelJSON$rundate,"%m-%Y") == format.Date(Sys.Date(),"%m-%Y")# check that all models are from this month and year, 
@@ -392,10 +405,10 @@ if(all(
 } else { # reselect terms
   # Create Volume Models for each site gage
   print("Selecting new volume models....")
-  bwh_vol_mod<- vol_model("bwh", "bwh", model_n,forceVars="bwh.wq")
-  bws_vol_mod<- vol_model("bws", c("bws", "bwh"), model_n,forceVars="bwh.wq")
-  cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), model_n)
-  sc_vol_mod<- vol_model("sc", c("bwh", "sc"), model_n,forceVars="bwh.wq")
+  bwh_vol_mod<- vol_model("bwh", "bwh", max_var=model_n,volVars=firstOfMonthData$allVar,forceVars="bwh.wq")
+  bws_vol_mod<- vol_model("bws", c("bws", "bwh"), max_var=model_n, volVars=firstOfMonthData$allVar )#, forceVars="bwh.wq")
+  cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), max_var=model_n, volVars=firstOfMonthData$allVar)
+  sc_vol_mod<- vol_model("sc", c("bwh", "sc"), max_var=model_n, volVars=firstOfMonthData$allVar, forceVars="bwh.wq")
 }
 
 

@@ -11,6 +11,8 @@
 writeVolModel=function(model,modelName,enddate=end_date,refitModelToToday){
   rundate=Sys.Date()
   
+  model$model$`(weights)`=NULL
+  
   if(refitModelToToday){
     moddate = enddate
   } else {

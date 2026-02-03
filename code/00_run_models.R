@@ -17,16 +17,16 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
 # TODO simdate v.s. run date
 # set end date 
-end_date = as.Date("2025-02-01") 
-#end_date=Sys.Date()
+#end_date = as.Date("2025-02-01") 
+end_date=Sys.Date()
 
 
 model_n=10
 refitModelToToday=T
-reuseMonthlyModels=T
+reuseMonthlyModels=F
 displayModelResults=T
 
-wtLowFlow=F #unweighted run done on 12/30/2025
+wtLowFlow=T #unweighted run done on 12/30/2025
 
 hindCast=F
 #if hindCast, whole dataset to date is used, only excluding forecast year
