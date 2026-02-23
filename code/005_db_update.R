@@ -341,7 +341,7 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
   #check for complete dataset
   if(!all(days %in% as.Date(dataInDb$datetime))){ #data for some days is not in database    
     missingDays=days[!days %in% as.Date(dataInDb$datetime)]
-    #print(paste("adding data for missing days:",paste(missingDays, collapse=", ")))
+    print(paste("adding data for missing days:",paste(missingDays, collapse=", ")))
     
     
     ###################--------------- data sourcing functions -------------------------
@@ -423,6 +423,8 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
       # metricID=6
       # locationID=c(170)
       
+      metricDetails=dbGetQuery(conn,paste0("SELECT * FROM metrics WHERE metricid = ",metricID,";"))
+      
       
       #db knows internal snotel source location ids:
       thisLocation_sourceID=dbGetQuery(conn,paste0("SELECT source_site_id FROM locations WHERE locationid = '",locationID,"';"))$source_site_id
@@ -434,17 +436,20 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
       
       if(nrow(snotel_data)>=1){
         
-        #process and write swe
-        snotel_data$sweQC=TRUE
-        snotel_data$snow_water_equivalent[is.na(snotel_data$snow_water_equivalent)]=-999
-        snotel_data$sweQC[snotel_data$snow_water_equivalent==-999]=FALSE
-        dbWriteData(metric="swe",value=snotel_data$snow_water_equivalent,datetime=snotel_data$date,locationID=locationID,sourceName = "snotel",qcStatus = snotel_data$sweQC)
         
-        #process and write mean daily temperature
-        snotel_data$meanTQC=TRUE
-        snotel_data$temperature_mean[is.na(snotel_data$temperature_mean)]=-999
-        snotel_data$meanTQC[snotel_data$temperature_mean==-999]=FALSE
-        dbWriteData(metric="mean daily temperature",value=snotel_data$temperature_mean,datetime=snotel_data$date,locationID=locationID,sourceName = "snotel",qcStatus = snotel_data$meanTQC)
+        if(metricDetails$name=="swe"){#process and write swe
+          snotel_data$sweQC=TRUE
+          snotel_data$snow_water_equivalent[is.na(snotel_data$snow_water_equivalent)]=-999
+          snotel_data$sweQC[snotel_data$snow_water_equivalent==-999]=FALSE
+          dbWriteData(metric="swe",value=snotel_data$snow_water_equivalent,datetime=snotel_data$date,locationID=locationID,sourceName = "snotel",qcStatus = snotel_data$sweQC)
+        }
+        
+        if(metricDetails$name=="mean daily temperature"){#process and write mean daily temperature
+          snotel_data$meanTQC=TRUE
+          snotel_data$temperature_mean[is.na(snotel_data$temperature_mean)]=-999
+          snotel_data$meanTQC[snotel_data$temperature_mean==-999]=FALSE
+          dbWriteData(metric="mean daily temperature",value=snotel_data$temperature_mean,datetime=snotel_data$date,locationID=locationID,sourceName = "snotel",qcStatus = snotel_data$meanTQC)
+        }
       }
     }
     
@@ -511,38 +516,64 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
 
 
 
+
+
 #############---------------update snodas data------------------------
+#Occasionally set to attempt rebuild past invalid data
+rebuildSnodas = F
+
 #first call will build all metrics, other calls should be unnecessary (but are quick)
-update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="snow_covered_area")
-update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="liquid_precip")
-update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="swe_total")
-update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="runoff_total")
+update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="snow_covered_area",rebuildAllMissingData = rebuildSnodas)
+update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="liquid_precip",rebuildAllMissingData = rebuildSnodas)
+update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="swe_total",rebuildAllMissingData = rebuildSnodas)
+update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="runoff_total",rebuildAllMissingData = rebuildSnodas)
 
 
 
+rbMissingData=F
+
+#monthly attempt to get missing data
+if(as.numeric(format.Date(Sys.Date(),"%d"))==1){
+  rbMissingData=T #try to rebuild / replace past missing values
+}
 
 ##########-----------update streamflow data ------------------
-updateDbData(metric="flow", location="BIG WOOD RIVER AT HAILEY", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
-updateDbData(metric="flow", location="BIG WOOD RIVER AT STANTON CROSSING", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
-updateDbData(metric="flow", location="SILVER CREEK AT SPORTSMAN ACCESS", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
-updateDbData(metric="flow", location="CAMAS CREEK NR BLAINE ID", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS")
+updateDbData(metric="flow", location="BIG WOOD RIVER AT HAILEY", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS",rebuildInvalidData = rbMissingData)
+updateDbData(metric="flow", location="BIG WOOD RIVER AT STANTON CROSSING", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS",rebuildInvalidData = rbMissingData)
+updateDbData(metric="flow", location="SILVER CREEK AT SPORTSMAN ACCESS", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS",rebuildInvalidData = rbMissingData)
+updateDbData(metric="flow", location="CAMAS CREEK NR BLAINE ID", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="USGS",rebuildInvalidData = rbMissingData)
 
 
 ###########------------------update snotel data-----------------
-#snotel data getter function writes SWE and mean daily temperature, no need to call for both
+
 #date does not matter for snotel_download function
-updateDbData(metric="swe", location="chocolate gulch", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
-updateDbData(metric="swe", location="galena", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
-updateDbData(metric="swe", location="galena summit", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
-updateDbData(metric="swe", location="hyndman", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
-updateDbData(metric="swe", location="lost-wood divide", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
-updateDbData(metric="swe", location="dollarhide summit", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
-updateDbData(metric="swe", location="camas creek divide", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
-updateDbData(metric="swe", location="soldier r.s.", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
-updateDbData(metric="swe", location="garfield r.s.", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
-updateDbData(metric="swe", location="swede peak", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
-updateDbData(metric="swe", location="stickney mill", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
-updateDbData(metric="swe", location="bear canyon", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel")
+updateDbData(metric="swe", location="chocolate gulch", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="swe", location="galena", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="swe", location="galena summit", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="swe", location="hyndman", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="swe", location="lost-wood divide", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="swe", location="dollarhide summit", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="swe", location="camas creek divide", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="swe", location="soldier r.s.", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="swe", location="garfield r.s.", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="swe", location="swede peak", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="swe", location="stickney mill", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="swe", location="bear canyon", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+
+
+updateDbData(metric="mean daily temperature", location="chocolate gulch", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="mean daily temperature", location="galena", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="mean daily temperature", location="galena summit", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="mean daily temperature", location="hyndman", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="mean daily temperature", location="lost-wood divide", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="mean daily temperature", location="dollarhide summit", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="mean daily temperature", location="camas creek divide", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="mean daily temperature", location="soldier r.s.", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="mean daily temperature", location="garfield r.s.", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="mean daily temperature", location="swede peak", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="mean daily temperature", location="stickney mill", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+updateDbData(metric="mean daily temperature", location="bear canyon", days=seq.Date(as.Date("2000-01-01"),Sys.Date(),by="day"),sourceName="snotel",rebuildInvalidData = rbMissingData)
+
 
 #dbGetQuery(conn,"SELECT data.locationid, locations.name, min(datetime) FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE metric = 'swe' GROUP BY data.locationid, locations.name;")
 
@@ -550,8 +581,8 @@ updateDbData(metric="swe", location="bear canyon", days=seq.Date(as.Date("2000-0
 ###########-----------update AgriMet data------------------
 #dbGetQuery(conn, "SELECT DISTINCT metric FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE locations.locationid=181;")
 
-updateDbData(metric="air temperature", location="Picabo AgriMet station", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="AgriMet")
-updateDbData(metric="air temperature", location="Fairfield AgriMet station", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="AgriMet")
+updateDbData(metric="air temperature", location="Picabo AgriMet station", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="AgriMet",rebuildInvalidData = rbMissingData)
+updateDbData(metric="air temperature", location="Fairfield AgriMet station", days=seq.Date(as.Date("1986-12-01"),Sys.Date(),by="day"),sourceName="AgriMet",rebuildInvalidData = rbMissingData)
 #dbGetQuery(conn,"SELECT data.locationid, locations.name, min(datetime) FROM data LEFT JOIN locations ON data.locationid = locations.locationid WHERE metric = 'air temperature' GROUP BY data.locationid, locations.name;")
 
 ######################-------------------- update db materialized views

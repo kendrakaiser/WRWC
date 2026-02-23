@@ -156,6 +156,7 @@ makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T,hindCastDat
   
   snodas_wide<-pivot_wider(data=winterSums[,c("wateryear","metric","value","sitenote")],names_from = c(sitenote, metric),values_from = c(value),names_sep=".")
   
+  #does this drop snotel data from pre-snodas years?
   swe_q=winterSWE_wide %>% merge(snodas_wide, by= 'wateryear', all=F) %>% merge(baseflow, by= 'wateryear', all=T) %>% merge(irr_vol, by= 'wateryear', all=TRUE) %>% 
     merge(cm_wide, by= 'wateryear', all=TRUE) %>% merge(tot_vol, by= 'wateryear', all=T)
   
@@ -182,7 +183,7 @@ makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T,hindCastDat
   
   #Also, ccd has 83 obs in 2017...  including it here drops the whole year later, which kinda sucks considering how many other temperatures are available
   
-  snotel.nj_temp=snotel.nj_temp[snotel.nj_temp$n_obs>=85,-1] #all 2024 data has at most 86 observations, so if I use 88 as a threshold 2024 is excluded entirely.  
+  snotel.nj_temp=snotel.nj_temp[snotel.nj_temp$n_obs>=80,-1] #all 2024 data has at most 86 observations, so if I use 88 as a threshold 2024 is excluded entirely.  
   
   
   snotel.aj_temp=dbGetQuery(conn,paste0("SELECT count(value) AS n_obs, wateryear(datetime) AS wateryear, metric, avg(value) AS aj_tempf, data.locationid, name, sitenote
@@ -192,7 +193,11 @@ makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T,hindCastDat
            AND datetime::date <= '",end_date,"'::date
            GROUP BY(wateryear, data.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
   
-  snotel.aj_temp=snotel.aj_temp[snotel.aj_temp$n_obs>=85,-1]    # much less missing data in this period
+  ### why so much missing snotel data from 2024 and 2025?
+  # -999s are correctly marked as qcStatus FALSE and excluded
+  
+  
+  snotel.aj_temp=snotel.aj_temp[snotel.aj_temp$n_obs>=80,-1]    # much less missing data in this period
   
   
   
