@@ -341,7 +341,7 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
   #check for complete dataset
   if(!all(days %in% as.Date(dataInDb$datetime))){ #data for some days is not in database    
     missingDays=days[!days %in% as.Date(dataInDb$datetime)]
-    print(paste("adding data for missing days:",paste(missingDays, collapse=", ")))
+   # print(paste("adding data for missing days:",paste(missingDays, collapse=", ")))
     
     
     ###################--------------- data sourcing functions -------------------------
