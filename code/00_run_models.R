@@ -63,7 +63,9 @@ if (month(end_date) == 2){
 # ------------------------------------------------------------------------------
 # Compile Data Based on Run Date
 # ------------------------------------------------------------------------------
-source(file.path(git_dir,'code/005_db_update.R'))
+try({
+  source(file.path(git_dir,'code/005_db_update.R'))
+})
 
 source(file.path(git_dir, 'code/0234_makeVarFunction.R'))  
 

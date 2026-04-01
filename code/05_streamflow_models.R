@@ -92,9 +92,9 @@ vol_model<-function(site, sites, max_var, min_var=2, forceVars=NULL, pred.year =
    max_var: max number of variables  
   '
   
-  usePredTypes=c("wq","swe_total","swe","snow_covered_area")
+  usePredTypes=c("wq","swe_total","swe","snow_covered_area","nj_t","ly_vol")
   
-  #dropped "liquid_precip", "nj_t","ly_vol"
+  #dropped "liquid_precip"
   offSiteTypes=c("swe","nj_t")
   
   #forceVars="bwh.wq"
@@ -262,7 +262,7 @@ cm_model<-function(site, sites, max_var, min_var=2, pred.year = pred.yr, cmVars=
    sites: list of sites with relevant variables for prediction 
    max_var: max number of variables  
   '
-  usePredTypes=c("wq", "ly_vol","swe","swe_total","nj_t","aj_t")
+  usePredTypes=c("wq", "ly_vol","swe","swe_total","nj_t","aj_t","snow_covered_area")
   #dropped: "liquid_precip","snow_covered_area"
   offSiteTypes=c("swe","nj_t","aj_t")
   
@@ -406,9 +406,9 @@ if(all(
 } else { # reselect terms
   # Create Volume Models for each site gage
   print("Selecting new volume models....")
-  bwh_vol_mod<- vol_model("bwh", "bwh", max_var=model_n,volVars=firstOfMonthData$allVar,forceVars = "bwh.snow_covered_area")#,forceVars="bwh.wq"
-  bws_vol_mod<- vol_model("bws", c("bws", "bwh"), max_var=model_n, volVars=firstOfMonthData$allVar,forceVars = "bwh.snow_covered_area" )#, forceVars="bwh.wq")
-  cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), max_var=model_n, volVars=firstOfMonthData$allVar, forceVars = "cc.snow_covered_area")
+  bwh_vol_mod<- vol_model("bwh", "bwh", max_var=model_n,volVars=firstOfMonthData$allVar)#,forceVars="bwh.wq"
+  bws_vol_mod<- vol_model("bws", c("bws", "bwh"), max_var=model_n, volVars=firstOfMonthData$allVar )#, forceVars="bwh.wq")
+  cc_vol_mod<- vol_model("cc", c("bwh", "cc\\."), max_var=model_n, volVars=firstOfMonthData$allVar)
   sc_vol_mod<- vol_model("sc", c("bwh", "sc"), max_var=model_n, volVars=firstOfMonthData$allVar)#, forceVars="bwh.wq"
 }
 

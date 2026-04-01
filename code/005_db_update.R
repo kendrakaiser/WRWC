@@ -429,14 +429,19 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
       #db knows internal snotel source location ids:
       thisLocation_sourceID=dbGetQuery(conn,paste0("SELECT source_site_id FROM locations WHERE locationid = '",locationID,"';"))$source_site_id
       
+      snotel_data=NULL
+      try({
       snotel_data = snotel_download(thisLocation_sourceID, path = tempdir(), internal = TRUE)
+      })
+      if(is.null(snotel_data)){#try again
+        snotel_data = snotel_download(thisLocation_sourceID, path = tempdir(), internal = TRUE)
+      }
+      if(!is.null(snotel_data)){
       snotel_data=snotel_data[snotel_data$date %in% missingDays,]
-      
       snotel_data = snotel_data[,c("date","snow_water_equivalent","temperature_mean")]
+      } else {snotel_data=data.frame()} #empty df for next if
       
       if(nrow(snotel_data)>=1){
-        
-        
         if(metricDetails$name=="swe"){#process and write swe
           snotel_data$sweQC=TRUE
           snotel_data$snow_water_equivalent[is.na(snotel_data$snow_water_equivalent)]=-999
