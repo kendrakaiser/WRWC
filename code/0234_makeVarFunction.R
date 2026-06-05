@@ -1,6 +1,6 @@
 #function for getting var df depending on date
 makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T,hindCastData=hindCast,pred.year=pred.yr){
-
+  
   if(hindCastData){
     if(month(end_date)==2 & day(end_date)==29){
       day(end_date)=28
@@ -8,7 +8,7 @@ makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T,hindCastDat
     year(end_date)=year(Sys.Date())+1
   }
   #pred.year=year(end_date)
-    
+  
   dataYear=format.Date(end_date,"%Y")
   dataMonth=format.Date(end_date,"%m")
   
@@ -139,20 +139,48 @@ makeDatasets=function(end_date,useFirstOfMonth,fillNullsWithRecent=T,hindCastDat
   
   #----------------------------Get SNODAS from Database ------------------
   winterSums=dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric, name, sitenote) wateryear(datetime) AS wateryear, max(datetime) AS datetime, metric,
-           sum(value) as value, snodasdata.locationid, name, sitenote
+           (sum(value) / ST_Area(watersheds.geometry)) * 1000 as value, snodasdata.locationid, name, sitenote 
            FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
+           LEFT JOIN watersheds ON snodasdata.locationid = watersheds.outflowlocationid 
            WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < '",dataMonth,"') 
-           AND METRIC = 'liquid_precip'
-           GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote) ORDER BY wateryear;"))
-  #^^^^ this gets the sum for liquid precip (all liquid precip for the period)
+           AND METRIC ='liquid_precip'
+           GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote, watersheds.geometry) ORDER BY wateryear;"))
+  #liquid precip (mm) (all liquid precip for the period across the watershed)
+  
+  
+  winterSums=rbind(winterSums,
+                   dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric, name, sitenote) wateryear(datetime) AS wateryear, max(datetime) AS datetime, metric,
+  (sum(value) / ST_Area(watersheds.geometry)) * 1000 as value, snodasdata.locationid, name, sitenote 
+  FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
+  LEFT JOIN watersheds ON snodasdata.locationid = watersheds.outflowlocationid 
+  WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < '",dataMonth,"') 
+  AND METRIC ='runoff_total'
+  GROUP BY(wateryear, snodasdata.locationid, metric, locations.name, locations.sitenote, watersheds.geometry) ORDER BY wateryear;"))
+  )  
+  #Runoff total, converted to mm, total for period across watershed
+  
+  
+  winterSums=rbind(winterSums,
+                   dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric) wateryear(datetime) AS wateryear, datetime, metric, 
+  (value / ST_Area(watersheds.geometry))*1000 as value, 
+  locations.locationid, locations.name, locations.sitenote 
+                 FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
+                 LEFT JOIN watersheds ON snodasdata.locationid = watersheds.outflowlocationid 
+                 WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < '",dataMonth,"')
+                 AND metric ='swe_total'
+                 ORDER BY locationid, metric, wateryear, datetime DESC;"))
+  )
+  #avg swe for watershed, converted to mm
+  
   
   winterSums=rbind(winterSums,
                    dbGetQuery(conn,paste0("SELECT DISTINCT ON (wateryear, locationid, metric) wateryear(datetime) AS wateryear, datetime, metric, value, locations.locationid, locations.name, locations.sitenote 
                  FROM snodasdata LEFT JOIN locations ON snodasdata.locationid = locations.locationid 
                  WHERE datetime::date <= '",end_date,"'::date AND (EXTRACT(month FROM datetime) >= 10 OR EXTRACT(month FROM datetime) < '",dataMonth,"')
-                 AND metric != 'liquid_precip'
+                 AND metric ='snow_covered_area'
                  ORDER BY locationid, metric, wateryear, datetime DESC;"))
   )###^^This adds the latest data within the period for runoff_total, snow_covered_area, swe_total
+  
   
   snodas_wide<-pivot_wider(data=winterSums[,c("wateryear","metric","value","sitenote")],names_from = c(sitenote, metric),values_from = c(value),names_sep=".")
   

@@ -40,6 +40,7 @@ update_ws_snow=function(ws_ids, dates, metric, rebuildAllMissingData=F){
   # each new derived metric must be defined here, and must have a function created to calculate it
   # the function is then matched to the metric in the 'switch' statement in the main function
   
+  #extract swe, meters
   extract_ws_swe <- function(ws_id, ws_geoms, d){ 
     # geometries of sub watershed to use to extract metrics of interest
     ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
@@ -48,21 +49,14 @@ update_ws_snow=function(ws_ids, dates, metric, rebuildAllMissingData=F){
     out_img<-extract.SNODAS.subset(d, values_wanted='SWE', extent=ws_extent, write_file = FALSE) 
     #convert images to raster
     out_rast=rast(out_img[[1]])
+    out_rast_m = out_rast/1000 # convert to meters using scale factor from user guide
     
-    ## --- extract values from all relevant parameters and modify into metrics ---#
-    out_swe<-terra::extract(out_rast, vect(ws_geom_tr))
-    #hist(out_swe[,2])
-    tot_swe<-sum(out_swe[,2],na.rm=T)
-    # convert to meters using scale factor from user guide
-    tot_swe_m=tot_swe/1000 
+    swe_total=zonal(out_rast_m,vect(ws_geom_tr),fun="mean",na.rm=T)[[1]] * expanse(vect(ws_geom_tr),unit="m")[[1]] #meters of swe * m2 area = m3 runoff
     
-    # add error catch to make sure there is data in here
-    
-    ##tot_swe is returned as the sum of swe measures across the snodas pixels
-    #divide by area in meters^2 to get an average value
-    return(tot_swe_m)
+    return(swe_total)
   }
-  #Extract total 24 hour melt (m)
+  
+  #Extract total 24 hour melt, meters
   extract_ws_runoff <- function(ws_id, ws_geoms, d){ 
     # geometries of sub watershed to use to extract metrics of interest
     ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
@@ -71,18 +65,16 @@ update_ws_snow=function(ws_ids, dates, metric, rebuildAllMissingData=F){
     out_img<-extract.SNODAS.subset(d, values_wanted='Runoff', extent=ws_extent, write_file = FALSE) 
     #convert images to raster
     out_rast=rast(out_img[[1]])
+    out_rast_m = out_rast / 100000   # convert integer to meters based on scale factor
     
-    ## --- extract values from all relevant parameters and modify into metrics ---#
-    out_runoff<-terra::extract(out_rast, vect(ws_geom_tr))
-    #hist(out_swe[,2])
-    tot_runoff<-sum(out_runoff[,2],na.rm=T) 
+    runoff_total=zonal(out_rast_m,vect(ws_geom_tr),fun="mean",na.rm=T)[[1]] *  expanse(vect(ws_geom_tr),unit="m")[[1]] #meters of runoff * m2 area = m3 runoff
     
-    # convert integer to meters based on scale factor
-    tot_runoff_m=tot_runoff/100000 
+    runoff_total=max(0,runoff_total,na.rm=T) #na where there is no snow
     
-    return(tot_runoff_m)
+    return(runoff_total)
     
   }
+  
   # snow covered area (km2)
   extract_ws_sca <- function(ws_id, ws_geoms, d){ 
     # geometries of sub watershed to use to extract metrics of interest
@@ -93,19 +85,28 @@ update_ws_snow=function(ws_ids, dates, metric, rebuildAllMissingData=F){
     #convert images to raster 
     out_rast=rast(out_img[[1]])
     
-    ## --- extract values from all relevant parameters and modify into metrics ---#
-    # extract and divide by scale factor to get into meters
-    out_depth<-terra::extract(out_rast, vect(ws_geom_tr))/1000
-    # ID which pixels have more than 0.15m of snow and sum
-    sca = sum(out_depth[,2] > 0.15, na.rm=T)
+    out_rast_m=out_rast/1000 #divide by scale factor to get into meters
+    out_rast_snow=out_rast_m>0.15
     
-    # add error catch to make sure there is data in here -- doesnt work yet
-    #tryCatch( {if(nrow(tot_runoff_m3) == 0)}
-    #  , error = function(e) {message('Dataframe is EMPTY')
-    #    print(e)})
+    sca=100*zonal(out_rast_snow,vect(ws_geom_tr),fun="mean",na.rm=T)[[1]]
+
+    # expanse(vect(ws_geom_tr),unit="km") #correct
+    # 
+    # 
+    # ## --- extract values from all relevant parameters and modify into metrics ---#
+    # # extract and divide by scale factor to get into meters
+    # out_depth<-terra::extract(out_rast, vect(ws_geom_tr))/1000
+    # #double check pixel size on out_depth. still km2 as per snodas docs? NOPE!!!!
+    # 
+    # # ID which pixels have more than 0.15m of snow and sum
+    # sca = sum(out_depth[,2] > 0.15, na.rm=T) #pixels are km2, so units of sum are km2
+    # 
+    # cellSize(out_rast,unit="km")
+  
     return(sca)
   }
-  # liquid precip, 24hr total (mm)
+  
+  # liquid precip, 24hr total (given as kg/m2, equivalent to mm)
   extract_ws_precip <- function(ws_id, ws_geoms, d){ 
     # geometries of sub watershed to use to extract metrics of interest
     ws_geom_tr= st_transform(ws_geoms[ws_geoms$outflowlocationid == ws_id,], crs=st_crs(4326))
@@ -114,18 +115,13 @@ update_ws_snow=function(ws_ids, dates, metric, rebuildAllMissingData=F){
     out_img<-extract.SNODAS.subset(d, values_wanted='P_Liquid', extent=ws_extent, write_file = FALSE) 
     #convert images to raster 
     out_rast=rast(out_img[[1]])
+    out_rast_mm=out_rast / 10 # convert to kg/m2 (mm) using scale factor from user guide
+    out_rast_m = out_rast_mm / 1000 #now convert to meters
     
-    ## --- extract values from all relevant parameters and modify into metrics ---#
-    # extract and divide by scale factor to get into meters
-    out_p<-terra::extract(out_rast, vect(ws_geom_tr))
-    # convert to kg/m2 (mm) using scale factor from user guide
-    tot_p<-sum(out_p[,2],na.rm=T)/10 
+    lp_total=zonal(out_rast_m,vect(ws_geom_tr),fun="mean",na.rm=T)[[1]] *  expanse(vect(ws_geom_tr),unit="m")[[1]] #meters of runoff * m2 area = m3 runoff
     
-    # add error catch to make sure there is data in here -- doesnt work yet
-    #tryCatch( {if(nrow(tot_runoff_m3) == 0)}
-    #  , error = function(e) {message('Dataframe is EMPTY')
-    #    print(e)})
-    return(tot_p)
+    lp_total=max(0,lp_total,na.rm=T) #na where there is no snow
+    return(lp_total)
   }
   
   
@@ -172,7 +168,6 @@ update_ws_snow=function(ws_ids, dates, metric, rebuildAllMissingData=F){
       
       #since we have downloaded the SNODAS data, calculate all metrics regardless of what was asked for:
       for(addMetric in metricDefinitions$metric){
-        
         #simple way to match 'metric' arg to this whole function to a specific function for calculating that metric.  
         #For example, if metric = 'SWE_total', this will run sapply(ws_ids, extract_ws_swe, ws_geoms) , and return the result as SNODAS_values.
         #we need to add more functions for other  metrics of interest, and add the metrics to the check above (knownMetrics)
@@ -182,7 +177,7 @@ update_ws_snow=function(ws_ids, dates, metric, rebuildAllMissingData=F){
                              snow_covered_area= sapply(ws_ids, extract_ws_sca, ws_geoms=ws_geoms, d=d),
                              liquid_precip = sapply(ws_ids, extract_ws_precip, ws_geoms=ws_geoms, d=d)
         )
-        
+      #print(SNODAS_values)
         
         #write new values to database
         dbWriteData(metric = addMetric, value = SNODAS_values, datetime = d, locationID = ws_ids, sourceName = "snodas", units = metricDefinitions$units[metricDefinitions$metric==addMetric],addMetric = T)
@@ -528,10 +523,13 @@ updateDbData=function(metric,location,days,sourceName,rebuildInvalidData=F){ #lo
 rebuildSnodas = F
 
 #first call will build all metrics, other calls should be unnecessary (but are quick)
-update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="snow_covered_area",rebuildAllMissingData = rebuildSnodas)
-update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="liquid_precip",rebuildAllMissingData = rebuildSnodas)
-update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="swe_total",rebuildAllMissingData = rebuildSnodas)
-update_ws_snow(ws_ids=c(140,167,144,141),dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day"),metric="runoff_total",rebuildAllMissingData = rebuildSnodas)
+winter_dates=seq.Date(from=as.Date("2003-09-30"),to=Sys.Date(),by="day")
+winter_dates=winter_dates[as.numeric(format.Date(winter_dates,"%m"))>=10 | as.numeric(format.Date(winter_dates,"%m"))<=5]
+
+update_ws_snow(ws_ids=c(140,167,144,141),dates=winter_dates,metric="snow_covered_area",rebuildAllMissingData = rebuildSnodas)
+update_ws_snow(ws_ids=c(140,167,144,141),dates=winter_dates,metric="liquid_precip",rebuildAllMissingData = rebuildSnodas)
+update_ws_snow(ws_ids=c(140,167,144,141),dates=winter_dates,metric="swe_total",rebuildAllMissingData = rebuildSnodas)
+update_ws_snow(ws_ids=c(140,167,144,141),dates=winter_dates,metric="runoff_total",rebuildAllMissingData = rebuildSnodas)
 
 
 

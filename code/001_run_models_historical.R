@@ -22,7 +22,7 @@ reuseMonthlyModels=F
 
 displayModelResults=T
 
-wtLowFlow=F #unweighted run done on 12/30/2025
+wtLowFlow=T #unweighted run done on 12/30/2025
 # and what about validity/implementation of  BIC of weighted regression?
 
 hindCast=F

@@ -17,8 +17,8 @@ input_dir <<- file.path(git_dir, 'input') # github necessary for 08
 
 # TODO simdate v.s. run date
 # set end date 
-#end_date = as.Date("2025-02-01") 
-end_date=Sys.Date()
+end_date = as.Date("2026-04-01") 
+#end_date=Sys.Date()
 
 
 model_n=10
@@ -67,7 +67,10 @@ try({
   source(file.path(git_dir,'code/005_db_update.R'))
 })
 
-source(file.path(git_dir, 'code/0234_makeVarFunction.R'))  
+source(file.path(git_dir, 'code/0234_makeVarFunction.R')) 
+
+mean(todayData$allVar$bwh.swe_total ,na.rm=T)#858.088
+
 
 # Create Streamflow Models 
 #-------------------------------------------------------------------------------
